@@ -80,22 +80,30 @@ Supported Vendors
 
 Trigger currently supports devices manufactured by the following vendors:
 
++ Arista Networks
+
+  + All 7000 family platforms
 
 + Cisco Systems
 
-  + Cisco IOS-based platforms only including all Catalyst switches, GSR/OSR routers.
+  + Cisco IOS-based platforms only including all Catalyst switches and GSR/OSR routers
+
++ Dell
+
+  + PowerConnect switches
 
 + Foundry/Brocade
 
-  + All switch/router platforms.
+  + All router and switch platforms including ServerIron, MLX, VDX
 
 + Juniper Networks
 
-  + All routers switches running JunOS and NetScreen firewalls running ScreenOS.
+  + All router and switch platforms running JunOS
+  + NetScreen firewalls running ScreenOS
 
 + Citrix Systems
 
-  + NetScaler web accelerator switches.
+  + NetScaler web accelerator switches (SSH only, no REST/SOAP yet)
 
 Installation
 ============
