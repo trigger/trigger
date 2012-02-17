@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+gong (go ng) - Command-line client to log in to network devices using TACACS credentials.
+
+Partially adapted from conch.  See twisted.conch.scripts.conch and
+http://twistedmatrix.com/projects/conch/documentation/howto/conch_client.html
+"""
+
+__author__ = 'Jathan McCollum, Eileen Tschetter, Michael Shields'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathan.mccollum@teamaol.com'
+__copyright__ = 'Copyright 2006-2010, AOL Inc.'
+__version__ = '1.18'
+
+import os
+import sys
+import tty
+from twisted.internet import reactor
+from twisted.python import log
+
+from trigger.netdevices import NetDevices, device_match
+from trigger.twister import pty_connect, Interactor
+
+from optparse import OptionParser
+
+
+def stop_reactor():
+    if reactor.running:
+        reactor.stop()
+
+def parse_args(argv):
+    #this isn't in use yet, but will be soon
+
+    parser = OptionParser(usage='%prog [options] [device]', description='''\
+Automatically log into network devices.
+''')
+
+    parser.add_option('-o', '--oob', action='store_true', 
+        help='Connect to device out of band first.')
+
+    #parser.add_option('-n', '--nonprod', action='store_true', 
+    #    help='Connect to a device that is marked non-production.')
+
+    opts, args = parser.parse_args(argv)
+    
+    if len(args) != 2:
+        #sys.stderr.write('usage: %s DEVICE\n' % sys.argv[0])
+        parser.print_help()
+        sys.exit(2)
+    
+    return opts, args
+
+def connect_to_oob(device):
+
+    dev = NetDevices(production_only=False)
+    f = dev.find(device)
+
+    tn = "telnet %s %s" % (f.OOBTerminalServerFQDN, f.OOBTerminalServerTCPPort)
+
+    if f.adminStatus != 'PRODUCTION':
+        print 'WARNING: You are connecting to a non-production device.'
+    print "OOB Information for %s" % f.nodeName
+    print tn
+    print 'Connecting you now...'
+    tn = "telnet %s %s" % (f.OOBTerminalServerFQDN, f.OOBTerminalServerTCPPort)
+
+    os.system(tn)
+
+
+def main():
+    
+    global opts
+    opts, args = parse_args(sys.argv)
+
+    #if len(sys.argv) != 2:
+    #    sys.stderr.write('usage: %s DEVICE\n' % sys.argv[0])
+    #    sys.exit(2)
+
+    if os.getenv('DEBUG') is not None:
+        log.startLogging(sys.stdout, setStdout=False)
+    
+    if opts.oob:
+        connect_to_oob(args[1].lower())
+        sys.exit(0)
+
+    # Exception handling is done in device_match, returns None if no match.
+    dev = device_match(args[1].lower(), production_only=False)  #sys.argv[1].lower(), production_only=False)
+    if not dev:
+        sys.exit(2)
+    
+    if dev.adminStatus != 'PRODUCTION':
+        print 'WARNING: You are connecting to a non-production device.' 
+
+    # Need to pass ^C through to the router so we can abort traceroute, etc.
+    print 'Connecting to %s.  Use ^X to exit.\n' % dev
+
+    try:
+        ## only proceed if ping test succeeds
+        #d = pty_connect(dev, Interactor(), ping_test=True)
+        d = pty_connect(dev, Interactor())
+        d.addErrback(log.err)
+        d.addCallback(lambda x: stop_reactor())
+    except AttributeError, err:
+        sys.stderr.write('Could not connect to %s.\n' % dev)
+        sys.exit(2)
+
+    stdin_fileno = sys.stdin.fileno()
+    old_ttyattr = tty.tcgetattr(stdin_fileno)
+
+    try:
+        # Enter raw mode on the local tty.
+        stdin_fileno = sys.stdin.fileno()
+        tty.setraw(stdin_fileno)
+        raw_ta = tty.tcgetattr(stdin_fileno)
+        raw_ta[tty.LFLAG] |= tty.ISIG
+        raw_ta[tty.OFLAG] |= tty.OPOST | tty.ONLCR
+        raw_ta[tty.CC][tty.VINTR] = '\x18'  # ^X is the new ^C
+        raw_ta[tty.CC][tty.VSUSP] = 0       # disable ^Z
+        tty.tcsetattr(stdin_fileno, tty.TCSANOW, raw_ta)
+
+        reactor.run()
+    finally:
+        tty.tcsetattr(stdin_fileno, tty.TCSANOW, old_ttyattr)
+        print '\n'  # return cursor to beginning of line
+
+if __name__ == '__main__':
+    main()

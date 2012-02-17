@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dummy version of netdevices.xml, with just one real entry copied
+     from the real file (version of 2006-06-19 20:01 UTC). -->
+<NetDevices>
+   <device nodeName="iwg1-r3.router.aol.com">
+      <adminStatus>PRODUCTION</adminStatus>
+      <assetID>90000041207</assetID>
+      <authMethod>tacacs</authMethod>
+      <barcode>001020020</barcode>
+      <budgetCode>100124.06</budgetCode>
+      <budgetName>DCNETS - IW</budgetName>
+      <coordinate>16AH</coordinate>
+      <deviceType>ROUTER</deviceType>
+      <enablePW>mkL0v3!w4r</enablePW>
+      <lastUpdate>2006-07-19 19:56:32.0</lastUpdate>
+      <layer2>1</layer2>
+      <layer3>1</layer3>
+      <lifecycleStatus>INSTALLED</lifecycleStatus>
+      <loginPW></loginPW>
+      <make>M40 INTERNET BACKBONE ROUTER</make>
+      <manufacturer>JUNIPER</manufacturer>
+      <model>M40-B-AC</model>
+      <nodeName>iwg1-r3.router.aol.com</nodeName>
+      <onCallEmail>dcnets@aol.net</onCallEmail>
+      <onCallID>17</onCallID>
+      <onCallName>NETOPS DCNETS</onCallName>
+      <OOBTerminalServerConnector>C</OOBTerminalServerConnector>
+      <OOBTerminalServerFQDN>ts-cr3-w7-srv5.oob.aol.com</OOBTerminalServerFQDN>
+      <OOBTerminalServerNodeName>ts-cr3-w7-srv5</OOBTerminalServerNodeName>
+      <OOBTerminalServerPort>18</OOBTerminalServerPort>
+      <OOBTerminalServerTCPPort>5018</OOBTerminalServerTCPPort>
+      <operationStatus>MONITORED</operationStatus>
+      <owner>10005063 - NETWORK ENGINEERING &amp; OPERATIONS</owner>
+      <room>CR3</room>
+      <serialNumber>23938</serialNumber>
+      <site>RTC</site>
+   </device>
+</NetDevices>

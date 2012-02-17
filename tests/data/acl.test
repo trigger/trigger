@@ -1,0 +1,104 @@
+no access-list 115
+access-list 115 permit tcp any any established
+access-list 115 permit icmp any any echo-reply
+access-list 115 permit icmp any any unreachable
+access-list 115 permit icmp any any time-exceeded
+access-list 115 permit icmp any any parameter-problem
+access-list 115 permit tcp host 46.31.162.158 any
+access-list 115 permit udp host 46.31.162.158 any
+access-list 115 permit icmp host 46.31.162.158 any echo
+access-list 115 permit tcp host 193.49.20.164 any
+access-list 115 permit udp host 193.49.20.164 any
+access-list 115 permit icmp host 193.49.20.164 any echo
+access-list 115 permit tcp host 190.106.56.192 any
+access-list 115 permit udp host 190.106.56.192 any
+access-list 115 permit icmp host 190.106.56.192 any echo
+access-list 115 permit tcp host 155.154.171.144 any
+access-list 115 permit udp host 155.154.171.144 any
+access-list 115 permit icmp host 155.154.171.144 any echo
+access-list 115 permit udp 163.208.217.120 0.0.0.7 eq 53 any gt 1023
+access-list 115 permit udp 94.115.90.192 0.0.0.7 eq 53 any gt 1023
+access-list 115 permit udp 163.208.217.120 0.0.0.7 eq 123 any gt 1023
+access-list 115 permit udp 94.115.90.192 0.0.0.7 eq 123 any gt 1023
+access-list 115 permit udp 163.208.217.120 0.0.0.7 eq 123 any eq 123
+access-list 115 permit udp 94.115.90.192 0.0.0.7 eq 123 any eq 123
+access-list 115 permit udp host 60.23.171.6 eq 88 any gt 1023
+access-list 115 permit udp host 60.23.171.6 eq 464 any gt 1023
+access-list 115 permit udp host 60.23.171.6 eq 749 any gt 1023
+access-list 115 permit udp host 60.23.171.6 range 1645 1646 any gt 1023
+access-list 115 permit udp host 172.210.73.35 eq 88 any gt 1023
+access-list 115 permit udp host 16.140.167.175 eq 88 any gt 1023
+access-list 115 permit udp 58.28.204.152 0.0.0.1 eq 88 any gt 1023
+access-list 115 permit udp host 25.102.208.80 eq 88 any gt 1023
+access-list 115 permit udp host 217.235.73.116 eq 88 any gt 1023
+access-list 115 permit udp host 186.236.212.8 eq 88 any gt 1023
+access-list 115 permit udp host 62.142.251.159 eq 88 any gt 1023
+access-list 115 permit udp host 28.127.238.76 eq 88 any gt 1023
+access-list 115 permit udp host 144.195.8.151 eq 88 any gt 1023
+access-list 115 permit udp host 82.34.118.4 eq 88 any gt 1023
+access-list 115 deny tcp any any eq 111
+access-list 115 deny udp any any eq 111
+access-list 115 deny tcp any any eq 2049
+access-list 115 deny udp any any eq 2049
+access-list 115 deny tcp any any range 32770 32780
+access-list 115 deny udp any any range 32770 32780
+access-list 115 permit tcp 221.188.0.0 0.0.255.255 any
+access-list 115 permit udp 221.188.0.0 0.0.255.255 any
+access-list 115 permit icmp 221.188.0.0 0.0.255.255 any echo
+access-list 115 permit ospf 221.188.0.0 0.0.255.255 any
+access-list 115 permit tcp 15.67.0.0 0.0.255.255 any
+access-list 115 permit udp 15.67.0.0 0.0.255.255 any
+access-list 115 permit icmp 15.67.0.0 0.0.255.255 any echo
+access-list 115 permit ospf 15.67.0.0 0.0.255.255 any
+access-list 115 permit tcp 173.108.0.0 0.0.255.255 any
+access-list 115 permit udp 173.108.0.0 0.0.255.255 any
+access-list 115 permit icmp 173.108.0.0 0.0.255.255 any echo
+access-list 115 permit ospf 173.108.0.0 0.0.255.255 any
+access-list 115 permit tcp 97.192.0.0 0.15.255.255 any
+access-list 115 permit udp 97.192.0.0 0.15.255.255 any
+access-list 115 permit icmp 97.192.0.0 0.15.255.255 any echo
+access-list 115 permit ospf 97.192.0.0 0.15.255.255 any
+access-list 115 permit tcp 46.0.0.0 0.7.255.255 any
+access-list 115 permit udp 46.0.0.0 0.7.255.255 any
+access-list 115 permit icmp 46.0.0.0 0.7.255.255 any echo
+access-list 115 permit ospf 46.0.0.0 0.7.255.255 any
+access-list 115 permit tcp 105.248.0.0 0.0.255.255 any
+access-list 115 permit udp 105.248.0.0 0.0.255.255 any
+access-list 115 permit icmp 105.248.0.0 0.0.255.255 any echo
+access-list 115 permit ospf 105.248.0.0 0.0.255.255 any
+access-list 115 permit tcp 122.0.0.0 0.63.255.255 any
+access-list 115 permit udp 122.0.0.0 0.63.255.255 any
+access-list 115 permit icmp 122.0.0.0 0.63.255.255 any echo
+access-list 115 permit ospf 122.0.0.0 0.63.255.255 any
+access-list 115 permit tcp 204.168.0.0 0.0.255.255 any
+access-list 115 permit udp 204.168.0.0 0.0.255.255 any
+access-list 115 permit icmp 204.168.0.0 0.0.255.255 any echo
+access-list 115 permit ospf 204.168.0.0 0.0.255.255 any
+access-list 115 permit tcp 73.140.0.0 0.0.127.255 any
+access-list 115 permit udp 73.140.0.0 0.0.127.255 any
+access-list 115 permit icmp 73.140.0.0 0.0.127.255 any echo
+access-list 115 permit tcp 53.106.0.0 0.0.63.255 any
+access-list 115 permit udp 53.106.0.0 0.0.63.255 any
+access-list 115 permit icmp 53.106.0.0 0.0.63.255 any echo
+access-list 115 permit ospf 53.106.0.0 0.0.63.255 any
+access-list 115 permit tcp 199.240.192.0 0.0.63.255 any
+access-list 115 permit udp 199.240.192.0 0.0.63.255 any
+access-list 115 permit icmp 199.240.192.0 0.0.63.255 any echo
+access-list 115 permit ospf 199.240.192.0 0.0.63.255 any
+access-list 115 permit tcp 124.129.0.0 0.0.127.255 any
+access-list 115 permit udp 124.129.0.0 0.0.127.255 any
+access-list 115 permit icmp 124.129.0.0 0.0.127.255 any echo
+access-list 115 permit ospf 124.129.0.0 0.0.127.255 any
+access-list 115 permit icmp 124.129.0.0 0.0.127.255 any echo
+access-list 115 permit udp 124.129.0.0 0.0.127.255 any range 33434 33523
+access-list 115 permit icmp 57.22.0.0 0.0.31.255 any echo
+access-list 115 permit udp 57.22.0.0 0.0.31.255 any range 33434 33523
+access-list 115 permit udp host 216.174.140.65 eq 67 any eq 68
+access-list 115 permit udp host 134.244.21.133 eq 67 any eq 68
+access-list 115 permit tcp 77.55.207.208 0.0.0.15 any
+access-list 115 permit udp 77.55.207.208 0.0.0.15 any
+access-list 115 permit icmp 77.55.207.208 0.0.0.15 any echo
+access-list 115 permit tcp 48.158.92.0 0.0.0.15 any
+access-list 115 permit udp 48.158.92.0 0.0.0.15 any
+access-list 115 permit icmp 48.158.92.0 0.0.0.15 any echo
+access-list 115 deny ip any any

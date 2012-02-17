@@ -1,0 +1,449 @@
+/*
+ * Example JunOS ACLs from Juniper documentation:
+ * http://www.juniper.net/techpubs/software/junos/junos73/swconfig73-policy/html/firewall-config18.html
+ * 
+ * Each example is followed by a version in AOL preferred style.
+ * Differences from JunOS inconsistent documentation style:
+ * 1. Always give ports numerically.
+ * 2. Always use braces for a "then" clause.
+ * 3. Don't use a match clause if it always matches,
+ *    e.g., source-address 0.0.0.0/0.
+ *
+ * This file is used by the test suite.  Each ACL should parse and then
+ * output in regularized style, and then that should parse and produce
+ * the same output.
+ *
+ */
+/* JunOS 7.3 example 1 */
+filter local-access-control {
+    term terminal-access {
+        from {
+            address {
+                192.168.1.0/24;
+            }
+            protocol tcp;
+            port [ssh telnet];
+        }
+        then accept;
+    }
+    term terminal-access-denied {
+        from {
+            protocol tcp;
+            port [ssh telnet];
+        }
+        then {
+            log;
+            reject;
+        }
+    }
+    term default-term {
+        then accept;
+    }
+}
+
+filter local-access-control {
+    term terminal-access {
+        from {
+            address {
+                192.168.1.0/24;
+            }
+            protocol tcp;
+            port 22-23;
+        }
+        then {
+            accept;
+        }
+    }
+    term terminal-access-denied {
+        from {
+            protocol tcp;
+            port 22-23;
+        }
+        then {
+            log;
+            reject;
+        }
+    }
+    term default-term {
+        then {
+            accept;
+        }
+    }
+}
+
+/* JunOS 7.3 example 2 */
+/* The example as reported in their documentation is actually invalid,
+   since it contains no term statement.  Reported as a Juniper doc bug
+   2006-02-08, doc-sw/68417. */
+filter tftp-access-control {
+    term blah { /* added */
+        from {
+            protocol udp;
+            port tftp;
+        }
+        then {
+            log;
+            discard;
+        }
+    } /* added */
+}
+
+filter tftp-access-control {
+    term blah {
+        from {
+            protocol udp;
+            port 69;
+        }
+        then {
+            log;
+            discard;
+        }
+    }
+}
+
+/* JunOS 7.3 example 3 */
+filter rpf-dhcp {
+    term dhcp {
+        from {
+            source-address {
+                0.0.0.0/32;
+            }
+            destination-address {
+                255.255.255.255/32;
+            }
+        }
+        then {
+            accept;
+        }
+    }
+}
+
+filter rpf-dhcp {
+    term dhcp {
+        from {
+            source-address {
+                0.0.0.0/32;
+            }
+            destination-address {
+                255.255.255.255/32;
+            }
+        }
+        then {
+            accept;
+        }
+    }
+}
+
+/* JunOS 7.3 example 4 */
+/* Brace missing after "police-class1"; reported as doc bug 2006-02-08, 
+   bug ID doc-sw/68418 */
+filter filter1 {
+    policer police-class1 {
+        if-exceeding {
+            bandwidth-limit 25;
+            burst-size-limit 1000;
+        }
+        then {
+            discard;
+        }
+    }
+    term term1 {
+        from {
+            destination-class class1;
+        }
+        then {
+            policer police-class1;
+        }
+    }
+}
+
+filter filter1 {
+    policer police-class1 {
+        if-exceeding {
+            bandwidth-limit 25;
+            burst-size-limit 1000;
+        }
+        then {
+            discard;
+        }
+    }
+    term term1 {
+        from {
+            destination-class class1;
+        }
+        then {
+            policer police-class1;
+        }
+    }
+}
+
+/* JunOS 7.3 example 5 */
+filter ip-option-filter {
+    term match-strictsource {
+        from {
+            ip-options strict-source-route;
+        }
+        then {
+            count strict-source-route;
+            log;
+            accept;
+        }
+    }
+    term match-loose-source {
+        from {
+            ip-options loose-source-route;
+        }
+        then {
+            count loose-source-route;
+            log;
+            accept;
+        }
+    }
+    term match-record {
+        from {
+            ip-options record-route;
+        }
+        then {
+            count record-route;
+            accept;
+        }
+    }
+    term match-timestamp {
+        from {
+            ip-options timestamp;
+        }
+        then {
+            count timestamp;
+            accept;
+        }
+    }
+    term match-router-alert {
+        from {
+            ip-options router-alert;
+        }
+        then {
+            count router-alert;
+            accept;
+        }
+    }
+    term match-all {
+        then accept;
+    }
+}
+
+filter ip-option-filter {
+    term match-strictsource {
+        from {
+            ip-options 137;
+        }
+        then {
+            count strict-source-route;
+            log;
+            accept;
+        }
+    }
+    term match-loose-source {
+        from {
+            ip-options 131;
+        }
+        then {
+            count loose-source-route;
+            log;
+            accept;
+        }
+    }
+    term match-record {
+        from {
+            ip-options 7;
+        }
+        then {
+            count record-route;
+            accept;
+        }
+    }
+    term match-timestamp {
+        from {
+            ip-options 68;
+        }
+        then {
+            count timestamp;
+            accept;
+        }
+    }
+    term match-router-alert {
+        from {
+            ip-options 148;
+        }
+        then {
+            count router-alert;
+            accept;
+        }
+    }
+    term match-all {
+        then {
+            accept;
+        }
+    }
+}
+
+/* JunOS 7.3 example 6 */
+filter ospf-filter {
+    term term1 {
+        from {
+            source-address {
+                10.108.0.0/16;
+            }
+            protocol ospf;
+        }
+    }
+    term default-term {
+        then {
+            reject administratively-prohibited;
+        }
+    }
+}
+
+filter ospf-filter {
+    term term1 {
+        from {
+            source-address {
+                10.108.0.0/16;
+            }
+            protocol ospf;
+        }
+	then {
+	    accept;
+	}
+    }
+    term default-term {
+        then {
+            reject;
+        }
+    }
+}
+
+/* JunOS 7.3 example 7 */
+filter ospf-or-131 {   
+    term protocol-match {
+        from {
+            protocol ospf;
+        }
+    }
+    term address-match {
+        from {
+            source-address {
+                10.108.0.0/16;
+            }
+        }
+    }
+}
+
+filter ospf-or-131 {
+    term protocol-match {
+        from {
+            protocol ospf;
+        }
+	then {
+	    accept;
+	}
+    }
+    term address-match {
+        from {
+            source-address {
+                10.108.0.0/16;
+            }
+        }
+	then {
+	    accept;
+	}
+    }
+}
+
+/* JunOS 7.3 example 8 */
+filter fire1 {
+    term 1 {
+        from {
+            address {
+                192.168.5.0/24 except;
+                0.0.0.0/0;
+            }
+        }
+        then {
+            count reject-pref1-1;
+            log;
+            reject;
+        }
+    }
+    term 2 {
+        then {
+            count reject-pref1-2;
+            log;
+            accept;
+        }
+    }
+}
+
+filter fire1 {
+    term 1 {
+        from {
+            address {
+                0.0.0.0/0;
+                192.168.5.0/24 except;
+            }
+        }
+        then {
+            count reject-pref1-1;
+            log;
+            reject;
+        }
+    }
+    term 2 {
+        then {
+            count reject-pref1-2;
+            log;
+            accept;
+        }
+    }
+}
+
+/* JunOS 7.3 example 9 */
+filter bgp179 {
+    term 1 {
+        from {
+            source-address {
+                0.0.0.0/0;
+            }
+            source-prefix-list {
+                bgp179 except;
+            }
+            destination-port bgp;
+        }
+        then {
+            reject;
+        }
+    }
+    term 2 {
+        then {
+            accept;
+        }
+    }
+}
+
+filter bgp179 {
+    term 1 {
+        from {
+            source-prefix-list {
+                bgp179 except;
+            }
+            destination-port 179;
+        }
+        then {
+            reject;
+        }
+    }
+    term 2 {
+        then {
+            accept;
+        }
+    }
+}
