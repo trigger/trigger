@@ -29,3 +29,4 @@ lifetime:
 - Mark Ellzey Thomas
 - Michael Shields
 - Jeff Sullivan (for the best error message ever)
+- Nick Sinopoli <https://github.com/NSinopoli> (for graciously giving us the name Trigger!)

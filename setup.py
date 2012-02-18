@@ -2,14 +2,16 @@
 
 # Copyright, 2005-2011 AOL Inc.
 
-#from distutils.core import setup, Command
-from setuptools import setup, find_packages, Command
+try:
+    from setuptools import setup, find_packages, Command
+except ImportError:
+    raise SystemExit('We require setuptools. Sorry! Install it and try again: http://pypi.python.org/pypi/setuptools')
 import glob
 import os
 import sys
 import unittest
 
-# get version from pkg index
+# Get version from pkg index
 from trigger import release as __version__
 
 # Names of required packages
@@ -55,26 +57,25 @@ class TestCommand(Command):
                     args.append(os.path.join(root, file[:-3]))
         unittest.main(None, None, args)
 
-desc = 'simain is a framework and suite of tools for configuring network devices'
+desc = 'Trigger is a framework and suite of tools for configuring network devices'
 long_desc = '''
-simain is a framework for communicating with network devices that was written
+Trigger is a framework for communicating with network devices that was written
 by the Network Security team at AOL to enhance management of security policies
 on network devices. It was written in Python utilizing the freely available
 Twisted Matrix event-driven networking engine. The libraries can connect to
 network devices by any available method (e.g. telnet, ssh), communicate with
 them in their native interface (e.g. Juniper JunoScript, Cisco IOS), and return
-output. Utilizing the Twisted framework, simain is able to manage any number of
+output. Utilizing the Twisted framework, Trigger is able to manage any number of
 jobs in parallel and handle output or errors as they return. With the high
 number of network devices on the AOL network this application is invaluable to
-performance and reliability. simain currently supports only devices
-manufactured by Cisco Systems, Foundry Networks, and Juniper Networks.
+performance and reliability. 
 '''
 
 setup(
     name='trigger',
     version=__version__,
     author='Jathan McCollum',
-    author_email='jathan.mccollum@teamaol.com',
+    author_email='jathan@gmail.com',
     packages=find_packages(exclude='tests'),
     license='BSD',
     url='https://github.com/aol/trigger',
