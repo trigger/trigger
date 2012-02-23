@@ -99,10 +99,19 @@ IOSLIKE_VENDORS = (
 #AUTOACL_FILE = os.environ.get('AUTOACL_FILE', '/usr/local/trigger/autoacl.py')
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
 
-# Path to netdevices.xml file, which is used to populate
-# trigger.netdevices.NetDevices
-#NETDEVICESXML_FILE = os.environ.get('NETDEVICESXML_FILE', '/usr/local/trigger/netdevices.xml')
-NETDEVICESXML_FILE = os.environ.get('NETDEVICESXML_FILE', os.path.join(PREFIX, 'netdevices.xml'))
+# One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
+# NETDEVICES_FILE or it won't work for obvious reasons.
+NETDEVICES_FORMAT = 'xml'
+
+# Path to netdevices device metadata source file, which is used to populate
+# trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
+# You must set NETDEVICES_FORMAT to match the type of data.
+NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/usr/local/trigger/netdevices.xml'
+
+#NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/home/j/jathan/sandbox/netdevices.json')
+#NETDEVICES_FORMAT = 'json' # One of 'xml', 'json', 'sqlite'
+#NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/home/j/jathan/sandbox/nd.db')
+#NETDEVICES_FORMAT = 'sqlite' # One of 'xml', 'json', 'sqlite'
 
 # Valid owning teams (e.g. device.owningTeam) go here. These are examples and should be
 # changed to match your environment.

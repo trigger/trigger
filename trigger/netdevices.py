@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-The heart and soul of Trigger, NetDevices is an abstract interface to network device metadata 
+The heart and soul of Trigger, NetDevices is an abstract interface to network device metadata
 and ACL associations.
 
-Parses netdevices.xml and makes available a dictionary of :class:`~trigger.netdevices.NetDevice` 
+Parses netdevices.xml and makes available a dictionary of :class:`~trigger.netdevices.NetDevice`
 objects, which is keyed by the FQDN of every network device.
 
 Other interfaces are non-public.
@@ -26,7 +26,10 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2011, AOL Inc.'
 
+# Imports (duh?)
+import itertools
 import os
+import sqlite3 as sqlite
 import sys
 import time
 from UserDict import DictMixin
@@ -36,17 +39,98 @@ from trigger.changemgmt import site_bounce, BounceStatus
 from trigger.acl.db import AclsDB
 
 try:
-    import psyco
-    psyco.full()
+    import simplejson as json # Prefer simplejson because of SPEED!
 except ImportError:
-    pass
+    import json
+
+
+# Constants
+SUPPORTED_FORMATS = ('xml', 'json', 'sqlite')
+
 
 # Exports
 __all__ = ['device_match', 'NetDevice', 'NetDevices']
 
 
 # Functions
-def _populate(netdevices, netdevicesxml_file, production_only):
+def _parse_json(data_source):
+    """
+    Parse 'netdevices.json' and return list of JSON objects.
+
+    :param data_source: Absolute path to data file
+    """
+    print 'JSON POWER'
+    with open(data_source, 'r') as contents:
+         # TODO (jathan): Can we somehow return an iterator like the other
+         # _parse methods?
+         data = json.load(contents)
+
+    return data
+
+def _parse_xml(data_source):
+    """
+    Parse 'netdevices.xml' and return a list of node 2-tuples (key, value).
+    These are as good as a dict without the extra dict() call.
+
+    :param data_source: Absolute path to data file
+    """
+    print 'XML POWER!'
+    # Parsing the complete file into a tree once and extracting outthe device
+    # nodes is faster than using iterparse(). Curses!!
+    xml = parse(netdevicesxml_file).findall('device')
+
+    # This is a generator within a generator. Trust me, it works in _populate()
+    data = (((e.tag, e.text) for e in node.getchildren()) for node in xml)
+
+    return data
+
+def _parse_sqlite(data_source):
+    """
+    Parse 'netdevices.sql' and return a list of stuff.
+
+    :param data_source: Absolute path to data file
+    """
+    print 'SQLITE POWER!'
+    connection = sqlite.connect(data_source)
+    cursor = connection.cursor()
+
+    # Get the column names. This is a simple list strings.
+    colfetch  = cursor.execute('pragma table_info(netdevices)')
+    results = colfetch.fetchall()
+    columns = [r[1] for r in results]
+
+    # And the devices. This is a list of tuples whose values match the indexes
+    # of the column names.
+    devfetch = cursor.execute('select * from netdevices')
+    devrows = devfetch.fetchall()
+
+    # Another generator within a generator, which structurally is a list of
+    # lists containing 2-tuples (key, value).
+    data = (itertools.izip(columns, row) for row in devrows)
+
+    return data
+
+def _munge_source_data(data_source=settings.NETDEVICES_FILE, format='xml'):
+    """
+    Read the source data in the specified format, parse it, and return a
+    dictionary of objects.
+
+    :param data_source: Absolute path to source data file
+    :param format: One of 'xml', 'json', or 'sqlite'
+    """
+    assert format in SUPPORTED_FORMATS
+
+    parsers = {
+        'xml': _parse_xml,
+        'json': _parse_json,
+        'sqlite': _parse_sqlite,
+    }
+    parser = parsers[format]
+    data = parser(data_source)
+
+    return data
+
+def _populate(netdevices, data_source, data_format, production_only):
     """
     Populates the NetDevices with NetDevice objects.
 
@@ -56,24 +140,19 @@ def _populate(netdevices, netdevicesxml_file, production_only):
     #start = time.time()
     aclsdb = AclsDB()
 
-    # Parsing the complete file into a tree once and extracting out
-    # the device nodes is faster than using iterparse().
-    for node in parse(netdevicesxml_file).findall('device'):
-        dev = NetDevice()
+    device_data = _munge_source_data(data_source=data_source, format=data_format)
 
-        #for elt in node.getchildren():
-        #    setattr(dev, elt.tag, elt.text)
-        # Slightly optimized because list comprehensions are the future!
-        [setattr(dev, e.tag, e.text) for e in node.getchildren()]
+    for obj in device_data:
+        dev = NetDevice(data=obj)
 
         # Only return devices with adminStatus of 'PRODUCTION' unless
         # production_only is True
         if dev.adminStatus != 'PRODUCTION' and production_only:
             continue
-            
+
         # These checks should be done on generation of netdevices.xml.
         ## skip empty nodenames
-        if dev.nodeName is None: 
+        if dev.nodeName is None:
             continue
 
         ## lowercase hostnames
@@ -97,7 +176,7 @@ def _populate(netdevices, netdevicesxml_file, production_only):
 
 def device_match(name, production_only=True):
     """
-    Return a matching :class:`~trigger.netdevices.NetDevice` object based on 
+    Return a matching :class:`~trigger.netdevices.NetDevice` object based on
     partial name. Return `None` if no match or if multiple matches is
     cancelled::
 
@@ -154,9 +233,55 @@ class NetDevice(object):
     problems and should be revisited in the long-run as there are certain
     fields that are baked into the core functionality of Trigger.
 
-    Users must not create `NetDevice` objects directly! Rely instead upon
+    Users usually won't create `NetDevice` objects directly! Rely instead upon
     `NetDevices` to do this for you.
     """
+    def __init__(self, data=None):
+        # Here comes all of the bare minimum set of attributes a NetDevice
+        # object needs for basic functionality within the existing suite.
+
+        # Hostname
+        self.nodeName = None
+
+        # Hardware Info
+        self.deviceType = None
+        self.make = None
+        self.manufacturer = None
+        self.model = None
+        self.serialNumber = None
+
+        # Administrivia
+        self.adminStatus = None
+        self.assetID = None
+        self.budgetCode = None
+        self.budgetName = None
+        self.owningTeam = None
+        self.owner = None
+        self.onCallName = None
+        self.operationStatus = None
+        self.lastUpdate = None
+        self.lifecycleStatus = None
+        self.projectName = None
+
+        # Location
+        self.site = None
+        self.room = None
+        self.coordinate = None
+
+        # ACLs
+        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
+
+        # And if data has been passed, well... replace everything that was in
+        # it.
+        if data is None:
+            pass
+        else:
+            self.__dict__.update(data) # Better hope this is a dict!
+
+        # And lowercase the nodeName for completeness.
+        if self.nodeName is not None:
+            self.nodeName = self.nodeName.lower()
+
     def __str__(self):
         return self.nodeName
 
@@ -180,9 +305,11 @@ class NetDevice(object):
         return self.nodeName.split('.', 1)[0]
 
     def allowable(self, action, when=None):
-        """Ok to perform the specified action?  Returns a boolean value.
-        False means a bounce window conflict.  For now 'load-acl' is the
-        only valid action and moratorium status is not checked."""
+        """
+        Ok to perform the specified action? Returns a boolean value. False
+        means a bounce window conflict. For now 'load-acl' is the only valid
+        action and moratorium status is not checked.
+        """
         assert action == 'load-acl'
         return self.bounce.status(when) == BounceStatus('green')
 
@@ -240,13 +367,13 @@ class NetDevices(DictMixin):
     :class:`~trigger.netdevices.NetDevice` objects. By default
     it will only return devices for which ``adminStatus=='PRODUCTION'``.
 
-    There are hardly any use cases where ``NON-PRODUCTION`` devices are needed, and 
-    it can cause real bugs of two sorts: 
-        
+    There are hardly any use cases where ``NON-PRODUCTION`` devices are needed, and
+    it can cause real bugs of two sorts:
+
       1. trying to contact unreachable devices and reporting spurious failures,
       2. hot spares with the same nodeName.
 
-    You may override this by passing ``production_only=False``. 
+    You may override this by passing ``production_only=False``.
     """
     _Singleton = None
 
@@ -268,15 +395,16 @@ class NetDevices(DictMixin):
             >>> nd._actual.search('fw')
             Traceback (most recent call last):
               File "<stdin>", line 1, in <module>
-            TypeError: unbound method match() must be called with _actual 
+            TypeError: unbound method match() must be called with _actual
             instance as first argument (got str instance instead)
         """
         def __init__(self, production_only=True):
             self._dict = {}
             _populate(
-                self._dict, 
-                settings.NETDEVICESXML_FILE, 
-                production_only
+                self._dict,
+                settings.NETDEVICES_FILE,
+                settings.NETDEVICES_FORMAT,
+                production_only,
             )
 
         def __getitem__(self, key):
@@ -345,8 +473,8 @@ class NetDevices(DictMixin):
             """
             Attempt to match values to all keys in @kwargs by dynamically
             building a list comprehension. Will throw errors if the keys don't
-            match legit NetDevice attributes. 
-            
+            match legit NetDevice attributes.
+
             Keys and values are case IN-senstitive. Matches against non-string
             values will FAIL.
 
@@ -377,21 +505,21 @@ class NetDevices(DictMixin):
                 """Helper function for the lowercase to regular attribute mapping."""
                 return self._device_key_map[key]
 
-            # Here we build a list comprehension and then eval it at the end. 
+            # Here we build a list comprehension and then eval it at the end.
             query_prefix = "[dev for dev in self.all() if "
             query_suffix = "]"
             template = "'%s'.lower() in getattr(dev, attr('%s')).lower()"
             list_body = ' and '.join(template % (v,k.lower()) for k,v in kwargs.iteritems())
             list_comp = query_prefix + list_body + query_suffix
 
-            # This was for the case-sensitive version 
+            # This was for the case-sensitive version
             #template = "'%s' in dev.%s"
             #list_body = ' and '.join(template % (v,k) for k,v in kwargs.iteritems())
 
             return eval(list_comp)
 
         def get_devices_by_type(self, devtype):
-            """ 
+            """
             Returns a list of NetDevice objects with deviceType matching type.
 
             Known deviceTypes: ['FIREWALL', 'ROUTER', 'SWITCH', 'DWDM']

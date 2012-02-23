@@ -2,6 +2,20 @@
 Changelog
 =========
 
+1.0.0.50
+========
+
+- New NetDevices device metadata source file support for JSON, XML, or SQLite3 
+- Companion changes made to conf/trigger_settings.py
+- trigger.netdevice.NetDevice objects can now be created on their own and have
+  the minimum set of attributes defaulted to None upon instantiation
+
+1.0.0.40
+========
+
+- Public release!
+- Arista and Dell command execution and interactive login support in trigger.twister!
+
 1.6.1
 =====
 
