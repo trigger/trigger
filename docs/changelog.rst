@@ -2,6 +2,14 @@
 Changelog
 =========
 
+1.0.0.60
+========
+
+- New nd2json.py nad nd2sqlite.py tools for use in converting existing
+  netdevices.xml implementations
+- Added sample netdevices.json in conf/netdevices.json
+- Added SQLite database schema for netdevices in conf/netdevices.sql
+
 1.0.0.50
 ========
 

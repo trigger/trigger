@@ -1,4 +1,4 @@
-__version__ = (1, 0, 0, 50)
+__version__ = (1, 0, 0, 60)
 
 full_version = '.'.join(str(x) for x in __version__)
 release = full_version

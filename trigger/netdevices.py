@@ -59,10 +59,9 @@ def _parse_json(data_source):
 
     :param data_source: Absolute path to data file
     """
-    print 'JSON POWER'
     with open(data_source, 'r') as contents:
-         # TODO (jathan): Can we somehow return an iterator like the other
-         # _parse methods?
+         # TODO (jathan): Can we somehow return an generator like the other
+         # _parse methods? Maybe using JSONDecoder?
          data = json.load(contents)
 
     return data
@@ -74,7 +73,6 @@ def _parse_xml(data_source):
 
     :param data_source: Absolute path to data file
     """
-    print 'XML POWER!'
     # Parsing the complete file into a tree once and extracting outthe device
     # nodes is faster than using iterparse(). Curses!!
     xml = parse(netdevicesxml_file).findall('device')
@@ -90,7 +88,6 @@ def _parse_sqlite(data_source):
 
     :param data_source: Absolute path to data file
     """
-    print 'SQLITE POWER!'
     connection = sqlite.connect(data_source)
     cursor = connection.cursor()
 
@@ -110,7 +107,8 @@ def _parse_sqlite(data_source):
 
     return data
 
-def _munge_source_data(data_source=settings.NETDEVICES_FILE, format='xml'):
+def _munge_source_data(data_source=settings.NETDEVICES_FILE,
+                       format=settings.NETDEVICES_FORMAT):
     """
     Read the source data in the specified format, parse it, and return a
     dictionary of objects.
