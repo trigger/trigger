@@ -75,7 +75,7 @@ def _parse_xml(data_source):
     """
     # Parsing the complete file into a tree once and extracting outthe device
     # nodes is faster than using iterparse(). Curses!!
-    xml = parse(netdevicesxml_file).findall('device')
+    xml = parse(data_source).findall('device')
 
     # This is a generator within a generator. Trust me, it works in _populate()
     data = (((e.tag, e.text) for e in node.getchildren()) for node in xml)

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.0.0.70
+========
+
+- Minor bugfix in trigger.netdevices._parse_xml()
+
 1.0.0.60
 ========
 
