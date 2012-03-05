@@ -17,7 +17,7 @@ __version__ = '1.4'
 
 import sys, os, time, signal, IPy
 from simpleparse.error import ParserSyntaxError
-from trigger.acl import *
+from trigger.acl import parse, Comment, ACL
 from datetime import datetime, date, time, timedelta
 from optparse import OptionParser
 from copy import deepcopy, copy
@@ -254,8 +254,6 @@ def optimize_terms(terms, focused, which):
         # this is used primarily for port optimization
         other = ['source-address', 'destination-address']
 
-
-
     meter = ProgressMeter(total=total)
 
     for term1 in terms:
@@ -313,7 +311,6 @@ def optimize_terms(terms, focused, which):
                term2.action[0] in rej_keys or \
                term2.match.has_key('source-port'):
                 continue
-
 
             # check to make sure both terms include somethin
             # that can be matched.
@@ -431,7 +428,6 @@ def optimize_terms(terms, focused, which):
 
     return new_terms
             
-
 def terms_unchunk(chunks):
     terms = []
 
@@ -443,34 +439,33 @@ def terms_unchunk(chunks):
 
 def terms_chunker(terms):
     """
-In order to achieve true optimization we must break our filter up
-into chunks that are the aggregate of the same modifier. What this 
-means is if we have the following term structure:
+    In order to achieve true optimization we must break our filter up
+    into chunks that are the aggregate of the same modifier. What this
+    means is if we have the following term structure:
 
-term1 { accept }
-term2 { accept }
-term3 { accept }
-term4 { deny }
-term5 { deny }
-term6 { accept }
-term7 { accept }
-term8 { deny }
+    term1 { accept }
+    term2 { accept }
+    term3 { accept }
+    term4 { deny }
+    term5 { deny }
+    term6 { accept }
+    term7 { accept }
+    term8 { deny }
 
-We would break it up as so:
+    We would break it up as so:
 
-chunks = [ [term1, term2, term3], [term4, term5], [term6, term7, term8] ] 
+    chunks = [ [term1, term2, term3], [term4, term5], [term6, term7, term8] ]
 
-We then only optimize on chunks of terms so that we don't accidently 
-optimize something accepted above a deny to an accept below the deny.
+    We then only optimize on chunks of terms so that we don't accidently
+    optimize something accepted above a deny to an accept below the deny.
     """
-
-
     ret           = []
     current_chunk = []
 
     total = len(terms)
     meter = ProgressMeter(total=total)
     current_modifier = None
+
     for term in terms:
         meter.update(1)
         if current_modifier == None:
@@ -501,15 +496,12 @@ def optimize(opts, terms, focused):
 
     #types = ['source-address', 'destination-address', 'destination-port']
 
-
     for term in terms:
         for type in types:
             if type == 'destination-port':
                 continue
             if not term.match.has_key(type):
                 term.match[type] = [IPy.IP('0.0.0.0/0')]
-
-
 
     chunks = terms_chunker(terms)
 
@@ -621,8 +613,8 @@ def do_work(opts, files):
             print >>out, x
             
 if __name__ == '__main__':
-    opts, args = parse_args(sys.argv)
     global opts
+    opts, args = parse_args(sys.argv)
     if opts.debug:
         debug = True
 

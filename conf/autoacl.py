@@ -31,7 +31,7 @@ __all__ = ('autoacl',)
 
 OWNERS = settings.VALID_OWNERS
 
-def autoacl(dev):
+def autoacl(dev, explicit_acls=None):
     """
     Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We require
     a device object so that we don't have circular dependencies between netdevices
@@ -41,6 +41,7 @@ def autoacl(dev):
     associations. An empty set is fine, but it must be a set!
 
     :param dev: A :class:`~trigger.netdevices.NetDevice` object.
+    :param explicit_acls: A set containing names of ACLs. Default: set()
 
     >>> dev = nd.find('test1-abc')
     >>> dev.manufacturer
@@ -48,6 +49,11 @@ def autoacl(dev):
     >>> autoacl(dev)
     set(['juniper-router-protect', 'juniper-router.policer'])
     """
+    # Explicitly pass a set of explicit_acls so that we can use it as a
+    # dependency for assigning implicit_acls. Defaults to an empty set.
+    if explicit_acls is None:
+        explicit_acls = set()
+
     # Skip anything not owned by valid groups
     if dev.owningTeam not in OWNERS:
         return set()
@@ -88,6 +94,18 @@ def autoacl(dev):
         else:
             acls.add('juniper-router-protect')
             acls.add('juniper-router.policer')
+
+    #
+    # Explicit ACL example
+    #
+    # Only add acl '10' (or variants) to the device if 'acb123.special' is not
+    # explicitly associated with the device.
+    if '10.special' in explicit_acls:
+        pass
+    elif dev.deviceType == 'ROUTER':
+        acls.add('10')
+    elif dev.deviceType == 'SWITCH':
+        acls.add('10.sw')
 
     return acls
 

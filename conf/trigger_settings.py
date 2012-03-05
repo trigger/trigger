@@ -106,7 +106,7 @@ NETDEVICES_FORMAT = 'xml'
 # Path to netdevices device metadata source file, which is used to populate
 # trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
 # You must set NETDEVICES_FORMAT to match the type of data.
-NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/usr/local/trigger/netdevices.xml'
+NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/usr/local/trigger/netdevices.xml')
 
 #NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/home/j/jathan/sandbox/netdevices.json')
 #NETDEVICES_FORMAT = 'json' # One of 'xml', 'json', 'sqlite'

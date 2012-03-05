@@ -2,6 +2,20 @@
 Changelog
 =========
 
+1.0.0.80
+========
+
+- Typo fix in sample conf/trigger_settings.py
+- Explicit imports from trigger.acl and a little docstring cleanup in bin/optimizer
+- trigger.acl.autoacl.autoacl() now takes optional explicit_acls as 2nd
+  argument, a set of ACL names, so that we can reference explicit_acls within
+  autoacl() implicit ACL logic, but we don't have to rely on the internals. 
+- trigger.acl.db.AclsDB.get_acl_set() modified to populate explicit_acls before
+  implicit_acls. autoacl() is now called with these explicit_acls as the 2nd
+  argument.
+- Sample autoacl.py in conf/autoacl.py updated to support explicit_acls and a
+  simple example of how it could be used.
+
 1.0.0.70
 ========
 

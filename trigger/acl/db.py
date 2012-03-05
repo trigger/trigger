@@ -118,15 +118,17 @@ class AclsDB(object):
         """
         acls = {}
 
-        # Implicit
-        acls['implicit'] = autoacl(device)
-
         # Explicit (we want to make sure the key exists before we try to assign
         # a value)
         expl_key = 'acls:explicit:%s' % device.nodeName
-        acls['explicit'] = set()
         if self.redis.exists(expl_key):
             acls['explicit'] = self.redis.smembers(expl_key) or set()
+        else:
+            acls['explicit'] = set()
+
+        # Implicit (automatically-assigned). We're passing the explicit_acls to
+        # autoacl so that we can use them logically for auto assignments.
+        acls['implicit'] = autoacl(device, explicit_acls=acls['explicit'])
 
         # All
         acls['all'] = acls['implicit'] | acls['explicit']
