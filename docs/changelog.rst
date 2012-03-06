@@ -15,6 +15,9 @@ Changelog
   argument.
 - Sample autoacl.py in conf/autoacl.py updated to support explicit_acls and a
   simple example of how it could be used.
+- Added support for Juniper "family inet" filters in trigger.acl.parser.
+- ACL objects now have a family attribute to support this when constructed or
+  parsed using the .output_junos() method.
 
 1.0.0.70
 ========

@@ -650,9 +650,10 @@ class ACL(object):
     An abstract access-list object intended to be created by the :func:`parse`
     function. 
     """
-    def __init__(self, name=None, terms=None, format=None):
+    def __init__(self, name=None, terms=None, format=None, family=None):
         check_name(name, ACLNameError, max_len=24)
         self.name = name
+        self.family = family
         self.format = format
         self.policers = []
         if terms:
@@ -663,6 +664,12 @@ class ACL(object):
         self.comments = Comments
         Comments = []
 
+    def __repr__(self):
+        return '<ACL: %s>' % self.name
+
+    def __str__(self):
+        return '\n'.join(self.output(format=self.format, family=self.family))
+
     def output(self, format=None, *largs, **kwargs):
         """
         Output the ACL data in the specified format.
@@ -671,28 +678,58 @@ class ACL(object):
             format = self.format
         return getattr(self, 'output_' + format)(*largs, **kwargs)
 
-    def output_junos(self, replace=False):
+    def output_junos(self, replace=False, family=None):
         """
         Output the ACL in JunOS format.  
 
         :param replace: If set the ACL is wrapped in a 
             ``firewall { replace: ... }`` section.
+        :param family: If set, the value is used to wrap the ACL in a
+            ``family inet { ...}`` section.
         """
         if self.name == None:
             raise MissingACLNameError, 'JunOS format requires a name'
 
+        # Make sure we properly set 'family' so it's automatically used for
+        # printing.
+        if family is not None:
+            assert family in ('inet', 'inet6')
+        else:
+            family = self.family
+
+        # Prep the filter body
         out = ['filter %s {' % self.name]
         out += ['    ' + c.output_junos() for c in self.comments if c]
+
+        # Add the policers
         if self.policers:
             for policer in self.policers:
                 out += ['    ' + x for x in policer.output()]
+
+        # Add the terms
         for t in self.terms:
             out += ['    ' + x for x in t.output_junos()]
         out += ['}']
+
+        # Wrap in 'firewall {}' thingy.
         if replace:
-            return ['firewall {', 'replace:'] + ['    '+x for x in out] + ['}']
-        else:
-            return out
+            '''
+            #out = ['firewall {', 'replace:'] + ['    '+x for x in out] + ['}']
+            if family is None: # This happens more often
+                out = ['firewall {', 'replace:'] + ['    '+x for x in out] + ['}']
+            else:
+                out = ['firewall {', family_head, 'replace:'] + ['    '+x for x in out] + [family_tail, '}']
+            '''
+
+            head = ['firewall {']
+            body = ['replace:'] + ['    ' + x for x in out]
+            tail = ['}']
+            if family is not None:
+                body = ['family %s {' % family] + body + tail
+                body = ['    ' + x for x in body]
+            out = head + body + tail
+
+        return out
 
     def output_ios(self, replace=False):
         """
@@ -833,6 +870,9 @@ class Term(object):
         global Comments
         self.comments = Comments
         Comments = []
+
+    def __repr__(self):
+        return '<Term: %s>' % self.name
 
     def getname(self):
         return self.__name
@@ -1479,7 +1519,13 @@ class Matches(MyDict):
 
 subtagged = set()
 def S(prod):
-    '''Call with a list of each parsed subtag, instead of the text.'''
+    """
+    Wrap your grammar token in this to call your helper function with a list
+    of each parsed subtag, instead of the raw text. This is useful for
+    performing modifiers.
+
+    :param prod: The parser product.
+    """
     subtagged.add(prod)
     return prod
 
@@ -1512,10 +1558,10 @@ def dict_sum(dlist):
 
 ## syntax error messages
 errs = {
-    'comm_start':   '"comment missing /* below line %(line)s"',
-    'comm_stop':    '"comment missing */ below line %(line)s"',
-    'default':            '"expected %(expected)s line %(line)s"',
-    'semicolon':    '"missing semicolon on line %(line)s"',
+    'comm_start': '"comment missing /* below line %(line)s"',
+    'comm_stop':  '"comment missing */ below line %(line)s"',
+    'default':    '"expected %(expected)s line %(line)s"',
+    'semicolon':  '"missing semicolon on line %(line)s"',
 }
 
 rules = {
@@ -1541,7 +1587,8 @@ rules = {
     'icmp_code':    (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
     'port':            (literals(ports) + ' / digits', do_port_lookup),
     'dscp':            (literals(dscp_names) + ' / digits', do_dscp_lookup),
-    'root':            'ws?, junos_raw_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
+    #'root':            'ws?, junos_raw_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
+    'root':            'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
 }
 
 
@@ -1812,6 +1859,15 @@ range_match('source-port', 'port')
 range_match('vlan-ether-type', 'alphanums')
 
 def handle_junos_acl(x):
+    """
+    Parse JUNOS ACL and return an ACL object populated with Term and Policer
+    objects.
+
+    It's expected that x is a 2-tuple of (name, terms) returned from the
+    parser.
+
+    Don't forget to wrap your token in S()!
+    """
     a = ACL(name=x[0], format='junos')
     for elt in x[1:]:
         if isinstance(elt, Term):
@@ -1823,7 +1879,22 @@ def handle_junos_acl(x):
             raise RuntimeError, 'bad object: %s' % repr(elt)
     return a
 
+def handle_junos_family_acl(x):
+    """
+    Parses a JUNOS acl that contains family information and sets the family
+    attribute for the ACL object.
+
+    It's expected that x is a 2-tuple of (family, aclobj) returned from the
+    parser.
+
+    Don't forget to wrap your token in S()!
+    """
+    family, aclobj = x
+    setattr(aclobj, 'family', family)
+    return aclobj
+
 def handle_junos_policers(x):
+    """Parse JUNOS policers and return a PolicerGroup object"""
     p = PolicerGroup(format='junos')
     for elt in x:
         if isinstance(elt, Policer):
@@ -1832,8 +1903,8 @@ def handle_junos_policers(x):
             raise RuntimeError,'bad object: %s in policer' % repr(elt)
     return p
 
-
 def handle_junos_term(d):
+    """Parse a JUNOS term and return a Term object"""
     if 'modifiers' in d:
         d['modifiers'] = Modifiers(d['modifiers'])
     return Term(**d)
@@ -1848,11 +1919,13 @@ rules.update({
     S('junos_raw_acl'):         ('"filter", jws, jword, jws?, ' + \
                                     braced_list('junos_term / junos_policer'), 
                                     handle_junos_acl),
-    'junos_replace_acl':        ('"firewall", jws?, "{", jws?, "replace:",'\
-                                    'jws?, (junos_raw_acl , jws?)*, "}"'),
-    S('junos_replace_policers'):('"firewall", jws?, "{", jws?, "replace:",'\
-                                    'jws?, (junos_policer,jws?)*, "}"',
+    'junos_replace_acl':        ('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
+    S('junos_replace_family_acl'): ('"firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
+                                 handle_junos_family_acl),
+    S('junos_replace_policers'):('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_policer, jws?)*, "}"',
                                     handle_junos_policers),
+    'junos_filter_family':      ('"family", ws, junos_family_type'),
+    'junos_family_type':        ('"inet" / "inet6"'),
     'opaque_braced_group':      ('"{", jws?, (jword / "[" / "]" / ";" / '
                                     'opaque_braced_group / jws)*, "}"', 
                                     lambda x: x),
