@@ -2,6 +2,43 @@
 Changelog
 =========
 
+1.0.0.90
+========
+
+- Added support for .gorc file to specify commands to run when using gong to
+  login to a device. Unique commands cand be specified for each vendor.
+- Default realm for credentials within .tacacsrc can now be specified within
+  settings.DEFAULT_REALM
+- The following changes have been made to trigger.tacacsrc:
+
+  - New module-level update_credentials() function added to facilitate updating of
+    cached user credentials by client applications (e.g. gong)
+  - Renamed the exceptions within trigger.tacacsrc to be more human-readable
+  - Tacacsrc._parse_old() completely redesigned with real error-handling for
+    bad/missing passwords (GPG-parsing coming "Soon")
+  - New Tacacsrc.update_creds() method used to facilitate update of stored
+    credentials within .tacacsrc
+  - Realm is now stored as an attribute on Credentials objects to simplify
+    loose-coupling of device/realm information while passing around
+    credentials.
+  - prompt_credentials() refactored to be more user-friendly.
+  - Blank passwords can no longer be stored within .tacacsrc.
+
+- The following changes have been made to trigger.twister:
+
+  - trigger.twister internals have been updated to support the passing of a
+    list of initial_commands to execute on a device upon logging in.
+  - TriggerClientFactory now reads the default realm from
+    settings.DEFAULT_REALM when populating credentials.
+  - TriggerClientFactory credentials detection improved
+  - All referencing of username/password from credentials by index replaced
+    with attributes.
+  - Failed logins via telnet/ssh will now raise a LoginFailure exception that
+    can be handled by client applications (such as gong)
+ 
+- bin/gong now detects login failures and prompts users to update their cached
+  password.
+
 1.0.0.80
 ========
 

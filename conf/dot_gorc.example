@@ -1,0 +1,38 @@
+; .gorc - Example file to show how .gorc would work
+
+[initial_commands]
+; Specify the commands you would like run upon login for each vendor name. The
+; vendor name must match the one found in the CMDB for the manufacturer of the
+; hardware. Currently these are:
+;
+;  Arista: ARISTA NETWORKS
+; Brocade: BROCADE
+;   Cisco: CISCO SYSTEMS
+;  Citrix: CITRIX
+;    Dell: DELL
+; Foundry: FOUNDRY
+; Juniper: JUNIPER
+;
+; Format:
+;
+; VENDOR:
+;     command1
+;     command2
+;
+JUNIPER:
+    set cli timestamp
+    monitor start messages
+    show system users
+
+CISCO SYSTEMS:
+    term mon
+    who
+
+ARISTA NETWORKS:
+    python-shell
+
+FOUNDRY:
+    show clock
+
+BROCADE:
+    show clock

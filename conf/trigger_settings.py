@@ -22,6 +22,10 @@ USE_GPG_AUTH = False
 TACACSRC_KEYFILE = os.path.join(PREFIX, '.tackf')
 TACACSRC_PASSPHRASE = 'bacon is awesome, son.'
 
+# Default login realm to store user credentials (username, password) for
+# general use within the .tacacsrc
+DEFAULT_REALM = 'aol'
+
 # Location of firewall policies
 FIREWALL_DIR = '/data/firewalls'
 

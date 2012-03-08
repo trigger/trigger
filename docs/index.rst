@@ -11,82 +11,66 @@ About
 =====
 
 Trigger is a Python framework and suite of tools for interfacing with network
-devices and managing configuration and security policy.  Written by
-the AOL Network Security team, it is designed to increase the speed
-and efficiency of network configuration management.
+devices and managing network configuration and security policy. Trigger was
+designed to increase the speed and efficiency of network configuration
+management.
 
-Trigger's core device interaction utilizes the freely available `Twisted Matrix
+Trigger's core device interaction utilizes the freely available `Twisted
 <http://twistedmatrix.com/>`_ event-driven networking engine. The libraries can
 connect to network devices by any available method (e.g. telnet, SSH),
 communicate with them in their native interface (e.g. Juniper JunoScript, Cisco
-IOS), and return output. Because of Twisted, Trigger is able to manage any
-number of jobs in parallel and handle output or errors as they return. With the
-high number of network devices on the AOL network Trigger is invaluable to
-performance and reliability.
-
-History
--------
-
-Once upon a time Trigger was actually **SIMIAN**, a really bad acronym that stood
-for **System Integrating Management of Individual Access to Networks**. Trigger
-has since outgrown its original purpose and can be used for any network
-hardware management operations, so we decided to ditch the acronym and just go
-with a proper noun.
+IOS), and return output. Trigger is able to manage any number of jobs in
+parallel and handle output or errors as they return. 
 
 Motivation
 ----------
 
 Trigger was created to facilitate rapid provisioning and automation of
 firewall policy change requests by Network Security. It has since expanded to
-cover all network device configuration. There are four major reasons
-we needed this:
+cover all network device configuration. 
 
-1. The Firewall Change Productivity Gap
-    The complexity of the network was increasing much more quickly than
-    the amount of time we had to spend on administering it, both because
-    AOL's products and services were becoming more complex and because we
-    were continually expanding our security posture. This pressure created
-    a workload gap that had be filled with tools that increased
-    productivity.
+The complexity of the network was increasing much more quickly than the amount
+of time we had to spend on administering it, both because AOL's products and
+services were becoming more sophisticated and because we were continually
+expanding infrastructure. This pressure created a workload gap that had be
+filled with tools that increased productivity.
 
-2. Audit Compliance
-    Sarb-Ox and PCI audits meant that we had to spend more time verifying
-    that requests were processed according to our documented procedures,
-    and producing a paper trail of why access was required and what
-    approvals were made. Product owners and Network Engineering also
-    frequently requested more information about what firewall holes were
-    in place and how they could move requests faster. By automating our
-    common processes, we are working towards providing greater visibility
-    and audit trails automatically, instead of as an independent step that
-    requires additional work.
+Pre-Trigger tools worked only for some common cases and required extensive
+knowledge of the network, and careful attention during edits and loads.
+Sometimes this resulted in a system-impacting errors, and it routine work more
+dangerous and unrewarding than it should have been.
 
-3. Complete Coverage
-    Pre-Trigger tools worked only for some common cases and required
-    extensive knowledge of the network, and careful attention during edits
-    and loads. NetSec has had historically low turnover and so this only
-    sometimes resulted in a system-impacting errors, but it made NetSec's
-    routine work more dangerous and unrewarding than it should have been.
+With the high number of network devices on the AOL network Trigger has become
+invaluable to the performance and reliability of the AOL network infrastructure.
 
-4. Human Error
-    The pre-Trigger request processing error rate was about 3%, and the
-    request turnaround about 48 hours. These were not bad for a fully
-    manual process, but it is enough of a bottleneck to high-profile
-    projects that there was much room for improvement. With a more
-    transparent and automated process, we have been more responsive to
-    requesters than ever.
+History
+-------
+
+Trigger was originally originally written by the AOL Network Security team and
+is now maintained by the Network Engineering organization.
+
+Once upon a time Trigger was actually called **SIMIAN**, a really bad acronym
+that stood for **System Integrating Management of Individual Access to
+Networks**. It has since outgrown its original purpose and can be used for any
+network hardware management operations, so we decided to ditch the acronym and
+just go with a name that more accurately hints at what it does.
 
 Supported Vendors
------------------
+=================
 
 Trigger currently supports devices manufactured by the following vendors:
 
 + Arista Networks
 
-  + All 7000 family platforms
+  + All 7000-family platforms
+
++ Brocade Networks
+
+  + MLX routers and VDX switches
 
 + Cisco Systems
 
-  + Cisco IOS-based platforms only including all Catalyst switches and GSR/OSR routers
+  + IOS-based platforms only including all Catalyst switches and GSR/OSR routers
 
 + Dell
 
@@ -94,12 +78,12 @@ Trigger currently supports devices manufactured by the following vendors:
 
 + Foundry/Brocade
 
-  + All router and switch platforms including ServerIron, MLX, VDX
+  + All router and switch platforms (NetIron, ServerIron, et al.)
 
 + Juniper Networks
 
-  + All router and switch platforms running JunOS
-  + NetScreen firewalls running ScreenOS
+  + All router and switch platforms running Junos
+  + NetScreen firewalls running ScreenOS (Junos not yet supported)
 
 + Citrix Systems
 
@@ -108,7 +92,7 @@ Trigger currently supports devices manufactured by the following vendors:
 Installation
 ============
 
-Blah blah blah stuff about installing Trigger here and then link to install page.
+To install Trigger, please check out the installation docs!
 
 .. toctree::
    :maxdepth: 1
@@ -117,6 +101,8 @@ Blah blah blah stuff about installing Trigger here and then link to install page
 
 Configuration
 =============
+
+This is a work in progress, but it's not a bad start. Please have a look and give us feedback on how we can improve!
 
 .. toctree::
   :maxdepth: 1
@@ -172,10 +158,8 @@ Please review the :doc:`changelog`.
 Contributing
 ============
 
-Stuff about contribuing to Trigger will go here.
-
-Any hackers interested in improving Fabric (or even users interested in how
-Fabric is put together or released) please see the :doc:`development` page. It
+Any hackers interested in improving Trigger (or even users interested in how
+Trigger is put together or released) please see the :doc:`development` page. It
 contains comprehensive info on contributing, repository layout, our release
 strategy, and more.
 
@@ -193,51 +177,38 @@ however!
 Mailing list
 ------------
 
-The best way to get help with using Fabric is via the `fab-user mailing list
-<http://lists.nongnu.org/mailman/listinfo/fab-user>`_ (currently hosted at
-``nongnu.org``.) The Fabric developers do their best to reply promptly, and the
-list contains an active community of other Fabric users and contributors as
-well.
+The best way to get help with using Trigger is via the `trigger-users mailing list
+<https://groups.google.com/d/forum/trigger-users>`_ (Google Group). We'll do our best to reply promptly!
 
 Twitter
 -------
 
-Fabric has an official Twitter account, `@pyfabric
+Trigger has an official Twitter account, `@pyfabric
 <http://twitter.com/pyfabric>`_, which is used for announcements and occasional
-related news tidbits (e.g. "Hey, check out this neat article on Fabric!").
+related news tidbits (e.g. "Hey, check out this neat article on Trigger!").
 
 .. _bugs:
 
 Bugs/ticket tracker
 -------------------
 
-To file new bugs or search existing ones, you may visit Fabric's `Redmine
-<http://redmine.org>`_ instance, located at `code.fabfile.org
-<http://code.fabfile.org>`_. Due to issues with spam, you'll need to (quickly
-and painlessly) register an account in order to post new tickets.
+To file new bugs or search existing ones, please use the GitHub issue tracker, located at `https://github.com/aol/trigger/issues <https://github.com/aol/trigger/issues>`_. 
 
 IRC
 ---
 
-We maintain a semi-official IRC channel at ``#fabric`` on Freenode
-(``irc://irc.freenode.net``) where the developers and other users may be found.
-As always with IRC, we can't promise immediate responses, but some folks keep
-logs of the channel and will try to get back to you when they can.
+IRC coming Soon™.
+
 
 Wiki
 ----
 
-There is an official Fabric `MoinMoin <http://moinmo.in>`_ wiki reachable at
-`wiki.fabfile.org <http://wiki.fabfile.org>`_, although as of this writing its
-usage patterns are still being worked out. Like the ticket tracker, spam has
-forced us to put anti-spam measures up: the wiki has a simple, easy captcha in
-place on the edit form.
+We will use GitHub's built-in wiki located at `https://github.com/aol/trigger/wiki` <https://github.com/aol/trigger/wiki>`_.
 
 License
 =======
 
-Trigger is licensed under a slightly modified version of the
-`BSD 3-Clause License <http://www.opensource.org/licenses/BSD-3-Clause>`_.
+Trigger is licensed under the `Clear BSD License <http://labs.metacarta.com/license-explanation.html>`_ which is based on the `BSD 3-Clause License <http://www.opensource.org/licenses/BSD-3-Clause>`_, and adds a term expressly stating it does not grant you any patent licenses.
 
 For the explicit details, please see the :doc:`license` page.
 

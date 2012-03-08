@@ -1140,7 +1140,9 @@ class Protocol(object):
         51: 'ah',
         89: 'ospf',
         94: 'nos',
-        103: 'pim'}
+        103: 'pim',
+        #112: 'vrrp' # Breaks Cisco compatibility
+    }
 
     name2num = dict([(v, k) for k, v in num2name.iteritems()])
     name2num['ahp'] = 51    # undocumented Cisco special name

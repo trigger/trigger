@@ -25,7 +25,8 @@ from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.ssh.common import getNS, NS
 from twisted.conch.ssh.connection import SSHConnection
 from twisted.conch.ssh.session import packRequest_pty_req
-from twisted.conch.ssh.transport import DISCONNECT_CONNECTION_LOST
+from twisted.conch.ssh.transport import (DISCONNECT_CONNECTION_LOST,
+                                         DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE)
 from twisted.conch.ssh.transport import SSHClientTransport
 from twisted.conch.ssh.userauth import SSHUserAuthClient
 from twisted.conch.telnet import Telnet, TelnetProtocol, ProtocolTransportMixin
@@ -38,8 +39,9 @@ from twisted.python import log
 
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
-import trigger.tacacsrc as tacacsrc
+from trigger import tacacsrc
 from trigger.utils.network import ping
+from trigger.utils.cli import yesno
 
 # Dump all logging to stdout if we run 'python -O'
 if not __debug__:
@@ -76,7 +78,6 @@ class JunoscriptCommandFailure(CommandFailure):
 # Functions
 def has_junoscript_error(tag):
     """Test whether an Element contains a Junoscript xnm:error."""
-    #if ElementTree(tag).find('//{http://xml.juniper.net/xnm/1.1/xnm}error'):
     if ElementTree(tag).find('.//{http://xml.juniper.net/xnm/1.1/xnm}error'):
         return True
     return False
@@ -89,24 +90,28 @@ def has_netscaler_error(s):
     """Test whether a string seems to contain a NetScaler error."""
     return s.startswith('ERROR:')
 
-def pty_connect(device, action, creds=None, display_banner=None, ping_test=False):
+def pty_connect(device, action, creds=None, display_banner=None,
+                ping_test=False, init_commands=None):
     """
     Connect to a device and log in.  Use SSHv2 or telnet as appropriate.
 
-    @device is a trigger.netdevices.NetDevice object.
+    :param device: A :class:`~trigger.netdevices.NetDevice` object.
 
-    @action is a Protocol object (not class) that will be activated when
+    :param action: A Protocol object (not class) that will be activated when
     the session is ready.
 
-    @creds is a (username, password) tuple.  By default, .tacacsrc AOL
+    :param creds: is a 2-tuple (username, password). By default, .tacacsrc AOL
     credentials will be used. Override that here.
 
-    @display_banner will be called for SSH pre-authentication banners.
+    :param display_banner: Will be called for SSH pre-authentication banners.
     It will receive two args, 'banner' and 'language'.  By default,
     nothing will be done with the banner.
 
-    @ping_test is a boolean that causes a ping to be performed. If True, ping must
-    succeed in order to proceed.
+    :param ping_test: If set, the device is pinged and succeed in order to
+    proceed.
+
+    :param init_commands: A list of commands to execute upon logging into
+    the device.
     """
     d = defer.Deferred()
 
@@ -124,18 +129,20 @@ def pty_connect(device, action, creds=None, display_banner=None, ping_test=False
          or not sys.stdin.isatty() or not sys.stdout.isatty():
             # Shell not in interactive mode.
             pass
-            
+
         else:
             if not creds and device.is_firewall():
                 creds = tacacsrc.get_device_password(str(device))
 
-        factory = TriggerSSHPtyClientFactory(d, action, creds, display_banner)
+        factory = TriggerSSHPtyClientFactory(d, action, creds, display_banner,
+                                             init_commands)
         log.msg('Trying SSH to %s' % device, debug=True)
         reactor.connectTCP(device.nodeName, 22, factory)
 
     # or Telnet?
     else:
-        factory = TriggerTelnetClientFactory(d, action, creds)
+        factory = TriggerTelnetClientFactory(d, action, creds,
+                                             init_commands=init_commands)
         log.msg('Trying telnet to %s' % device, debug=True)
         reactor.connectTCP(device.nodeName, 23, factory)
 
@@ -158,8 +165,8 @@ def execute_junoscript(device, commands, creds=None, incremental=None,
     Any None object in the command sequence will result in a None being
     placed in the output sequence, with no command issued to the router.
 
-    @incremental (optional) will be called with an empty sequence 
-    immediately on connecting, and each time a result comes back with 
+    @incremental (optional) will be called with an empty sequence
+    immediately on connecting, and each time a result comes back with
     the list of all results.
 
     @commands is usually just a list.  However, you can have also
@@ -170,9 +177,9 @@ def execute_junoscript(device, commands, creds=None, incremental=None,
     to have the 'incremental' callback determine what command to execute
     next; it could then be a method of an object that keeps state.
 
-        BEWARE: Your generator cannot block; you must immediately 
+        BEWARE: Your generator cannot block; you must immediately
         decide what next command to execute, if any.
-    
+
     @timeout is the command timeout in seconds or None to disable.
     The default is in settings.DEFAULT_TIMEOUT; CommandTimeout errors
     will result if a command seems to take longer than that to run.
@@ -257,10 +264,24 @@ class TriggerClientFactory(ClientFactory):
     Factory for all clients. Subclass me.
     """
 
-    def __init__(self, deferred, creds=None):
+    def __init__(self, deferred, creds=None, init_commands=None):
         self.d = deferred
-        self.creds = creds or tacacsrc.Tacacsrc().creds['aol']
-        self.results = self.err = None
+        self.tcrc = tacacsrc.Tacacsrc()
+        if creds is None:
+            log.msg('creds not defined, fetching...', debug=True)
+            realm = settings.DEFAULT_REALM
+            creds = self.tcrc.creds.get(realm, tacacsrc.get_device_password(realm))
+        self.creds = creds
+
+        self.results = None
+        self.err = None
+
+        # Setup and run the initial commands
+        if init_commands is None:
+            init_commands = [] # We need this to be a list
+        self.init_commands = init_commands
+        log.msg('INITIAL COMMANDS: %r' % self.init_commands, debug=True)
+        self.initialized = False
 
     def clientConnectionFailed(self, connector, reason):
         """Do this when the connection fails."""
@@ -273,6 +294,22 @@ class TriggerClientFactory(ClientFactory):
             self.d.errback(self.err)
         else:
             self.d.callback(self.results)
+
+    def _init_commands(self, protocol):
+        """
+        Execute any initial commands specified.
+
+        :param protocol: A Protocol instance (e.g. action) to which to write
+        the commands.
+        """
+        if not self.initialized:
+            log.msg('Not initialized, sending init commands', debug=True)
+            while self.init_commands:
+                next_init = self.init_commands.pop(0)
+                log.msg('Sending: %r' % next_init, debug=True)
+                protocol.write(next_init + '\n')
+            else:
+                self.initialized = True
 
 class TriggerSSHTransport(SSHClientTransport, object):
     """
@@ -287,7 +324,7 @@ class TriggerSSHTransport(SSHClientTransport, object):
     def connectionSecure(self):
         """Once we're secure, authenticate."""
         self.requestService(TriggerSSHUserAuth(
-                self.factory.creds[0], TriggerSSHConnection()))
+                self.factory.creds.username, TriggerSSHConnection()))
 
     def receiveError(self, reason, desc):
         """Do this when we receive an error."""
@@ -295,20 +332,22 @@ class TriggerSSHTransport(SSHClientTransport, object):
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
+        log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc), debug=True)
         if reason != DISCONNECT_CONNECTION_LOST:
             self.factory.err = SSHConnectionLost(reason, desc)
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
 
 class TriggerSSHUserAuth(SSHUserAuthClient):
     """Perform user authentication over SSH."""
-    # Only try one authentication mechanism.
-    preferredOrder = ['password']
+    # We are not yet in a world where network devices support publickey
+    # authentication, so these are it.
+    preferredOrder = ['password', 'keyboard-interactive']
 
     def getPassword(self, prompt=None):
         """Send along the password."""
         #self.getPassword()
         log.msg('Performing password authentication', debug=True)
-        return defer.succeed(self.transport.factory.creds[1])
+        return defer.succeed(self.transport.factory.creds.password)
 
     def getGenericAnswers(self, name, information, prompts):
         """
@@ -326,8 +365,9 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
         for idx, prompt_tuple in enumerate(prompts):
             prompt, echo = prompt_tuple # e.g. [('Password: ', False)]
             if 'assword' in prompt:
-                log.msg("Got password prompt: %r, sending password!" % prompt, debug=True)
-                response[idx] = self.transport.factory.creds[1]
+                log.msg("Got password prompt: %r, sending password!" % prompt,
+                        debug=True)
+                response[idx] = self.transport.factory.creds.password
 
         return defer.succeed(response)
 
@@ -336,6 +376,71 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
         if self.transport.factory.display_banner:
             banner, language = getNS(packet)
             self.transport.factory.display_banner(banner, language)
+
+    def ssh_USERAUTH_FAILURE(self, packet):
+        """
+        An almost exact duplicate of SSHUserAuthClient.ssh_USERAUTH_FAILURE
+        modified to forcefully disconnect. If we receive authentication
+        failures, instead of looping until the server boots us and performing a
+        sendDisconnect(), we raise a LoginFailure and call loseConnection().
+
+        See the base docstring for the method signature.
+        """
+        canContinue, partial = getNS(packet)
+        partial = ord(partial)
+        log.msg('Previous method: %r ' % self.lastAuth, debug=True)
+
+        # If the last method succeeded, track it. If network devices ever start
+        # doing second-factor authentication this might be useful.
+        if partial:
+            self.authenticatedWith.append(self.lastAuth)
+        # If it failed, track that too...
+        else:
+            log.msg('Previous method failed, skipping it...', debug=True)
+            self.authenticatedWith.append(self.lastAuth)
+
+        def orderByPreference(meth):
+            """
+            Invoked once per authentication method in order to extract a
+            comparison key which is then used for sorting.
+
+            @param meth: the authentication method.
+            @type meth: C{str}
+
+            @return: the comparison key for C{meth}.
+            @rtype: C{int}
+            """
+            if meth in self.preferredOrder:
+                return self.preferredOrder.index(meth)
+            else:
+                # put the element at the end of the list.
+                return len(self.preferredOrder)
+
+        canContinue = sorted([meth for meth in canContinue.split(',')
+                              if meth not in self.authenticatedWith],
+                             key=orderByPreference)
+
+        log.msg('can continue with: %s' % canContinue)
+        log.msg('Already tried: %s' % self.authenticatedWith, debug=True)
+        return self._cbUserauthFailure(None, iter(canContinue))
+
+    def _cbUserauthFailure(self, result, iterator):
+        """Callback for ssh_USERAUTH_FAILURE"""
+        if result:
+            return
+        try:
+            method = iterator.next()
+        except StopIteration:
+            #self.transport.sendDisconnect(
+            #    DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE,
+            #    'no more authentication methods available')
+            self.transport.factory.err = LoginFailure(
+                'No more authentication methods available')
+            self.transport.loseConnection()
+        else:
+            d = defer.maybeDeferred(self.tryAuth, method)
+            d.addCallback(self._cbUserauthFailure, iterator)
+            return d
 
 class TriggerSSHConnection(SSHConnection, object):
     """Used to manage, you know, an SSH connection."""
@@ -353,7 +458,7 @@ class TriggerSSHConnection(SSHConnection, object):
 #==================
 class Interactor(Protocol):
     """
-    Creates an interactive shell. Intended for use as an action with pty_connect(). 
+    Creates an interactive shell. Intended for use as an action with pty_connect().
     See gong for an example.
     """
 
@@ -380,6 +485,11 @@ class TriggerSSHPtyChannel(SSHChannel):
         self.conn.sendRequest(self, 'pty-req', pr)
         self.conn.sendRequest(self, 'shell', '')
         signal.signal(signal.SIGWINCH, self._window_resized)
+
+        # Setup and run the initial commands
+        self.factory = self.conn.transport.factory
+        self.factory._init_commands(protocol=self) # We are the protocol
+
         # Pass control to the action.
         action = self.conn.transport.factory.action
         action.write = self.write
@@ -409,13 +519,14 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
     with the user and pass along commands.
     """
 
-    def __init__(self, deferred, action, creds=None, display_banner=None):
+    def __init__(self, deferred, action, creds=None, display_banner=None,
+                 init_commands=None):
         self.protocol = TriggerSSHTransport
         self.action = action
         self.action.factory = self
         self.display_banner = display_banner
         self.channel = TriggerSSHPtyChannel
-        TriggerClientFactory.__init__(self, deferred, creds)
+        TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
 #==================
 # XML Stuff
@@ -423,7 +534,7 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
 class IncrementalXMLTreeBuilder(XMLTreeBuilder):
     """
     Version of XMLTreeBuilder that runs a callback on each tag.
-    
+
     We need this because JunoScript treats the entire session as one XML
     document. IETF NETCONF fixes that.
     """
@@ -463,8 +574,8 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
 class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
     """
     Base class for SSH Channels. setup_channelOpen() should be called by
-    channelOpen() in the child class
-    ."""
+    channelOpen() in the child class.
+    """
     name = 'session'
 
     def setup_channelOpen(self, data):
@@ -486,8 +597,8 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
 
     def loseConnection(self):
         """
-        Terminate the connectoin. Link this to the transport method
-        of the same name
+        Terminate the connection. Link this to the transport method of the same
+        name.
         """
         self.conn.transport.loseConnection()
 
@@ -500,9 +611,9 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
 
 class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
-    Run Junoscript commands on a Juniper router.  This completely assumes 
-    that we are the only channel in the factory (a TriggerJunoscriptFactory) 
-    and walks all the way back up to the factory for its arguments.
+    Run Junoscript commands on a Juniper router. This completely assumes that
+    we are the only channel in the factory (a TriggerJunoscriptFactory) and
+    walks all the way back up to the factory for its arguments.
     """
 
     def channelOpen(self, data):
@@ -580,11 +691,11 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         """Do this when we receive data."""
         self.data += bytes
         log.msg('BYTES: %r' % bytes, debug=True)
-        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' % 
+        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
                 (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
 
         # We have to check for errors first, because a prompt is not returned
-        # when an error is received like on other systems. 
+        # when an error is received like on other systems.
         if has_netscaler_error(self.data):
             err = self.data
             if not self.with_errors:
@@ -653,7 +764,7 @@ class TriggerSSHNetscreenChannel(TriggerSSHChannelBase):
         self.data = ''
         self.prompt = re.compile('(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$')
         self.conn.sendRequest(self, 'shell', '')
-        
+
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         self.data += bytes
@@ -699,13 +810,14 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
     Factory for a telnet connection.
     """
 
-    def __init__(self, deferred, action, creds=None, loginpw=None, enablepw=None):
+    def __init__(self, deferred, action, creds=None, loginpw=None,
+                 enablepw=None, init_commands=None):
         self.protocol = TriggerTelnet
         self.action = action
         self.loginpw = loginpw
         self.enablepw = enablepw
         self.action.factory = self
-        TriggerClientFactory.__init__(self, deferred, creds)
+        TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
 class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
     """
@@ -736,7 +848,7 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
         """
         log.msg('TriggerTelnet.enableRemote option: %r' % option, debug=True)
         return True
-    
+
     def login_state_machine(self, bytes):
         """Track user login state."""
         self.data += bytes
@@ -752,21 +864,23 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
 
     def state_username(self):
         """After we've gotten username, check for password prompt."""
-        self.write(self.factory.creds[0] + '\n')
+        self.write(self.factory.creds.username + '\n')
         self.waiting_for = [
             ('Password: ', self.state_password),
             ('Password:', self.state_password),  # Dell
         ]
 
     def state_password(self):
-        """After we got password prompt, check for enable prompt."""
-        self.write(self.factory.creds[1] + '\n')
+        """After we got password prompt, check for enabled prompt."""
+        self.write(self.factory.creds.password + '\n')
         self.waiting_for = [
             ('#', self.state_logged_in),
             ('>', self.state_enable),
-            ('> ', self.state_logged_in),        # Juniper
+            ('> ', self.state_logged_in),             # Juniper
             ('\n% ', self.state_percent_error),
-            ('# ', self.state_logged_in),        # Dell
+            ('# ', self.state_logged_in),             # Dell
+            ('\nUsername: ', self.state_raise_error), # Cisco
+            ('\nlogin: ', self.state_raise_error),    # Arista, Juniper
         ]
 
     def state_logged_in(self):
@@ -778,6 +892,11 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
         data = self.data.lstrip('\n')
         log.msg('state_logged_in, DATA: %r' % data, debug=True)
         del self.waiting_for, self.data
+
+        # Run init_commands
+        self.factory._init_commands(protocol=self) # We are the protocol
+
+        # Control passed here :)
         action = self.factory.action
         action.transport = self
         self.applicationDataReceived = action.dataReceived
@@ -806,6 +925,12 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
             pw = self.factory.loginpw
         else:
             pw = NetDevices().find(self.transport.connector.host).loginPW
+
+        # Workaround to avoid TypeError when concatenating 'NoneType' and
+        # 'str'. This *should* result in a LoginFailure.
+        if pw is None:
+            pw = ''
+
         log.msg('Sending password %s' % pw, debug=True)
         self.write(pw + '\n')
         self.waiting_for = [('>', self.state_enable),
@@ -835,7 +960,7 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
     def state_raise_error(self):
         """Do this when we get a login failure."""
         self.waiting_for = []
-        self.factory.err = LoginFailure('Login failed: %s' % self.data.rstrip())
+        self.factory.err = LoginFailure('%r' % self.data.rstrip())
         self.loseConnection()
 
     def timeoutConnection(self):

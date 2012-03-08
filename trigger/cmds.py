@@ -11,7 +11,7 @@ Commando superclass is intended to be subclassed.  More documentation soon!
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2011, AOL Inc.'
+__copyright__ = 'Copyright 2009-2012, AOL Inc.'
 
 import os
 import sys
@@ -19,13 +19,12 @@ import re
 import time
 from IPy import IP
 from xml.etree.cElementTree import ElementTree, Element, SubElement
+from twisted.python import log
 from trigger.acl import *
 from trigger.netdevices import NetDevices
 from trigger.twister import (execute_junoscript, execute_ioslike,
                             execute_netscaler)
 
-# Defaults
-DEBUG = False
 
 # Exports
 __all__ = ('Commando', 'NetACLInfo')
@@ -37,8 +36,8 @@ class Commando(object):
     I run commands on devices but am not much use unless you subclass me and
     configure vendor-specific parse/generate methods.
     """
-    def __init__(self, devices=None, max_conns=10,
-      verbose=False, timeout=30, production_only=True):
+    def __init__(self, devices=None, max_conns=10, verbose=False, timeout=30,
+                 production_only=True):
         self.curr_connections = 0
         self.reactor_running  = False
         self.devices = devices or []
@@ -71,6 +70,31 @@ class Commando(object):
     #=======================================
     # Vendor-specific parse/generate methods
     #=======================================
+
+    def _normalize_manufacturer(self, manufacturer):
+        """Normalize the manufacturer name into a method"""
+        return manufacturer.replace(' ', '_').lower()
+
+    def _lookup(self, device, prefix):
+        """Base lookup method."""
+        manuf = self._normalize_manufacturer(device.manufacturer)
+        try:
+            func = getattr(self, prefix + manuf)
+        except AttributeError:
+            return 'base prefix' + prefix  (device)
+            #return self._base_generate_cmd(device)
+
+        return func(device)
+
+    def _parse_lookup(self, device):
+        """Base parse method."""
+        manuf = self._normalize_manufacturer
+        try:
+            func = getattr(self, 'parse_' + manuf)
+        except AttributeError:
+            return self._base_generate_cmd(device)
+
+        return func(device)
 
     # Yes there is probably a better way to do this in the long-run instead of
     # individual parse/generate methods for each vendor, but this works for now.

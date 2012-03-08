@@ -8,7 +8,7 @@ pieces of code like user prompts, that don't fit in other utils modules.
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2011, AOL Inc.'
+__copyright__ = 'Copyright 2006-2012, AOL Inc.'
 
 import datetime
 from fcntl import ioctl
@@ -23,17 +23,22 @@ import tty
 
 # Exports
 __all__ = ('yesno', 'get_terminal_width', 'get_terminal_size', 'Whirlygig',
-           'NullDevice', 'print_severed_head', 'min_sec', 'pretty_time')
+           'NullDevice', 'print_severed_head', 'min_sec', 'pretty_time',
+           'proceed')
 
 
 # Functions
-def yesno(prompt, default=False):
+def yesno(prompt, default=False, autoyes=False):
     """
     Present a yes-or-no prompt, get input, and return a boolean.
 
     :param prompt: Prompt text
     :param default: Yes if True; No if False
+    :param autoyes: Automatically return True
     """
+    if autoyes:
+        return True
+
     sys.stdout.write(prompt)
     if default:
         sys.stdout.write(' (Y/n) ')
