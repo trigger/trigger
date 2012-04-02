@@ -7,7 +7,7 @@ team in 2006, Trigger was originally designed to increase the speed and
 efficiency of security policy management on firewalls, routers, and switches.
 It has since been expanded to be a full-featured network engineering toolkit.
 
-Trigger is written in Python utilizing the freely available Twisted Matrix
+Trigger is written in Python utilizing the freely available Twisted
 event-driven networking engine. The libraries can connect to network devices by
 any available method (e.g. telnet, ssh), communicate with them in their native
 interface (e.g. Juniper JunoScript, Cisco IOS), and return output.
