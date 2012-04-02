@@ -59,16 +59,10 @@ class TestCommand(Command):
 
 desc = 'Trigger is a framework and suite of tools for configuring network devices'
 long_desc = '''
-Trigger is a framework for communicating with network devices that was written
-by the Network Security team at AOL to enhance management of security policies
-on network devices. It was written in Python utilizing the freely available
-Twisted Matrix event-driven networking engine. The libraries can connect to
-network devices by any available method (e.g. telnet, ssh), communicate with
-them in their native interface (e.g. Juniper JunoScript, Cisco IOS), and return
-output. Utilizing the Twisted framework, Trigger is able to manage any number of
-jobs in parallel and handle output or errors as they return. With the high
-number of network devices on the AOL network this application is invaluable to
-performance and reliability. 
+Trigger is a Python framework and suite of tools for interfacing with network
+devices and managing network configuration and security policy. Trigger was
+designed to increase the speed and efficiency of network configuration
+management.
 '''
 
 setup(

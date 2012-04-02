@@ -182,7 +182,8 @@ The best way to get help with using Trigger is via the `trigger-users mailing
 list <https://groups.google.com/d/forum/trigger-users>`_ (Google Group). We'll
 do our best to reply promptly!
 
-Twitter -------
+Twitter
+-------
 
 Trigger has an official Twitter account, `@pytrigger <http://twitter.com/pytrigger>`_, which is used for announcements and occasional related news tidbits (e.g. "Hey, check out this neat article on Trigger!").
 
