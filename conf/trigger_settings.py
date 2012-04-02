@@ -8,7 +8,7 @@ import IPy
 #===============================
 
 # This is where Trigger should look for its files.
-PREFIX = '/usr/local/trigger'
+PREFIX = '/etc/trigger'
 
 # Set to True to enable GPG Authentication
 # Set to False to use the old .tackf one-way hashing method. 
@@ -100,7 +100,6 @@ IOSLIKE_VENDORS = (
 
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
-#AUTOACL_FILE = os.environ.get('AUTOACL_FILE', '/usr/local/trigger/autoacl.py')
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
 
 # One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
@@ -110,7 +109,7 @@ NETDEVICES_FORMAT = 'xml'
 # Path to netdevices device metadata source file, which is used to populate
 # trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
 # You must set NETDEVICES_FORMAT to match the type of data.
-NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/usr/local/trigger/netdevices.xml')
+NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', os.path.join(PREFIX, 'netdevices.xml'))
 
 #NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/home/j/jathan/sandbox/netdevices.json')
 #NETDEVICES_FORMAT = 'json' # One of 'xml', 'json', 'sqlite'

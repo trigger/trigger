@@ -2,7 +2,7 @@
 Settings and configuration for Trigger. Attempts to load from 
 ``SETTINGS_FILE`` and complains if it can't. The primary public interface
 for this module is the ``settings`` variable, which is a module object
-containing the variables found in ``trigger_settings.py``.
+containing the variables found in ``settings.py``.
 
 >>> from trigger.conf import settings
 >>> settings.FIREWALL_DIR
@@ -14,13 +14,13 @@ containing the variables found in ``trigger_settings.py``.
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2010-2011, AOL Inc.'
+__copyright__ = 'Copyright 2010-2012, AOL Inc.'
 
 import os
 import sys
 
 # Defaults
-SETTINGS_FILE = '/etc/trigger_settings.py'
+SETTINGS_FILE = '/etc/trigger/settings.py'
 
 # Exports
 __all__ = ('settings', 'DummySettings', 'import_path')

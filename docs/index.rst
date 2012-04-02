@@ -166,26 +166,25 @@ strategy, and more.
 Getting Help
 ============
 
-Stuff about getting help with Trigger will go here. The following is ripped directly from Fabric's superb documentation and should be replaced.
+Stuff about getting help with Trigger will go here. The following is ripped
+directly from Fabric's superb documentation and should be replaced.
 
-If you've scoured the :ref:`prose <usage-docs>` and :ref:`API <api_docs>`
-documentation and still can't find an answer to your question, below are
-various support resources that should help. We do request that you do at least
-skim the documentation before posting tickets or mailing list questions,
-however!
+If you've scoured the :ref:`Usage <usage-documentation>` and :ref:`API
+<api-documentation>` documentation and still can't find an answer to your
+question, below are various support resources that should help. We do request
+that you do at least skim the documentation before posting tickets or mailing
+list questions, however!
 
 Mailing list
 ------------
 
-The best way to get help with using Trigger is via the `trigger-users mailing list
-<https://groups.google.com/d/forum/trigger-users>`_ (Google Group). We'll do our best to reply promptly!
+The best way to get help with using Trigger is via the `trigger-users mailing
+list <https://groups.google.com/d/forum/trigger-users>`_ (Google Group). We'll
+do our best to reply promptly!
 
-Twitter
--------
+Twitter -------
 
-Trigger has an official Twitter account, `@pyfabric
-<http://twitter.com/pyfabric>`_, which is used for announcements and occasional
-related news tidbits (e.g. "Hey, check out this neat article on Trigger!").
+Trigger has an official Twitter account, `@pytrigger <http://twitter.com/pytrigger>`_, which is used for announcements and occasional related news tidbits (e.g. "Hey, check out this neat article on Trigger!").
 
 .. _bugs:
 
@@ -199,16 +198,19 @@ IRC
 
 IRC coming Soon™.
 
-
 Wiki
 ----
 
-We will use GitHub's built-in wiki located at `https://github.com/aol/trigger/wiki` <https://github.com/aol/trigger/wiki>`_.
+We will use GitHub's built-in wiki located at
+`https://github.com/aol/trigger/wiki <https://github.com/aol/trigger/wiki>`_.
 
 License
 =======
 
-Trigger is licensed under the `Clear BSD License <http://labs.metacarta.com/license-explanation.html>`_ which is based on the `BSD 3-Clause License <http://www.opensource.org/licenses/BSD-3-Clause>`_, and adds a term expressly stating it does not grant you any patent licenses.
+Trigger is licensed under the `Clear BSD License
+<http://labs.metacarta.com/license-explanation.html>`_ which is based on the
+`BSD 3-Clause License <http://www.opensource.org/licenses/BSD-3-Clause>`_, and
+adds a term expressly stating it does not grant you any patent licenses.
 
 For the explicit details, please see the :doc:`license` page.
 

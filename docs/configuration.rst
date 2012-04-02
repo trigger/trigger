@@ -7,7 +7,7 @@
 This document describes the configuration options available.
 
 If you're using the default loader, you must create or copy the
-:file:`trigger_settings.py` module and make sure it is in ``/etc`` on the local
+:file:`settings.py` module and make sure it is in ``/etc/trigger`` on the local
 system.
 
 .. contents::
@@ -365,7 +365,7 @@ CM Ticket Creation settings
 CREATE_CM_TICKET
 ~~~~~~~~~~~~~~~~
 
-This variable should reference a function that creates a CM ticket and returns the ticket number, or ``None``. It defaults to ``_create_cm_ticket_stub``, which can be found within the trigger_settings.py source code and is a simple function that takes any arguments and returns ``None``.
+This variable should reference a function that creates a CM ticket and returns the ticket number, or ``None``. It defaults to ``_create_cm_ticket_stub``, which can be found within the ``settings.py`` source code and is a simple function that takes any arguments and returns ``None``.
 
 Default::
 

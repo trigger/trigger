@@ -86,7 +86,7 @@ to interact with Redis.
 
 Trigger currently assumes that you're running Redis on localhost and on the
 default port (6379). If you would like to change this, update ``REDIS_HOST`` in
-`trigger_settings.py` to reflect the IP address or hostname of your Redis instance.
+`settings.py` to reflect the IP address or hostname of your Redis instance.
 
 Used by:
 
@@ -168,34 +168,34 @@ From source (which will use ``easy_install``)::
 Create configuration directory
 ------------------------------
 
-This can be customized using the ``PREFIX`` configuration variable within ``trigger_settings.py`` and defaults to ``/usr/local/trigger``::
+This can be customized using the ``PREFIX`` configuration variable within ``settings.py`` and defaults to ``/etc/trigger``::
 
-    sudo mkdir /usr/local/trigger
+    sudo mkdir /etc/trigger
 
-Copy trigger_settings.py
-------------------------
+Copy settings.py
+----------------
 
-Trigger expects ``trigger_settings.py`` to be in ``/etc``. If you really don't like
+Trigger expects ``settings.py`` to be in ``/etc/trigger``. If you really don't like
 this, edit ``trigger/conf.py`` and change the value of ``SETTINGS_FILE`` prior to
 installing the package::
 
-    sudo cp conf/trigger_settings.py /etc/trigger_settings.py
+    sudo cp conf/trigger_settings.py /etc/trigger/settings.py
 
 Copy autoacl.py
 ---------------
 
 ::
 
-    sudo cp conf/autoacl.py /usr/local/trigger/autoacl.py
+    sudo cp conf/autoacl.py /etc/trigger/autoacl.py
 
-If you're using a non-standard location, be sure to update the ``AUTOACL_FILE`` configuration variable within ``trigger_settings.py`` with the location of ``autoacl.py``!
+If you're using a non-standard location, be sure to update the ``AUTOACL_FILE`` configuration variable within ``settings.py`` with the location of ``autoacl.py``!
 
 Copy netdevices.xml
 -------------------
 
 ::
 
-    sudo cp conf/netdevices.xml /usr/local/trigger/netdevices.xml
+    sudo cp conf/netdevices.xml /etc/trigger/netdevices.xml
 
 Create MySQL Database
 ---------------------

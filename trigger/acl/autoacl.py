@@ -9,9 +9,9 @@ This is primarily used by :class:`~trigger.acl.db.AclsDB` to populate the
 **implicit** ACL-to-device mappings.
 
 No changes should be made to this module. You must specify the path to the
-autoacl logic inside of ``trigger_settings.py`` as ``AUTOACL_FILE``. This will be
-exported as ``autoacl`` so that the module path for the :func:`autoacl()` function will
-still be :func:`trigger.autoacl.autoacl`.
+autoacl logic inside of ``settings.py`` as ``AUTOACL_FILE``. This will be
+exported as ``autoacl`` so that the module path for the :func:`autoacl()`
+function will still be :func:`trigger.autoacl.autoacl`.
 
 This trickery allows us to keep the business-logic for how ACLs are mapped to
 devices out of the Trigger packaging.

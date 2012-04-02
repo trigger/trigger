@@ -83,14 +83,17 @@ Changelog
 - Public release!
 - Arista and Dell command execution and interactive login support in trigger.twister!
 
+Legacy Versions
+===============
+
 1.6.1
-=====
+-----
 
 - Users credentials from tacacsrc.Tacacsrc are now stored as a namedtuple aptly
   named 'Credentials'
 
 1.6.0 - 2011-10-26
-==================
+------------------
 
 - Fixed missing acl.parse import in bin/find_access
 - More documentation cleanup!
@@ -117,7 +120,7 @@ Changelog
 - Added parsing support for remark statements in IOS numbered ACLs 
 
 1.5.9 - 2011-08-17
-==================
+------------------
 
 - Tons and tons of documentation added into the docs folder including usage,
   API, and setup/install documentation. 
@@ -167,7 +170,7 @@ Changelog
 - trigger.netscreen: Tweak EBNF slightly to parse policies for ScreenOS 6.x.
 
 1.5.8 - 20011-06-08
-===================
+-------------------
 
 - trigger.acl.parser fully supports Brocade ACLs now, including the ability to strip comments and properly 
   include the "ip rebind-receive-acl" or "ip rebind-acl" commands.
@@ -175,7 +178,7 @@ Changelog
 - bin/load_acl will automatically strip comments from Brocade ACLs
 
 1.5.7 - 2011-06-01
-==================
+-------------------
 
 - Where possible replaced ElementTree with cElementTree for faster XML parsing
 - New NetDevices.match() method allows for case-insensitive queries for devices.
@@ -195,7 +198,7 @@ Changelog
 - Removed jobi, orb, nms modules from Trigger; replaced with python-aol versions.
 
 1.5.6 - 2011-05-24
-==================
+-------------------
 
 - bin/acl: corrected excpetion catching, changes option help text and made -a and -r append
 - bin/gnng, bin/netdev: Added -N flag to toggle production_only flag to NetDevices 
@@ -205,7 +208,7 @@ Changelog
 - bin/fang: Can now properly parse hops on Brocade devices.
 
 1.5.5 - 2011-04-27
-==================
+-------------------
 
 - bin/acl: Will now tell you when something isn't found
 - bin/acl: Added -q flag to silence messages if needed
@@ -220,7 +223,7 @@ Changelog
   - Added production_only flag to Commando constructor
 
 1.5.4 - 2011-03-09
-==================
+-------------------
 
 - Fixed a bug in trigger.cmds.Commando that would prevent reactor loop from
   continuing after an exception was thrown.
@@ -230,7 +233,7 @@ Changelog
 - fixed a bug with gong connecting to devices' oob
 
 1.5.3 - 2011-01-12
-==================
+-------------------
 
 - Fixed a bug in trigger.cmds.NetACLInfo where verbosity was not correctly
   toggled.
@@ -240,7 +243,7 @@ Changelog
 - acl will make any device name lower case before associating an acl with it.  
 
 1.5.2 - 2010-11-03
-==================
+-------------------
 
 - bin/find_access: Added -D and -S flags to exclude src/dst of 'any' from
   search results. Useful for when you need to report on inclusive networks but
@@ -254,7 +257,7 @@ Changelog
 - Caught an exception thrown in NetACLInfo for some Cisco devices
 
 1.5.1 - 2010-09-08
-==================
+-------------------
 
 - trigger.conf: import_path() can now be re-used by other modules to load
   modules from file paths without needing to modify sys.path.
@@ -280,12 +283,12 @@ Changelog
   - will now not display information for ACLs found in settings.IGNORED_ACLS
 
 1.5.0r2 - 2010-08-16
-====================
+-------------------
 
 - Minor fix to warnings/shebang for bin/scripts
 
 1.5.0 - 2010-08-04
-==================
+-------------------
 
 - acl.db: renamed ExplicitACL to AclsDB, all references adjusted
 - process_bulk_loads() moved to trigger.acl.tools 
@@ -311,14 +314,14 @@ Changelog
 - fang: patched to support Juniper filter-lists
 
 1.4.9r2 - 2010-04-27
-====================
+-------------------
 
 - find_access: Corrected missing import for IPy
 - tacacsrc.py: Corrected bug with incorrect username association to .tacacsrc in sudo/su
   use-cases (such as with cron) where login uid differs from current uid. 
 
 1.4.9 - 2010-04-26
-==================
+-------------------
 
 - You may now use gong (go) to connect to Dell devices (telnet only).
 - Completely overhauled tacacsrc.py to support auto-detection of missing .tacacsrc
@@ -332,7 +335,7 @@ Changelog
 - netdev now uses device_match() to present choices to users
 
 1.4.8 - 2010-04-16
-==================
+-------------------
 
 - acls.db replaced with redis key/value store found at trigger.acl.db
 - trigger.acl converted to package
