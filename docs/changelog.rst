@@ -2,6 +2,17 @@
 Changelog
 =========
 
+1.0.0.100
+=========
+
+- trigger.conf converted from a module to a package.
+- All global default settings are now baked into trigger.conf.settings
+- trigger.conf.settings and trigger.acl.autoacl may now be imported without the
+  proper expected config files in place on disk. If the config files cannot be
+  found, default versions of these objects will be returned.
+- All trigger modules can now be imported with default values (but don't try
+  instantiating any objects without following the install instructions!)
+
 1.0.0.90
 ========
 

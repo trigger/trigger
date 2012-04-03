@@ -227,7 +227,7 @@ class Tacacsrc(object):
                 self.creds[settings.DEFAULT_REALM] = prompt_credentials(device='tacacsrc')
                 self.write()
         else:
-            self.key = self._get_key_old(os.getenv('TACACSRC_KEYFILE', settings.TACACSRC_KEYFILE))
+            self.key = self._get_key_old(settings.TACACSRC_KEYFILE)
 
             if not self.generate_new:
                 self.rawdata = self._read_file_old()

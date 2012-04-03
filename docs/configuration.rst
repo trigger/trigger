@@ -54,6 +54,16 @@ Default::
 
     '/etc/trigger/.tackf'
 
+DEFAULT_REALM
+~~~~~~~~~~~~~
+
+Default login realm to store user credentials (username, password) for general
+use within the ``.tacacsrc`` file.
+
+Default::
+
+    'aol'
+
 FIREWALL_DIR
 ~~~~~~~~~~~~
 
@@ -211,22 +221,34 @@ These will eventually be replaced with Redis or another task queue solution
 (such as Celery). For now, you'll need to populate this with information for
 your MySQL database. 
 
-These are all self-explanatory, I hope, and do not have default values.
+These are all self-explanatory, I hope.
 
 DATABASE_NAME
 ~~~~~~~~~~~~~
 
 The name of the database.
 
+Default::
+
+    ''
+
 DATABASE_USER
 ~~~~~~~~~~~~~
 
 The username to use to connect to the database.
 
+Default::
+
+    ''
+
 DATABASE_PASSWORD
 ~~~~~~~~~~~~~~~~~
 
 The password for the user account used to connect to the database.
+
+Default::
+
+    ''
 
 DATABASE_HOST
 ~~~~~~~~~~~~~

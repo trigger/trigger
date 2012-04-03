@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-
-# This is a sample settings.py that varies slightly from the default. Please see docs/configuration.rst or
-# trigger/conf/global_settings.py for the complete list of default settings.
+# Default Trigger settings. Override these with settings in the module
+# pointed-to by the TRIGGER_SETTINGS environment variable. This is pretty much
+# an exact duplication of how Django does this.
 
 import os
 import IPy
@@ -22,8 +21,8 @@ USE_GPG_AUTH = False
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
 # the default and only method. Or, use real hashing, encryption and not this
 # garbage.
-TACACSRC_KEYFILE = os.path.join(PREFIX, '.tackf')
-TACACSRC_PASSPHRASE = 'bacon is awesome, son.'
+TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
+TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc
@@ -48,8 +47,7 @@ SUCCESS_EMAILS = [
     #'neteng@example.com',
 ]
 
-# Who to email when things go not well 
-# --auto)
+# Who to email when things go not well (e.g. load_acl --auto)
 FAILURE_EMAILS = [
     #'primarypager@example.com',
     #'secondarypager@example.com',
@@ -122,11 +120,10 @@ NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', os.path.join(PREFIX, 'netdev
 # Valid owning teams (e.g. device.owningTeam) go here. These are examples and should be
 # changed to match your environment.
 VALID_OWNERS = (
-    'Data Center',
-    'Backbone Engineering',
-    'Enterprise Networking',
+    #'Data Center',
+    #'Backbone Engineering',
+    #'Enterprise Networking',
 )
-
 
 #===============================
 # Redis Settings
@@ -147,9 +144,9 @@ REDIS_DB = 0
 
 # These are self-explanatory, I hope.
 # TODO (jathan): Replace remaining db interaction w/ Redis.
-DATABASE_NAME = 'trigger'
-DATABASE_USER = 'trigger'
-DATABASE_PASSWORD = 'abc123'
+DATABASE_NAME = ''
+DATABASE_USER = ''
+DATABASE_PASSWORD = ''
 DATABASE_HOST = '127.0.0.1'
 DATABASE_PORT = 3306
 
@@ -166,31 +163,19 @@ def get_firewall_db_conn():
 # NOTE: These should be the names of the filters as they appear on devices. We
 # want this to be mutable so it can be modified at runtime.
 # TODO (jathan): Move this into Redis and maintain with 'acl' command?
-IGNORED_ACLS = [
-    'netflow', 
-    'massive-edge-filter',
-    'antispoofing',
-]
+IGNORED_ACLS = []
 
 # FILE names ACLs that shall not be modified by tools
 # NOTE: These should be the names of the files as they exist in FIREWALL_DIR.
 # Trigger expects ACLs to be prefixed with 'acl.'.  These are examples and
 # should be replaced.
-NONMOD_ACLS  = [ 
-    'acl.netflow', 
-    'acl.antispoofing',
-    'acl.border-protect',
-    'acl.route-engine-protect',
-]
+NONMOD_ACLS  = []
 
 # Mapping of real IP to external NAT. This is used by load_acl in the event
 # that a TFTP or connection from a real IP fails or explicitly when passing the
 # --no-vip flag.
 # format: {local_ip: external_ip}
-VIPS = {
-    '10.20.21.151': '5.60.17.81',
-    '10.10.18.157': '5.60.71.81',
-}
+VIPS = {}
 
 #===============================
 # ACL Loading/Rate-Limiting
@@ -200,13 +185,7 @@ VIPS = {
 # change.
 
 # Any FILTER name (not filename) in this list will be skipped during automatic loads.
-AUTOLOAD_BLACKLIST = [
-    'route-engine-protect',
-    'netflow', 
-    'antispoofing',
-    'static-policy',
-    'border-protect',
-]
+AUTOLOAD_BLACKLIST = []
 
 # Assign blacklist to filter for backwards compatibility
 AUTOLOAD_FILTER = AUTOLOAD_BLACKLIST
@@ -216,11 +195,9 @@ AUTOLOAD_FILTER = AUTOLOAD_BLACKLIST
 # TODO (jathan): Provide examples so that this has more context/meaning. The
 # current implementation is kind of broken and doesn't scale for data centers
 # with a large of number of devices.
-AUTOLOAD_FILTER_THRESH = {
-    'route-engine-protect':3,
-    'antispoofing':5,
-    '12345':10,
-}
+# Format:
+# { 'filter_name': threshold_count }
+AUTOLOAD_FILTER_THRESH = {}
 
 # Any ACL applied on a number of devices >= to this number will be treated as
 # bulk loads.
@@ -233,11 +210,10 @@ AUTOLOAD_BULK_THRESH = 10
 # 1 per load_acl execution; ~3 per day, per bounce window
 # 2 per load_acl execution; ~6 per day, per bounce window
 # etc.
-BULK_MAX_HITS = {
-    'abc123': 3,
-    'xyz246': 5,
-    'border-protect': 5,
-}
+#
+# Format: 
+# { 'filter_name': max_hits }
+BULK_MAX_HITS = {}
 
 # If an ACL is bulk but not in BULK_MAX_HITS, use this number as max_hits
 BULK_MAX_HITS_DEFAULT = 1
@@ -252,20 +228,9 @@ BULK_MAX_HITS_DEFAULT = 1
 # {'username': 'joegineer', 
 #  'name': 'Joe Engineer', 
 #  'email': 'joe.engineer@example.notreal'}
-def get_current_oncall():
-    """fetch current on-call info"""
-    # from somewhere import get_primary_oncall()
-
-    try:
-        ret = get_primary_oncall()
-    except:
-        return None
-
-    return ret
-
+#
 # If you don't want to return this information, have it return None.
 GET_CURRENT_ONCALL = lambda x=None: x
-#GET_CURRENT_ONCALL = get_current_oncall
 
 #===============================
 # CM Ticket Creation
@@ -273,23 +238,8 @@ GET_CURRENT_ONCALL = lambda x=None: x
 # This should be a function that creates a CM ticket and returns the ticket
 # number, or None. 
 # TODO (jathan): Improve this interface so that it is more intuitive.
-def create_cm_ticket(acls, oncall, service='load_acl'):
-    """Create a CM ticket and return the ticket number or None"""
-    # from somewhere import create_cm_ticket
-
-    devlist = ''
-    for dev, aclset in acls.items():
-        a = sorted(aclset)
-        devlist += "%-32s %s\n" % (dev, ' '.join(a))
-        
-    oncall['devlist'] = devlist
-    oncall['service'] = service
-
-    return create_ticket(**oncall)
-
 def _create_cm_ticket_stub(**args):
     return None
 
 # If you don't want to use this feature, just have the function return None.
-#CREATE_CM_TICKET = lambda a=None o, s: None
 CREATE_CM_TICKET = _create_cm_ticket_stub
