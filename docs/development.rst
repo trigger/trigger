@@ -2,7 +2,7 @@
 Trigger Development
 ===================
 
-The Trigger developemetn team is currently a one-man operation lead by `Jathan McCollum
+The Trigger developement team is currently a one-man operation lead by `Jathan McCollum
 <http://twitter.com/jathanism>`_, aka ``jathanism``.
 
 Contributing

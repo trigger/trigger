@@ -28,7 +28,7 @@ This is where Trigger should look for its essential files including
 
 Default:: 
 
-    '/usr/local/trigger'
+    '/etc/trigger'
 
 USE_GPG_AUTH
 ~~~~~~~~~~~~
@@ -52,7 +52,7 @@ within the ``.tacacsrc`` file.
 
 Default:: 
 
-    '/usr/local/trigger/.tackf'
+    '/etc/trigger/.tackf'
 
 FIREWALL_DIR
 ~~~~~~~~~~~~
@@ -251,7 +251,7 @@ Access-list Management settings
 
 These are various settings that control what files may be modified, by various
 tools and libraries within the Trigger suite. These settings are specific to
-the functionality found within the :module:`~trigger.acl` module.
+the functionality found within the :mod:`trigger.acl` module.
 
 IGNORED_ACLS
 ~~~~~~~~~~~~

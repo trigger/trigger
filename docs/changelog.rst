@@ -178,7 +178,7 @@ Legacy Versions
 - bin/load_acl will automatically strip comments from Brocade ACLs
 
 1.5.7 - 2011-06-01
--------------------
+------------------
 
 - Where possible replaced ElementTree with cElementTree for faster XML parsing
 - New NetDevices.match() method allows for case-insensitive queries for devices.
@@ -198,7 +198,7 @@ Legacy Versions
 - Removed jobi, orb, nms modules from Trigger; replaced with python-aol versions.
 
 1.5.6 - 2011-05-24
--------------------
+------------------
 
 - bin/acl: corrected excpetion catching, changes option help text and made -a and -r append
 - bin/gnng, bin/netdev: Added -N flag to toggle production_only flag to NetDevices 
@@ -208,7 +208,7 @@ Legacy Versions
 - bin/fang: Can now properly parse hops on Brocade devices.
 
 1.5.5 - 2011-04-27
--------------------
+------------------
 
 - bin/acl: Will now tell you when something isn't found
 - bin/acl: Added -q flag to silence messages if needed
@@ -223,7 +223,7 @@ Legacy Versions
   - Added production_only flag to Commando constructor
 
 1.5.4 - 2011-03-09
--------------------
+------------------
 
 - Fixed a bug in trigger.cmds.Commando that would prevent reactor loop from
   continuing after an exception was thrown.
@@ -233,7 +233,7 @@ Legacy Versions
 - fixed a bug with gong connecting to devices' oob
 
 1.5.3 - 2011-01-12
--------------------
+------------------
 
 - Fixed a bug in trigger.cmds.NetACLInfo where verbosity was not correctly
   toggled.
@@ -243,7 +243,7 @@ Legacy Versions
 - acl will make any device name lower case before associating an acl with it.  
 
 1.5.2 - 2010-11-03
--------------------
+------------------
 
 - bin/find_access: Added -D and -S flags to exclude src/dst of 'any' from
   search results. Useful for when you need to report on inclusive networks but
@@ -257,7 +257,7 @@ Legacy Versions
 - Caught an exception thrown in NetACLInfo for some Cisco devices
 
 1.5.1 - 2010-09-08
--------------------
+------------------
 
 - trigger.conf: import_path() can now be re-used by other modules to load
   modules from file paths without needing to modify sys.path.
@@ -283,12 +283,12 @@ Legacy Versions
   - will now not display information for ACLs found in settings.IGNORED_ACLS
 
 1.5.0r2 - 2010-08-16
--------------------
+--------------------
 
 - Minor fix to warnings/shebang for bin/scripts
 
 1.5.0 - 2010-08-04
--------------------
+------------------
 
 - acl.db: renamed ExplicitACL to AclsDB, all references adjusted
 - process_bulk_loads() moved to trigger.acl.tools 
@@ -314,14 +314,14 @@ Legacy Versions
 - fang: patched to support Juniper filter-lists
 
 1.4.9r2 - 2010-04-27
--------------------
+--------------------
 
 - find_access: Corrected missing import for IPy
 - tacacsrc.py: Corrected bug with incorrect username association to .tacacsrc in sudo/su
   use-cases (such as with cron) where login uid differs from current uid. 
 
 1.4.9 - 2010-04-26
--------------------
+------------------
 
 - You may now use gong (go) to connect to Dell devices (telnet only).
 - Completely overhauled tacacsrc.py to support auto-detection of missing .tacacsrc
@@ -335,7 +335,7 @@ Legacy Versions
 - netdev now uses device_match() to present choices to users
 
 1.4.8 - 2010-04-16
--------------------
+------------------
 
 - acls.db replaced with redis key/value store found at trigger.acl.db
 - trigger.acl converted to package

@@ -18,6 +18,21 @@ network this application is invaluable to performance and reliability.
 Hopefully you'll find it useful for it on your network and consider
 participating!
 
+Documentation
+=============
+
+Before You Begin
+----------------
+
+There is a `known issue <https://github.com/aol/trigger/issues/1>`_ right now
+with the hosted API documentation being incomplete. Until this is addressed
+please view the latest pre-built documentation at `http://bit.ly/trigger_beta <http://bit.ly/trigger_beta>`_. 
+
+Once This is Fixed
+------------------
+
+Once we address this issue, the documentation hosted by `Read the Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org <http://trigger.readthedocs.org>`_ will be complete. 
+
 Contributors
 ============
 

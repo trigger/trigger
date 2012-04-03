@@ -39,7 +39,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'Trigger'
 #copyright = u'2011, Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
-copyright = u'2006-2011, AOL Inc'
+copyright = u'2006-2012, AOL Inc'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
