@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright, 2005-2011 AOL Inc.
+# Copyright, 2005-2012 AOL Inc.
 
 try:
     from setuptools import setup, find_packages, Command
@@ -18,6 +18,7 @@ from trigger import release as __version__
 requires = [
     'IPy>=0.73',
     'Twisted',
+    'pyasn1', # Twisted conch needs this, but doesn't say so
     'pycrypto',
     'pytz',
     'SimpleParse',
