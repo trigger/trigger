@@ -116,6 +116,8 @@ Please note that all documentation is written with users of Python 2.6 in mind. 
 
 For now, most of our documentation is automatically generated form the source code documentation, which is usually very detailed. As we move along, this will change, especially with regards to some of the more creative ways in which we use Trigger's major functionality.
 
+.. _api-docs:
+
 API Documentation
 -----------------
 
@@ -127,10 +129,14 @@ Trigger's core API is made up of several components.
 
    api/*
 
+.. _tutorial:
+
 Tutorial
 --------
 
 Coming Soon.
+
+.. _usage-docs:
 
 Usage Documentation
 -------------------
@@ -169,11 +175,11 @@ Getting Help
 Stuff about getting help with Trigger will go here. The following is ripped
 directly from Fabric's superb documentation and should be replaced.
 
-If you've scoured the :ref:`Usage <usage-documentation>` and :ref:`API
-<api-documentation>` documentation and still can't find an answer to your
-question, below are various support resources that should help. We do request
-that you do at least skim the documentation before posting tickets or mailing
-list questions, however!
+If you've scoured the :ref:`Usage <usage-docs>` and :ref:`API <api-docs>`
+documentation and still can't find an answer to your question, below are
+various support resources that should help. We do request that you do at least
+skim the documentation before posting tickets or mailing list questions,
+however!
 
 Mailing list
 ------------
@@ -185,9 +191,18 @@ do our best to reply promptly!
 Twitter
 -------
 
-Trigger has an official Twitter account, `@pytrigger <http://twitter.com/pytrigger>`_, which is used for announcements and occasional related news tidbits (e.g. "Hey, check out this neat article on Trigger!").
+Trigger has an official Twitter account, `@pytrigger
+<http://twitter.com/pytrigger>`_, which is used for announcements and
+occasional related news tidbits (e.g. "Hey, check out this neat article on
+Trigger!").
 
 .. _bugs:
+
+Email
+-----
+
+If you don't do Twitter or mailing lists, please feel free to drop us an email
+at `pytrigger@aol.com <mailto:pytrigger@aol.com>`_.
 
 Bugs/ticket tracker
 -------------------

@@ -1,11 +1,11 @@
 """
 Settings and configuration for Trigger.
 
-Values will be read from the module specified by the TRIGGER_SETTINGS
+Values will be read from the module specified by the ``TRIGGER_SETTINGS``
 environment variable, and then from trigger.conf.global_settings; see the
 global settings file for a list of all possible variables.
 
-If TRIGGER_SETTINGS is not set, it will attempt to load from
+If ``TRIGGER_SETTINGS`` is not set, it will attempt to load from
 ``/etc/trigger/settings.py`` and complains if it can't. The primary public
 interface for this module is the ``settings`` variable, which is a module
 object containing the variables found in ``settings.py``.

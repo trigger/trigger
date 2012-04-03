@@ -3,7 +3,7 @@ Trigger Development
 ===================
 
 The Trigger developement team is currently a one-man operation lead by `Jathan McCollum
-<http://twitter.com/jathanism>`_, aka ``jathanism``.
+<http://about.me/jathanism>`_, aka ``jathanism``.
 
 Contributing
 ============
@@ -122,10 +122,3 @@ feature modifications may (rarely) occur.
 This third number is sometimes omitted for the first major or minor release in
 a series, e.g. 1.2 or 2.0, and in these cases it can be considered an implicit
 zero (e.g. 2.0.0).
-
-.. note::
-
-    The 0.9 series of development included more significant feature work than
-    is typically found in tertiary releases; from 1.0 onwards a more
-    traditional approach, as per the above, is used.
-

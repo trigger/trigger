@@ -2,7 +2,13 @@
 Installation
 ============
 
-Blurb about installation goes here.
+This is a work in progress. Please bear with us as we expand and improve this
+documentation. If you have any feedback, please don't hesitate to `contact us
+<http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!!
+
+.. contents::
+    :local:
+    :depth: 2
 
 Dependencies
 ============
@@ -13,8 +19,10 @@ pieces of software:
 * the Python programming language (version 2.6 or higher);
 * the ``setuptools`` packaging/installation library;
 * the Redis key-value server (and companion Python interface);
+* the ``IPy`` IP address parsing library;
+* the PyASN1 library;
 * the PyCrypto cryptography library;
-* and the Twisted Matrix event-driven networking engine.
+* and the Twisted event-driven networking engine.
 
 Trigger has a tricky set of dependencies. If you want to take full advantage of
 all of Trigger's functionality, you'll need them all. If you only want to use
@@ -44,6 +52,13 @@ setuptools dependency in the future, or include alternative support for the
 .. _setuptools: http://pypi.python.org/pypi/setuptools
 .. _Distribute: http://pypi.python.org/pypi/distribute
 
+PyASN1
+------
+
+`PyASN1 <http://pyasn1.sourceforge.net/>`_ is a dependency of Twisted Conch
+which implements Abstract Syntax Notation One (`ASN.1
+<http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_1x>`_) and is used to
+encode/decode public & private OpenSSH keys.
 
 PyCrypto
 --------
@@ -140,24 +155,33 @@ Used by:
 Package tools
 ~~~~~~~~~~~~~
 
-We strongly recommend using ``pip`` to install Trigger as it is newer and
-generally better than ``easy_install``. In either case, these tools will
-automatically install of the dependencies for you quickly and easily.
+We strongly recommend using `pip <http://pypi.python.org/pypi/pip>`_ to install
+Trigger as it is newer and generally better than ``easy_install``. In either
+case, these tools will automatically install of the dependencies for you
+quickly and easily.
 
 Other Dependencies
 ------------------
 
-This needs to be cleaned up.
+This documentation is incomplete and is being improved.
+
+Know for now that if you want to use the integrated load queue, you must have
+the Python MySQL bindings.
 
 + python-mysql (MySQLdb)
 
 Installing Trigger
 ==================
 
+The following steps will get you the very basic functionality and will be
+improved over time. As mentioned at the top of this document, if you have any
+feedback or questions, please get `get in touch
+<http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!
+
 Install Trigger package
 -----------------------
 
-Using ``pip``::
+Using `pip <http://pypi.python.org/pypi/pip>`_::
 
     sudo pip install trigger
 
@@ -168,18 +192,22 @@ From source (which will use ``easy_install``)::
 Create configuration directory
 ------------------------------
 
-This can be customized using the ``PREFIX`` configuration variable within ``settings.py`` and defaults to ``/etc/trigger``::
+This can be customized using the ``PREFIX`` configuration variable within
+``settings.py`` and defaults to ``/etc/trigger``::
 
     sudo mkdir /etc/trigger
 
 Copy settings.py
 ----------------
 
-Trigger expects ``settings.py`` to be in ``/etc/trigger``. If you really don't like
-this, edit ``trigger/conf.py`` and change the value of ``SETTINGS_FILE`` prior to
-installing the package::
+Trigger expects ``settings.py`` to be in ``/etc/trigger``::
 
     sudo cp conf/trigger_settings.py /etc/trigger/settings.py
+
+If you really don't like this, you may override the default location by setting
+the environment variable ``TRIGGER_SETTINGS`` to the desired location. If you
+go this route, you must make sure all Trigger-based tools have this set prior
+to any imports!
 
 Copy autoacl.py
 ---------------
@@ -188,7 +216,9 @@ Copy autoacl.py
 
     sudo cp conf/autoacl.py /etc/trigger/autoacl.py
 
-If you're using a non-standard location, be sure to update the ``AUTOACL_FILE`` configuration variable within ``settings.py`` with the location of ``autoacl.py``!
+If you're using a non-standard location, be sure to update the ``AUTOACL_FILE``
+configuration variable within ``settings.py`` with the location of
+``autoacl.py``!
 
 Copy netdevices.xml
 -------------------
@@ -200,16 +230,22 @@ Copy netdevices.xml
 Create MySQL Database
 ---------------------
 
-Trigger currently (but hopefully not for too much longer) uses MySQL for the automated ACL load queue used by the ``load_acl`` and ``acl`` utilities. If you want to use these tools, you need to create a MySQL database and make sure you also have the Python `MySQLdb` module installed.
+Trigger currently (but hopefully not for too much longer) uses MySQL for the
+automated ACL load queue used by the ``load_acl`` and ``acl`` utilities. If you
+want to use these tools, you need to create a MySQL database and make sure you
+also have the Python `MySQLdb` module installed.
 
-Find ``conf/acl_queue_schema.sql`` in the source distribution and import the `queue` and `acl_queue` tables into a database of your choice. It's probably best to create a unique database and database user for this purpose, but we'll leave that up to you.
+Find ``conf/acl_queue_schema.sql`` in the source distribution and import the
+`queue` and `acl_queue` tables into a database of your choice. It's probably
+best to create a unique database and database user for this purpose, but we'll
+leave that up to you.
 
 Example import::
 
-    % mysql trigger -u trigger_user -p < ./conf/acl_queue_schema.sql 
+    % mysql trigger -u trigger_user -p < ./conf/acl_queue_schema.sql
 
-Verify Functionality
-====================
+Verifyng Functionality
+======================
 
 Once the dependencies are installed, try doing stuff.
 

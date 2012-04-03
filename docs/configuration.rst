@@ -6,13 +6,87 @@
 
 This document describes the configuration options available.
 
-If you're using the default loader, you must create or copy the
-:file:`settings.py` module and make sure it is in ``/etc/trigger`` on the local
-system.
+If you're using the default loader, you must create or copy the provided
+:file:`trigger_settings.py` module and make sure it is in
+``/etc/trigger/settings.py`` on the local system.
 
 .. contents::
     :local:
     :depth: 2
+
+A Word about Defaults
+=====================
+
+There are two Trigger components that rely on Python modules to be provided on
+disk in ``/etc/trigger`` and these are:
+
+* :mod:`trigger.acl.autoacl` at ``/etc/trigger/autoacl.py``
+* :mod:`trigger.conf` at ``/etc/trigger/settings.py``
+
+If your custom configuration either cannot be found or fails to import, Trigger
+will fallback to the defaults.
+
+settings.py
+-----------
+
+Using a custom settings.py
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You may override the default location using the ``TRIGGER_SETTINGS`` environment variable.
+
+For example, set this variable and fire up the Python interpreter::
+
+    % export TRIGGER_SETTINGS=/home/jathan/sandbox/trigger/conf/trigger_settings.py
+    % python
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import os
+    >>> os.environ.get('TRIGGER_SETTINGS')
+    '/home/j/jathan/sandbox/netops/trigger/conf/trigger_settings.py'
+    >>> from trigger.conf import settings
+
+Observe that it doesn't complain. You have loaded ``settings.py`` from a custom
+location!
+
+Using global defaults
+~~~~~~~~~~~~~~~~~~~~~
+
+If you don't want to specify your own ``settings.py``, it will warn you and
+fallback to the defaults::
+
+    >>> from trigger.conf import settings
+    trigger/conf/__init__.py:114: RuntimeWarning: Module could not be imported from /tmp/trigger/settings.py. Using default global settings.
+      warnings.warn(str(err) + ' Using default global settings.', RuntimeWarning)
+
+autoacl()
+---------
+
+The :mod:`trigger.netdevices` and :mod:`trigger.acl` modules require
+:func:`~trigger.acl.autoacl.autoacl`.
+
+Trigger wants to import the :func:`~trigger.acl.autoacl.autoacl` function from
+either a module you specify or, failing that, the default location.
+
+Using a custom autoacl()
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+You may override the default location of the module containing the autoacl()
+function using the ``AUTOACL_FILE`` environment variable just like how you
+specified a custom location for ``settings.py``.
+
+Using default autoacl()
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Just as with ``settings.py``, the same goes for :func:`~trigger.acl.autoacl.autoacl`::
+
+    >>> from trigger.acl.autoacl import autoacl
+    trigger/acl/autoacl.py:44: RuntimeWarning: Function autoacl() could not be found in /etc/trigger/autoacl.py, using default!
+      warnings.warn(msg, RuntimeWarning)
+
+Keep in mind this :func:`~trigger.acl.autoacl.autoacl` has the expected
+signature but does nothing with the arguments and only returns an empty set::
+
+    >>> autoacl('foo')
+    set([])
 
 Configuration Directives
 ========================
@@ -24,7 +98,7 @@ PREFIX
 ~~~~~~
 
 This is where Trigger should look for its essential files including
-:file:`autoacl.py` and :file:`netdevices.xml``. 
+:file:`autoacl.py` and :file:`netdevices.xml`. 
 
 Default:: 
 
@@ -35,7 +109,7 @@ USE_GPG_AUTH
 
 Toggles whether or not we should use GPG authentication for storing TACACS
 credentials in the user's ``.tacacsrc`` file. Set to ``False`` to use the old
-.tackf two-way hashing method, which sucks but requires almost no overhead.
+.tackf encryptoin method, which sucks but requires almost no overhead.
 Should be ``False`` unless instructions/integration is ready for GPG. At this
 time the documentation for the GPG support is incomplete.
 
@@ -140,8 +214,9 @@ Default::
 SSH_TYPES
 ~~~~~~~~~
 
-A list of manufacturers that support SSH logins. Only add one if ALL devices of that 
-# manufacturer have SSH logins enabled. (Don't forget the trailing comma when you add a new entry.)
+A list of manufacturers that support SSH logins. Only add one if ALL devices of
+that manufacturer have SSH logins enabled. (Don't forget the trailing comma
+when you add a new entry.)
 
 Default:: 
 
@@ -171,18 +246,50 @@ Default::
 NetDevices settings
 -------------------
 
+AUTOACL_FILE
+~~~~~~~~~~~~
+
+Path to the explicit module file for autoacl.py so that we can still perform ``from trigger.acl.autoacl import autoacl`` without modifying ``sys.path``.
+
+Default::
+
+    '/etc/trigger/autoacl.py'
+
+NETDEVICES_FORMAT
+~~~~~~~~~~~~~~~~~
+
+One of ``xml``, ``json``, ``sqlite``. This MUST match the actual format of
+``NETDEVICES_FILE`` or it won't work for obvious reasons.
+
+You may override this location by setting the ``NETDEVICES_FORMAT`` environment variable to the format of the file.
+
+Default::
+
+    'xml'
+
+NETDEVICES_FILE
+~~~~~~~~~~~~~~~
+
+Path to netdevices device metadata source file, which is used to populate :class:`~trigger.netdevices.NetDevices`. This may be JSON, XML, or a SQLite3 database. You must set ``NETDEVICES_FORMAT`` to match the type of data.
+
+You may override this location by setting the ``NETDEVICES_FILE`` environment variable to the path of the file.
+
+Default::
+
+    '/etc/trigger/netdevices.xml'
+
 VALID_OWNERS
 ~~~~~~~~~~~~
 
 A tuple of strings containing the names of valid owning teams for
-:class:`~trigger.netdevices.NetDevice` objects.. This is intended to be a
-master list of the valid owners, to have a central configuration entry to
-easily reference. The default value is an example and should be changed to
-match your environment.
+:class:`~trigger.netdevices.NetDevice` objects. This is intended to be a master
+list of the valid owners to have a central configuration entry to easily
+reference. Please see the sample settings file for an example to use in your
+environment.
 
 Default:: 
 
-    ('Data Center', 'Backbone Engineering', 'Enterprise Networking')
+    ()
 
 Redis settings
 --------------
@@ -300,7 +407,10 @@ Default::
 VIPS
 ~~~~
 
-This is a dictionary mapping of real IP to external NAT IP address for used by your connecting host(s) (aka jump host). This is used primarily by ``load_acl`` in the event that a connection from a real IP fails (such as via tftp) or when explicitly passing the ``--no-vip`` flag. Format: ``{local_ip: external_ip}``
+This is a dictionary mapping of real IP to external NAT IP address for used by
+your connecting host(s) (aka jump host). This is used primarily by ``load_acl``
+in the event that a connection from a real IP fails (such as via tftp) or when
+explicitly passing the ``--no-vip`` flag. Format: ``{local_ip: external_ip}``
 
 Default::
 
@@ -309,12 +419,16 @@ Default::
 Access-list loading & rate-limiting settings
 --------------------------------------------
 
-All of the following esttings are currently only used by ``load_acl``. If and when the ``load_acl`` functionality gets moved into the library API, this may change.
+All of the following esttings are currently only used by ``load_acl``. If and
+when the ``load_acl`` functionality gets moved into the library API, this may
+change.
 
 AUTOLOAD_FILTER
 ~~~~~~~~~~~~~~~
 
-A list of FILTER names (not filenames) that will be skipped during automated loads (``load_acl --auto``).  This setting was renamed from ``AUTOLOAD_BLACKLIST``; usage of that name is being phased out.
+A list of FILTER names (not filenames) that will be skipped during automated
+loads (``load_acl --auto``).  This setting was renamed from
+``AUTOLOAD_BLACKLIST``; usage of that name is being phased out.
 
 Default::
 
@@ -323,9 +437,13 @@ Default::
 AUTOLOAD_FILTER_THRESH
 ~~~~~~~~~~~~~~~~~~~~~~
 
-A dictionary mapping for FILTER names (not filenames) and a numeric threshold. Modify this if you want to create a list that if over the specified number of devices will be treated as bulk loads.
+A dictionary mapping for FILTER names (not filenames) and a numeric threshold.
+Modify this if you want to create a list that if over the specified number of
+devices will be treated as bulk loads.
 
-For now, we provided examples so that this has more context/meaning. The current implementation is kind of broken and doesn't scale for data centers with a large of number of devices.
+For now, we provided examples so that this has more context/meaning. The
+current implementation is kind of broken and doesn't scale for data centers
+with a large of number of devices.
 
 Default::
 
@@ -334,7 +452,9 @@ Default::
 AUTOLOAD_BULK_THRESH
 ~~~~~~~~~~~~~~~~~~~~
 
-Any ACL applied on a number of devices >= this number will be treated as bulk loads. For example, if this is set to 5, any ACL applied to 5 or more devices will be considered a bulk ACL load.
+Any ACL applied on a number of devices >= this number will be treated as bulk
+loads. For example, if this is set to 5, any ACL applied to 5 or more devices
+will be considered a bulk ACL load.
 
 Default::
 
@@ -343,7 +463,12 @@ Default::
 BULK_MAX_HITS
 ~~~~~~~~~~~~~
 
-This is a dictionary mapping of filter names to the number of bulk hits. Use this to override ``BULK_MAX_HITS_DEFAULT``. Please note that this number is used PER EXECUTION of ``load_acl --auto``. For example if you ran it once per hour, and your bounce window were 3 hours, this number should be the total number of expected devices per ACL within that allotted bounce window. Yes this is confusing and needs to be redesigned.)
+This is a dictionary mapping of filter names to the number of bulk hits. Use
+this to override ``BULK_MAX_HITS_DEFAULT``. Please note that this number is
+used PER EXECUTION of ``load_acl --auto``. For example if you ran it once per
+hour, and your bounce window were 3 hours, this number should be the total
+number of expected devices per ACL within that allotted bounce window. Yes this
+is confusing and needs to be redesigned.)
 
 Examples:
 + 1 per load_acl execution; ~3 per day, per 3-hour bounce window
@@ -355,7 +480,10 @@ Default:
 BULK_MAX_HITS_DEFAULT
 ~~~~~~~~~~~~~~~~~~~~~
 
-If an ACL is bulk but not defined in ``BULK_MAX_HITS``, use this number as max_hits. For example using the default value of 1, that means load on one device per ACL, per data center or site location, per ``load_acl --auto`` execution.
+If an ACL is bulk but not defined in ``BULK_MAX_HITS``, use this number as
+max_hits. For example using the default value of 1, that means load on one
+device per ACL, per data center or site location, per ``load_acl --auto``
+execution.
 
 Default::
 
@@ -367,9 +495,9 @@ On-Call Engineer Display settings
 GET_CURRENT_ONCALL
 ~~~~~~~~~~~~~~~~~~
 
-This variable should reference a function that returns data for your on-call engineer, or
-failing that ``None``. The function should return a dictionary that looks like
-this::
+This variable should reference a function that returns data for your on-call
+engineer, or failing that ``None``. The function should return a dictionary
+that looks like this::
 
     {
         'username': 'mrengineer', 
@@ -387,7 +515,10 @@ CM Ticket Creation settings
 CREATE_CM_TICKET
 ~~~~~~~~~~~~~~~~
 
-This variable should reference a function that creates a CM ticket and returns the ticket number, or ``None``. It defaults to ``_create_cm_ticket_stub``, which can be found within the ``settings.py`` source code and is a simple function that takes any arguments and returns ``None``.
+This variable should reference a function that creates a CM ticket and returns
+the ticket number, or ``None``. It defaults to ``_create_cm_ticket_stub``,
+which can be found within the ``settings.py`` source code and is a simple
+function that takes any arguments and returns ``None``.
 
 Default::
 

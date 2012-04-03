@@ -44,7 +44,23 @@ except ImportError:
     warnings.warn(msg, RuntimeWarning)
     def autoacl(dev, explicit_acls=None):
         """
-        Default fallback autoacl function with the same argument signature
-        as as is expected, but Does nothing with the arguments. Returns an empty set.
+        Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We
+        require a device object so that we don't have circular dependencies
+        between netdevices and autoacl.
+
+        This function MUST return a ``set()`` of acl names or you will break
+        the ACL associations. An empty set is fine, but it must be a set!
+
+        :param dev: A :class:`~trigger.netdevices.NetDevice` object.
+        :param explicit_acls: A set containing names of ACLs. Default: set()
+
+        >>> dev = nd.find('test1-abc')
+        >>> dev.manufacturer
+        JUNIPER
+        >>> autoacl(dev)
+        set(['juniper-router-protect', 'juniper-router.policer'])
+
+        NOTE: If the default function is returned it does nothing with the
+        arguments and always returns an empty set.
         """
         return set()

@@ -13,16 +13,15 @@ import IPy
 PREFIX = '/etc/trigger'
 
 # Set to True to enable GPG Authentication
-# Set to False to use the old .tackf one-way hashing method. 
+# Set to False to use the old .tackf encryption method.
 # Should be False unless instructions/integration is ready for GPG
 USE_GPG_AUTH = False
 
 # This is used for old auth method. It sucks and needs to die.
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
-# the default and only method. Or, use real hashing, encryption and not this
-# garbage.
+# the default and only method.
 TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
-TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
+TACACSRC_PASSPHRASE = '' # NYI
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc
@@ -72,10 +71,10 @@ VALID_VENDORS = (
 # received within this window, the connection is terminated.
 DEFAULT_TIMEOUT = 5 * 60
 
-# Default timeout in seconds for initial telnet connections. 
+# Default timeout in seconds for initial telnet connections.
 TELNET_TIMEOUT  = 60
 
-# Add manufacturers that support SSH logins here. Only add one if ALL devices of that 
+# Add manufacturers that support SSH logins here. Only add one if ALL devices of that
 # manufacturer have SSH logins enabled. Adding CISCO SYSTEMS to this list will
 # require a lot of work! (Don't forget the trailing comma when you add a new entry.)
 SSH_TYPES = [
@@ -105,7 +104,7 @@ AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py')
 
 # One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
 # NETDEVICES_FILE or it won't work for obvious reasons.
-NETDEVICES_FORMAT = 'xml'
+NETDEVICES_FORMAT = os.environ.get('NETDEVICES_FORMAT', 'xml')
 
 # Path to netdevices device metadata source file, which is used to populate
 # trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
@@ -153,7 +152,7 @@ DATABASE_PORT = 3306
 # Call function to get a connection object. (Replaces fwdb.py)
 def get_firewall_db_conn():
     import MySQLdb
-    return MySQLdb.connect(host=DATABASE_HOST, db=DATABASE_NAME, 
+    return MySQLdb.connect(host=DATABASE_HOST, db=DATABASE_NAME,
                            port=DATABASE_PORT, user=DATABASE_USER, passwd=DATABASE_PASSWORD)
 
 #===============================
@@ -211,7 +210,7 @@ AUTOLOAD_BULK_THRESH = 10
 # 2 per load_acl execution; ~6 per day, per bounce window
 # etc.
 #
-# Format: 
+# Format:
 # { 'filter_name': max_hits }
 BULK_MAX_HITS = {}
 
@@ -225,8 +224,8 @@ BULK_MAX_HITS_DEFAULT = 1
 # failing that None.  The function should return a dictionary that looks like
 # this:
 #
-# {'username': 'joegineer', 
-#  'name': 'Joe Engineer', 
+# {'username': 'joegineer',
+#  'name': 'Joe Engineer',
 #  'email': 'joe.engineer@example.notreal'}
 #
 # If you don't want to return this information, have it return None.
@@ -236,7 +235,7 @@ GET_CURRENT_ONCALL = lambda x=None: x
 # CM Ticket Creation
 #===============================
 # This should be a function that creates a CM ticket and returns the ticket
-# number, or None. 
+# number, or None.
 # TODO (jathan): Improve this interface so that it is more intuitive.
 def _create_cm_ticket_stub(**args):
     return None

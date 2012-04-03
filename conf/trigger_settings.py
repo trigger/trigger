@@ -14,16 +14,15 @@ import IPy
 PREFIX = '/etc/trigger'
 
 # Set to True to enable GPG Authentication
-# Set to False to use the old .tackf one-way hashing method. 
+# Set to False to use the old .tackf encryption method.
 # Should be False unless instructions/integration is ready for GPG
 USE_GPG_AUTH = False
 
 # This is used for old auth method. It sucks and needs to die.
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
-# the default and only method. Or, use real hashing, encryption and not this
-# garbage.
+# the default and only method.
 TACACSRC_KEYFILE = os.path.join(PREFIX, '.tackf')
-TACACSRC_PASSPHRASE = 'bacon is awesome, son.'
+TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc
@@ -107,7 +106,7 @@ AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py')
 
 # One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
 # NETDEVICES_FILE or it won't work for obvious reasons.
-NETDEVICES_FORMAT = 'xml'
+NETDEVICES_FORMAT = os.environ.get('NETDEVICES_FORMAT', 'xml')
 
 # Path to netdevices device metadata source file, which is used to populate
 # trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
