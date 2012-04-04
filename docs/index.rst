@@ -7,6 +7,8 @@
 Trigger
 =======
 
+*"Go ahead, pull it!"*
+
 About
 =====
 
@@ -20,14 +22,14 @@ Trigger's core device interaction utilizes the freely available `Twisted
 connect to network devices by any available method (e.g. telnet, SSH),
 communicate with them in their native interface (e.g. Juniper JunoScript, Cisco
 IOS), and return output. Trigger is able to manage any number of jobs in
-parallel and handle output or errors as they return. 
+parallel and handle output or errors as they return.
 
 Motivation
 ----------
 
 Trigger was created to facilitate rapid provisioning and automation of
 firewall policy change requests by Network Security. It has since expanded to
-cover all network device configuration. 
+cover all network device configuration.
 
 The complexity of the network was increasing much more quickly than the amount
 of time we had to spend on administering it, both because AOL's products and
@@ -169,17 +171,17 @@ Trigger is put together or released) please see the :doc:`development` page. It
 contains comprehensive info on contributing, repository layout, our release
 strategy, and more.
 
+.. _help:
+
 Getting Help
 ============
 
-Stuff about getting help with Trigger will go here. The following is ripped
-directly from Fabric's superb documentation and should be replaced.
-
 If you've scoured the :ref:`Usage <usage-docs>` and :ref:`API <api-docs>`
 documentation and still can't find an answer to your question, below are
-various support resources that should help. We do request that you do at least
-skim the documentation before posting tickets or mailing list questions,
-however!
+various support resources that should help. Please do at least skim the
+documentation before posting tickets or mailing list questions, however!
+
+.. _mailing-list:
 
 Mailing list
 ------------
@@ -187,6 +189,8 @@ Mailing list
 The best way to get help with using Trigger is via the `trigger-users mailing
 list <https://groups.google.com/d/forum/trigger-users>`_ (Google Group). We'll
 do our best to reply promptly!
+
+.. _twitter:
 
 Twitter
 -------
@@ -196,7 +200,7 @@ Trigger has an official Twitter account, `@pytrigger
 occasional related news tidbits (e.g. "Hey, check out this neat article on
 Trigger!").
 
-.. _bugs:
+.. _email:
 
 Email
 -----
@@ -204,21 +208,29 @@ Email
 If you don't do Twitter or mailing lists, please feel free to drop us an email
 at `pytrigger@aol.com <mailto:pytrigger@aol.com>`_.
 
+.. _bugs:
+
 Bugs/ticket tracker
 -------------------
 
-To file new bugs or search existing ones, please use the GitHub issue tracker, located at `https://github.com/aol/trigger/issues <https://github.com/aol/trigger/issues>`_. 
+To file new bugs or search existing ones, please use the GitHub issue tracker, located at `https://github.com/aol/trigger/issues <https://github.com/aol/trigger/issues>`_.
+
+.. _irc:
 
 IRC
 ---
 
 IRC coming Soon™.
 
+.. _wiki:
+
 Wiki
 ----
 
 We will use GitHub's built-in wiki located at
 `https://github.com/aol/trigger/wiki <https://github.com/aol/trigger/wiki>`_.
+
+.. _license:
 
 License
 =======
