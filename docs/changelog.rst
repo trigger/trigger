@@ -12,6 +12,9 @@ Changelog
   found, default versions of these objects will be returned.
 - All trigger modules can now be imported with default values (but don't try
   instantiating any objects without following the install instructions!)
+- :bug:`2` Fixed a bug in :class:`~trigger.tacacsrc.Tacacsrc` where newly-created
+  .tacacsrc files were world-readable. Correct 0600 perms are now enforced on
+  every write().
 
 1.0.0.90
 ========

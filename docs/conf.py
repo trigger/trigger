@@ -11,7 +11,74 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import re
+import sys
+from datetime import datetime
+
+
+# Custom ReST roles. (Thanks for Fabric for these awesome ideas)
+from docutils.parsers.rst import roles
+from docutils import nodes, utils
+issue_types = ('bug', 'feature', 'support')
+
+
+def issues_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    """
+    Use: :issue|bug|feature|support:`ticket number`
+
+    When invoked as :issue:, turns into just a "#NN" hyperlink to Github.
+
+    When invoked otherwise, turns into "[Type] <#NN hyperlink>: ".
+    """
+    # Old-style 'just the issue link' behavior
+    issue_no = utils.unescape(text)
+    ref = "https://github.com/aol/trigger/issues/" + issue_no
+    link = nodes.reference(rawtext, '#' + issue_no, refuri=ref, **options)
+    ret = [link]
+    # Additional 'new-style changelog' stuff
+    if name in issue_types:
+        which = '[<span class="changelog-%s">%s</span>]' % (
+            name, name.capitalize()
+        )
+        ret = [
+            nodes.raw(text=which, format='html'),
+            nodes.inline(text=" "),
+            link,
+            nodes.inline(text=":")
+        ]
+    return ret, []
+
+for x in issue_types + ('issue',):
+    roles.register_local_role(x, issues_role)
+
+# Also ripped from Fabric, but we need to nail down the versioning and release process for Trigger before we start to use this.
+'''
+year_arg_re = re.compile(r'^(.+?)\s*(?<!\x00)<(.*?)>$', re.DOTALL)
+def release_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    """
+    Invoked as :release:`N.N.N <YYYY-MM-DD>`.
+
+    Turns into: <b>YYYY-MM-DD</b>: released <b><a>Trigger N.N.N</a></b>, with
+    the link going to the Github source page for the tag.
+    """
+    # Make sure year has been specified
+    match = year_arg_re.match(text)
+    if not match:
+        msg = inliner.reporter.error("Must specify release date!")
+        return [inliner.problematic(rawtext, rawtext, msg)], [msg]
+    number, date = match.group(1), match.group(2)
+    return [
+        nodes.strong(text=date),
+        nodes.inline(text=": released "),
+        nodes.reference(
+            text="Fabric %s" % number,
+            refuri="https://github.com/fabric/fabric/tree/%s" % number,
+            classes=['changelog-release']
+        )
+    ], []
+roles.register_local_role('release', release_role)
+'''
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -39,7 +106,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'Trigger'
 #copyright = u'2011, Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
-copyright = u'2006-2012, AOL Inc'
+copyright = u'2006-%s, AOL Inc' % datetime.now().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

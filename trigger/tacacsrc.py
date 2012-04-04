@@ -282,8 +282,10 @@ class Tacacsrc(object):
                 raise CouldNotParse("Missing value for key %r at line %s" % (key, lineno))
 
             # Check for version
-            if key == 'version' and val != self.version:
-                raise VersionMismatch('Bad .tacacsrc version (%s)' % v)
+            if key == 'version':
+                if val != self.version:
+                    raise VersionMismatch('Bad .tacacsrc version (%s)' % v)
+                continue
 
             # Make sure tokens can be parsed
             realm, token, end = key.split('_')
@@ -361,6 +363,8 @@ class Tacacsrc(object):
         with open(self.file_name, 'w+') as fd:
             fd.writelines(out)
 
+        self._update_perms()
+
     def _decrypt_and_read(self):
         """Decrypt file using GPG and return the raw data."""
         ret = []
@@ -387,7 +391,7 @@ class Tacacsrc(object):
 
         self.rawdata = out
         self._encrypt_and_write()
-        self.creds_updated = False
+        self._update_perms()
 
     def write(self):
         """Writes .tacacsrc(.gpg) using the accurate method (old vs. new)."""
@@ -395,6 +399,10 @@ class Tacacsrc(object):
             return self._write_new()
 
         return self._write_old()
+
+    def _update_perms(self):
+        """Enforce -rw------- on the creds file"""
+        os.chmod(self.file_name, 0600)
 
     def _parse(self):
         """Parses .tacacsrc.gpg and returns dictionary of credentials."""
