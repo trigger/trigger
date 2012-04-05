@@ -968,6 +968,17 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
         self.factory.err = LoginTimeout('Timed out while logging in')
         self.loseConnection()
 
+def is_awaiting_confirmation(prompt):
+    """
+    Checks if a prompt is asking for us for confirmation and returns a Boolean.
+
+    :param prompt: The prompt string to check
+    """
+    log.msg('Got confirmation prompt: %r' % prompt)
+    prompt = prompt.lower()
+    matchlist = ['continue?', 'proceed?', '(y/n):', '[y/n]:']
+    return any(prompt.endswith(match) for match in matchlist)
+
 class IoslikeSendExpect(Protocol, TimeoutMixin):
     """
     Action for use with TriggerTelnet. Take a list of commands, and send them
@@ -977,6 +988,7 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
     def __init__(self, dev, commands, incremental=None, with_errors=False,
                  timeout=None, command_interval=0):
         self.dev = dev
+        self._commands = commands
         self.commanditer = iter(commands)
         self.incremental = incremental
         self.with_errors = with_errors
@@ -986,14 +998,30 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
         # Match prompt for IOS-like in (config), (config-if), (config-line).
         #self.prompt =  re.compile('^[a-zA-Z0-9-_]+(@[a-zA-Z0-9-_]+)?(\(config(-[a-z]+)?\))?#', re.M)
         self.prompt =  re.compile('[a-zA-Z0-9-_]+(@[a-zA-Z0-9-_]+)?(\(config(-[a-z]+)?\))?#', re.M)
+
+        # Commands used to disable paging
         self.initialize = [{'CISCO SYSTEMS': 'terminal length 0\n',
                             'ARISTA NETWORKS': 'terminal length 0\n',
                             'FOUNDRY': 'skip-page-display\n',
-                            'BROCADE': 'skip-page-display\n',
+                            'BROCADE': self._disable_paging_brocade(dev),
                             'DELL': 'terminal datadump\n',
                            }[dev.manufacturer]]
         log.msg('My initialize commands: %r' % self.initialize, debug=True)
         self.initialized = False
+
+    def _disable_paging_brocade(self, dev):
+        """
+        Brocade MLX routers and VDX switches require different commands to
+        disable paging. Based on the device type, emits the proper command.
+
+        :param dev: A Brocade NetDevice object
+        """
+        if dev.is_switch():
+            return 'terminal length 0\n'
+        elif dev.is_router():
+            return 'skip-page-display\n'
+
+        return None
 
     def connectionMade(self):
         """Do this when we connect."""
@@ -1009,11 +1037,22 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
         log.msg('dataReceived, got bytes: %r' % bytes, debug=True)
         self.data += bytes
         log.msg('dataReceived, got data: %r' % self.data, debug=True)
+
+        # See if the prompt matches, and if it doesn't, see if it is waiting
+        # for more input (like a [y/n]) prompt), and continue, otherwise return
+        # None
         m = self.prompt.search(self.data)
         if not m:
-            return None
+            # If the prompt confirms set the index to the matched bytes,
+            if is_awaiting_confirmation(self.data):
+                prompt_idx = self.data.find(bytes)
+            else:
+                return None
+        else:
+            # Or just use the matched regex object...
+            prompt_idx = m.start()
 
-        result = self.data[:m.start()]
+        result = self.data[:prompt_idx]
         # Trim off the echoed-back command.  This should *not* be necessary
         # since the telnet session is in WONT ECHO.  This is confirmed with
         # a packet trace, and running self.transport.dont(ECHO) from

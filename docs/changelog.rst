@@ -15,6 +15,9 @@ Changelog
 - :bug:`2` Fixed a bug in :class:`~trigger.tacacsrc.Tacacsrc` where newly-created
   .tacacsrc files were world-readable. Correct 0600 perms are now enforced on
   every write().
+- :feature:`3` Added the ability for :class:~trigger.twister.IoslikeSendExpect`
+  to handle confirmation prompts (such as when a device asks you "are you sure?
+  [y/N]:" by detecting common cases within the prompt-matching logic.
 
 1.0.0.90
 ========
