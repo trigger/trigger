@@ -83,8 +83,14 @@ def has_junoscript_error(tag):
     return False
 
 def has_ioslike_error(s):
-    """Test whether a string seems to contain an IOS error."""
-    return s.startswith('%') or '\n%' in s
+    """Test whether a string seems to contain an IOS-like error."""
+    tests = (
+        s.startswith('%'),     # Cisco, Arista
+        '\n%' in s,            # Foundry
+        'syntax error: ' in s, # Brocade VDX
+    )
+
+    return any(tests)
 
 def has_netscaler_error(s):
     """Test whether a string seems to contain a NetScaler error."""

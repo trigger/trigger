@@ -22,6 +22,9 @@ Changelog
   hostnames using :func:`~trigger.netdevices.device_match`.
 - :bug:`6` The `get_firewall_db_conn()` function was moved out of `settings.py`
   and into `~trigger.acl.queue.Queue` where it belongs. 
+- :feature:`7` Updated :func:`~trigger.twister.has_ioslike_error` to support
+  Brocade VDX errors.
+
 
 1.0.0.90
 ========
