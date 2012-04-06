@@ -105,7 +105,6 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Trigger'
-#copyright = u'2011, Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
 copyright = u'2006-%s, AOL Inc' % datetime.now().year
 
 # The version info for the project you're documenting, acts as replacement for
@@ -139,6 +138,7 @@ exclude_trees = ['_build']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
+default_role = 'obj'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True

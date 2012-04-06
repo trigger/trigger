@@ -149,12 +149,6 @@ DATABASE_PASSWORD = ''
 DATABASE_HOST = '127.0.0.1'
 DATABASE_PORT = 3306
 
-# Call function to get a connection object. (Replaces fwdb.py)
-def get_firewall_db_conn():
-    import MySQLdb
-    return MySQLdb.connect(host=DATABASE_HOST, db=DATABASE_NAME,
-                           port=DATABASE_PORT, user=DATABASE_USER, passwd=DATABASE_PASSWORD)
-
 #===============================
 # ACL Management
 #===============================

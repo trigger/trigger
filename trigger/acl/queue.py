@@ -39,10 +39,20 @@ class Queue(object):
     :type verbose: Boolean
     """
     def __init__(self, verbose=True):
-        self.dbconn = settings.get_firewall_db_conn()
+        self.dbconn = self._get_firewall_db_conn()
         self.cursor = self.dbconn.cursor()
         self.nd = NetDevices()
         self.verbose = verbose
+
+    def _get_firewall_db_conn(self):
+        """Returns a MySQL db connection used for the ACL queues using database
+        settings found withing ``settings.py``."""
+        import MySQLdb
+        return MySQLdb.connect(host=settings.DATABASE_HOST,
+                               db=settings.DATABASE_NAME,
+                               port=settings.DATABASE_PORT,
+                               user=settings.DATABASE_USER,
+                               passwd=settings.DATABASE_PASSWORD)
 
     def _normalize(self, arg):
         if arg.startswith('acl.'):

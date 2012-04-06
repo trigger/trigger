@@ -5,9 +5,9 @@ Changelog
 1.0.0.100
 =========
 
-- trigger.conf converted from a module to a package.
+- `~trigger.conf` converted from a module to a package.
 - All global default settings are now baked into trigger.conf.settings
-- trigger.conf.settings and trigger.acl.autoacl may now be imported without the
+- `~trigger.conf.settings` and `~trigger.acl.autoacl` may now be imported without the
   proper expected config files in place on disk. If the config files cannot be
   found, default versions of these objects will be returned.
 - All trigger modules can now be imported with default values (but don't try
@@ -18,6 +18,10 @@ Changelog
 - :feature:`3` Added the ability for :class:~trigger.twister.IoslikeSendExpect`
   to handle confirmation prompts (such as when a device asks you "are you sure?
   [y/N]:" by detecting common cases within the prompt-matching logic.
+- :feature:`5` Added ability for gong --oob to lookup devices by partial
+  hostnames using :func:`~trigger.netdevices.device_match`.
+- :bug:`6` The `get_firewall_db_conn()` function was moved out of `settings.py`
+  and into `~trigger.acl.queue.Queue` where it belongs. 
 
 1.0.0.90
 ========
