@@ -8,8 +8,8 @@ check_access - Determines whether access is permitted by a given ACL.
 __author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2010, AOL Inc.'
-__version__ = '1.18'
+__copyright__ = 'Copyright 2006-2012, AOL Inc.'
+__version__ = '1.1.9'
 
 import optparse
 import sys
@@ -74,7 +74,9 @@ except ParserSyntaxError, e:
     print 'Cannot parse %s:' % acl_file, ' '.join(etxt[1:])
     sys.exit(0)
 
-permitted = check_access(acl.terms, new_term, opts.quiet, format=acl.format)
+#permitted = check_access(acl.terms, new_term, opts.quiet, format=acl.format)
+permitted = check_access(acl.terms, new_term, opts.quiet, format=acl.format,
+                         acl_name=acl.name)
 
 if permitted and not opts.quiet:
     print 'No edits needed.'

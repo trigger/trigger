@@ -131,7 +131,7 @@ def search_builder(opts):
         vars.append(" '%s' in x.budgetCode" % opts.budget_code)
 
     # budgetName (budget name)
-    if opts.budget_code: 
+    if opts.budget_name: 
         vars.append(" '%s' in x.budgetName.lower()" % opts.budget_name.lower())
 
     # manufacturer

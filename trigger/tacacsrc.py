@@ -44,7 +44,7 @@ class VersionMismatch(TacacsrcError): pass
 def get_device_password(device=None):
     """
     Fetch the password for a device/realm or create a new entry for it.
-    If device is not passed, `settings.DEFAULT_REALM is used, which is default
+    If device is not passed, ``settings.DEFAULT_REALM`` is used, which is default
     realm for most devices.
 
     :param device: Realm or device name to updated
@@ -54,7 +54,6 @@ def get_device_password(device=None):
     # If device isn't passed, assume we are initializing the .tacacsrc.
     try:
         creds = tcrc.creds[device]
-        print '\nFetching credentials from %s' % tcrc.file_name
     except KeyError:
         print '\nCredentials not found for device/realm %r, prompting...' % device
         creds = prompt_credentials(device)

@@ -2,6 +2,29 @@
 Changelog
 =========
 
+1.1
+===
+
+- All changes from release 1.0.0.100 (oh hey, duh) are officially part of this
+  release
+- :bug:`9` Fixed missing imports from ``bin/acl_script`` and removed a bunch of
+  duplicated code already within the Trigger libs.
+- Added new keywords to setup.py
+- Some new utilities added to `~trigger.acl.tools` for merging new access into
+  an existing ACL object
+- :feature:`17` `~trigger.acl.parser.RangeList` now sorts port range tuples
+  when parsing access-lists.
+- :bug:`8` `~trigger.tacacsrc.get_device_password` user-friendly message moved
+  to `~trigger.twister.pty_connect` so it no longer bleeds into
+  non-interactive usage.
+- :bug:`15` `~trigger.acl.parser.Term.output_ios` updated to support optional
+  ``acl_name`` argument for cases when you need to output a
+  `~trigger.acl.parser.Term` separately from an `~trigger.acl.parser.ACL`
+  object. `~trigger.acl.tools.check_access`, ``bin/check_access``, and
+  ``bin/find_access`` also had to be updated to utilize this new argument.
+- :bug:`19` `~trigger.acl.tools.check_access` updated to support 'complicated'
+  checks against Juniper firewall terms with a 'port' statement defined.
+
 1.0.0.100
 =========
 

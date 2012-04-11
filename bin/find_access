@@ -8,13 +8,12 @@ find_access - Like check_access but reports on networks inside of networks.
 __author__ = 'Jathan McCollum, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2011, AOL Inc.'
-__version__ = '1.5'
+__copyright__ = 'Copyright 2009-2012, AOL Inc.'
+__version__ = '1.5.1'
 
 import sys
 from simpleparse.error import ParserSyntaxError
 from trigger.acl import parse
-#from trigger.acl import *
 from optparse import OptionParser
 import pprint
 import IPy
@@ -142,16 +141,19 @@ def do_work(acl_files):
             sys.exit(etxt)
 
         matching_terms = match_terms(acl, sources, dests, ports)
-        acl_file_data[(acl_file, acl.format)] = matching_terms
+
+        acl.filename = acl_file # Store this for a hot minute
+        acl.terms = [] # Nuke this in case it's huge
+        acl_file_data[acl] = matching_terms
     
     return acl_file_data
     
 def print_report(data):
-    for (acl,format), terms in data.iteritems():
-        print acl
+    for aclobj, terms in data.iteritems():
+        print aclobj.filename
         print '================================================='
         for term in terms:
-            for o in term.output(format):
+            for o in term.output(format=aclobj.format, acl_name=aclobj.name):
                 print o
         print ''
 

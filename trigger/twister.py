@@ -152,6 +152,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
         log.msg('Trying telnet to %s' % device, debug=True)
         reactor.connectTCP(device.nodeName, 23, factory)
 
+    print '\nFetching credentials from %s' % factory.tcrc.file_name
+
     return d
 
 def execute_junoscript(device, commands, creds=None, incremental=None,

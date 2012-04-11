@@ -30,7 +30,8 @@ DEFAULT_EXPIRE = 6 * 30 # 6 months
 # Exports
 __all__ = ('create_trigger_term', 'create_access', 'check_access', 'ACLScript',
           'process_bulk_loads', 'get_bulk_acls', 'get_comment_matches', 
-           'write_tmpacl', 'diff_files', 'worklog')
+           'write_tmpacl', 'diff_files', 'worklog', 'insert_term_into_acl',
+           'create_new_acl')
 
 
 # Functions
@@ -57,7 +58,8 @@ def create_trigger_term(source_ips=[],
                 term.match[key] = [n] 
     return term
 
-def check_access(terms_to_check, new_term, quiet=True, format='junos'):
+def check_access(terms_to_check, new_term, quiet=True, format='junos',
+                 acl_name=None):
     """
     Determine whether access is permitted by a given ACL (list of terms).
 
@@ -65,21 +67,47 @@ def check_access(terms_to_check, new_term, quiet=True, format='junos'):
     is permitted, or False if not.
 
     Optionally displays the terms that apply and what edits are needed.
+
+    :param terms_to_check: A list of Term objects to check
+    :param new_term: The Term object used for the access test
+    :param quiet: Toggle whether output is displayed
+    :param format: The ACL format to use for output display
+    :param acl_name: The ACL name to use for output display
     """
     permitted = None
     matches = {
-            'source-address':       new_term.match.get('source-address',[]),
-            'destination-address':  new_term.match.get('destination-address',[]),
-            'protocol':             new_term.match.get('protocol',[]),
-            'destination-port':     new_term.match.get('destination-port',[]),
-            'source-port':          new_term.match.get('source-port',[]) }
+        'source-address':       new_term.match.get('source-address',[]),
+        'destination-address':  new_term.match.get('destination-address',[]),
+        'protocol':             new_term.match.get('protocol',[]),
+        'destination-port':     new_term.match.get('destination-port',[]),
+        'source-port':          new_term.match.get('source-port',[]),
+    }
+
+    def _permitted_in_term(term, comment=' check_access: PERMITTED HERE'):
+        """
+        A little closure to re-use internally that returns a Boolean based
+        on the given Term object's action.
+        """
+        action = term.action[0]
+        if action == 'accept':
+            is_permitted = True
+            if not quiet:
+                term.comments.append(Comment(comment))
+
+        elif action in ('discard', 'reject'):
+            is_permitted = False
+            if not quiet:
+                print '\n'.join(new_term.output(format, acl_name=acl_name))
+        else:
+            is_permitted = None
+
+        return is_permitted
 
     for t in terms_to_check:
         hit = True
         complicated = False
 
         for comment in t.comments:
-            #print comment
             if 'trigger: make discard' in comment:
                 t.setaction('discard') #.action[0] = 'discard'
 
@@ -95,22 +123,41 @@ def check_access(terms_to_check, new_term, quiet=True, format='junos'):
                         break
 
         if hit and not t.inactive:
+            # Simple access check. Elegant!
             if not complicated and permitted is None:
+                permitted = _permitted_in_term(t)
 
-                if t.action[0] == 'accept':
-                    permitted = True
-                    if not quiet: 
-                        t.comments.append(Comment('check_access: PERMITTED HERE'))
+            # Complicated checks should set hit=False unless you want
+            # them to display and potentially confuse end-users
+            # TODO (jathan): Factor this into a "better way"
+            else:
+                # Does the term have 'port' defined?
+                if 'port' in t.match:
+                    port_match = t.match.get('port')
+                    match_fields = (matches['destination-port'], matches['source-port'])
 
-                elif t.action[0] in ('discard', 'reject'):
-                    permitted = False
-                    if not quiet:
-                        print '\n'.join(new_term.output(format))
+                    # Iterate the fields, and then the ports for each field. If
+                    # one of the port numbers is within port_match, check if
+                    # the action permits/denies and set the permitted flag.
+                    for field in match_fields:
+                        for portnum in field:
+                            if portnum in port_match:
+                                permitted = _permitted_in_term(t)
+                            else:
+                                hit = False
+
+                # Other complicated checks would go here...
+
+            # If a complicated check happened and was not a hit, skip to the
+            # next term
+            if complicated and not hit:
+                continue
+
             if not quiet:
-                print '\n'.join(t.output(format))
+                print '\n'.join(t.output(format, acl_name=acl_name))
 
     return permitted
-        
+
 def create_access(terms_to_check, new_term):
     """
     Breaks a new_term up into separate constituent parts so that they can be 
@@ -145,6 +192,115 @@ def create_access(terms_to_check, new_term):
                             ret.append(t)
 
     return ret
+
+def insert_term_into_acl(new_term, aclobj, debug=False):
+    """
+    Return a new ACL object with the new_term added in the proper place based
+    on the aclobj. Intended to recursively append to an interim ACL object
+    based on a list of Term objects.
+
+    It's safe to assume that this function is incomplete pending better
+    documentation and examples.
+
+    :param new_term: The Term object to use for comparison against aclobj
+    :param aclobj: The original ACL object to use for creation of new_acl
+
+    Example:
+
+        import copy
+        # terms_to_be_added is a list of Term objects that is to be added in
+        # the "right place" into new_acl based on the contents of aclobj
+        original_acl = parse(open('acl.original'))
+        new_acl = copy.deepcopy(original_acl) # Dupe the original
+        for term in terms_to_be_added:
+            new_acl = generate_new_acl(term, new_acl)
+    """
+    new_acl = ACL() # ACL comes from trigger.acl.parser
+    new_acl.policers = aclobj.policers
+    new_acl.format   = aclobj.format
+    new_acl.name     = aclobj.name
+    already_added    = False
+
+    for c in aclobj.comments:
+        new_acl.comments.append(c)
+
+    # The following logic is almost identical to that of check_access() except
+    # that it tracks already_added and knows how to handle insertion of terms
+    # before or after Terms with an action of 'discard' or 'reject'.
+    for t in aclobj.terms:
+        hit = True
+        complicated = False
+        permitted = None
+        for k, v in t.match.iteritems():
+
+            if debug:
+                print "generate_new_acl(): k,v==",k,"and",v
+            if k == 'protocol' and k not in new_term.match:
+                continue
+            if k not in new_term.match:
+                complicated = True
+                continue
+            else:
+                for test in new_term.match[k]:
+                    if test not in v:
+                        hit = False
+                        break
+
+            if not hit and k in ('source-port', 'destination-port',
+                                 'source-address', 'destination-address'):
+                # Here is where it gets odd: If we have multiple  IPs in this
+                # new term, and one of them matches in a deny, we must set hit
+                # to True.
+                got_match = False
+                if t.action[0] in ('discard', 'reject'):
+                    for test in new_term.match[k]:
+                        if test in v:
+                            hit = True
+
+        # Check whether access in new_term is permitted (a la check_access(),
+        # track whether it's already been added into new_acl, and then add it
+        # in the "right place".
+        if hit and not t.inactive and already_added == False:
+            if not complicated and permitted is None:
+                for comment in t.comments:
+                    if 'trigger: make discard' in comment and \
+                        new_term.action[0] == 'accept':
+                        new_aca.terms.append(new_term)
+                        already_added = True
+                        permitted = True
+                if t.action[0] in ('discard','reject') and \
+                   new_term.action[0] in ('discard','reject'):
+                    permitted = False
+                elif t.action[0] in ('discard','reject'):
+                    permitted = False
+                    new_acl.terms.append(new_term)
+                    already_added = True
+                elif t.action[0] == 'accept' and \
+                     new_term.action[0] in ('discard', 'reject'):
+                       permitted = False
+                       new_acl.terms.append(new_term)
+                       already_added = True
+                elif t.action[0] == 'accept' and \
+                     new_term.action[0] == 'accept':
+                       permitted = True
+        if debug:
+            print "PERMITTED?", permitted
+
+        # Original term is always appended as we move on
+        new_acl.terms.append(t)
+
+    return new_acl
+
+def create_new_acl(old_file, terms_to_be_added):
+    """Given a list of Term objects call insert_term_into_acl() to determine
+    what needs to be added in based on the contents of old_file. Returns a new
+    ACL object."""
+    aclobj = parse(open(old_file)) # Start with the original ACL contents
+    new_acl = None
+    for new_term in terms_to_be_added:
+        new_acl = insert_term_into_acl(new_term, aclobj)
+
+    return new_acl
 
 def get_bulk_acls():
     """
@@ -194,8 +350,6 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
         print 'DEVLIST:', sorted(work)
 
     # Sort devices numerically
-    #for router in sorted(work):
-        #dev = nd.find(router)
     for dev in sorted(work):
         if DEBUG: print 'Doing', dev
 

@@ -382,34 +382,32 @@ class RangeList(object):
         self.data = data
         self._do_collapse()
 
-    def _cleanup(self, l):
+    def _cleanup(self, L):
         """
         Prepare a potential list of lists, tuples, digits for collapse. Does
         the following::
 
-        1. Convert all inner lists to tuples
+        1. Sort & Convert all inner lists to tuples
         2. Convert all tuples w/ only 1 item into single item
         3. Gather all single digits
         4. Convert to set to remove duplicates
         5. Return as a sorted list
 
         """
-        try:
-            return sorted(set(l)) # For complex types, e.g. Protocol
-        except TypeError:
-            pass # Fall through 
-
         ret = []
 
         # Get all list/tuples and return tuples
-        tuples = [tuple(i) for i in l if isinstance(i, (list, tuple))]
-        singles = [i[0] for i in tuples if len(i) == 1] # grab len of 1
-        tuples = [i for i in tuples if len(i) == 2] # filter out len of 1
-        digits = [i for i in l if isinstance(i, int)] # get digits
+        tuples = [tuple(sorted(i)) for i in L if isinstance(i, (list, tuple))]
+        singles = [i[0] for i in tuples if len(i) == 1] # Grab len of 1
+        tuples = [i for i in tuples if len(i) == 2]     # Filter out len of 1
+        digits = [i for i in L if isinstance(i, int)]   # Get digits
 
         ret.extend(singles)
         ret.extend(tuples)
         ret.extend(digits)
+
+        if not ret:
+            ret = L
 
         return sorted(set(ret))
 
@@ -944,7 +942,7 @@ class Term(object):
         """
         return getattr(self, 'output_' + format)(*largs, **kwargs)
 
-    def output_junos(self):
+    def output_junos(self, *args, **kwargs):
         """Convert the term to JunOS format."""
         if self.name is None:
             raise MissingTermNameError, 'JunOS requires terms to be named'
@@ -989,17 +987,39 @@ class Term(object):
                       '"%s" modifier not supported by IOS' % k
         return [prefix + action + x + suffix for x in self.match.output_ios()]
 
-    def output_ios(self, prefix=''):
-        """Output term to IOS traditional format."""
+    def output_ios(self, prefix=None, acl_name=None):
+        """
+        Output term to IOS traditional format.
+
+        :param prefix: Prefix to use, default: 'access-list'
+        :param acl_name: Name of access-list to display
+        """
         comments = [c.output_ios() for c in self.comments]
+        # If prefix isn't set, but name is, force the template
+        if prefix is None and acl_name is not None:
+            prefix = 'access-list %s ' % acl_name
+
+        # Or if prefix is set, but acl_name isn't, make sure prefix ends with ' '
+        elif prefix is not None and acl_name is None:
+            if not prefix.endswith(' '):
+                prefix += ' '
+
+        # Or if both are set, use them
+        elif prefix is not None and acl_name is not None:
+            prefix = '%s %s ' % (prefix.strip(), acl_name.strip())
+
+        # Otherwise no prefix
+        else:
+            prefix = ''
+
         return comments + self._ioslike(prefix)
 
-    def output_ios_named(self, prefix=''):
+    def output_ios_named(self, prefix='', *args, **kwargs):
         """Output term to IOS named format."""
         comments = [c.output_ios_named() for c in self.comments]
         return comments + self._ioslike(prefix)
 
-    def output_iosxr(self, prefix=''):
+    def output_iosxr(self, prefix='', *args, **kwargs):
         """Output term to IOS XR format."""
         comments = [c.output_iosxr() for c in self.comments]
         return comments + self._ioslike(prefix)
