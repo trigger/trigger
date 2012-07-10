@@ -251,7 +251,9 @@ To file new bugs or search existing ones, please use the GitHub issue tracker, l
 IRC
 ---
 
-IRC coming Soon™.
+Find us on IRC at ``#trigger`` on Freenode (``irc://irc.freenode.net``).
+Trigger is a Pacific coast operation, so your best chance of getting a
+real-time response is during the weekdays, Pacific time.
 
 .. _wiki:
 
