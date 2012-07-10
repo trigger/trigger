@@ -32,7 +32,7 @@ import redis
 import sys
 
 from trigger.acl.autoacl import autoacl
-from trigger.acl.exceptions import *
+from trigger import exceptions
 from trigger.conf import settings
 
 ACLSDB_BACKUP = './acls.csv'
@@ -55,11 +55,6 @@ __all__ = (
     'get_all_acls',
     'get_bulk_acls',
     'populate_bulk_acls',
-
-    # exceptions
-    'ACLSetError',
-    'InvalidACLSetError',
-    'ModifyACLSetError',
 
     # classes
     'AclsDB',
@@ -86,7 +81,7 @@ class AclsDB(object):
         """
         rc = self.redis.sadd('acls:explicit:%s' % device.nodeName, acl)
         if rc != 1:
-            raise ModifyACLSetError('%s already has acl %s' % (device.nodeName, acl))
+            raise exceptions.ACLSetError('%s already has acl %s' % (device.nodeName, acl))
         self.redis.save()
 
         return 'added acl %s to %s' % (acl, device)
@@ -100,7 +95,7 @@ class AclsDB(object):
         """
         rc = self.redis.srem('acls:explicit:%s' % device.nodeName, acl)
         if rc != 1:
-            raise ModifyACLSetError('%s does not have acl %s' % (device.nodeName, acl))
+            raise exceptions.ACLSetError('%s does not have acl %s' % (device.nodeName, acl))
         self.redis.save()
 
         return 'removed acl %s from %s' % (acl, device)
@@ -153,7 +148,7 @@ class AclsDB(object):
         ACL_SETS = acls_dict.keys()
         if DEBUG: print 'fetching', acl_set, 'acls for', device
         if acl_set not in ACL_SETS:
-            raise InvalidACLSetError('match statement must be one of %s' % ACL_SETS)
+            raise exceptions.InvalidACLSet('match statement must be one of %s' % ACL_SETS)
 
         return acls_dict[acl_set]
 

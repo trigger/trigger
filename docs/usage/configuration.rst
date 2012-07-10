@@ -1,10 +1,10 @@
 .. _configuration:
 
-============================
- Configuration and defaults
-============================
+==========================
+Configuration and defaults
+==========================
 
-This document describes the configuration options available.
+This document describes the configuration options available for Trigger.
 
 If you're using the default loader, you must create or copy the provided
 :file:`trigger_settings.py` module and make sure it is in
@@ -32,7 +32,8 @@ settings.py
 Using a custom settings.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You may override the default location using the ``TRIGGER_SETTINGS`` environment variable.
+You may override the default location using the ``TRIGGER_SETTINGS``
+environment variable.
 
 For example, set this variable and fire up the Python interpreter::
 
@@ -54,7 +55,7 @@ If you don't want to specify your own ``settings.py``, it will warn you and
 fallback to the defaults::
 
     >>> from trigger.conf import settings
-    trigger/conf/__init__.py:114: RuntimeWarning: Module could not be imported from /tmp/trigger/settings.py. Using default global settings.
+    trigger/conf/__init__.py:114: RuntimeWarning: Module could not be imported from /etc/trigger/settings.py. Using default global settings.
       warnings.warn(str(err) + ' Using default global settings.', RuntimeWarning)
 
 autoacl()
@@ -98,9 +99,9 @@ PREFIX
 ~~~~~~
 
 This is where Trigger should look for its essential files including
-:file:`autoacl.py` and :file:`netdevices.xml`. 
+:file:`autoacl.py` and :file:`netdevices.xml`.
 
-Default:: 
+Default::
 
     '/etc/trigger'
 
@@ -124,7 +125,7 @@ Only used if GPG auth is disabled. This is the location of the file that
 contains the passphrase used for the two-way hashing of the user credentials
 within the ``.tacacsrc`` file.
 
-Default:: 
+Default::
 
     '/etc/trigger/.tackf'
 
@@ -152,7 +153,7 @@ TFTPROOT_DIR
 
 Location of the tftproot directory.
 
-Default:: 
+Default::
 
     '/data/tftproot'
 
@@ -171,8 +172,8 @@ SUCCESS_EMAILS
 ~~~~~~~~~~~~~~
 
 A list of email addresses to email when things go well (such as from ``load_acl
---auto``). 
- 
+--auto``).
+
 Default::
 
     []
@@ -185,6 +186,117 @@ A list of email addresses to email when things go not well.
 Default::
 
     []
+
+.. setting:: VENDOR_MAP
+
+VENDOR_MAP
+~~~~~~~~~~
+
+.. versionadded:: 1.2
+
+A mapping of manufacturer attribute values to canonical vendor name used by
+Trigger. These single-word, lowercased canonical names are used throughout
+Trigger.
+
+If your internal definition differs from the UPPERCASED ones specified below
+(which they probably do, customize them here.
+
+Default::
+
+    {
+        'A10 NETWORKS': 'a10',
+        'ARISTA NETWORKS': 'arista',
+        'BROCADE': 'brocade',
+        'CISCO SYSTEMS': 'cisco',
+        'CITRIX': 'citrix',
+        'DELL': 'dell',
+        'FOUNDRY': 'foundry',
+        'JUNIPER': 'juniper',
+        'NETSCREEN TECHNOLOGIES': 'netscreen',
+    }
+
+.. setting:: SUPPORTED_PLATFORMS
+
+SUPPORTED_PLATFORMS
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2
+
+A dictionary keyed by manufacturer name containing a list of the device types
+for each that is officially supported by Trigger. Do not modify this unless you
+know what you’re doing!
+
+Default::
+
+    {
+        'a10': ['SWITCH'],
+        'arista': ['SWITCH'],
+        'brocade': ['ROUTER', 'SWITCH'],
+        'cisco': ['ROUTER', 'SWITCH'],
+        'citrix': ['SWITCH'],
+        'dell': ['SWITCH'],
+        'foundry': ['ROUTER', 'SWITCH'],
+        'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],
+        'netscreen': ['FIREWALL']
+    }
+
+SUPPORTED_VENDORS
+~~~~~~~~~~~~~~~~~
+
+A tuple of strings containing the names of valid manufacturer names. These are
+currently defaulted to what Trigger supports internally. Do not modify this
+unless you know what you're doing!
+
+Default::
+
+    ('a10', 'arista', 'brocade', 'cisco', 'citrix', 'dell', 'foundry',
+    'juniper', 'netscreen')
+
+SUPPORTED_TYPES
+~~~~~~~~~~~~~~~
+
+A tuple of device types officially supported by Trigger. Do not modify this
+unless you know what you’re doing!
+
+Default::
+
+    ('FIREWALL', 'ROUTER', 'SWITCH')
+
+.. setting:: DEFAULT_TYPES
+
+DEFAULT_TYPES
+~~~~~~~~~~~~~
+
+.. versionadded:: 1.2
+
+A mapping of of vendor names to the default device type for each in the event
+that a device object is created and the ``deviceType`` attribute isn't set for
+some reason.
+
+Default::
+
+    {
+        'a10': 'SWITCH',
+        'arista': 'SWITCH',
+        'brocade': 'SWITCH',
+        'citrix': 'SWITCH',
+        'cisco': 'ROUTER',
+        'dell': 'SWITCH',
+        'foundry': 'SWITCH',
+        'juniper': 'ROUTER',
+        'netscreen': 'FIREWALL',
+    }
+
+FALLBACK_TYPE
+~~~~~~~~~~~~~
+
+.. versionadded:: 1.2
+
+When a vendor is not explicitly defined within :setting:`DEFAULT_TYPES`, fallback to this type.
+
+Default::
+
+    'ROUTER'
 
 Twister settings
 ----------------
@@ -205,33 +317,56 @@ Default::
 TELNET_TIMEOUT
 ~~~~~~~~~~~~~~
 
-Default timeout in seconds for initial telnet connections. 
+Default timeout in seconds for initial telnet connections.
 
 Default::
 
     60
 
-SSH_TYPES
-~~~~~~~~~
+TELNET_ENABLED
+~~~~~~~~~~~~~~
 
-A list of manufacturers that support SSH logins. Only add one if ALL devices of
-that manufacturer have SSH logins enabled. (Don't forget the trailing comma
-when you add a new entry.)
+.. versionadded:: 1.2
 
-Default:: 
+Whether or not to allow telnet fallback. Set to ``False`` to disable support
+for telnet.
 
-    ['ARISTA NETWORKS', 'CITRIX', 'JUNIPER', 'NETSCREEN TECHNOLOGIES']
+Default::
 
-VALID_VENDORS
-~~~~~~~~~~~~~
+    True
 
-A tuple of strings containing the names of valid manufacturer names. These are
-currently defaulted to what Trigger supports internally. Do not modify this
-unless you know what you're doing!
+SSH_PTY_DISABLED
+~~~~~~~~~~~~~~~~
 
-Default:: 
+.. versionadded:: 1.2
 
-    ('ARISTA NETWORKS', 'CISCO SYSTEMS', 'DELL', 'JUNIPER', 'FOUNDRY', 'CITRIX', 'BROCADE')
+A mapping of vendors to the types of devices for that vendor for which you
+would like to disable interactive (pty) SSH sessions, such as when using
+``bin/gong``.
+
+Default::
+
+    {
+        'dell': ['SWITCH'],
+    }
+
+SSH_ASYNC_DISABLED
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2
+
+A mapping of vendors to the types of devices for that vendor for which you
+would like to disable asynchronous (NON-interactive) SSH sessions, such as when using
+`~trigger.twister.execute` or `~trigger.cmds.Commando` to remotely control a
+device.
+
+Default::
+
+    {
+        'arista': ['SWITCH'],
+        'brocade': ['SWITCH'],
+        'dell': ['SWITCH'],
+    }
 
 IOSLIKE_VENDORS
 ~~~~~~~~~~~~~~~
@@ -241,7 +376,7 @@ Cisco's IOS and can be treated accordingly for the sake of interaction.
 
 Default::
 
-    ('ARISTA NETWORKS', 'BROCADE' 'CISCO SYSTEMS', 'DELL', 'FOUNDRY')
+    ('a10', 'arista', 'brocade', 'cisco', 'dell', 'foundry')
 
 NetDevices settings
 -------------------
@@ -255,28 +390,60 @@ Default::
 
     '/etc/trigger/autoacl.py'
 
+.. setting:: NETDEVICES_FORMAT
+
 NETDEVICES_FORMAT
 ~~~~~~~~~~~~~~~~~
 
-One of ``xml``, ``json``, ``sqlite``. This MUST match the actual format of
-``NETDEVICES_FILE`` or it won't work for obvious reasons.
+One of ``json``, ``rancid``, ``sqlite``, ``xml``. This MUST match the actual
+format of ``NETDEVICES_FILE`` or it won't work for obvious reasons.
 
-You may override this location by setting the ``NETDEVICES_FORMAT`` environment variable to the format of the file.
+Please note that RANCID support is experimental. If you use it you must specify
+the path to the RANCID directory.
+
+You may override this location by setting the ``NETDEVICES_FORMAT`` environment
+variable to the format of the file.
 
 Default::
 
     'xml'
 
+.. setting:: NETDEVICES_FILE
+
 NETDEVICES_FILE
 ~~~~~~~~~~~~~~~
 
-Path to netdevices device metadata source file, which is used to populate :class:`~trigger.netdevices.NetDevices`. This may be JSON, XML, or a SQLite3 database. You must set ``NETDEVICES_FORMAT`` to match the type of data.
+Path to netdevices device metadata source file, which is used to populate
+`~trigger.netdevices.NetDevices`. This may be JSON, RANCID, a SQLite3 database,
+or XML. You must set ``NETDEVICES_FORMAT`` to match the type of data.
 
-You may override this location by setting the ``NETDEVICES_FILE`` environment variable to the path of the file.
+Please note that RANCID support is experimental. If you use it you must specify
+the path to the RANCID directory.
+
+You may override this location by setting the ``NETDEVICES_FILE`` environment
+variable to the path of the file.
 
 Default::
 
     '/etc/trigger/netdevices.xml'
+
+.. setting:: RANCID_RECURSE_SUBDIRS
+
+RANCID_RECURSE_SUBDIRS
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2
+
+When using `RANCID <http://www.shrubbery.net/rancid>`_ as a data source, toggle
+whether to treat the RANCID root as a normal instance, or as the root to
+multiple instances.
+
+You may override this location by setting the ``RANCID_RECURSE_SUBDIRS``
+environment variable to a any ``True`` value.
+
+Default::
+
+    False
 
 VALID_OWNERS
 ~~~~~~~~~~~~
@@ -287,7 +454,8 @@ list of the valid owners to have a central configuration entry to easily
 reference. Please see the sample settings file for an example to use in your
 environment.
 
-Default:: 
+
+Default::
 
     ()
 
@@ -326,7 +494,7 @@ Database settings
 
 These will eventually be replaced with Redis or another task queue solution
 (such as Celery). For now, you'll need to populate this with information for
-your MySQL database. 
+your MySQL database.
 
 These are all self-explanatory, I hope.
 
@@ -398,7 +566,7 @@ NONMOD_ACLS
 
 This is a list of FILE names of ACLs that shall not be modified by tools. These
 should be the names of the files as they exist in ``FIREWALL_DIR``. Trigger
-expects ACLs to be prefixed with ``'acl.'``.  
+expects ACLs to be prefixed with ``'acl.'``.
 
 Default::
 
@@ -410,7 +578,9 @@ VIPS
 This is a dictionary mapping of real IP to external NAT IP address for used by
 your connecting host(s) (aka jump host). This is used primarily by ``load_acl``
 in the event that a connection from a real IP fails (such as via tftp) or when
-explicitly passing the ``--no-vip`` flag. Format: ``{local_ip: external_ip}``
+explicitly passing the ``--no-vip`` flag.
+
+Format: ``{local_ip: external_ip}``
 
 Default::
 
@@ -471,11 +641,15 @@ number of expected devices per ACL within that allotted bounce window. Yes this
 is confusing and needs to be redesigned.)
 
 Examples:
+
 + 1 per load_acl execution; ~3 per day, per 3-hour bounce window
 + 2 per load_acl execution; ~6 per day, per 3-hour bounce window
 
-Default:
+Format: ``{'filter_name': max_hits}``
 
+Default::
+
+    {}
 
 BULK_MAX_HITS_DEFAULT
 ~~~~~~~~~~~~~~~~~~~~~
@@ -500,8 +674,8 @@ engineer, or failing that ``None``. The function should return a dictionary
 that looks like this::
 
     {
-        'username': 'mrengineer', 
-        'name': 'Joe Engineer', 
+        'username': 'mrengineer',
+        'name': 'Joe Engineer',
         'email': 'joe.engineer@example.notreal'
     }
 

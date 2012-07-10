@@ -19,9 +19,10 @@ Here is the usage output::
     % netdev
     Usage: netdev [options]
 
-    Command-line search interface for 'netdevices.xml'.
+    Command-line search interface for 'NetDevices' metdata.
 
     Options:
+      --version             show program's version number and exit
       -h, --help            show this help message and exit
       -a, --acls            Search will return acls instead of devices.
       -l <DEVICE>, --list=<DEVICE>
@@ -42,6 +43,8 @@ Here is the usage output::
       -C <OWNING ORG>, --owning-org=<OWNING ORG>
                             For use with -s:  Match on cost center Owning Org.
                             (owner).
+      -v <VENDOR>, --vendor=<VENDOR>
+                            For use with -s:  Match on canonical vendor name.
       -m <MANUFACTURER>, --manufacturer=<MANUFACTURER>
                             For use with -s:  Match on manufacturer.
       -b <BUDGET CODE>, --budget-code=<BUDGET CODE>
@@ -70,7 +73,7 @@ You may use the ``-l`` option to list an individual device::
             Owning Team:       Data Center
             OnCall Team:       Data Center
 
-            Manufacturer:      JUNIPER
+            Vendor:            Juniper (JUNIPER)
             Make:              M40 INTERNET BACKBONE ROUTER
             Model:             M40-B-AC
             Type:              ROUTER
@@ -109,7 +112,7 @@ You must provide at least one optional field or this happens::
 
 Search for all Juniper switches in site "BBQ"::
 
-    % netdev -s -t switch -m juniper -L bbq
+    % netdev -s -t switch -v juniper -L bbq
 
 All search arguments accept partial matches and are case-INsensitive, so this::
 

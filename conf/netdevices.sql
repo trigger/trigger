@@ -5,7 +5,8 @@
 -- trigger.netdevices.NetDevices for storing and tracking network device
 -- metadata.
 --
--- This is based on the current set of existing attributes and is by no means definitive.
+-- This is based on the current set of existing attributes in use and is by no
+-- means exclusive. Feel free to add your own fields to suit your environment.
 --
 
 CREATE TABLE netdevices (

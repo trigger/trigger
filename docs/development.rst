@@ -2,7 +2,7 @@
 Trigger Development
 ===================
 
-The Trigger developement team is currently a one-man operation lead by `Jathan McCollum
+The Trigger developement team is currently a one-man operation led by `Jathan McCollum
 <http://about.me/jathanism>`_, aka ``jathanism``.
 
 Contributing
@@ -26,7 +26,8 @@ There are several ways to get involved with Trigger:
   Trigger repository <https://github.com/aol/trigger>`_, and `submit a pull
   request <http://help.github.com/send-pull-requests/>`_.
 
-All contributors will receive proper attribution for their work. We want to give credit where it is due!
+All contributors will receive proper attribution for their work. We want to
+give credit where it is due!
 
 Communication
 -------------

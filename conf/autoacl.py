@@ -44,8 +44,8 @@ def autoacl(dev, explicit_acls=None):
     :param explicit_acls: A set containing names of ACLs. Default: set()
 
     >>> dev = nd.find('test1-abc')
-    >>> dev.manufacturer
-    JUNIPER
+    >>> dev.vendor
+    <Vendor: Juniper>
     >>> autoacl(dev)
     set(['juniper-router-protect', 'juniper-router.policer'])
     """
@@ -72,14 +72,14 @@ def autoacl(dev, explicit_acls=None):
     # 
     # ACL Magic starts here
     # 
-    if dev.manufacturer in ('BROCADE', 'CISCO SYSTEMS', 'FOUNDRY'):
+    if dev.vendor in ('brocade', 'cisco', 'foundry'):
         acls.add('118')
         acls.add('119')
 
     #
     # Other GSR acls
     #
-    if dev.manufacturer == 'CISCO SYSTEMS':
+    if dev.vendor == 'cisco':
         acls.add('117')
         if dev.make == '12000 SERIES' and dev.nodeName.startswith('pop') or dev.nodeName.startswith('bb'):
             acls.add('backbone-acl')
@@ -88,7 +88,7 @@ def autoacl(dev, explicit_acls=None):
     #
     # Juniper acls
     #
-    if dev.manufacturer == 'JUNIPER':
+    if dev.vendor == 'juniper':
         if dev.deviceType == 'SWITCH':
             acls.add('juniper-switch-protect')
         else:

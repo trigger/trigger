@@ -108,6 +108,8 @@ the ``-o`` flag::
 
     Username:
 
+.. _gorc-doc:
+
 Executing commands upon login
 -----------------------------
 
@@ -122,43 +124,44 @@ specified by the vendor name. Here is an example::
     ; vendor name must match the one found in the CMDB for the manufacturer of the
     ; hardware. Currently these are:
     ;
-    ;  Arista: ARISTA NETWORKS
-    ; Brocade: BROCADE
-    ;   Cisco: CISCO SYSTEMS
-    ;  Citrix: CITRIX
-    ;    Dell: DELL
-    ; Foundry: FOUNDRY
-    ; Juniper: JUNIPER
+    ;     A10: a10
+    ;  Arista: arista
+    ; Brocade: brocade
+    ;   Cisco: cisco
+    ;  Citrix: citrix
+    ;    Dell: dell
+    ; Foundry: foundry
+    ; Juniper: juniper
     ;
     ; Format:
     ;
-    ; VENDOR:
+    ; vendor:
     ;     command1
     ;     command2
     ;
-    JUNIPER:
+    juniper:
         request system reboot
         set cli timestamp
         monitor start messages
         show system users
 
-    CISCO SYSTEMS:
+    cisco:
         term mon
         who
 
-    ARISTA NETWORKS:
+    arista:
         python-shell
 
-    FOUNDRY:
+    foundry:
         show clock
 
-    BROCADE:
+    brocade:
         show clock
 
 (You may also find this file at ``conf/gorc.example`` within the Trigger source
 tree.)
 
-Notice for **JUNIPER** one of the commands specified is ``request system
+Notice for **Juniper** one of the commands specified is ``request system
 reboot``. This is bad! But don't worry, only a very limited subset of root
 commands are allowed to be specified within the ``.gorc``, and these are::
 
@@ -176,7 +179,7 @@ commands are allowed to be specified within the ``.gorc``, and these are::
 Any root commands not permitted will be filtered out prior to passing them
 along to the device.
 
-Here is an example of what happens when you connect to a ``JUNIPER`` device
+Here is an example of what happens when you connect to a ``Juniper`` device
 with the specified commands in the sample ``.gorc`` file displayed above::
 
     % gong test1-abc

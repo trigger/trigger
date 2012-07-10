@@ -22,7 +22,8 @@ import sys
 
 from trigger.utils.cli import get_terminal_width
 from trigger.acl.queue import Queue
-from trigger.acl.db import AclsDB, get_matching_acls, ModifyACLSetError
+from trigger.acl.db import AclsDB, get_matching_acls
+from trigger import exceptions
 
 # Setup
 aclsdb = AclsDB()
@@ -127,7 +128,7 @@ elif changers:
             for acl in opts.add:
                 try:
                     print aclsdb.add_acl(dev, acl)
-                except ModifyACLSetError, err:
+                except exceptions.ACLSetError as err:
                     print err
 
         elif opts.remove:

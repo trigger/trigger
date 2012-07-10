@@ -230,8 +230,8 @@ NOTE when using --replace-defined:
     As you can see only the source-address portion of the term was replaced.
 """
     opts, args = parser.parse_args(argv)
-    print 'OPTS:', opts
-    print 'ARGS:', args
+    #print 'OPTS:', opts
+    #print 'ARGS:', args
 
     for i in opts.source_port_range:
         opts.source_port.append(i)

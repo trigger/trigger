@@ -84,16 +84,15 @@ def fetch_router_list(args):
         for entry in nd.itervalues():
             if entry.owningTeam in blocked_groups:
                 continue
-            if entry.manufacturer in ('CISCO SYSTEMS', 'FOUNDRY', 'JUNIPER'):
+            if entry.vendor in ('cisco', 'foundry', 'juniper'):
                 if 'oob' in entry.shortName:
                     continue
 
                 if not pass_filters(entry):
                     continue
                 ret.append(entry)
-    ret.sort()
-    ret.reverse()
-    return ret
+
+    return sorted(ret, reverse=True)
 
 def pass_filters(device):
     """Used by fetch_router_list() to filter a device based on command-line arguments."""

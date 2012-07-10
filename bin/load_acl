@@ -15,8 +15,8 @@ automatically load eligible devices from the queue and email results.
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
-__version__ = '1.6.9'
+__copyright__ = 'Copyright 2003-2012, AOL Inc.'
+__version__ = '1.6.10'
 
 # Dist imports
 from collections import defaultdict
@@ -46,13 +46,13 @@ from trigger.netdevices import NetDevices
 from trigger.twister import execute_junoscript, execute_ioslike
 from trigger.utils.cli import print_severed_head, NullDevice, pretty_time, min_sec
 
-# Globals 
+# Globals
 # Pull in these functions from settings
 get_current_oncall = settings.GET_CURRENT_ONCALL
 create_cm_ticket = settings.CREATE_CM_TICKET
 
 # Our global NetDevices object!
-nd = NetDevices() #production_only=False)  #should be added with a flag 
+nd = NetDevices() #production_only=False)  #should be added with a flag
 
 # We don't want queue interaction messages to mess up curses display
 queue = Queue(verbose=False)
@@ -70,11 +70,20 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
     Curses-based status board for displaying progress during interactive
     mode.
 
-    :param work: The work dictionary (device to acls)
-    :param active: Dictionary mapping running devs to human-readable status
-    :param failures: Dictionary of failures
-    :param start_qlen: The length of the queue at start (to calculate progress)
-    :param start_time: The epoch time at startup (to calculate progress)
+    :param work:
+        The work dictionary (device to acls)
+
+    :param active:
+        Dictionary mapping running devs to human-readable status
+
+    :param failures:
+        Dictionary of failures
+
+    :param start_qlen:
+        The length of the queue at start (to calculate progress)
+
+    :param start_time:
+        The epoch time at startup (to calculate progress)
     """
     global output_cache
 
@@ -143,7 +152,8 @@ def parse_args(argv):
     Parses the args and returns opts, args back to caller. Defaults to
     ``sys.argv``, but Optinally takes a custom one if you so desire.
 
-    :param argv: A list of opts/args to use over sys.argv
+    :param argv:
+        A list of opts/args to use over sys.argv
     """
     def comma_cb(option, opt_str, value, parser):
         '''OptionParser callback to handle comma-separated arguments.'''
@@ -228,7 +238,8 @@ def get_tftp_source(dev):
     Determine the right TFTP source-address to use (public vs. private)
     based on ``settings.VIPS``, and return that address.
 
-    :param dev: The NetDevice object to check against
+    :param dev:
+        A `~trigger.netdevices.NetDevice` object
     """
     host = socket.gethostbyname(socket.getfqdn())
     if opts.no_vip:
@@ -252,8 +263,11 @@ def get_work(opts, args):
     each.  Processes extra CLI arguments to modify the work queue. Return a
     dictionary of ``{nodeName: set(acls)}``.
 
-    :param opts: A dictionary-like object of CLI options
-    :param args: A list of CLI arguments
+    :param opts:
+        A dictionary-like object of CLI options
+
+    :param args:
+        A list of CLI arguments
     """
     aclargs = set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
 
@@ -374,7 +388,7 @@ def get_work(opts, args):
         print
 
     # Display filtered acls
-    for a in filtered_acls: 
+    for a in filtered_acls:
         print '%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a
         log.msg('%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a)
 
@@ -385,19 +399,23 @@ def junoscript_cmds(acls):
     Return a list of Junoscript commands to load the given ACLs, and a
     matching list of tuples (acls remaining, human-readable status message).
 
-    :param acls: A collection of ACL names
+    :param acls:
+        A collection of ACL names
     """
     xml = [Element('lock-configuration')]
     status = ['locking configuration']
+
     for i, acl in enumerate(acls):
         lc = Element('load-configuration', action='replace', format='text')
         body = SubElement(lc, 'configuration-text')
         body.text = file(settings.FIREWALL_DIR + '/acl.' + acl).read()
         xml.append(lc)
         status.append('loading ACL ' + acl)
+
     xml.append(Element('commit-configuration'))
     status.append('committing for ' + ','.join(acls))
     status.append('done for' + ','.join(acls) )
+
     if debug_fakeout():
         xml = [Element('get-software-information')] * (len(status) - 1)
 
@@ -408,17 +426,22 @@ def ioslike_cmds(acls, dev, nonce):
     Return a list of IOS-like commands to load the given ACLs, and a matching
     list of tuples (acls remaining, human-readable status message).
 
-    :param acls: A collection of ACL names
-    :param dev: An IOS-like NetDevice object
-    :param nonce: A nonce to use when staging the ACL file for TFTP
+    :param acls:
+        A collection of ACL names
+
+    :param dev:
+        An IOS-like `~trigger.netdevices.NetDevice` object
+
+    :param nonce:
+        A nonce to use when staging the ACL file for TFTP
     """
     template_base = {
-        'CISCO SYSTEMS': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
-        'FOUNDRY': 'copy tftp run %s acl.%s.%s\n',
-        'BROCADE': 'copy tftp run %s acl.%s.%s\n',
+        'cisco': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
+        'brocade': 'copy tftp run %s acl.%s.%s\n',
+        'foundry': 'copy tftp run %s acl.%s.%s\n',
     }
 
-    template = template_base[dev.manufacturer]
+    template = template_base[dev.vendor.name]
     cmds = [template % (get_tftp_source(dev), acl, nonce) for acl in acls]
     status = ['loading ACL ' + acl for acl in acls]
     cmds.append('write mem')
@@ -439,13 +462,18 @@ def stage_tftp(acls, nonce, sanitize_acl=False):
 
     Files are created with strongly random names so they can't be fetched
     without that knowledge.  Note that we don't want to clean up on exit
-    because some Foundrys download TFTP in the background (which gives you 
+    because some Foundrys download TFTP in the background (which gives you
     no chance to catch errors).  Instead ``settings.TFTPROOT_DIR`` should be
     cleaned up with a cronjob.
 
-    :param acls: A collection of ACL names
-    :param nonce: A nonce to use when staging the ACL file for TFTP
-    :param sanitize_acl: A Boolean of whether to sanitize on ACL on stage
+    :param acls:
+        A collection of ACL names
+
+    :param nonce:
+        A nonce to use when staging the ACL file for TFTP
+
+    :param sanitize_acl:
+        A Boolean of whether to sanitize on ACL on stage
     """
     for acl in acls:
         source = settings.FIREWALL_DIR + '/acl.%s' % acl
@@ -470,8 +498,11 @@ def _sanitize_acl(src_file, dst_file):
     """
     Sanitize in this context is really just stripping the comments for now.
 
-    :param src_file: The source file to sanitize
-    :param dst_file: The destination file for sanitized results
+    :param src_file:
+        The source file to sanitize
+
+    :param dst_file:
+        The destination file for sanitized results
     """
     msg = 'Sanitizing ACL {0} as {1}'.format(src_file, dst_file)
     log.msg(msg)
@@ -493,7 +524,8 @@ def group(dev):
     devices are "together".  Based loosely upon naming convention that is not
     the "strictest". Expect to need to tweak this.!
 
-    :param dev: The NetDevice object to try to group
+    :param dev:
+        The `~trigger.netdevices.NetDevice` object to try to group
     """
     trimmer = re.compile('[0-9]*[a-z]+')   # allow for e.g. "36bit1"
     x = trimmer.match(dev.nodeName).group()
@@ -506,8 +538,11 @@ def select_next_device(work, active):
     Select another device for the active queue.  Don't select a device
     if there is another of that "group" already there.
 
-    :param work: The work dictionary (device to acls)
-    :param active: Dictionary mapping running devs to human-readable status
+    :param work:
+        The work dictionary (device to acls)
+
+    :param active:
+        Dictionary mapping running devs to human-readable status
     """
     active_groups = set([group(dev) for dev in active.keys()])
     for dev in work.keys():
@@ -525,11 +560,20 @@ def activate(work, active, failures, jobs, redraw):
     """
     Refill the active work queue based on number of current active jobs.
 
-    :param work: The work dictionary (device to acls)
-    :param active: Dictionary mapping running devs to human-readable status
-    :param failures: Dictionary of failures
-    :param jobs: The max number of jobs for active queue
-    :param redraw: The redraw closure passed along from the caller
+    :param work:
+        The work dictionary (device to acls)
+
+    :param active:
+        Dictionary mapping running devs to human-readable status
+
+    :param failures:
+        Dictionary of failures
+
+    :param jobs:
+        The max number of jobs for active queue
+
+    :param redraw:
+        The redraw closure passed along from the caller
     """
     if not active and not work:
         reactor.stop()
@@ -543,14 +587,14 @@ def activate(work, active, failures, jobs, redraw):
 
         active[dev] = 'connecting'
 
-        if dev.manufacturer == 'JUNIPER':
+        if dev.vendor == 'juniper':
             cmds, status = junoscript_cmds(acls)
             execute = execute_junoscript
         else:
             nonce = os.urandom(8).encode('hex')
 
             # For now this only has to be done for Brocade, so...
-            sanitize_acl = dev.manufacturer == 'BROCADE'
+            sanitize_acl = dev.vendor == 'brocade'
 
             if not stage_tftp(acls, nonce, sanitize_acl):
                 failures[dev] = "Unable to stage TFTP File %s" % str(acls)
@@ -574,11 +618,11 @@ def activate(work, active, failures, jobs, redraw):
             activate(work, active, failures, jobs, redraw)
 
         # Check if a device is Foundry-like and inject a 1 second interval
-        # between commands. This is hacky, but its needed because of an issue 
-        # where rapidly executed commands are not properly acknowledged by the 
+        # between commands. This is hacky, but its needed because of an issue
+        # where rapidly executed commands are not properly acknowledged by the
         # device. The same behavior can be witnessed when pasting into an
-        # interactive terminal. 
-        if dev.manufacturer in ('BROCADE', 'FOUNDRY'):
+        # interactive terminal.
+        if dev.vendor in ('brocade', 'foundry'):
             d = execute(dev, cmds, incremental=update_board, command_interval=1)
         else:
             d = execute(dev, cmds, incremental=update_board)
@@ -592,10 +636,17 @@ def run(stdscr, work, jobs, failures):
     """
     Runs the show. Starts the curses status board & starts the reactor loop.
 
-    :param stdscr: The starting curses screen (usually None)
-    :param work: The work dictionary (device to acls)
-    :param jobs: The max number of jobs for active queue
-    :param failures: Dictionary of failures
+    :param stdscr:
+        The starting curses screen (usually None)
+
+    :param work:
+        The work dictionary (device to acls)
+
+    :param jobs:
+        The max number of jobs for active queue
+
+    :param failures:
+        Dictionary of failures
     """
     # Dictionary of currently running devs -> human-readable status
     active = {}
@@ -619,10 +670,17 @@ def email_users(addresses, subject, body, fromaddr=settings.EMAIL_SENDER):
     Emails... users... Sender is implied from ``settings`` unless otherwise
     specified.
 
-    :param addresses: List of email recipients
-    :param subject: The email subject
-    :param body: The email body
-    :param fromaddr: The email sender (optional)
+    :param addresses:
+        List of email recipients
+
+    :param subject:
+        The email subject
+
+    :param body:
+        The email body
+
+    :param fromaddr:
+        The email sender (optional)
     """
     import smtplib
     fromaddr = settings.EMAIL_SENDER
@@ -648,7 +706,7 @@ def main():
 
     global queue
     if opts.no_db:
-        queue = None 
+        queue = None
 
     # Where the magic happens
     work = get_work(opts, args)
@@ -696,8 +754,8 @@ def main():
         if not oncall:
             if opts.auto:
                 email_users(settings.FAILURE_EMAILS, "LOAD_ACL FAILURE",
-                        "Unable to get current ONCALL from ORB!")
-            log.err("Unable to get oncall info from ORB!", logLevel=logging.CRITICAL)
+                        "Unable to get current ONCALL information!")
+            log.err("Unable to get oncall information!", logLevel=logging.CRITICAL)
             sys.exit(1)
 
         print '\nSubmitting CM ticket...'

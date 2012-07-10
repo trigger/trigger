@@ -5,34 +5,35 @@
 ; vendor name must match the one found in the CMDB for the manufacturer of the
 ; hardware. Currently these are:
 ;
-;  Arista: ARISTA NETWORKS
-; Brocade: BROCADE
-;   Cisco: CISCO SYSTEMS
-;  Citrix: CITRIX
-;    Dell: DELL
-; Foundry: FOUNDRY
-; Juniper: JUNIPER
+;     A10: a10
+;  Arista: arista
+; Brocade: brocade
+;   Cisco: cisco
+;  Citrix: citrix
+;    Dell: dell
+; Foundry: foundry
+; Juniper: juniper
 ;
 ; Format:
 ;
-; VENDOR:
+; vendor:
 ;     command1
 ;     command2
 ;
-JUNIPER:
+juniper:
     set cli timestamp
     monitor start messages
     show system users
 
-CISCO SYSTEMS:
+cisco:
     term mon
     who
 
-ARISTA NETWORKS:
+arista:
     python-shell
 
-FOUNDRY:
+foundry:
     show clock
 
-BROCADE:
+brocade:
     show clock

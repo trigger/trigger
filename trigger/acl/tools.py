@@ -68,11 +68,20 @@ def check_access(terms_to_check, new_term, quiet=True, format='junos',
 
     Optionally displays the terms that apply and what edits are needed.
 
-    :param terms_to_check: A list of Term objects to check
-    :param new_term: The Term object used for the access test
-    :param quiet: Toggle whether output is displayed
-    :param format: The ACL format to use for output display
-    :param acl_name: The ACL name to use for output display
+    :param terms_to_check:
+        A list of Term objects to check
+
+    :param new_term:
+        The Term object used for the access test
+
+    :param quiet:
+        Toggle whether output is displayed
+
+    :param format:
+        The ACL format to use for output display
+
+    :param acl_name:
+        The ACL name to use for output display
     """
     permitted = None
     matches = {
@@ -202,10 +211,13 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
     It's safe to assume that this function is incomplete pending better
     documentation and examples.
 
-    :param new_term: The Term object to use for comparison against aclobj
-    :param aclobj: The original ACL object to use for creation of new_acl
+    :param new_term:
+        The Term object to use for comparison against aclobj
 
-    Example:
+    :param aclobj:
+        The original ACL object to use for creation of new_acl
+
+    Example::
 
         import copy
         # terms_to_be_added is a list of Term objects that is to be added in
@@ -641,29 +653,38 @@ class ACLScript:
 
     def add_src_host(self, data):
         self._add_addr(self.source_ips, data)
+
     def add_dst_host(self, data):
         self._add_addr(self.dest_ips, data)
+
     def add_src_port(self, data):
         self._add_port(self.source_ports, data)
+
     def add_dst_port(self, data):
         self._add_port(self.dest_ports, data)
+
     def add_modify_between_comments(self, begin, end):
         del self.modify_terms
         self.modify_terms = []
         self.bcomments.append((begin,end))
+
     def add_modify_term(self, term):
         del self.bcomments
         self.bcomments = []
         if term not in self.modify_terms:
             self.modify_terms.append(term)
+
     def get_protocols(self):
         return self.protocol
+
     def get_src_hosts(self):
         return self.source_ips
+
     def get_dst_hosts(self):
         return self.dest_ips
+
     def get_src_ports(self):
         return self.source_ports
+
     def get_dst_ports(self):
         return self.dest_ports
-

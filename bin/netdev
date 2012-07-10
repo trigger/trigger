@@ -8,8 +8,8 @@ netdev - Command-line search interface for NetDevices.
 __author__ = 'Jathan McCollum, Eileen Tschetter'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
-__version__ = '1.11'
+__copyright__ = 'Copyright 2003-2012, AOL Inc.'
+__version__ = '1.12'
 
 from optparse import OptionParser
 import sys
@@ -19,8 +19,12 @@ from trigger.netdevices import device_match, NetDevices
 def parse_args(argv):
     """Parse arguments, duh. There is a better way to do this using Twisted's
     usage module, but replacing it is not a high priority."""
-    parser = OptionParser(usage='%prog [options]', description='''\
-Command-line search interface for 'netdevices.xml'.''')
+    parser = OptionParser(
+        usage='%prog [options]',
+        description="\nCommand-line search interface for 'NetDevices' metdata.",
+        version='%prog ' + __version__
+    )
+
     parser.add_option('-a', '--acls', action='store_true', 
         help='Search will return acls instead of devices.')
     parser.add_option('-l', '--list', type='string', metavar='<DEVICE>',
@@ -39,6 +43,8 @@ Command-line search interface for 'netdevices.xml'.''')
         help='For use with -s:  Match on Oncall Team (onCallName).')
     parser.add_option('-C', '--owning-org', type='string', metavar='<OWNING ORG>',
         help='For use with -s:  Match on cost center Owning Org. (owner).')
+    parser.add_option('-v', '--vendor', type='string', metavar='<VENDOR>',
+        help='For use with -s:  Match on canonical vendor name.')
     parser.add_option('-m', '--manufacturer', type='string', metavar='<MANUFACTURER>',
         help='For use with -s:  Match on manufacturer.')
     parser.add_option('-b', '--budget-code', type='string', metavar='<BUDGET CODE>',
@@ -134,13 +140,17 @@ def search_builder(opts):
     if opts.budget_name: 
         vars.append(" '%s' in x.budgetName.lower()" % opts.budget_name.lower())
 
+    # vendor
+    if opts.vendor:
+        vars.append(" '%s' in x.vendor" % opts.vendor.lower())
+
     # manufacturer
     if opts.manufacturer: 
-        vars.append (" '%s' in x.manufacturer" % opts.manufacturer.upper())
+        vars.append(" '%s' in x.manufacturer" % opts.manufacturer.upper())
 
     # site
     if opts.location: 
-        vars.append (" x.site == '%s'" % opts.location.upper())
+        vars.append(" x.site == '%s'" % opts.location.upper())
 
     # make
     if opts.make: 
@@ -156,10 +166,10 @@ def search_builder(opts):
 
     # Build a list comprehension based on the vars list.
     # so: 
-    #    [" 'SWITCH' in x.deviceType", 'JUNIPER' in x.manufacturer"]
+    #    [" 'SWITCH' in x.deviceType", 'juniper' in x.vendor"]
     # becomes: 
-    #   [x for x in nd.all() if 'SWITCH' in x.deviceType and 'JUNIPER' in
-    #   x.manufacturer]
+    #   [x for x in nd.all() if 'SWITCH' in x.deviceType and 'juniper' in
+    #   x.vendor]
     query += " if"
     vlen = len(vars)
     counter = 1

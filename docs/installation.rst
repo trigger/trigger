@@ -96,7 +96,7 @@ If you're using Ubuntu, it's as simple as::
 
 .. _Redis: http://redis.io/download
 
-The `python redis <http://pypi.python.org/pypi/redis>`_ client is required
+The `Python redis <http://pypi.python.org/pypi/redis>`_ client is required
 to interact with Redis.
 
 Trigger currently assumes that you're running Redis on localhost and on the

@@ -12,22 +12,22 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2009-2012, AOL Inc.'
+__version__ = '2.0'
 
+import datetime
+import itertools
 import os
 import sys
-import re
-import time
 from IPy import IP
 from xml.etree.cElementTree import ElementTree, Element, SubElement
 from twisted.python import log
-from trigger.acl import *
 from trigger.netdevices import NetDevices
-from trigger.twister import (execute_junoscript, execute_ioslike,
-                            execute_netscaler)
+from trigger.conf import settings
+from trigger import exceptions
 
 
 # Exports
-__all__ = ('Commando', 'NetACLInfo')
+__all__ = ('Commando', 'NetACLInfo', 'ShowClock')
 
 
 # Classes
@@ -36,156 +36,124 @@ class Commando(object):
     I run commands on devices but am not much use unless you subclass me and
     configure vendor-specific parse/generate methods.
     """
-    def __init__(self, devices=None, max_conns=10, verbose=False, timeout=30,
-                 production_only=True):
-        self.curr_connections = 0
-        self.reactor_running  = False
-        self.devices = devices or []
-        self.verbose = verbose
+    # Defaults to all supported vendors
+    vendors = settings.SUPPORTED_VENDORS
+
+    # Defaults to all supported platforms
+    platforms = settings.SUPPORTED_PLATFORMS
+
+    # The commands to run
+    commands = []
+
+    def __init__(self, devices=None, commands=None, incremental=None,
+                 max_conns=10, verbose=False, timeout=30,
+                 production_only=True, allow_fallback=True):
+        """
+        At the bare minimum you must specify a list of ``devices`` to interact
+        with. You may optionally specify a list of ``commands`` to execute on those
+        devices, but doing so will execute the same commands on every device
+        regardless of platform.
+
+        If ``commands`` are not specified, they will be expected to be emitted
+        by the ``generate`` method for a given platform. Otherwise no commands
+        will be executed.
+
+        If you wish to customize the commands executed by device, you must
+        define a ``to_{vendor_name}`` method containing your custom logic.
+
+        If you wish to customize what is done with command results returned
+        from a device, you must define a ``from_{vendor_name}`` method
+        containing your custom logic.
+
+        :param devices:
+            A list of device hostnames or `~trigger.netdevices.NetDevices` objects
+
+        :param commands:
+            (Optional) A list of commands to execute on the ``devices``.
+
+        :param incremental:
+            (Optional) A callback that will be called with an empty sequence
+            upon connection and then called every time a result comes back from
+            the device, with the list of all results.
+
+        :param max_conns:
+            (Optional) The maximum number of simultaneous connections to keep
+            open.
+
+        :param verbose:
+            (Optional) Whether or not to display informational messages to the
+            console
+
+        :param timeout:
+            (Optional) Time in seconds to wait for each command executed to
+            return a result
+
+        :param production_only:
+            (Optional) If set, includes all devices instead of excluding any
+            devices where ``adminStatus`` is not set to ``PRODUCTION``.
+
+        :param allow_fallback:
+            If set (default), allow fallback to base parse/generate methods
+            when they are not customized in a subclass, otherwise an exception
+            is raised when a method is called that has not been explicitly
+            defined.
+        """
+        if devices is None:
+            raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
+
+        self.devices = devices
+        self.commands = self.commands or (commands or []) # Always fallback to []
+        self.incremental = incremental
         self.max_conns = max_conns
+        self.verbose = verbose
+        self.timeout = timeout # in seconds
         self.nd = NetDevices(production_only=production_only)
+        self.allow_fallback = allow_fallback
+        self.curr_conns = 0
         self.jobs = []
         self.errors = {}
-        self.data = {}
+        self.results = {}
         self.deferrals = self._setup_jobs()
-        self.timeout = timeout # in seconds
+        self.supported_platforms = self._validate_platforms()
 
-    def _decrement_connections(self, data):
+    def _validate_platforms(self):
+        """
+        Determine the set of supported platforms for this instance by making
+        sure the specified vendors/platforms for the class match up.
+        """
+        supported_platforms = {}
+        for vendor in self.vendors:
+            if vendor in self.platforms:
+                types = self.platforms[vendor]
+                if not types:
+                    raise exceptions.MissingPlatform('No platforms specified for %r' % vendor)
+                else:
+                    #self.supported_platforms[vendor] = types
+                    supported_platforms[vendor] = types
+            else:
+                raise exceptions.ImproperlyConfigured('Platforms for vendor %r not found. Please provide it at either the class level or using the arguments.' % vendor)
+
+        return supported_platforms
+
+    def _decrement_connections(self, data=None):
         """
         Self-explanatory. Called by _add_worker() as both callback/errback
         so we can accurately refill the jobs queue, which relies on the
         current connection count.
         """
-        self.curr_connections -= 1
+        self.curr_conns -= 1
         return True
 
-    def set_data(self, device, data):
-        """
-        Another method for storing results. If you'd rather just change the
-        default method for storing results, overload this. All default
-        parse/generate methods call this."""
-        self.data[device] = data
+    def _increment_connections(self, data=None):
+        """Increment connection count."""
+        self.curr_conns += 1
         return True
-
-    #=======================================
-    # Vendor-specific parse/generate methods
-    #=======================================
-
-    def _normalize_manufacturer(self, manufacturer):
-        """Normalize the manufacturer name into a method"""
-        return manufacturer.replace(' ', '_').lower()
-
-    def _lookup(self, device, prefix):
-        """Base lookup method."""
-        manuf = self._normalize_manufacturer(device.manufacturer)
-        try:
-            func = getattr(self, prefix + manuf)
-        except AttributeError:
-            return 'base prefix' + prefix  (device)
-            #return self._base_generate_cmd(device)
-
-        return func(device)
-
-    def _parse_lookup(self, device):
-        """Base parse method."""
-        manuf = self._normalize_manufacturer
-        try:
-            func = getattr(self, 'parse_' + manuf)
-        except AttributeError:
-            return self._base_generate_cmd(device)
-
-        return func(device)
-
-    # Yes there is probably a better way to do this in the long-run instead of
-    # individual parse/generate methods for each vendor, but this works for now.
-    def _base_parse(self, data, device):
-        """
-        Parse output from a device. Overload this to customize this default
-        behavior.
-        """
-        self.set_data(device, data)
-        return True
-
-    def _base_generate_cmd(self, dev=None):
-        """
-        Generate commands to be run on a device. If you don't overload this, it
-        returns an empty list.
-        """
-        return []
-
-    # TODO (jathan): Find a way to dynamically generate/call these methods
-    # TODO (jathan): Methods should be prefixed with their action, not vendor
-
-    # IOS (Cisco)
-    ios_parse = _base_parse
-    generate_ios_cmd = _base_generate_cmd
-
-    # Brocade
-    brocade_parse = _base_parse
-    generate_brocade_cmd = _base_generate_cmd
-
-    # Foundry
-    foundry_parse = _base_parse
-    generate_foundry_cmd = _base_generate_cmd
-
-    # Juniper (JUNOS)
-    junos_parse = _base_parse
-    generate_junos_cmd = _base_generate_cmd
-
-    # Citrix NetScaler
-    netscaler_parse = _base_parse
-    generate_netscaler_cmd = _base_generate_cmd
-
-    # Arista
-    arista_parse = _base_parse
-    generate_arista_cmd = _base_generate_cmd
-
-    # Dell
-    dell_parse = _base_parse
-    generate_dell_cmd = _base_generate_cmd
-
-    def _setup_callback(self, dev):
-        """
-        Map execute, parse and generate callbacks to device by manufacturer.
-        This is ripe for optimization, especially if/when we need to add
-        support for multiple OS types/revisions per vendor.
-
-        :param dev: NetDevice object
-
-        Notes::
-
-        + Arista, Brocade, Cisco, Dell, Foundry all use execute_ioslike
-        + Citrix is assumed to be a NetScaler (switch)
-        + Juniper is assumed to be a router/switch running JUNOS
-        """
-        callback_map = {
-            'ARISTA NETWORKS':[dev, execute_ioslike,
-                              self.generate_arista_cmd,
-                              self.arista_parse],
-            'BROCADE':       [dev, execute_ioslike,
-                              self.generate_brocade_cmd,
-                              self.brocade_parse],
-            'CISCO SYSTEMS': [dev, execute_ioslike,
-                              self.generate_ios_cmd,
-                              self.ios_parse],
-            'CITRIX':        [dev, execute_netscaler,
-                              self.generate_netscaler_cmd,
-                              self.netscaler_parse],
-            'DELL':          [dev, execute_ioslike,
-                              self.generate_dell_cmd,
-                              self.dell_parse],
-            'FOUNDRY':       [dev, execute_ioslike,
-                              self.generate_foundry_cmd,
-                              self.foundry_parse],
-            'JUNIPER':       [dev, execute_junoscript,
-                              self.generate_junos_cmd,
-                              self.junos_parse],
-        }
-        result = callback_map[dev.manufacturer]
-
-        return result
 
     def _setup_jobs(self):
+        """
+        "Maps device hostnames to `~trigger.netdevices.NetDevices` objects and
+        populates the job queue.
+        """
         for dev in self.devices:
             if self.verbose:
                 print 'Adding', dev
@@ -194,90 +162,279 @@ class Commando(object):
             try:
                 devobj = self.nd.find(str(dev))
             except KeyError:
-                msg = 'Device not found in NetDevices: %s' % dev
                 if self.verbose:
+                    msg = 'Device not found in NetDevices: %s' % dev
                     print 'ERROR:', msg
 
                 # Track the errors and keep moving
                 self.errors[dev] = msg
                 continue
 
-            this_callback = self._setup_callback(devobj)
-            self.jobs.append(this_callback)
+            # We only want to add devices for which we've enabled support in
+            # this class
+            if devobj.vendor not in self.vendors:
+                raise exceptions.UnsupportedVendor("The vendor '%s' is not specified in ``vendors``. Could not add %s to job queue. Please check the attribute in the class object." % (devobj.vendor, devobj))
 
-    def run(self):
-        """Nothing happens until you execute this to perform the actual work."""
-        self._add_worker()
-        self._start()
+            self.jobs.append(devobj)
 
-    def eb(self, x):
-        self._decrement_connections(x)
-        return True
+    def select_next_device(self, jobs=None):
+        """
+        Select another device for the active queue.
+
+        Currently only returns the next device in the job queue. This is
+        abstracted out so that this behavior may be customized, such as for
+        future support for incremental callbacks.
+
+        :param jobs:
+            (Optional) The jobs queue. If not set, uses ``self.jobs``.
+
+        :returns:
+            A `~trigger.netdevices.NetDevices` object
+        """
+        if jobs is None:
+            jobs = self.jobs
+
+        return jobs.pop()
 
     def _add_worker(self):
-        work = None
+        """
+        Adds devices to the work queue to keep it populated with the maximum
+        connections as specified by ``max_conns``.
+        """
+        while self.jobs and self.curr_conns < self.max_conns:
+            device = self.select_next_device()
 
-        try:
-            work = self.jobs.pop()
+            self._increment_connections()
             if self.verbose:
+                print 'connections:', self.curr_conns
                 print 'Adding work to queue...'
-        except (AttributeError, IndexError):
-            #if not self.curr_connections:
-            if not self.curr_connections and self.reactor_running:
+
+            # Setup the async Deferred object with a timeout and error printing.
+            commands = self.generate(device)
+            async = device.execute(commands, incremental=self.incremental,
+                                   timeout=self.timeout, with_errors=True)
+
+            # Add the parser callback for great justice!
+            async.addCallback(self.parse, device)
+
+            # Here we addBoth to continue on after pass/fail
+            async.addBoth(self._decrement_connections)
+            async.addBoth(lambda x: self._add_worker())
+
+            # If worker add fails, still decrement and track the error
+            async.addErrback(self.errback, device)
+
+        # Do this once we've exhausted the job queue
+        else:
+            if not self.curr_conns and self.reactor_running:
                 self._stop()
-            else:
+            elif not self.jobs and not self.reactor_running:
                 if self.verbose:
                     print 'No work left.'
 
-        while work:
-            if self.verbose:
-                print 'connections:', self.curr_connections
-            if self.curr_connections >= self.max_conns:
-                self.jobs.append(work)
-                return
+    def _lookup_method(self, device, method):
+        """
+        Base lookup method. Looks up stuff by device manufacturer like:
 
-            self.curr_connections += 1
-            if self.verbose:
-                print 'connections:', self.curr_connections
+            from_juniper
+            to_foundry
 
-            # Unpack the job parts
-            #dev, execute, cmd, parser = work
-            dev, execute, generate, parser = work
+        :param device:
+            A `~trigger.netdevices.NetDevices` object
 
-            # Setup the deferred object with a timeout and error printing.
-            #defer = execute(dev, cmd, timeout=self.timeout, with_errors=True)
-            cmds = generate(dev)
-            defer = execute(dev, cmds, timeout=self.timeout, with_errors=True)
+        :param method:
+            One of 'generate', 'parse'
+        """
+        METHOD_MAP = {
+            'generate': 'to_%s',
+            'parse': 'from_%s',
+        }
+        assert method in METHOD_MAP
 
-            # Add the callbacks for great justice!
-            defer.addCallback(parser, dev)
-            # Here we addBoth to continue on after pass/fail
-            defer.addBoth(self._decrement_connections)
-            defer.addBoth(lambda x: self._add_worker())
-            defer.addErrback(self.eb) # If worker add fails, still decrement
+        desired_attr = None
 
-            try:
-                work = self.jobs.pop()
-            except (AttributeError, IndexError):
-                work = None
+        for vendor, types in self.platforms.iteritems():
+            meth_attr = METHOD_MAP[method] % device.vendor
+            if device.deviceType in types:
+                if hasattr(self, meth_attr):
+                    desired_attr = meth_attr
+                    break
+
+        if desired_attr is None:
+            if self.allow_fallback:
+                desired_attr = METHOD_MAP[method] % 'base'
+            else:
+                raise exceptions.UnsupportedVendor("The vendor '%s' had no available %s method. Please check your ``vendors`` and ``platforms`` attributes in your class object." % (device.vendor, method))
+
+        func = getattr(self, desired_attr)
+        return func
+
+    def generate(self, device, commands=None, extra=None):
+        """
+        Generate commands to be run on a device. If you don't provide
+        ``commands`` to the class constructor, this will return an empty list.
+
+        Define a 'to_{vendor_name}' method to customize the behavior for each
+        platform.
+
+        :param device:
+            A `~trigger.netdevices.NetDevices` object
+
+        :param commands:
+            (Optional) A list of commands to execute on the device. If not
+            specified in they will be inherited from commands passed to the
+            class constructor.
+
+        :param extra:
+            (Optional) A dictionary of extra data to send to the generate method for the
+            device.
+        """
+        if commands is None:
+            commands = self.commands
+        if extra is None:
+            extra = {}
+
+        func = self._lookup_method(device, method='generate')
+        return func(device, commands, extra)
+
+    def parse(self, results, device):
+        """
+        Parse output from a device.
+
+        Define a 'from_{vendor_name}' method to customize the behavior for each
+        platform.
+
+        :param results:
+            The results of the commands executed on the device
+
+        :param device:
+            A `~trigger.netdevices.NetDevices` object
+        """
+        func = self._lookup_method(device, method='parse')
+        return func(results, device)
+
+    def errback(self, failure, device):
+        """
+        The default errback. Overload for custom behavior but make sure it
+        always decrements the connections.
+
+        :param failure:
+            Usually a Twisted ``Failure`` instance.
+
+        :param device:
+            A `~trigger.netdevices.NetDevices` object
+        """
+        self.store_error(device, failure)
+        self._decrement_connections(failure)
+        return True
+
+    def store_error(self, device, error):
+        """
+        A simple method for storing an error called by all default
+        parse/generate methods.
+
+        If you want to customize the default method for storing results,
+        overload this in your subclass.
+
+        :param device:
+            A `~trigger.netdevices.NetDevices` object
+
+        :param error:
+            The error to store. Anything you want really, but usually a Twisted
+            ``Failure`` instance.
+        """
+        self.errors[device.nodeName] = error
+        return True
+
+    def store_results(self, device, results):
+        """
+        A simple method for storing results called by all default
+        parse/generate methods.
+
+        If you want to customize the default method for storing results,
+        overload this in your subclass.
+
+        :param device:
+            A `~trigger.netdevices.NetDevices` object
+
+        :param results:
+            The results to store. Anything you want really.
+        """
+        self.results[device.nodeName] = results
+        return True
+
+    def map_results(self, commands=None, results=None):
+        """Return a dict of ``{command: result, ...}``"""
+        if commands is None:
+            commands = self.commands
+        if results is None:
+            results = []
+
+        return dict(itertools.izip_longest(commands, results))
+
+    @property
+    def reactor_running(self):
+        """Return whether reactor event loop is running or not"""
+        from twisted.internet import reactor
+        return reactor.running
 
     def _stop(self):
+        """Stop the reactor event loop"""
         if self.verbose:
             print 'stopping reactor'
-        self.reactor_running = False
+
         from twisted.internet import reactor
         reactor.stop()
 
     def _start(self):
+        """Start the reactor event loop"""
         if self.verbose:
             print 'starting reactor'
-        self.reactor_running = True
-        from twisted.internet import reactor
-        if self.curr_connections:
+
+        if self.curr_conns:
+            from twisted.internet import reactor
             reactor.run()
         else:
             if self.verbose:
                 print "Won't start reactor with no work to do!"
+
+    def run(self):
+        """
+        Nothing happens until you execute this to perform the actual work.
+        """
+        self._add_worker()
+        self._start()
+
+    #=======================================
+    # Base generate (to_)/parse (from_) methods
+    #=======================================
+
+    def to_base(self, device, commands=None, extra=None):
+        print '%s is a %s' % (device, device.deviceType)
+        commands = commands or self.commands
+        print 'sending %r to %s' % (commands, device)
+        return commands
+
+    def from_base(self, results, device):
+        print 'received %r from %s' % (results, device)
+        self.store_results(device, self.map_results(self.commands, results))
+
+    #=======================================
+    # Vendor-specific generate (to_)/parse (from_) methods
+    #=======================================
+
+    def to_juniper(self, device, commands=None, extra=None):
+        """
+        This just creates a series of ``<command>foo</command>`` elements to
+        pass along to execute_junoscript()"""
+        commands = commands or self.commands
+        ret = []
+        for command in commands:
+            cmd = Element('command')
+            cmd.text = command
+            ret.append(cmd)
+
+        return ret
 
 class NetACLInfo(Commando):
     """
@@ -301,13 +458,22 @@ class NetACLInfo(Commando):
             }
         }
 
-    Interface field descriptions::
+    Interface field descriptions:
 
-        :addr: List of IPy.IP objects of interface addresses
-        :acl_in: List of inbound ACL names
-        :acl_out: List of outbound ACL names
-        :description: List of interface description(s)
-        :subnets: List of IPy.IP objects of interface networks/CIDRs
+        :addr:
+            List of ``IPy.IP`` objects of interface addresses
+
+        :acl_in:
+            List of inbound ACL names
+
+        :acl_out:
+            List of outbound ACL names
+
+        :description:
+            List of interface description(s)
+
+        :subnets:
+            List of ``IPy.IP`` objects of interface networks/CIDRs
 
     Example::
 
@@ -327,8 +493,8 @@ class NetACLInfo(Commando):
         [IP('66.185.128.160')]
     """
     def __init__(self, **args):
-        self.config = dict()
-        Commando.__init__(self, **args)
+        self.config = {}
+        super(NetACLInfo, self).__init__(**args)
 
     def IPsubnet(self, addr):
         '''Given '172.20.1.4/24', return IP('172.20.1.0/24').'''
@@ -336,41 +502,6 @@ class NetACLInfo(Commando):
         netbase = (IP(net).int() &
                    (0xffffffffL ^ (2**(32-int(mask))-1)))
         return IP('%d/%s' % (netbase, mask))
-
-    def generate_ios_cmd(self, dev):
-        """This is the "show me all interface information" command we pass to
-        IOS devices"""
-        return ['show  configuration | include ^(interface | ip address | ip access-group | description|!)']
-
-    def generate_arista_cmd(self, dev):
-        """
-        Similar to IOS, but:
-
-           + Arista has now "show conf" so we have to do "show run"
-           + The regex used in the CLI for Arista is more "precise" so we have to change the pattern a little bit compared to the on in generate_ios_cmd
-
-        """
-        return ['show running-config | include (^interface | ip address | ip acces-group | description |!)']
-
-    # TODO (jathan): Temp workaround for missing brocade/foundry execution.
-    # Replace with dynamic "stuff"
-    #generate_arista_cmd = generate_ios_cmd
-    generate_brocade_cmd = generate_ios_cmd
-    generate_foundry_cmd = generate_ios_cmd
-
-    def eb(self, data):
-        print "ERROR: ", data
-
-    def generate_junos_cmd(self, dev):
-        """Generates an etree.Element object suitable for use with
-        JunoScript"""
-        cmd = Element('get-configuration',
-            database='committed',
-            inherit='inherit')
-
-        SubElement(SubElement(cmd, 'configuration'), 'interfaces')
-
-        return [cmd]
 
     def ipv4_cidr_to_netmask(bits):
         """ Convert CIDR bits to netmask """
@@ -386,31 +517,68 @@ class NetACLInfo(Commando):
                 bits = 0
         return netmask
 
-    def ios_parse(self, data, device):
+    def errback(self, data):
+        print "ERROR: ", data
+
+    #=======================================
+    # Vendor-specific generate (to_)/parse (from_) methods
+    #=======================================
+
+    def to_cisco(self, dev, commands=None, extra=None):
+        """This is the "show me all interface information" command we pass to
+        IOS devices"""
+        return ['show  configuration | include ^(interface | ip address | ip access-group | description|!)']
+
+    def to_arista(self, dev, commands=None, extra=None):
+        """
+        Similar to IOS, but:
+
+           + Arista has now "show conf" so we have to do "show run"
+           + The regex used in the CLI for Arista is more "precise" so we have to change the pattern a little bit compared to the on in generate_ios_cmd
+
+        """
+        return ['show running-config | include (^interface | ip address | ip acces-group | description |!)']
+
+    # Other IOS-like vendors are Cisco-enough
+    to_brocade = to_cisco
+    to_foundry = to_cisco
+
+    def from_cisco(self, data, device):
         """Parse IOS config based on EBNF grammar"""
-        self.data[device.nodeName] = data #"MY OWN IOS DATA"
+        self.results[device.nodeName] = data #"MY OWN IOS DATA"
 
         alld = ''
         awesome = ''
         for line in data:
             alld += line
 
-        self.config[device] = parse_ios_interfaces(alld)
+        self.config[device] = _parse_ios_interfaces(alld)
 
         return True
 
-    # TODO (jathan): Temp workaround for missing brocade/foundry parsing.
-    # Replace with dynamic "stuff"
-    arista_parse = ios_parse
-    brocade_parse = ios_parse
-    foundry_parse = ios_parse
+    # Other IOS-like vendors are Cisco-enough
+    from_arista = from_cisco
+    from_brocade = from_cisco
+    from_foundry = from_cisco
+
+    def to_juniper(self, dev, commands=None, extra=None):
+        """Generates an etree.Element object suitable for use with
+        JunoScript"""
+        cmd = Element('get-configuration',
+            database='committed',
+            inherit='inherit')
+
+        SubElement(SubElement(cmd, 'configuration'), 'interfaces')
+
+        self.commands = [cmd]
+        return self.commands
 
     def __children_with_namespace(self, ns):
         return lambda elt, tag: elt.findall('./' + ns + tag)
 
-    def junos_parse(self, data, device):
+    def from_juniper(self, data, device):
         """Do all the magic to parse Junos interfaces"""
-        self.data[device.nodeName] = data #"MY OWN JUNOS DATA"
+        self.results[device.nodeName] = data #"MY OWN JUNOS DATA"
 
         ns = '{http://xml.juniper.net/xnm/1.1/xnm}'
         children = self.__children_with_namespace(ns)
@@ -420,12 +588,11 @@ class NetACLInfo(Commando):
         for interface in xml.getiterator(ns + 'interface'):
 
             basename = children(interface, 'name')[0].text
-            description = children(interface, 'description')
-            desctext = []
 
-            if description:
-                for i in description:
-                    desctext.append(i.text)
+            description = interface.find(ns + 'description')
+            desctext = []
+            if description is not None:
+                desctext.append(description.text)
 
             for unit in children(interface, 'unit'):
                 ifname = basename + '.' + children(unit, 'name')[0].text
@@ -477,8 +644,7 @@ class NetACLInfo(Commando):
         self.config[device] = dta
         return True
 
-
-def parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
+def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
     """
     Walks through a IOS interface config and returns a dict of parts. Intended
     for use by trigger.cmds.NetACLInfo.ios_parse() but was written to be portable.
@@ -596,7 +762,6 @@ def parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
 
     try:
         results = interfaces.parseString(data)
-        #print "no error on parse string"
         #print results
     except:  # (ParseException, ParseFatalException, RecursiveGrammarException): #err:
         #pass
@@ -610,7 +775,7 @@ def parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
 
     return cleanup_interface_results(results) if auto_cleanup else results
 
-def cleanup_interface_results(results):
+def _cleanup_interface_results(results):
     """
     Takes ParseResults dictionary-like object and returns an actual dict of
     populated interface details.  The following is performed:
@@ -636,8 +801,8 @@ def cleanup_interface_results(results):
         newdict[interface] = {}
         new_int = newdict[interface]
 
-        new_int['addr'] = make_ipy(iface_info['addr'])
-        new_int['subnets'] = make_cidrs(iface_info.get('subnets', []) or iface_info['addr'])
+        new_int['addr'] = _make_ipy(iface_info['addr'])
+        new_int['subnets'] = _make_cidrs(iface_info.get('subnets', []) or iface_info['addr'])
         new_int['acl_in'] = list(iface_info.get('acl_in', []))
         new_int['acl_out'] = list(iface_info.get('acl_out', []))
         #new_int['description'] = ' '.join(iface_info.get('description', [])).replace(' : ', ':')
@@ -645,17 +810,17 @@ def cleanup_interface_results(results):
 
     return newdict
 
-def make_ipy(nets):
+def _make_ipy(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list of
     IP address objects"""
     return [IP(addr) for addr, mask in nets]
 
-def make_cidrs(nets):
+def _make_cidrs(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list CIDR
     blocks"""
     return [IP(addr).make_net(mask) for addr, mask in nets]
 
-def dump_interfaces(idict):
+def _dump_interfaces(idict):
     """Prints a dict of parsed interface results info for use in debugging"""
     for name, info in idict.items():
         print '>>>', name
@@ -671,3 +836,53 @@ def dump_interfaces(idict):
         else:
             print 'might be shutdown'
         print
+
+class ShowClock(Commando):
+    """
+    A simple example that runs ``show clock`` and parses it to
+    ``datetime.datetime`` object.
+    """
+    commands = ['show clock']
+    vendors = ['cisco', 'brocade']
+
+    def _parse_datetime(self, datestr, fmt):
+        """
+        Given a date string and a format, try to parse and return
+        datetime.datetime object.
+        """
+        try:
+            return datetime.datetime.strptime(datestr, fmt)
+        except ValueError:
+            return datestr
+
+    def _store_datetime(self, results, device, fmt):
+        """
+        Parse and store a datetime
+        """
+        print 'received %r from %s' % (results, device)
+        mapped = self.map_results(self.commands, results)
+        for cmd, res in mapped.iteritems():
+            mapped[cmd] = self._parse_datetime(res, fmt)
+
+        self.store_results(device, mapped)
+
+    def from_cisco(self, results, device):
+        """Parse Cisco time"""
+        # => '16:18:21.763 GMT Thu Jun 28 2012\n'
+        fmt = '%H:%M:%S.%f %Z %a %b %d %Y\n'
+        self._store_datetime(results, device, fmt)
+
+    def from_brocade(self, results, device):
+        """
+        Parse Brocade time. Brocade switches and routers behave
+        differently...
+        """
+        if device.is_router():
+            # => '16:42:04 GMT+00 Thu Jun 28 2012\r\n'
+            fmt = '%H:%M:%S GMT+00 %a %b %d %Y\r\n'
+        elif device.is_switch():
+            # => 'rbridge-id 1: 2012-06-28 16:42:04 Etc/GMT+0\n'
+            results = [res.split(': ', 1)[-1] for res in results]
+            fmt = '%Y-%m-%d %H:%M:%S Etc/GMT+0\n'
+
+        self._store_datetime(results, device, fmt)

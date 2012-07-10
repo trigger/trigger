@@ -34,13 +34,13 @@ try:
 except ImportError:
     pass
 
-from trigger.acl.exceptions import *
+from trigger import exceptions
 
 # Exports
 __all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
            'literals', 'IP', 'do_protocol_lookup', 'ports', 'Policer',
            'PolicerGroup', 'make_nondefault_processor', 'ACLParser', 'strip_comments',
-           'ACLProcessor', 'default_processor', 'S', 'ParseError')
+           'ACLProcessor', 'default_processor', 'S')
 
 
 # Proceed at your own risk. It's kind of a mess from here on out!
@@ -551,8 +551,8 @@ def IP(arg):
     """Wrapper for IPy.IP to intercept exception text and make it more user-friendly."""
     try:
         return MyIPy(arg)
-    except Exception, e:
-        raise ValueError, 'Bad network block: %s' % arg
+    except Exception as e:
+        raise ValueError('Bad network block: %s' % arg)
 
 class IPold(IPy.IP):
     """Just like IPy.IP, but with corrected sorting.
@@ -649,7 +649,7 @@ class ACL(object):
     function. 
     """
     def __init__(self, name=None, terms=None, format=None, family=None):
-        check_name(name, ACLNameError, max_len=24)
+        check_name(name, exceptions.ACLNameError, max_len=24)
         self.name = name
         self.family = family
         self.format = format
@@ -686,7 +686,7 @@ class ACL(object):
             ``family inet { ...}`` section.
         """
         if self.name == None:
-            raise MissingACLNameError, 'JunOS format requires a name'
+            raise exceptions.MissingACLName('JunOS format requires a name')
 
         # Make sure we properly set 'family' so it's automatically used for
         # printing.
@@ -736,16 +736,16 @@ class ACL(object):
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
         if self.name == None:
-            raise MissingACLNameError, 'IOS format requires a name'
+            raise exceptions.MissingACLName('IOS format requires a name')
         try:
             x = int(self.name)
             if not (100 <= x <= 199 or 2000 <= x <= 2699):
-                raise BadACLNameError, 'IOS ACLs are 100-199 or 2000-2699'
+                raise exceptions.BadACLName('IOS ACLs are 100-199 or 2000-2699')
         except (TypeError, ValueError):
-            raise BadACLNameError, 'IOS format requires a number as name'
+            raise exceptions.BadACLName('IOS format requires a number as name')
         out = [c.output_ios() for c in self.comments]
         if self.policers:
-            raise VendorSupportLackingError, 'policers not supported in IOS'
+            raise exceptions.VendorSupportLacking('policers not supported in IOS')
         if replace:
             out.append('no access-list ' + self.name)
         prefix = 'access-list %s ' % self.name
@@ -788,10 +788,10 @@ class ACL(object):
         :param replace: If set the ACL is preceded by a ``no access-list`` line. 
         """
         if self.name == None:
-            raise MissingACLNameError, 'IOS format requires a name'
+            raise exceptions.MissingACLName('IOS format requires a name')
         out = [c.output_ios_named() for c in self.comments]
         if self.policers:
-            raise VendorSupportLackingError, 'policers not supported in IOS'
+            raise exceptions.VendorSupportLacking('policers not supported in IOS')
         if replace:
             out.append('no ip access-list extended ' + self.name)
         out.append('ip access-list extended %s' % self.name)
@@ -806,10 +806,10 @@ class ACL(object):
         :param replace: If set the ACL is preceded by a ``no ipv4 access-list`` line.
         """
         if self.name == None:
-            raise MissingACLNameError, 'IOS XR format requires a name'
+            raise exceptions.MissingACLName('IOS XR format requires a name')
         out = [c.output_iosxr() for c in self.comments]
         if self.policers:
-            raise VendorSupportLackingError, 'policers not supported in IOS'
+            raise exceptions.VendorSupportLacking('policers not supported in IOS')
         if replace:
             out.append('no ipv4 access-list ' + self.name)
         out.append('ipv4 access-list ' + self.name)
@@ -823,13 +823,13 @@ class ACL(object):
                 try:
                     counter = int(t.name)
                     if not 1 <= counter <= 2147483646:
-                        raise BadTermNameError, 'Term %d out of range' % counter
+                        raise exceptions.BadTermName('Term %d out of range' % counter)
                     line = t.output_iosxr()
                     if len(line) > 1:
-                        raise VendorSupportLackingError, 'one name per line'
+                        raise exceptions.VendorSupportLacking('one name per line')
                     out += [' ' + line[0]]
                 except ValueError:
-                    raise BadTermNameError, 'IOS XR requires numbered terms'
+                    raise exceptions.BadTermName('IOS XR requires numbered terms')
         return out
 
     def name_terms(self):
@@ -876,7 +876,7 @@ class Term(object):
         return self.__name
 
     def setname(self, name):
-        check_name(name, BadTermNameError)
+        check_name(name, exceptions.BadTermName)
         self.__name = name
 
     def delname(self):
@@ -894,7 +894,8 @@ class Term(object):
         if isinstance(action, str):
             action = (action,)
         if len(action) > 2:
-            raise ActionError, 'too many arguments to action "%s"' % str(action)
+            raise exceptions.ActionError('too many arguments to action "%s"' %
+                                         str(action))
         action = tuple(action)
         if action in (('accept',), ('discard',), ('reject',), ('next', 'term')):
             self.__action = action
@@ -904,15 +905,15 @@ class Term(object):
             self.__action = ('reject',)
         elif action[0] == 'reject':
             if action[1] not in icmp_reject_codes:
-                raise RejectCodeError, 'invalid rejection code ' + action[1]
+                raise exceptions.BadRejectCode('invalid rejection code ' + action[1])
             if action[1] == icmp_reject_codes[0]:
                 action = ('reject',)
             self.__action = action
         elif action[0] == 'routing-instance':
-            check_name(action[1], RoutingInstanceNameError)
+            check_name(action[1], exceptions.BadRoutingInstanceName)
             self.__action = action
         else:
-            raise UnknownActionNameError, 'unknown action "%s"' % str(action)
+            raise exceptions.UnknownActionName('unknown action "%s"' % str(action))
 
     def delaction(self):
         self.action = 'accept'
@@ -925,7 +926,7 @@ class Term(object):
         """
         try:
             self.action = action
-        except UnknownActionNameError:
+        except exceptions.UnknownActionName:
             if not isinstance(action, tuple):
                 self.modifiers[action] = None
             else:
@@ -945,7 +946,7 @@ class Term(object):
     def output_junos(self, *args, **kwargs):
         """Convert the term to JunOS format."""
         if self.name is None:
-            raise MissingTermNameError, 'JunOS requires terms to be named'
+            raise exceptions.MissingTermName('JunOS requires terms to be named')
         out = ['%sterm %s {' %
                 (self.inactive and 'inactive: ' or '', self.name)]
         out += ['    ' + c.output_junos() for c in self.comments if c]
@@ -965,8 +966,7 @@ class Term(object):
 
     def _ioslike(self, prefix=''):
         if self.inactive:
-            raise VendorSupportLackingError, \
-                  "inactive terms not supported by IOS"
+            raise exceptions.VendorSupportLacking("inactive terms not supported by IOS")
         action = ''
         if self.action == ('accept',):
             action = 'permit '
@@ -974,8 +974,7 @@ class Term(object):
         elif self.action in (('reject',), ('discard',)):
             action = 'deny '
         else:
-            raise VendorSupportLackingError, \
-                  '"%s" action not supported by IOS' % ' '.join(self.action)
+            raise VendorSupportLacking('"%s" action not supported by IOS' % ' '.join(self.action))
         suffix = ''
         for k, v in self.modifiers.iteritems():
             if k == 'syslog':
@@ -983,8 +982,7 @@ class Term(object):
             elif k == 'count':
                 pass        # counters are implicit in IOS
             else:
-                raise VendorSupportLackingError, \
-                      '"%s" modifier not supported by IOS' % k
+                raise exceptions.VendorSupportLacking('"%s" modifier not supported by IOS' % k)
         return [prefix + action + x + suffix for x in self.match.output_ios()]
 
     def output_ios(self, prefix=None, acl_name=None):
@@ -1037,28 +1035,29 @@ class Modifiers(MyDict):
         # Handle argument-less modifiers first.
         if key in ('log', 'sample', 'syslog', 'port-mirror'):
             if value not in (None, True):
-                raise ActionError, '"%s" action takes no argument' % key
+                raise exceptions.ActionError('"%s" action takes no argument' % key)
             super(Modifiers, self).__setitem__(key, None)
             return
         # Everything below requires an argument.
         if value is None:
-            raise ActionError, '"%s" action requires an argument' % key
+            raise exceptions.ActionError('"%s" action requires an argument' %
+                                         key)
         if key == 'count':
             # JunOS 7.3 docs say this cannot contain underscores and that
             # it must be 24 characters or less, but this appears to be false.
             # Doc bug filed 2006-02-09, doc-sw/68420.
-            check_name(value, CounterNameError, max_len=255)
+            check_name(value, exceptions.BadCounterName, max_len=255)
         elif key == 'forwarding-class':
-            check_name(value, ForwardingClassNameError)
+            check_name(value, exceptions.BadForwardingClassName)
         elif key == 'ipsec-sa':
-            check_name(value, IPSecSANameError)
+            check_name(value, exceptions.BadIPSecSAName)
         elif key == 'loss-priority':
             if value not in ('low', 'high'):
-                raise ActionError, '"loss-priority" must be "low" or "high"'
+                raise exceptions.ActionError('"loss-priority" must be "low" or "high"')
         elif key == 'policer':
-            check_name(value, PolicerNameError)
+            check_name(value, exceptions.BadPolicerName)
         else:
-            raise ActionError, 'invalid action: ' + str(key)
+            raise exceptions.ActionError('invalid action: ' + str(key))
         super(Modifiers, self).__setitem__(key, value)
 
     def output_junos(self):
@@ -1076,7 +1075,7 @@ class Policer(object):
     """
     def __init__(self, name, data):
         if not name:
-            raise ActionError, "Policer requres name"
+            raise exceptions.ActionError("Policer requres name")
         self.name = name
         self.exceedings = []
         self.actions    = []
@@ -1210,7 +1209,7 @@ def do_lookup(lookup_func, arg):
     try:
         return lookup_func(arg)
     except KeyError:
-        raise UnknownMatchArgError, 'match argument "%s" not known' % arg
+        raise exceptions.UnknownMatchArg('match argument "%s" not known' % arg)
 
 def do_protocol_lookup(arg):
     if isinstance(arg, tuple):
@@ -1240,8 +1239,8 @@ def check_range(values, min, max):
                 check_range([subvalue], min, max)
         except TypeError:
             if not min <= value <= max:
-                raise MatchArgRangeError('match arg %s must be between %d and %d' %
-                                         (str(value), min, max))
+                raise exceptions.BadMatchArgRange('match arg %s must be between %d and %d'
+                                                  % (str(value), min, max))
 
 
 # Ordering for JunOS match clauses.  AOL style rules:
@@ -1295,10 +1294,10 @@ class Matches(MyDict):
                    'esp-spi', 'forwarding-class', 'interface-group',
                    'precedence', 'source-mac-address', 'vlan-ether-type',
                    'fragment-flags', 'source-class', 'destination-class'):
-            raise NotImplementedError, 'match on %s not implemented' % key
+            raise NotImplementedError('match on %s not implemented' % key)
 
         if arg is None:
-            raise MatchError, 'match must have an argument'
+            raise exceptions.MatchError('match must have an argument')
 
         negated = False
         if key.endswith('-except'):
@@ -1339,7 +1338,7 @@ class Matches(MyDict):
         elif key in ('prefix-list', 'source-prefix-list',   
                      'destination-prefix-list'):
             for pl in arg:
-                check_name(pl, MatchError)
+                check_name(pl, exceptions.MatchError)
         elif key in tcp_flag_specials:
             # This cannot be the final form of how to represent tcp-flags.
             # Instead, we need to implement a real parser for it.
@@ -1354,7 +1353,7 @@ class Matches(MyDict):
         elif key in ('first-fragment', 'is-fragment'):
             arg = []
         else:
-            raise UnknownMatchTypeError, 'unknown match type "%s"' % key
+            raise exceptions.UnknownMatchType('unknown match type "%s"' % key)
 
         arg = RangeList(arg)
 
@@ -1486,14 +1485,13 @@ class Matches(MyDict):
                             destports.append(str(type))
             elif key == 'icmp-code':
                 if 'icmp-type' not in self:
-                    raise VendorSupportLackingError, 'need ICMP code w/type'
+                    raise exceptions.VendorSupportLacking('need ICMP code w/type')
             elif key == 'tcp-flags':
                 if arg != [tcp_flag_specials['tcp-established']]:
-                    raise VendorSupportLackingError, \
-                          'IOS supports only "tcp-flags established"'
+                    raise exceptions.VendorSupportLacking('IOS supports only "tcp-flags established"')
                 trailers += ['established']
             else:
-                raise VendorSupportLackingError, '"%s" not in IOS' % key
+                raise exceptions.VendorSupportLacking('"%s" not in IOS' % key)
         if not protos:
             protos = ['ip']
         if not sources:
@@ -1564,7 +1562,7 @@ def update(d, **kwargs):
     # ignored.  This led to an outage on 2006-10-11.
     for key in kwargs.iterkeys():
         if key in d:
-            raise ParseError('duplicate %s' % key)
+            raise exceptions.ParseError('duplicate %s' % key)
     d.update(kwargs)
     return d
 
@@ -1675,7 +1673,7 @@ def handle_ios_acl(rows):
             elif k == 'name':
                 if acl.name:
                     if v != acl.name:
-                        raise ACLNameError("Name '%s' does not match ACL '%s'" % (v, acl.name))
+                        raise exceptions.ACLNameError("Name '%s' does not match ACL '%s'" % (v, acl.name))
                 else:
                     acl.name = v
             elif k == 'term':
@@ -1898,7 +1896,7 @@ def handle_junos_acl(x):
             #a.policers[elt.name] = elt
             a.policers.append(elt)
         else:
-            raise RuntimeError, 'bad object: %s' % repr(elt)
+            raise RuntimeError('bad object: %s' % repr(elt))
     return a
 
 def handle_junos_family_acl(x):
@@ -1922,7 +1920,7 @@ def handle_junos_policers(x):
         if isinstance(elt, Policer):
             p.policers.append(elt)
         else:
-            raise RuntimeError,'bad object: %s in policer' % repr(elt)
+            raise RuntimeError('bad object: %s in policer' % repr(elt))
     return p
 
 def handle_junos_term(d):
@@ -2089,4 +2087,4 @@ def parse(input_data):
     else:
         line = data[:nextchar].count('\n') + 1
         column = len(data[data[nextchar].rfind('\n'):nextchar]) + 1
-        raise ParseError('Could not match syntax.  Please report as a bug.', line, column)
+        raise exceptions.ParseError('Could not match syntax.  Please report as a bug.', line, column)

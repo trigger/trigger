@@ -12,12 +12,11 @@ vendor syntax.
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2010-2011, AOL Inc.'
+__copyright__ = 'Copyright 2010-2012, AOL Inc.'
 
 import os
 from trigger.conf import settings
 from trigger.acl.parser import *
-#from trigger.acl import parser
 
 __all__ = ['acl_exists', 'parse', 'ACL']
 #__all__.extend(list(parser.__all__)) # Include parser.__all__ (duh!)

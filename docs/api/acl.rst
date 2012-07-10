@@ -22,12 +22,6 @@
 .. automodule:: trigger.acl.parser
    :members:
 
-:mod:`trigger.acl.exceptions`
------------------------------
-
-.. automodule:: trigger.acl.exceptions
-   :members:
-
 :mod:`trigger.acl.queue`
 ------------------------
 

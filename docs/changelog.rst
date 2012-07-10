@@ -2,6 +2,148 @@
 Changelog
 =========
 
+1.2
+===
+
+- :feature:`23` Commando API overhauled and support added for RANCID
+
+  - RANCID is now officially supported as a source for network device
+    metadata. A new RANCID compatibility module has been added at
+    `~trigger.rancid`, with support for either single or multiple instance
+    configurations. Multiple instances support can be toggled by setting
+    :setting:`RANCID_RECURSE_SUBDIRS`` to ``True``.
+
+  - The following changes have been made to `~trigger.netdevices`:
+
+    - `~trigger.netdevices.NetDevices` can now import from RANCID
+    - A new `~trigger.netdevices.Vendor` type has been added to
+      `~trigger.netdevices` to store canonical vendor names as determined by
+      the new setting :setting:`VENDOR_MAP`.
+    - When `~trigger.netdevice.NetDevice` objects are created, the manufacturer
+      attribute is mapped to a dynamic vendor attribute. This is intended to
+      normalize the way that Trigger identifies vendors internally by a single
+      lower-cased word.
+    - All `~trigger.netdevices.NetDevice` objects now have a ``vendor``
+      attribute with their canonical `~trigger.netdevices.Vendor` object
+      attached to it.
+    - If the ``deviceType`` attribute is not set, it is determined
+      automatically based on the ``vendor`` attribute. The default types for
+      each vendor can be customized using :setting:`DEFAULT_TYPES`. If a vendor
+      is not specified witihin :setting:`DEFAULT_TYPES`,
+      :setting:`FALLBACK_TYPE`. will be used.
+    - All logical comparisons that onced used the hard-coded value of the
+      ``manufacturer`` attribute of a device now instead compare against the
+      ``vendor`` attribute.
+    - You may now tell NetDevices not to fetch acls from AclsDB when
+      instantiate you may also do the same for individual NetDevice objects
+      that you manually create
+
+  - The following changes have been made to `~trigger.cmds`:
+
+    - The `~trigger.cmds.Commando` class been completely redesigned to reduce
+      boilerplate and simplify creation of new command adapters. This is
+      leveraging the changes to `~trigger.netdevice.NetDevice` objects, where
+      the vendor name can be expected to always be normalized to a single,
+      lower-cased word. Defining commands to send to devices is as simple as
+      definiing a ``to_{vendor}`` method, and parsing return results as simple
+      as ``from_{vendor}``.
+    - All dynamic method lookups are using the normalized vendor name (e.g.
+      cisco, juniper).
+    - Base parse/generate lookup can be disabled explicitly in
+      `~trigger.cmds.Commando` subclasses or as an argument to the constructor.
+    - `~trigger.cmds.NetACLInfo` adapted to use Commando 2.0
+
+  - The following changes have been made to Trigger's exception handling
+
+    - All exceptions moved to `~trigger.exceptions` and given docstrings
+    - ``trigger.acl.exceptions`` has been removed
+    - All calls to exceptions updated to new-style exceptions
+
+  - A new -v option has been added to ``bin/netdev`` to support vendor lookups
+
+- :feature:`4` Support for SSH auto-detection and pty/async improvements:
+
+  - The following changes have been made to `~trigger.twister`:
+
+    - Detection of remotely closed SSH connections so ``bin/gong`` users can be
+      properly notified (e.g. ssh_exchange_identification errors)
+    - New `~trigger.twister.execute` function to automatically choose the best
+      ``execute_`` function for a given `~trigger.netdevices.NetDevice` object,
+      and is now attached to all `~trigger.netdevices.NetDevice` objects
+    - `~trigger.twister.execute_ioslike` now determines whether to use SSH or
+      Telnet automatically
+    - All pty connection logic moved out of ``bin/gong`` into
+      `~trigger.twister` and is exposed as the `~trigger.twister.connect`
+      function and also attached to all `~trigger.netdevices.NetDevice` objects
+    - Interactive sessions may now be optionally logged to a file-like object by
+      passing the log_to argument to the `~trigger.twister.Interactor`
+      constructor
+    - `~trigger.twister.execute_junoscript` now using
+      `~trigger.twister.execute_generic_ssh`
+    - Command interval added to Junoscript channels for consistency
+    - Global `~trigger.netdevices.NetDevices` import removed from twister;
+      moved to only occur when a telnet channel is created
+
+  - The following changes have been made to `~trigger.netdevices`:
+
+    - All `~trigger.netdevices.NetDevice` objects now have a
+      `~trigger.twister..execute` method to perform async interaction
+    - The `~trigger.twister.connect` function is now automatically attached to
+      every `~trigger.netdevices.NetDevice` object; to get a pty it's as simple
+      as ``dev.connect()``.
+    - New helper methods added to `~trigger.netdevices.NetDevice` objects:
+
+      - SSH functionality methods: `~trigger.netdevices.NetDevice.has_ssh`
+        (port connection test), `~trigger.netdevices.NetDevice.can_ssh_async`
+        (device supports async), `~trigger.netdevices.NetDevice.can_ssh_pty`
+        (device supports pty)
+      - `~trigger.netdevices.NetDevice.is_ioslike` to test if a device is
+        IOS-like as specified by ``settings.IOSLIKE_VENDORS``
+      - `~trigger.netdevices.NetDevice.is_netscreen` to test if a device is a
+        NetScreen firewall
+      - `~trigger.netdevices.NetDevice.is_reachable` to test if a device
+        responds to a ping
+
+  - The following changes have been made to `~trigger.conf.settings`:
+
+    - A mapping of officially supported platforms has been defined at
+      ``settings.SUPPORTED_PLATFORMS``
+    - ``settings.VALID_VENDORS`` has been renamed to ``settings.SUPPORTED_VENDORS``
+    - A mapping of officially supported device types has been defined at
+      ``settings.SUPPORTED_TYPES``
+    - You may now disable telnet fallback by toggling ``settings.TELNET_ENABLED``
+    - You may now disable SSH for pty or async by vendor/type using
+      ``settings.SSH_PTY_DISABLED`` and ``settings.SSH_ASYNC_DISABLED``
+      respectively
+    - ``settings.SSH_TYPES`` has been removed as it is no longer needed
+
+  - `~trigger.cmds.Commando` experimentally using the new
+    ``NetDevice.execute()`` method
+  - Two new helper functions added to `~trigger.utils.cli`:
+    `~trigger.utils.cli.setup_tty_for_pty` and
+    `~trigger.utils.cli.update_password_and_reconnect`, which modularize
+    functionality that was in bin/gong that didn't seem to fit anywhere else
+
+- :feature:`21` The following changes have been made to support A10 hardware
+  and to enhance handling of SSH channels:
+
+  - Added a new generic SSH channel. The NetScreen and A10 channels are based
+    from this. Further abstraction needed to roll NetScaler channel into this
+    as well.
+  - Added a new `~trigger.twister.execute_generic_ssh` factory function.
+  - Refactored `~trigger.twister.execute_netscreen` to use `~trigger.twister.execute_generic_ssh`
+  - Added a new `~trigger.twister.execute_ioslike_ssh` factory function
+    utilizing the generic SSH channel to support SSH on IOS-like devices
+    (Brocade, Cisco, Arista, A10, etc.). Works like a charm except for the
+    Brocade VDX.
+  - The `~trigger.cmds.Commando` was updated to support A10, NetScreen. Brocade,
+    Arista changed to use SSH vs. telnet.
+  - All prompt-matching patterns moved to top of `trigger.twister` as constants
+  - A10 added to ``settings.IOSLIKE_VENDORS````
+
+- :feature:`24` ``bin/gong`` will now display the reason when it fails to
+  connect to a device.
+
 1.1
 ===
 
@@ -44,7 +186,7 @@ Changelog
 - :feature:`5` Added ability for gong --oob to lookup devices by partial
   hostnames using :func:`~trigger.netdevices.device_match`.
 - :bug:`6` The `get_firewall_db_conn()` function was moved out of `settings.py`
-  and into `~trigger.acl.queue.Queue` where it belongs. 
+  and into `~trigger.acl.queue.Queue` where it belongs.
 - :feature:`7` Updated :func:`~trigger.twister.has_ioslike_error` to support
   Brocade VDX errors.
 
@@ -82,7 +224,7 @@ Changelog
     with attributes.
   - Failed logins via telnet/ssh will now raise a LoginFailure exception that
     can be handled by client applications (such as gong)
- 
+
 - bin/gong now detects login failures and prompts users to update their cached
   password.
 
@@ -93,7 +235,7 @@ Changelog
 - Explicit imports from trigger.acl and a little docstring cleanup in bin/optimizer
 - trigger.acl.autoacl.autoacl() now takes optional explicit_acls as 2nd
   argument, a set of ACL names, so that we can reference explicit_acls within
-  autoacl() implicit ACL logic, but we don't have to rely on the internals. 
+  autoacl() implicit ACL logic, but we don't have to rely on the internals.
 - trigger.acl.db.AclsDB.get_acl_set() modified to populate explicit_acls before
   implicit_acls. autoacl() is now called with these explicit_acls as the 2nd
   argument.
@@ -119,7 +261,7 @@ Changelog
 1.0.0.50
 ========
 
-- New NetDevices device metadata source file support for JSON, XML, or SQLite3 
+- New NetDevices device metadata source file support for JSON, XML, or SQLite3
 - Companion changes made to conf/trigger_settings.py
 - trigger.netdevice.NetDevice objects can now be created on their own and have
   the minimum set of attributes defaulted to None upon instantiation
@@ -162,15 +304,15 @@ Legacy Versions
 - Added _cleanup() method to acl.parser.RangeList objects to allow for addition
   of lists of mixed lists/tuples/digits and still account for more complex
   types such as Protocol objects
-- Performance tweak to Rangelist._expand() method for calculating ranges. 
+- Performance tweak to Rangelist._expand() method for calculating ranges.
 
-- Added parsing support for remark statements in IOS numbered ACLs 
+- Added parsing support for remark statements in IOS numbered ACLs
 
 1.5.9 - 2011-08-17
 ------------------
 
 - Tons and tons of documentation added into the docs folder including usage,
-  API, and setup/install documentation. 
+  API, and setup/install documentation.
 - Tons of code docstrings added or clarified across the entire package.
 - Added install_requires to setup() in setup.py; removed bdist_hcm install command.
 - The following changes have been made to trigger.twister:
@@ -204,7 +346,7 @@ Legacy Versions
   engineer data and CM ticket creation into trigger_settings.py.
 - External release sanitization:
 
-  - Template for trigger_settings.py updated and internal references removed. 
+  - Template for trigger_settings.py updated and internal references removed.
   - Sanitized autoacl.py and added generic usage examples.
 
 - The following items have been moved from bin/load_acl into trigger.utils.cli:
@@ -219,7 +361,7 @@ Legacy Versions
 1.5.8 - 20011-06-08
 -------------------
 
-- trigger.acl.parser fully supports Brocade ACLs now, including the ability to strip comments and properly 
+- trigger.acl.parser fully supports Brocade ACLs now, including the ability to strip comments and properly
   include the "ip rebind-receive-acl" or "ip rebind-acl" commands.
 - trigger.acl.Term objects have a new output_ios_brocade() method to support Brocade-special ACLs
 - bin/load_acl will automatically strip comments from Brocade ACLs
@@ -231,14 +373,14 @@ Legacy Versions
 - New NetDevices.match() method allows for case-insensitive queries for devices.
 - NetDevices.search() now accepts optional field argument but defaults to nodeName.
 - New trigger.acl.ACL.strip_comments() method ... strips... comments... from ACL object.
-- bin/fang: 
+- bin/fang:
 
   - Now accepts hostnames as arguments
   - Now *really* properly parses hops on Brocade devices.
 
-- bin/load_acl: 
+- bin/load_acl:
 
-  - Now fully supports Brocade devices. 
+  - Now fully supports Brocade devices.
   - Strips comments from Brocade ACLs prior to staging and load.
   - Now displays temporary log file location to user.
 
@@ -248,9 +390,9 @@ Legacy Versions
 ------------------
 
 - bin/acl: corrected excpetion catching, changes option help text and made -a and -r append
-- bin/gnng, bin/netdev: Added -N flag to toggle production_only flag to NetDevices 
+- bin/gnng, bin/netdev: Added -N flag to toggle production_only flag to NetDevices
 - trigger.cmds/trigger.twister: Added support for 'BROCADE' vendor (it's ioslike!)
-- trigger.cmds.Commando: All generate_* methods are now passed a device object as the first argument 
+- trigger.cmds.Commando: All generate_* methods are now passed a device object as the first argument
   to allow for better dynamic handling of commands to execute
 - bin/fang: Can now properly parse hops on Brocade devices.
 
@@ -263,10 +405,10 @@ Legacy Versions
 - trigger.tacacsrc: Fixed bogus AssertionError for bad .tacacsrc file. Clarified error.
 - trigger.twister: Fixed bug in Dell password prompt matching in execute_ioslike()
 - bin/fang: Increased default timeout to 30 seconds when collecting devices.
-- trigger.cmds.Commando: 
+- trigger.cmds.Commando:
 
-  - Replaced all '__foo()' with '_foo()' 
-  - Removed Commando constructor args that are not used at this time 
+  - Replaced all '__foo()' with '_foo()'
+  - Removed Commando constructor args that are not used at this time
   - Added production_only flag to Commando constructor
 
 1.5.4 - 2011-03-09
@@ -287,7 +429,7 @@ Legacy Versions
 - gong (go) will now connect to non-prod devices and throw a warning to the
   user
 - gong can connect to a device through oob by passing the -o or --oob option.
-- acl will make any device name lower case before associating an acl with it.  
+- acl will make any device name lower case before associating an acl with it.
 
 1.5.2 - 2010-11-03
 ------------------
@@ -315,12 +457,12 @@ Legacy Versions
 
   - Slight optimization to NetDevice attribute population
   - Added new fields to NetDevice.dump() output
-  - All incoming fields from netdevices.xml now normalized 
+  - All incoming fields from netdevices.xml now normalized
 
-- bin/netdev: 
+- bin/netdev:
 
   - added search option for Owning Team (-o)
-  - search opt for OnCall Team moved to -O 
+  - search opt for OnCall Team moved to -O
   - search opt for Owning Org (cost center) moved to -C
   - added search option for Budget Name (-B)
   - refactored search argument parsing code
@@ -338,7 +480,7 @@ Legacy Versions
 ------------------
 
 - acl.db: renamed ExplicitACL to AclsDB, all references adjusted
-- process_bulk_loads() moved to trigger.acl.tools 
+- process_bulk_loads() moved to trigger.acl.tools
 - get_bulk_acls() moved to trigger.acl.tdb
 - get_all_acls(), get_netdevices(), populate_bulk_acls() added to trigger.acl.db
 - load_acl: now imports bulk_acl functions from trigger.acl.tools
@@ -346,11 +488,11 @@ Legacy Versions
 - load_acl: --bouncy now disables bulk acl thresholding
 - load_acl: now displays CM ticket # upon successful completion
 - process_bulk_loads() now uses device.bulk_acl associations, better performance
-- device_match() now sorts and provides correct choices 
+- device_match() now sorts and provides correct choices
 - Juniper filter-chain support added to trigger.cmds.NetACLInfo
 - gnng updated to use NetACLinfo
 - Added proceed() utility function trigger.utils.cli
-- Several ACL manipulation functions added to trigger.acl.tools:  
+- Several ACL manipulation functions added to trigger.acl.tools:
 
   - get_comment_matches() - returns ACL terms comments matching a pattern
   - update_expirations() - updates expiration date for listed ACL terms
@@ -365,7 +507,7 @@ Legacy Versions
 
 - find_access: Corrected missing import for IPy
 - tacacsrc.py: Corrected bug with incorrect username association to .tacacsrc in sudo/su
-  use-cases (such as with cron) where login uid differs from current uid. 
+  use-cases (such as with cron) where login uid differs from current uid.
 
 1.4.9 - 2010-04-26
 ------------------
@@ -391,7 +533,7 @@ Legacy Versions
 - aclscript.py moved to trigger.acl.tools.py
 - netdevices.py now using trigger.acl.db instead of flat files
 - added trigger.netdevices.NetDevices.all() as shortcut to itervalues()
-- You may now use gong (go) to connect to non-TACACS devices, such as OOB or 
+- You may now use gong (go) to connect to non-TACACS devices, such as OOB or
   unsupported devices using password authentication.
 - The ACL parser has been reorganized slightly to make future modifications
   more streamlined.

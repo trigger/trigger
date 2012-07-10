@@ -1,4 +1,4 @@
-#coding=utf-8
+# -*- coding: utf-8 -*-
 
 """
 Parses and manipulates firewall policy for Juniper NetScreen firewall devices.
@@ -9,64 +9,23 @@ other.
 __author__ = 'Jathan McCollum, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2007-2011, AOL Inc.'
-__version__ = '1.2.0'
+__copyright__ = 'Copyright 2007-2012, AOL Inc.'
+__version__ = '1.2.1'
 
 import IPy
-from trigger.acl.parser import Term, Protocol, check_range, do_port_lookup, \
-    literals, IP, do_protocol_lookup, ports, make_nondefault_processor, \
-    ACLParser, strip_comments, ACLProcessor, default_processor, S, ParseError
+from trigger.acl.parser import (Protocol, check_range, literals, IP,
+                                do_protocol_lookup, make_nondefault_processor,
+                                ACLParser, ACLProcessor, default_processor, S)
 from trigger.acl.tools import create_trigger_term
+from trigger import exceptions
+
 
 # TODO (jathan): Implement __all__
-
-
-# Exceptions
-class NetScreenError(Exception): pass
-class NetScreenParseError(NetScreenError): pass
-
-# Functions
-def concatenate_grp(x):
-    """Used by NetScreen class when grouping policy members."""
-    ret = {}
-    for entry in x:
-        for key,val in entry.iteritems():
-            if ret.has_key(key):
-                ret[key].append(val)
-            else:
-                ret[key] = [val]
-    return ret
-
+__all__ = ('NSRawPolicy', 'NSRawGroup', 'NetScreen', 'NSGroup',
+           'NSServiceBook', 'NSAddressBook', 'NSAddress', 'NSService',
+           'NSPolicy')
 
 # Classes
-class NSRawPolicy(object):
-    """
-    Container for policy definitions.
-    """
-    def __init__(self, data, isglobal=0):
-        self.isglobal = isglobal
-        self.data = {}
-
-        for entry in data:
-            for key,val in entry.iteritems():
-                self.data[key] = val
-
-class NSRawGroup(object):
-    """
-    Container for group definitions.
-    """
-    def __init__(self, data):
-        if data[0] == 'address' and len(data) == 3:
-            data.append(None)
-        if data[0] == 'service' and len(data) == 2:
-            data.append(None)
-
-        self.data = data
-    def __iter__(self):
-        return self.data.__iter__()
-    def __len__(self):
-        return self.data.__len__()
-
 class NetScreen(object):
     """
     Parses and generates NetScreen firewall policy.
@@ -148,7 +107,7 @@ class NetScreen(object):
                                 lambda x: {'global':1}),
             S('policy_set_id'):     ('"set", ws, src_address / service_short / dst_address'),
             # the thing inside a policy set id 0 stuff.
-            S('policy_set_id_grp'): ('(policy_set_id, ws?)+, "exit", ws', concatenate_grp),
+            S('policy_set_id_grp'): ('(policy_set_id, ws?)+, "exit", ws', self.concatenate_grp),
             S('policy_id'):        ('"id", ws, digits',
                                 lambda x: {'id':int(x[0])}),
             'policy_id_null':  ('"id", ws, digits, ws, "exit"', lambda x: {}),
@@ -193,7 +152,18 @@ class NetScreen(object):
             line = string[:nextchar].count('\n') + 1
             column = len(string[string[nextchar].rfind('\n'):nextchar]) + 2
             print "Error at: ", string[nextchar:]
-            raise ParseError('Could not match syntax. Please report as a bug.', line, column)
+            raise exceptions.ParseError('Could not match syntax. Please report as a bug.', line, column)
+
+    def concatenate_grp(self, x):
+        """Used by NetScreen class when grouping policy members."""
+        ret = {}
+        for entry in x:
+            for key, val in entry.iteritems():
+                if key in ret:
+                    ret[key].append(val)
+                else:
+                    ret[key] = [val]
+        return ret
 
     def netmask2cidr(self, ipstr):
         """Converts dotted-quad netmask to cidr notation"""
@@ -314,7 +284,7 @@ class NetScreen(object):
                         if t is None:
                             msg = "No address entry: %s, zone: %s, policy: %s" \
                                   % (entry, found.source_zone, found.id)
-                            raise NetScreenParseError(msg)
+                            raise exceptions.NetScreenParseError(msg)
 
                         if (t.zone and found.source_zone) and t.zone != found.source_zone:
                             raise "%s has a zone of %s, while the source zone" \
@@ -327,7 +297,7 @@ class NetScreen(object):
                         if t is None:
                             msg = "No address entry: %s, zone: %s, policy: %s" \
                                   % (entry, found.destination_zone, found.id)
-                            raise NetScreenParseError(msg)
+                            raise exceptions.NetScreenParseError(msg)
 
                         if (t.zone and found.destination_zone) and t.zone != found.destination_zone:
                             raise "%s has a zone of %s, while the destination zone" \
@@ -362,8 +332,24 @@ class NetScreen(object):
                 ret.append(term)
         return ret
 
+############################
+# Policy/Service/Group stuff
+############################
+class NSRawGroup(object):
+    """
+    Container for group definitions.
+    """
+    def __init__(self, data):
+        if data[0] == 'address' and len(data) == 3:
+            data.append(None)
+        if data[0] == 'service' and len(data) == 2:
+            data.append(None)
 
-#### policy/service/group stuff
+        self.data = data
+    def __iter__(self):
+        return self.data.__iter__()
+    def __len__(self):
+        return self.data.__len__()
 
 class NSGroup(NetScreen):
     """
@@ -446,8 +432,8 @@ class NSServiceBook(NetScreen):
         service.set_protocol('tcp')
         print service.output()
     """
-    def __init__(self, entries=[]):
-        self.entries = []
+    def __init__(self, entries=None):
+        self.entries = entries or []
         if entries:
             self.entries = entries
 
@@ -605,11 +591,9 @@ class NSAddress(NetScreen):
         return [self.addr]
 
     def output_crap(self):
-        return "[(Z:%s)%s]"%(self.zone,self.addr.strNormal())
+        return "[(Z:%s)%s]" % (self.zone, self.addr.strNormal())
+
     def output(self):
-        #return ['set address "%s" "%s" %s %s' % (self.zone,
-        #    self.name, self.addr.strNormal(0),
-        #    self.addr.netmask())]
         tmpl = 'set address "%s" "%s" %s %s %s'
         output = tmpl % (self.zone, self.name, self.addr.strNormal(0),
                           self.addr.netmask(), self.comment)
@@ -620,7 +604,7 @@ class NSService(NetScreen):
     Container for individual service items.
     """
     def __init__(self, name=None, protocol=None, source_port=(1,65535),
-         destination_port=(1,65535), timeout=0, predefined=False):
+                 destination_port=(1,65535), timeout=0, predefined=False):
         self.protocol         = protocol
         self.source_port      = source_port
         self.destination_port = destination_port
@@ -703,18 +687,31 @@ class NSService(NetScreen):
             ret += ' timeout %d' % (self.timeout)
         return [ret]
 
+class NSRawPolicy(object):
+    """
+    Container for policy definitions.
+    """
+    def __init__(self, data, isglobal=0):
+        self.isglobal = isglobal
+        self.data = {}
+
+        for entry in data:
+            for key,val in entry.iteritems():
+                self.data[key] = val
+
 class NSPolicy(NetScreen):
     """
     Container for individual policy definitions.
     """
     def __init__(self, name=None, address_book=NSAddressBook(),
-      service_book=NSServiceBook(), address_groups=[],
-      service_groups=[], source_zone="Untrust",
-      destination_zone="Trust",id=0, action='permit', isglobal=False):
+                 service_book=NSServiceBook(), address_groups=None,
+                 service_groups=None, source_zone="Untrust",
+                 destination_zone="Trust", id=0, action='permit',
+                 isglobal=False):
         self.service_book     = service_book
         self.address_book     = address_book
-        self.service_groups   = service_groups
-        self.address_groups   = address_groups
+        self.service_groups   = service_groups or []
+        self.address_groups   = address_groups or []
         self.source_zone      = source_zone
         self.destination_zone = destination_zone
         self.source_addresses      = []

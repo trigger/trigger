@@ -2,7 +2,7 @@
 =============================================================
 
 .. automodule:: trigger.netdevices
-   :members: device_match, NetDevice
+   :members: device_match, NetDevice, Vendor
 
 .. autoclass:: NetDevices
     :members: _actual

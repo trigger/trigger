@@ -270,7 +270,7 @@ class Tacacsrc(object):
             if any((line.startswith('#'), line == '')):
                 log.msg('skipping %r' % line, debug=True)
                 continue
-            log.msg('parsing %r' % line, debug=True)
+            #log.msg('parsing %r' % line, debug=True)
 
             if line.count(' = ') > 1:
                 raise CouldNotParse("Malformed line %r at line %s" % (line, lineno))

@@ -55,8 +55,8 @@ except ImportError:
         :param explicit_acls: A set containing names of ACLs. Default: set()
 
         >>> dev = nd.find('test1-abc')
-        >>> dev.manufacturer
-        JUNIPER
+        >>> dev.vendor
+        <Vendor: Juniper>
         >>> autoacl(dev)
         set(['juniper-router-protect', 'juniper-router.policer'])
 

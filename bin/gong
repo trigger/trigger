@@ -14,24 +14,13 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '1.4'
+__version__ = '2.0'
 
 from optparse import OptionParser
 import os
 import sys
-import tty
-from twisted.internet import reactor
 from twisted.python import log
-from trigger.conf import settings
-from trigger.netdevices import NetDevices, device_match
-from trigger.twister import pty_connect, Interactor, LoginFailure
-from trigger.utils.cli import yesno
-from trigger import tacacsrc, gorc
-
-def stop_reactor():
-    """Stop the reactor if it's already running."""
-    if reactor.running:
-        reactor.stop()
+from trigger.netdevices import device_match
 
 def parse_args(argv):
     parser = OptionParser(usage='%prog [options] [device]', description='''\
@@ -58,13 +47,6 @@ def connect_to_oob(dev):
     print 'Connecting you now...'
     os.system(tn)
 
-login_failed = None
-def handle_login_failure(failure):
-    """An errback to try detect a login failure."""
-    global login_failed
-    if failure.type == LoginFailure:
-        login_failed = True
-
 def main():
     global opts
     opts, args = parse_args(sys.argv)
@@ -75,63 +57,20 @@ def main():
     # Exception handling is done in device_match, returns None if no match.
     dev = device_match(args[1].lower(), production_only=False)
     if dev is None:
-        sys.exit(2)
+        return 2
 
     if dev.adminStatus != 'PRODUCTION':
         print 'WARNING: You are connecting to a non-production device.'
 
     if opts.oob:
         connect_to_oob(dev)
-        sys.exit(0)
+        return 0
 
-    # Need to pass ^C through to the router so we can abort traceroute, etc.
-    print 'Connecting to %s.  Use ^X to exit.' % dev
-
-    # Fetch the initial commands for the device
-    init_commands = gorc.get_init_commands(dev.manufacturer)
-
-    try:
-        d = pty_connect(dev, Interactor(), init_commands=init_commands)
-        d.addErrback(handle_login_failure)
-        d.addErrback(log.err)
-        d.addCallback(lambda x: stop_reactor())
-    except AttributeError, err:
-        sys.stderr.write('Could not connect to %s.\n' % dev)
-        sys.exit(2)
-
-    # Preserve original tty settings
-    stdin_fileno = sys.stdin.fileno()
-    old_ttyattr = tty.tcgetattr(stdin_fileno)
-
-    try:
-        # Enter raw mode on the local tty.
-        tty.setraw(stdin_fileno)
-        raw_ta = tty.tcgetattr(stdin_fileno)
-        raw_ta[tty.LFLAG] |= tty.ISIG
-        raw_ta[tty.OFLAG] |= tty.OPOST | tty.ONLCR
-        raw_ta[tty.CC][tty.VINTR] = '\x18'  # ^X is the new ^C
-        raw_ta[tty.CC][tty.VSUSP] = 0       # disable ^Z
-        tty.tcsetattr(stdin_fileno, tty.TCSANOW, raw_ta)
-
-        reactor.run()
-
-    finally:
-        # Restore original tty settings
-        tty.tcsetattr(stdin_fileno, tty.TCSANOW, old_ttyattr)
-
-    # If there is a login failure stop the reactor so we can take raw_input(),
-    # ask the user if they, awant to update their cached credentials, and
-    # prompt them to connect.
-    if login_failed:
-        stop_reactor()
-        if yesno('Login failed, would you like to update your password?', default=True):
-            tacacsrc.update_credentials(dev.nodeName)
-            if yesno('\nReconnect to %s?' % dev, default=True):
-                # Replaces the current process w/ same pid
-                os.execl(sys.executable, sys.executable, *sys.argv)
-        print 'BYE'
+    # Connect to the device... and make sure to capture its exit code
+    retval = dev.connect()
 
     print '\n' # Return cursor to beginning of line
+    return retval
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

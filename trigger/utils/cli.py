@@ -64,7 +64,7 @@ def yesno(prompt, default=False, autoyes=False):
         return default
 
 def proceed():
-    """Present a proceed prompt. Return True if Y, else False."""
+    """Present a proceed prompt. Return ``True`` if Y, else ``False``"""
     return raw_input('\nDo you wish to proceed? [y/N] ').lower().startswith('y')
 
 def get_terminal_width():
@@ -82,7 +82,12 @@ def get_terminal_size():
     return rows, cols
 
 def print_severed_head():
-    '''Thanks to Jeff Sullivan for this best error message ever.'''
+    """
+    Prints a demon holding a severed head. Best used when things go wrong, like
+    production-impacting network outages caused by fat-fingered ACL changes.
+    
+    Thanks to Jeff Sullivan for this best error message ever.
+    """
     print r"""
 
                                                                 _( (~\
@@ -114,6 +119,8 @@ def pretty_time(t):
     Print a pretty version of timestamp, including timezone info. Expects
     the incoming datetime object to have proper tzinfo.
 
+    :param t: A ``datetime.datetime`` object
+
     >>> import datetime
     >>> from pytz import timezone
     >>> localzone = timezone('US/Eastern')
@@ -143,23 +150,87 @@ def pretty_time(t):
         return t.strftime('%Y-%m-%d %H:%M %Z')
 
 def min_sec(secs):
-    """Takes epoch timestamp and returns string of minutes:seconds."""
+    """
+    Takes an epoch timestamp and returns string of minutes:seconds.
+
+    :param secs: Timestamp (in seconds)
+
+    >>> import time 
+    >>> start = time.time()  # Wait a few seconds
+    >>> finish = time.time()
+    >>> min_sec(finish - start)
+    '0:11'
+    """
     secs = int(secs)
     return '%d:%02d' % (secs / 60, secs % 60)
+
+def setup_tty_for_pty(func):
+    """
+    Sets up tty for raw mode while retaining original tty settings and then
+    starts the reactor to connect to the pty. Upon exiting pty, restores
+    original tty settings.
+
+    :param func:
+        The callable to run after the tty is ready, such as ``reactor.run``
+    """
+    # Preserve original tty settings
+    stdin_fileno = sys.stdin.fileno()
+    old_ttyattr = tty.tcgetattr(stdin_fileno)
+
+    try:
+        # Enter raw mode on the local tty.
+        tty.setraw(stdin_fileno)
+        raw_ta = tty.tcgetattr(stdin_fileno)
+        raw_ta[tty.LFLAG] |= tty.ISIG
+        raw_ta[tty.OFLAG] |= tty.OPOST | tty.ONLCR
+
+        # Pass ^C through so we can abort traceroute, etc.
+        raw_ta[tty.CC][tty.VINTR] = '\x18'  # ^X is the new ^C
+
+        # Ctrl-Z is used by a lot of vendors to exit config mode
+        raw_ta[tty.CC][tty.VSUSP] = 0       # disable ^Z
+        tty.tcsetattr(stdin_fileno, tty.TCSANOW, raw_ta)
+
+        # Execute our callable here
+        func()
+
+    finally:
+        # Restore original tty settings
+        tty.tcsetattr(stdin_fileno, tty.TCSANOW, old_ttyattr)
+
+def update_password_and_reconnect(hostname):
+    """
+    Prompts the user to update their password and reconnect to the target
+    device
+
+    :param hostname: Hostname of the device to connect to.
+    """
+    if yesno('Authentication failed, would you like to update your password?',
+             default=True):
+        from trigger import tacacsrc
+        tacacsrc.update_credentials(hostname)
+        if yesno('\nReconnect to %s?' % hostname, default=True):
+            # Replaces the current process w/ same pid
+            os.execl(sys.executable, sys.executable, *sys.argv)
 
 # Classes
 class NullDevice(object):
     """
-    Used to supress output to sys.stdout.
+    Used to supress output to ``sys.stdout`` (aka ``print``).
 
-    Example:
+    Example::
 
-    print "1 - this will print to STDOUT"
-    original_stdout = sys.stdout  # keep a reference to STDOUT
-    sys.stdout = NullDevice()  # redirect the real STDOUT
-    print "2 - this won't print"
-    sys.stdout = original_stdout  # turn STDOUT back on
-    print "3 - this will print to SDTDOUT"
+        >>> from trigger.utils.cli import NullDevice
+        >>> import sys
+        >>> print "1 - this will print to STDOUT"
+        1 - this will print to STDOUT
+        >>> original_stdout = sys.stdout  # keep a reference to STDOUT
+        >>> sys.stdout = NullDevice()     # redirect the real STDOUT
+        >>> print "2 - this won't print"
+        >>>
+        >>> sys.stdout = original_stdout  # turn STDOUT back on
+        >>> print "3 - this will print to SDTDOUT"
+        3 - this will print to SDTDOUT
     """
     def write(self, s): pass
 
@@ -172,8 +243,9 @@ class Whirlygig(object):
     :param done_msg: The completion message displayed upon completion (e.g. "Done.")
     :param max: Integer of the number of whirlygig repetitions to perform
 
-    Example:
-        >>> Whirly("Doing stuff:", "Done.", 12).run()
+    Example::
+
+        >>> Whirlygig("Doing stuff:", "Done.", 12).run()
     """
 
     def __init__(self, start_msg="", done_msg="", max=100):

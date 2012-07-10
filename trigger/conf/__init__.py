@@ -26,7 +26,7 @@ import os
 import sys
 import warnings
 
-from trigger.conf import global_settings
+from . import global_settings
 
 # Defaults
 DEFAULT_LOCATION = '/etc/trigger/settings.py'
@@ -98,7 +98,7 @@ class Settings(BaseSettings):
 
         # Settings that should be converted into tuples if they're mistakenly entered
         # as strings.
-        tuple_settings = ("VALID_VENDORS", "IOSLIKE_VENDORS", "VALID_OWNERS")
+        tuple_settings = ("SUPPORTED_VENDORS", "IOSLIKE_VENDORS", "VALID_OWNERS")
 
         # Now override anything configured in the custom settings
         for setting in dir(mod):

@@ -1,78 +1,74 @@
-.. Trigger documentation master file, created by
-   sphinx-quickstart on Wed Jul  6 15:17:22 2011.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 =======
 Trigger
 =======
 
-*"Go ahead, pull it!"*
+*"Keep your eyes on the prize, and your finger on the trigger."*
 
-About
-=====
+What is Trigger?
+================
 
-Trigger is a Python framework and suite of tools for interfacing with network
-devices and managing network configuration and security policy. Trigger was
-designed to increase the speed and efficiency of network configuration
-management.
+Trigger is a robust network engineering toolkit written in Python that was
+designed for interfacing with network devices and managing network
+configuration and security policy. It increases the speed and efficiency of
+managing large-scale networks while reducing the risk of human error.
 
-Trigger's core device interaction utilizes the freely available `Twisted
-<http://twistedmatrix.com/>`_ event-driven networking engine. The libraries can
-connect to network devices by any available method (e.g. telnet, SSH),
-communicate with them in their native interface (e.g. Juniper JunoScript, Cisco
-IOS), and return output. Trigger is able to manage any number of jobs in
-parallel and handle output or errors as they return.
+.. _key-features:
 
-Motivation
-----------
+Key Features
+============
 
-Trigger was created to facilitate rapid provisioning and automation of
-firewall policy change requests by Network Security. It has since expanded to
-cover all network device configuration.
+Trigger is designed to work at scale and can support hundreds or thousands of
+network devices with ease. Here are some of things that make Trigger tick:
 
-The complexity of the network was increasing much more quickly than the amount
-of time we had to spend on administering it, both because AOL's products and
-services were becoming more sophisticated and because we were continually
-expanding infrastructure. This pressure created a workload gap that had be
-filled with tools that increased productivity.
++ Support for SSH, Telnet, and Juniper's Junoscript XML API
++ Easily get an interactive shell or execute commands asynchronously.
++ Leverage advanced event-driven functionality to manage any number of
+  jobs in parallel and handle output or errors as they return.
++ Powerful metadata interface for performing complex queries to group and
+  associate network devices by name, manufacturer, type, location, and more.
++ Encrypted storage of login credentials so you can interact without constantly
+  being prompted to enter your password.
++ Flexible access-list & firewall policy parser that can test access if access
+  is permitted, or easily convert ACLs from one format to another.
++ Detailed support for timezones and maintenance windows.
++ A suite of tools for simplifying many common tasks.
 
-Pre-Trigger tools worked only for some common cases and required extensive
-knowledge of the network, and careful attention during edits and loads.
-Sometimes this resulted in a system-impacting errors, and it routine work more
-dangerous and unrewarding than it should have been.
+.. versionadded:: 1.2
 
-With the high number of network devices on the AOL network Trigger has become
-invaluable to the performance and reliability of the AOL network infrastructure.
++ Import your metadata from an existing RANCID installation to get
+  up-and-running quickly!
 
-History
--------
+.. _examples-index:
 
-Trigger was originally originally written by the AOL Network Security team and
-is now maintained by the Network Engineering organization.
+Examples
+========
 
-Once upon a time Trigger was actually called **SIMIAN**, a really bad acronym
-that stood for **System Integrating Management of Individual Access to
-Networks**. It has since outgrown its original purpose and can be used for any
-network hardware management operations, so we decided to ditch the acronym and
-just go with a name that more accurately hints at what it does.
+.. include:: examples.rst
 
-Supported Vendors
-=================
+.. _platforms:
 
-Trigger currently supports devices manufactured by the following vendors:
+Supported Platforms
+===================
+
+Trigger currently officially supports devices manufactured by the following
+vendors:
+
++ A10 Networks
+
+  + All AX series application delivery controllers and server load balancers
 
 + Arista Networks
 
-  + All 7000-family platforms
+  + All 7000-family switch platforms
 
 + Brocade Networks
 
-  + MLX routers and VDX switches
+  + MLX routers
+  + VDX switches
 
 + Cisco Systems
 
-  + IOS-based platforms only including all Catalyst switches and GSR/OSR routers
+  + All router and switch platforms running IOS
 
 + Dell
 
@@ -89,63 +85,75 @@ Trigger currently supports devices manufactured by the following vendors:
 
 + Citrix Systems
 
-  + NetScaler web accelerator switches (SSH only, no REST/SOAP yet)
+  + NetScaler application delivery controllers and server load balancers
+
+It's worth noting that other vendors may actually work with the current
+libraries, but they have not been tested. The mapping of supported platforms is
+stored in ``settings.py`` as ``settings.SUPPORTED_PLATFORMS``. Modify it at
+your own risk!
+
+Getting Started
+===============
+
+.. _install-docs:
 
 Installation
-============
+------------
 
-To install Trigger, please check out the installation docs!
+Stable releases of Trigger are best installed using ``pip`` or
+``easy_install``; or you may download compressed source archives from any of
+the official locations. Detailed instructions and links may be found on the
+:doc:`installation` page.
 
-.. toctree::
-   :maxdepth: 1
+Please keep in mind that before you can truly use Trigger, you must configure
+it. This is not overly difficult, but it is an important step.
 
-   installation
+.. _config-docs:
 
 Configuration
-=============
+-------------
 
-This is a work in progress, but it's not a bad start. Please have a look and give us feedback on how we can improve!
+To configure Trigger please see :doc:`usage/configuration`. Initial
+configuration is relatively easy. If you have any doubts, just start by using
+the defaults that are provided in the instructions so you can start tinkering.
 
-.. toctree::
-  :maxdepth: 1
+To take full advantage of all of the features, there are some hurdles you have
+to jump through, but we are working on greatly simplifying this! This is a work
+in progress, but it's not a bad start. Please have a look and give us
+:ref:`feedback <help>` on how we can improve!
 
-  configuration
+.. _documentation-index:
 
 Documentation
 =============
 
-Please note that all documentation is written with users of Python 2.6 in mind. It's safe to assume that Trigger will not work properly on Python versions earlier than Python 2.6.
+Please note that all documentation is written with users of Python 2.6 in mind.
+It's safe to assume that Trigger will not work properly on Python versions
+earlier than Python 2.6.
 
-For now, most of our documentation is automatically generated form the source code documentation, which is usually very detailed. As we move along, this will change, especially with regards to some of the more creative ways in which we use Trigger's major functionality.
-
-.. _api-docs:
-
-API Documentation
------------------
-
-Trigger's core API is made up of several components.
+For now, most of our documentation is automatically generated form the source
+code documentation, which is usually very detailed. As we move along, this will
+change, especially with regards to some of the more creative ways in which we
+use Trigger's major functionality.
 
 .. toctree::
-   :maxdepth: 1
-   :glob:
+    :hidden:
 
-   api/*
-
-.. _tutorial:
-
-Tutorial
---------
-
-Coming Soon.
+    changelog
+    development
+    examples
+    installation
+    license
+    overview
 
 .. _usage-docs:
 
 Usage Documentation
 -------------------
 
-Once you've properly installed Trigger, you might want to know how to use it. Please have a look at the
+Once you've properly installed Trigger, you might want to know how to use it.
+Please have a look at the
 usage documentation!
-
 
 .. toctree::
    :maxdepth: 1
@@ -153,18 +161,41 @@ usage documentation!
 
    usage/*
 
-FAQ
----
+.. _api-docs:
 
-You guessed it: Coming Soon.
+API Documentation
+-----------------
+
+Trigger's core API is made up of several components. For a more detailed
+explanation of these components, please see the :doc:`overview`.
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   api/*
+
+.. _changelog-index:
 
 Change Log
 ----------
 
-Please review the :doc:`changelog`.
+Please see the :doc:`changelog`.
 
-Contributing
-============
+.. _roadmap:
+
+Road Map
+--------
+
+We are using `milestones <https://github.com/aol/trigger/issues/milestones>`_
+to track Trigger's development path 30 to 90 days out. This is where we map
+outstanding issues to upcoming releases and is the best way to see what's
+coming!
+
+.. _development-index:
+
+Development
+===========
 
 Any hackers interested in improving Trigger (or even users interested in how
 Trigger is put together or released) please see the :doc:`development` page. It
@@ -241,6 +272,18 @@ Trigger is licensed under the `Clear BSD License
 adds a term expressly stating it does not grant you any patent licenses.
 
 For the explicit details, please see the :doc:`license` page.
+
+About
+=====
+
+Trigger was created by `AOL's <http://dev.aol.com>`_ Network Engineering team.
+With the high number of network devices on the AOL network this application is
+invaluable to performance and reliability. Hopefully you'll find it useful for
+it on your network and consider
+participating!
+
+To learn about Trigger's background and history as well as an overview of the
+various components, please see the :doc:`overview`.
 
 Indices and tables
 ==================

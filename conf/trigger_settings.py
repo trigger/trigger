@@ -54,46 +54,113 @@ FAILURE_EMAILS = [
     #'secondarypager@example.com',
 ]
 
+# The tuple of supported vendors derived from the values of VENDOR_MAP
+SUPPORTED_VENDORS = (
+    'a10',
+    'arista',
+    'brocade',
+    'cisco',
+    'citrix',
+    'dell',
+    'foundry',
+    'juniper',
+    'netscreen'
+)
+VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
+
+# A mapping of manufacturer attribute values to canonical vendor name used by
+# Trigger. These single-word, lowercased canonical names are used throughout
+# Trigger.
+#
+# If your internal definition differs from the UPPERCASED ones specified below
+# (which they probably do, customize them here.
+VENDOR_MAP = {
+    'A10 NETWORKS': 'a10',
+    'ARISTA NETWORKS': 'arista',
+    'BROCADE': 'brocade',
+    'CISCO SYSTEMS': 'cisco',
+    'CITRIX': 'citrix',
+    'DELL': 'dell',
+    'FOUNDRY': 'foundry',
+    'JUNIPER': 'juniper',
+    'NETSCREEN TECHNOLOGIES': 'netscreen',
+}
+
+# A dictionary keyed by manufacturer name containing a list of the device types
+# for each that is officially supported by Trigger.
+SUPPORTED_PLATFORMS = {
+    'a10': ['SWITCH'],
+    'arista': ['SWITCH'],                         # Your "Cloud" network vendor
+    'brocade': ['ROUTER', 'SWITCH'],
+    'cisco': ['ROUTER', 'SWITCH'],
+    'citrix': ['SWITCH'],                         # Assumed to be NetScalers
+    'dell': ['SWITCH'],
+    'foundry': ['ROUTER', 'SWITCH'],
+    'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
+    'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
+}
+
+# The tuple of support device types
+SUPPORTED_TYPES = ('FIREWALL', 'ROUTER', 'SWITCH')
+
+# A mapping of of vendor names to the default device type for each in the
+# event that a device object is created and the deviceType attribute isn't set
+# for some reason.
+DEFAULT_TYPES = {
+    'a10': 'SWITCH',
+    'arista': 'SWITCH',
+    'brocade': 'SWITCH',
+    'citrix': 'SWITCH',
+    'cisco': 'ROUTER',
+    'dell': 'SWITCH',
+    'foundry': 'SWITCH',
+    'juniper': 'ROUTER',
+    'netscreen': 'FIREWALL',
+}
+
+# When a vendor is not explicitly defined within `DEFAULT_TYPES`, fallback to
+# this type.
+FALLBACK_TYPE = 'ROUTER'
+
 #===============================
 # Twister
 #===============================
 
-# List of supported vendors. These are what Trigger currently supports.
-VALID_VENDORS = (
-    'ARISTA NETWORKS',
-    'BROCADE',
-    'CISCO SYSTEMS',
-    'CITRIX',
-    'DELL',
-    'FOUNDRY',
-    'JUNIPER',
-)
-
-# Default timeout in seconds for commands executed during a session.  If a response is not
-# received within this window, the connection is terminated.
+# Default timeout in seconds for commands executed during a session.  If a
+# response is not received within this window, the connection is terminated.
 DEFAULT_TIMEOUT = 5 * 60
 
 # Default timeout in seconds for initial telnet connections. 
 TELNET_TIMEOUT  = 60
 
-# Add manufacturers that support SSH logins here. Only add one if ALL devices of that 
-# manufacturer have SSH logins enabled. Adding CISCO SYSTEMS to this list will
-# require a lot of work! (Don't forget the trailing comma when you add a new entry.)
-SSH_TYPES = [
-    'ARISTA NETWORKS',        # Your "Cloud" network vendor
-    'CITRIX',                 # Makers of NetScalers
-    'JUNIPER',                # Any devices running JUNOS
-    'NETSCREEN TECHNOLOGIES', # Former maker of NetScreen firewalls (pre-Juniper)
-]
+# Whether or not to allow telnet fallback
+TELNET_ENABLED = True
+
+# A mapping of vendors to the types of devices for that vendor for which you
+# would like to disable interactive (pty) SSH sessions, such as when using
+# bin/gong.
+SSH_PTY_DISABLED = {
+    'dell': ['SWITCH'],    # Dell SSH is just straight up broken
+}
+
+# A mapping of vendors to the types of devices for that vendor for which you
+# would like to disable asynchronous (NON-interactive) SSH sessions, such as
+# when using twister or Commando to remotely control a device.
+SSH_ASYNC_DISABLED = {
+    'arista': ['SWITCH'],  # Known not to work w/ SSH ... yet
+    'brocade': ['SWITCH'], # Namely the Brocade VDX =(
+    'dell': ['SWITCH'],    # Dell SSH is just straight up broken
+}
 
 # Vendors that basically just emulate Cisco's IOS and can be treated
 # accordingly for the sake of interaction.
 IOSLIKE_VENDORS = (
-    'ARISTA NETWORKS',
-    'BROCADE',
-    'CISCO SYSTEMS',
-    'DELL',
-    'FOUNDRY',
+    'a10',
+    'arista',
+    'brocade',
+    'cisco',
+    'dell',
+    'foundry',
 )
 
 #===============================
@@ -113,10 +180,9 @@ NETDEVICES_FORMAT = os.environ.get('NETDEVICES_FORMAT', 'xml')
 # You must set NETDEVICES_FORMAT to match the type of data.
 NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', os.path.join(PREFIX, 'netdevices.xml'))
 
-#NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/home/j/jathan/sandbox/netdevices.json')
-#NETDEVICES_FORMAT = 'json' # One of 'xml', 'json', 'sqlite'
-#NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', '/home/j/jathan/sandbox/nd.db')
-#NETDEVICES_FORMAT = 'sqlite' # One of 'xml', 'json', 'sqlite'
+# Whether to treat the RANCID root as a normal instance, or as the root to
+# multiple instances. This is only checked when using RANCID as a data source.
+RANCID_RECURSE_SUBDIRS = os.environ.get('RANCID_RECURSE_SUBDIRS', False)
 
 # Valid owning teams (e.g. device.owningTeam) go here. These are examples and should be
 # changed to match your environment.
@@ -125,7 +191,6 @@ VALID_OWNERS = (
     'Backbone Engineering',
     'Enterprise Networking',
 )
-
 
 #===============================
 # Redis Settings
