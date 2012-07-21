@@ -36,9 +36,7 @@ Get a count of all your devices::
 Get an interactive shell
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since this device has SSH, let's connect to it!
-
-::
+Since this device has SSH, let's connect to it::
 
     >>> dev = nd.find('edge1-abc')
     >>> dev.connect()
@@ -92,8 +90,8 @@ I removed it and then::
 
     Updating credentials for device/realm 'tacacsrc'
     Username: jathan
-    Password: 
-    Password (again): 
+    Password:
+    Password (again):
     >>> tcrc.creds['aol']
     Credentials(username='jathan', password='boguspassword', realm='tacacsrc')
 
@@ -113,7 +111,7 @@ Trigger includes a simple tool for end-users to connect to devices called
 
     Fetching credentials from /home/jathan/.tacacsrc
     foo1-cisco#
-    foo1-abc#show clock
+    foo1-cisco#show clock
     20:52:05.777 UTC Sat Jun 23 2012
     foo1-cisco#
 
@@ -139,7 +137,10 @@ Execute commands asynchronously using Twisted
 
 This is a little more advanced... so we saved it for last.
 
-Trigger uses Twisted, which is a callback-based event loop. Wherever possible Twisted's implementation details are abstracted away, but the power is there for those who choose to wield it. Here's a super simplified example of how this might be accomplished::
+Trigger uses Twisted, which is a callback-based event loop. Wherever possible
+Twisted's implementation details are abstracted away, but the power is there
+for those who choose to wield it. Here's a super simplified example of how this
+might be accomplished::
 
     from trigger.netdevices import NetDevices
     from twisted.internet import reactor
@@ -165,7 +166,7 @@ Trigger uses Twisted, which is a callback-based event loop. Wherever possible Tw
     async.addCallback(print_result)
 
     # Once we're out of commands, or we an encounter an error, call this
-    async.addBoth(stop_reactor)     
+    async.addBoth(stop_reactor)
 
     # Start the event loop
     reactor.run()
@@ -175,10 +176,19 @@ Which outputs::
     Result: ['21:27:46.435 UTC Sat Jun 23 2012\n']
     Stopping reactor
 
+Observe, however, that this only communicated with a single device.
+
 Execute commands asynchronously using the Commando API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`~trigger.cmds.Commando` tries to hide Twisted's implementation details so you don't have to deal with callbacks. It is a base class that is intended to be extended to perform the operations you desire. Here is a basic example of how we might perform the same example above using ``Commando`` instead::
+`~trigger.cmds.Commando` tries to hide Twisted's implementation details so you
+don't have to deal with callbacks, while also implementing a worker pool so
+that you may easily communicate with multiple devices in parallel.
+
+This is a base class that is intended to be extended to perform the operations
+you desire. Here is a basic example of how we might perform the same example
+above using ``Commando`` instead, but also communicating with a second device
+in parallel::
 
     from trigger.cmds import Commando
 

@@ -35,8 +35,8 @@ network devices with ease. Here are some of things that make Trigger tick:
 
 .. versionadded:: 1.2
 
-+ Import your metadata from an existing RANCID installation to get
-  up-and-running quickly!
++ Import your metadata from an existing `RANCID <www.shrubbery.net/rancid/>`_
+  installation to get up-and-running quickly!
 
 .. _examples-index:
 
@@ -268,12 +268,9 @@ We will use GitHub's built-in wiki located at
 License
 =======
 
-Trigger is licensed under the `Clear BSD License
-<http://labs.metacarta.com/license-explanation.html>`_ which is based on the
-`BSD 3-Clause License <http://www.opensource.org/licenses/BSD-3-Clause>`_, and
-adds a term expressly stating it does not grant you any patent licenses.
-
-For the explicit details, please see the :doc:`license` page.
+Trigger is licensed under the `BSD 3-Clause License
+<http://www.opensource.org/licenses/BSD-3-Clause>`_. For the explicit details,
+please see the :doc:`license` page.
 
 About
 =====

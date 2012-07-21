@@ -17,7 +17,7 @@ devices and managing network configuration and security policy. Trigger was
 designed to increase the speed and efficiency of network configuration
 management.
 
-Trigger's core device interaction utilizes the freely available `Twisted
+Trigger's core device interaction utilizes the `Twisted
 <http://twistedmatrix.com/>`_ event-driven networking engine. The libraries can
 connect to network devices by any available method (e.g. telnet, SSH),
 communicate with them in their native interface (e.g. Juniper JunoScript, Cisco
@@ -31,16 +31,16 @@ Trigger was created to facilitate rapid provisioning and automation of
 firewall policy change requests by Network Security. It has since expanded to
 cover all network device configuration.
 
-The complexity of the network was increasing much more quickly than the amount
-of time we had to spend on administering it, both because AOL's products and
-services were becoming more sophisticated and because we were continually
+The complexity of the AOL network was increasing much more quickly than the
+amount of time we had to spend on administering it, both because AOL's products
+and services were becoming more sophisticated and because we were continually
 expanding infrastructure. This pressure created a workload gap that had be
 filled with tools that increased productivity.
 
 Pre-Trigger tools worked only for some common cases and required extensive
 knowledge of the network, and careful attention during edits and loads.
-Sometimes this resulted in a system-impacting errors, and it routine work more
-dangerous and unrewarding than it should have been.
+Sometimes this resulted in a system-impacting errors, and it caused routine
+work more dangerous and unrewarding than it should have been.
 
 With the high number of network devices on the AOL network Trigger has become
 invaluable to the performance and reliability of the AOL network infrastructure.
@@ -54,8 +54,8 @@ is now maintained by the Network Engineering organization.
 Once upon a time Trigger was actually called **SIMIAN**, a really bad acronym
 that stood for **System Integrating Management of Individual Access to
 Networks**. It has since outgrown its original purpose and can be used for any
-network hardware management operations, so we decided to ditch the acronym and
-just go with a name that more accurately hints at what it does.
+network hardware configuration management operations, so we decided to ditch
+the acronym and just go with a name that more accurately hints at what it does.
 
 Components
 ==========

@@ -309,7 +309,8 @@ The Singleton Pattern
 ~~~~~~~~~~~~~~~~~~~~~
 
 The NetDevices module object has a ``_Singleton`` attribute that defaults to ``None``.
-Upon creating an instance, this is populated with the ``NetDevices._actual`` instance::
+Upon creating an instance, this is populated with the
+`~trigger.netdevices.NetDevices._actual` instance::
 
     >>> nd = NetDevices()
     >>> nd._Singleton
@@ -333,7 +334,7 @@ If you need to do this, set the value to ``None``::
 
     >>> NetDevices._Singleton = None
 
-Then the next call to ``NetDevices()`` will start from scratch. Keep in mind
+Then the next call to `~trigger.netdevices.NetDevices()` will start from scratch. Keep in mind
 because of this pattern it is not easy to have more than one instance (there are
 ways but we're not going to list them here!). All existing instances will
 inherit the value of ``NetDevices._Singleton``::

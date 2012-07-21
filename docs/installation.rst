@@ -168,7 +168,7 @@ This documentation is incomplete and is being improved.
 Know for now that if you want to use the integrated load queue, you must have
 the Python MySQL bindings.
 
-+ python-mysql (MySQLdb)
++ `MySQL-python <http://pypi.python.org/pypi/MySQL-python>`_ (MySQLdb)
 
 Installing Trigger
 ==================
@@ -192,10 +192,20 @@ From source (which will use ``easy_install``)::
 Create configuration directory
 ------------------------------
 
-This can be customized using the ``PREFIX`` configuration variable within
-``settings.py`` and defaults to ``/etc/trigger``::
+Trigger expects to find its configuration files to be in ``/etc/trigger``. This
+can be customized using the :setting:`PREFIX` configuration variable within
+``settings.py``::
 
     sudo mkdir /etc/trigger
+
+That's it! Now you're ready to configure Trigger.
+
+Basic Configuration
+===================
+
+For these steps you'll need to download the `Trigger tarball
+<https://github.com/aol/trigger/tarball/master>`_, expand it, and then navigate
+to the root directory (the same directory in which you'll find ``setup.py``).
 
 Copy settings.py
 ----------------
@@ -212,40 +222,31 @@ to any imports!
 Copy autoacl.py
 ---------------
 
+Trigger's `~trigger.acl.autoacl` module expects to find ``autoacl.py`` in the
+:setting:`PREFIX`. This is used to customize the automatic ACL associations for
+network devices.  
+
 ::
 
     sudo cp conf/autoacl.py /etc/trigger/autoacl.py
 
-If you're using a non-standard location, be sure to update the ``AUTOACL_FILE``
-configuration variable within ``settings.py`` with the location of
-``autoacl.py``!
+If you're using a non-standard location, be sure to update the
+:setting:`AUTOACL_FILE` configuration variable within ``settings.py`` with the
+location of ``autoacl.py``!
 
-Copy netdevices.xml
--------------------
+Copy metadata file
+------------------
 
-::
+Trigger's `~trigger.netdevices` module expects to find the device metadata file in
+:setting:`PREFIX`. This is used to customize the automatic ACL associations for
+network devices.  
+
+For the purpose of basic config, we'll just use the sample ``netdevices.xml`` file::
 
     sudo cp conf/netdevices.xml /etc/trigger/netdevices.xml
 
-Create MySQL Database
----------------------
-
-Trigger currently (but hopefully not for too much longer) uses MySQL for the
-automated ACL load queue used by the ``load_acl`` and ``acl`` utilities. If you
-want to use these tools, you need to create a MySQL database and make sure you
-also have the Python `MySQLdb` module installed.
-
-Find ``conf/acl_queue_schema.sql`` in the source distribution and import the
-`queue` and `acl_queue` tables into a database of your choice. It's probably
-best to create a unique database and database user for this purpose, but we'll
-leave that up to you.
-
-Example import::
-
-    % mysql trigger -u trigger_user -p < ./conf/acl_queue_schema.sql
-
-Verifyng Functionality
-======================
+Verifying Functionality
+=======================
 
 Once the dependencies are installed, try doing stuff.
 
@@ -285,3 +286,30 @@ And then inherited from autoacl by AclsDB::
     >>> a.get_acl_set(dev)
     >>> dev.implicit_acls
     set(['juniper-router.policer', 'juniper-router-protect'])
+
+Now that you've properly installed Trigger, you might want to know how to use it.
+Please have a look at the usage documentation!
+
+.. toctree::
+    :maxdepth: 1
+    :glob:
+
+    usage/*
+
+Integrated Load Queue
+=====================
+
+Trigger currently (but hopefully not for too much longer) uses MySQL for the
+automated ACL load queue used by the ``load_acl`` and ``acl`` utilities. If you
+want to use these tools, you need to create a MySQL database and make sure you
+also have the `MySQLdb <http://pypi.python.org/pypi/MySQL-python>`_ module
+installed.
+
+Find ``conf/acl_queue_schema.sql`` in the source distribution and import the
+`queue` and `acl_queue` tables into a database of your choice. It's probably
+best to create a unique database and database user for this purpose, but we'll
+leave that up to you.
+
+Example import::
+
+    % mysql trigger -u trigger_user -p < ./conf/acl_queue_schema.sql

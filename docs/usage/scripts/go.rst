@@ -200,3 +200,41 @@ with the specified commands in the sample ``.gorc`` file displayed above::
     jathan   p0       awesome.win.aol.com              11:05PM     - -cli (cli)
 
     jathan@test1-abc>
+
+Troubleshooting
+===============
+
+Authentication failures
+-----------------------
+
+If ``gong`` fails to connect, it tries to tell you why, and in the event of an
+authentication failure it will give you the opportunity to update your stored
+credentials::
+
+    Fetching credentials from /home/j/jathan/.tacacsrc
+
+    Connection failed for the following reason:
+
+    '\n\n% Authentication failed.\n\n\nUser Access Verification\n\nUsername:'
+
+    Authentication failed, would you like to update your password? (Y/n)
+
+Blank passwords
+---------------
+
+When initially caching credentials, your password cannot be blank. If you try,
+``gong`` complains::
+
+    Updating credentials for device/realm 'tacacsrc'
+    Username: jathan
+    Password:
+    Password (again):
+
+    Password cannot be blank, try again!
+
+If ``gong`` detects a blank password in an existing ``.tacacsrc`` file, it will force you to update it::
+
+    Missing password for 'aol', initializing...
+
+    Updating credentials for device/realm 'aol'
+    Username [jathan]:

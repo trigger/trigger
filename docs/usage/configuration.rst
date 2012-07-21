@@ -95,6 +95,8 @@ Configuration Directives
 Global settings
 ---------------
 
+.. setting:: PREFIX
+
 PREFIX
 ~~~~~~
 
@@ -104,6 +106,8 @@ This is where Trigger should look for its essential files including
 Default::
 
     '/etc/trigger'
+
+.. setting:: USE_GPG_AUTH
 
 USE_GPG_AUTH
 ~~~~~~~~~~~~
@@ -118,6 +122,8 @@ Default::
 
    False
 
+.. setting:: TACACSRC_KEYFILE
+
 TACACSRC_KEYFILE
 ~~~~~~~~~~~~~~~~
 
@@ -128,6 +134,8 @@ within the ``.tacacsrc`` file.
 Default::
 
     '/etc/trigger/.tackf'
+
+.. setting:: DEFAULT_REALM
 
 DEFAULT_REALM
 ~~~~~~~~~~~~~
@@ -240,6 +248,8 @@ Default::
         'netscreen': ['FIREWALL']
     }
 
+.. setting:: SUPPORTED_VENDORS
+
 SUPPORTED_VENDORS
 ~~~~~~~~~~~~~~~~~
 
@@ -251,6 +261,8 @@ Default::
 
     ('a10', 'arista', 'brocade', 'cisco', 'citrix', 'dell', 'foundry',
     'juniper', 'netscreen')
+
+.. setting:: SUPPORTED_TYPES
 
 SUPPORTED_TYPES
 ~~~~~~~~~~~~~~~
@@ -287,6 +299,8 @@ Default::
         'netscreen': 'FIREWALL',
     }
 
+.. setting:: FALLBACK_TYPE
+
 FALLBACK_TYPE
 ~~~~~~~~~~~~~
 
@@ -304,6 +318,8 @@ Twister settings
 These settings are used to customize the timeouts and methods used by Trigger
 to connect to network devices.
 
+.. setting:: DEFAULT_TIMEOUT
+
 DEFAULT_TIMEOUT
 ~~~~~~~~~~~~~~~
 
@@ -314,6 +330,8 @@ Default::
 
     300
 
+.. setting:: TELNET_TIMEOUT
+
 TELNET_TIMEOUT
 ~~~~~~~~~~~~~~
 
@@ -322,6 +340,8 @@ Default timeout in seconds for initial telnet connections.
 Default::
 
     60
+
+.. setting:: TELNET_ENABLED
 
 TELNET_ENABLED
 ~~~~~~~~~~~~~~
@@ -334,6 +354,8 @@ for telnet.
 Default::
 
     True
+
+.. setting:: SSH_PTY_DISABLED
 
 SSH_PTY_DISABLED
 ~~~~~~~~~~~~~~~~
@@ -349,6 +371,8 @@ Default::
     {
         'dell': ['SWITCH'],
     }
+
+.. setting:: SSH_ASYNC_DISABLED
 
 SSH_ASYNC_DISABLED
 ~~~~~~~~~~~~~~~~~~
@@ -368,6 +392,8 @@ Default::
         'dell': ['SWITCH'],
     }
 
+.. setting:: IOSLIKE_VENDORS
+
 IOSLIKE_VENDORS
 ~~~~~~~~~~~~~~~
 
@@ -380,6 +406,8 @@ Default::
 
 NetDevices settings
 -------------------
+
+.. setting:: AUTOACL_FILE
 
 AUTOACL_FILE
 ~~~~~~~~~~~~

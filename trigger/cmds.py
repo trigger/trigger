@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-Abstracts the execution of commands on network devices.  Allows for
-integrated parsing and manipulation of return data for rapid integration
-to existing or newly created tools.
+This module abstracts the asynchronous execution of commands on multiple
+network devices. It allows for integrated parsing and event-handling of return
+data for rapid integration to existing or newly-created tools.
 
-Commando superclass is intended to be subclassed.  More documentation soon!
+The `~trigger.cmds.Commando` class is designed to be extended but can still be
+used as-is to execute commands and return the results as-is.
+
+Please see the source code for `~trigger.cmds.ShowClock` class for a basic
+example of one might create a subclass. Better documentation is in the works!
 """
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
@@ -33,8 +37,57 @@ __all__ = ('Commando', 'NetACLInfo', 'ShowClock')
 # Classes
 class Commando(object):
     """
-    I run commands on devices but am not much use unless you subclass me and
-    configure vendor-specific parse/generate methods.
+    Execute commands asynchronously on multiple network devices.
+
+    This class is designed to be extended but can still be used as-is to execute
+    commands and return the results as-is.
+
+    At the bare minimum you must specify a list of ``devices`` to interact with.
+    You may optionally specify a list of ``commands`` to execute on those
+    devices, but doing so will execute the same commands on every device
+    regardless of platform.
+
+    If ``commands`` are not specified, they will be expected to be emitted by
+    the ``generate`` method for a given platform. Otherwise no commands will be
+    executed.
+
+    If you wish to customize the commands executed by device, you must define a
+    ``to_{vendor_name}`` method containing your custom logic.
+
+    If you wish to customize what is done with command results returned from a
+    device, you must define a ``from_{vendor_name}`` method containing your
+    custom logic.
+
+    :param devices:
+        A list of device hostnames or `~trigger.netdevices.NetDevice` objects
+
+    :param commands:
+        (Optional) A list of commands to execute on the ``devices``.
+
+    :param incremental:
+        (Optional) A callback that will be called with an empty sequence upon
+        connection and then called every time a result comes back from the
+        device, with the list of all results.
+
+    :param max_conns:
+        (Optional) The maximum number of simultaneous connections to keep open.
+
+    :param verbose:
+        (Optional) Whether or not to display informational messages to the
+        console.
+
+    :param timeout:
+        (Optional) Time in seconds to wait for each command executed to return a
+        result
+
+    :param production_only:
+        (Optional) If set, includes all devices instead of excluding any devices
+        where ``adminStatus`` is not set to ``PRODUCTION``.
+
+    :param allow_fallback:
+        If set (default), allow fallback to base parse/generate methods when
+        they are not customized in a subclass, otherwise an exception is raised
+        when a method is called that has not been explicitly defined.
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -48,56 +101,6 @@ class Commando(object):
     def __init__(self, devices=None, commands=None, incremental=None,
                  max_conns=10, verbose=False, timeout=30,
                  production_only=True, allow_fallback=True):
-        """
-        At the bare minimum you must specify a list of ``devices`` to interact
-        with. You may optionally specify a list of ``commands`` to execute on those
-        devices, but doing so will execute the same commands on every device
-        regardless of platform.
-
-        If ``commands`` are not specified, they will be expected to be emitted
-        by the ``generate`` method for a given platform. Otherwise no commands
-        will be executed.
-
-        If you wish to customize the commands executed by device, you must
-        define a ``to_{vendor_name}`` method containing your custom logic.
-
-        If you wish to customize what is done with command results returned
-        from a device, you must define a ``from_{vendor_name}`` method
-        containing your custom logic.
-
-        :param devices:
-            A list of device hostnames or `~trigger.netdevices.NetDevices` objects
-
-        :param commands:
-            (Optional) A list of commands to execute on the ``devices``.
-
-        :param incremental:
-            (Optional) A callback that will be called with an empty sequence
-            upon connection and then called every time a result comes back from
-            the device, with the list of all results.
-
-        :param max_conns:
-            (Optional) The maximum number of simultaneous connections to keep
-            open.
-
-        :param verbose:
-            (Optional) Whether or not to display informational messages to the
-            console
-
-        :param timeout:
-            (Optional) Time in seconds to wait for each command executed to
-            return a result
-
-        :param production_only:
-            (Optional) If set, includes all devices instead of excluding any
-            devices where ``adminStatus`` is not set to ``PRODUCTION``.
-
-        :param allow_fallback:
-            If set (default), allow fallback to base parse/generate methods
-            when they are not customized in a subclass, otherwise an exception
-            is raised when a method is called that has not been explicitly
-            defined.
-        """
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
 
@@ -151,7 +154,7 @@ class Commando(object):
 
     def _setup_jobs(self):
         """
-        "Maps device hostnames to `~trigger.netdevices.NetDevices` objects and
+        "Maps device hostnames to `~trigger.netdevices.NetDevice` objects and
         populates the job queue.
         """
         for dev in self.devices:
@@ -189,7 +192,7 @@ class Commando(object):
             (Optional) The jobs queue. If not set, uses ``self.jobs``.
 
         :returns:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
         """
         if jobs is None:
             jobs = self.jobs
@@ -240,7 +243,7 @@ class Commando(object):
             to_foundry
 
         :param device:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
 
         :param method:
             One of 'generate', 'parse'
@@ -278,7 +281,7 @@ class Commando(object):
         platform.
 
         :param device:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
 
         :param commands:
             (Optional) A list of commands to execute on the device. If not
@@ -308,7 +311,7 @@ class Commando(object):
             The results of the commands executed on the device
 
         :param device:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
         """
         func = self._lookup_method(device, method='parse')
         return func(results, device)
@@ -322,7 +325,7 @@ class Commando(object):
             Usually a Twisted ``Failure`` instance.
 
         :param device:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
         """
         self.store_error(device, failure)
         self._decrement_connections(failure)
@@ -337,7 +340,7 @@ class Commando(object):
         overload this in your subclass.
 
         :param device:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
 
         :param error:
             The error to store. Anything you want really, but usually a Twisted
@@ -355,7 +358,7 @@ class Commando(object):
         overload this in your subclass.
 
         :param device:
-            A `~trigger.netdevices.NetDevices` object
+            A `~trigger.netdevices.NetDevice` object
 
         :param results:
             The results to store. Anything you want really.
