@@ -197,20 +197,6 @@ in parallel::
         vendors = ['cisco']
         commands = ['show clock']
 
-        def to_cisco(self, device, commands=None, extra=None):
-            """Passes the commands as-is to the device"""
-            print "Sending %r to %s" % (self.commands, device)
-            return self.commands
-
-        def from_cisco(self, results, device):
-            """Capture the command output and move on"""
-            if device.nodeName not in self.results:
-                self.results[device.nodeName] = {}
-    
-            # Store each command and its result for this device
-            for cmd, result in zip(self.commands, results):
-                self.results[device.nodeName][cmd] = result
-
     if __name__ == '__main__':
         device_list = ['foo1-abc.net.aol.com', 'foo2-xyz.net.aol.com']
         showclock = ShowClock(devices=device_list)
@@ -223,6 +209,8 @@ Which outputs::
 
     Sending ['show clock'] to foo2-xyz.net.aol.com
     Sending ['show clock'] to foo1-abc.net.aol.com
+    Received ['21:56:44.701 UTC Sat Jun 23 2012\n'] from foo2-xyz.net.aol.com
+    Received ['21:56:44.704 UTC Sat Jun 23 2012\n'] from foo1-abc.net.aol.com
 
     Results:
     {

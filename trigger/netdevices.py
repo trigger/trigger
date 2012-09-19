@@ -441,7 +441,7 @@ class NetDevice(object):
 
     def has_ssh(self):
         """Am I even listening on SSH?"""
-        return network.test_tcp_port(self.nodeName, port=22)
+        return network.test_ssh(self.nodeName)
 
     def _can_ssh(self, method):
         """

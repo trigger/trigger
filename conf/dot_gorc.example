@@ -1,6 +1,6 @@
 ; .gorc - Example file to show how .gorc would work
 
-[initial_commands]
+[init_commands]
 ; Specify the commands you would like run upon login for each vendor name. The
 ; vendor name must match the one found in the CMDB for the manufacturer of the
 ; hardware. Currently these are:

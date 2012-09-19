@@ -18,7 +18,6 @@ import signal
 import socket
 import struct
 import sys
-import time
 import tty
 from xml.etree.ElementTree import Element, ElementTree, XMLTreeBuilder, tostring
 from twisted.conch.ssh.channel import SSHChannel
@@ -525,7 +524,6 @@ class TriggerClientFactory(ClientFactory):
     """
     Factory for all clients. Subclass me.
     """
-
     def __init__(self, deferred, creds=None, init_commands=None):
         self.d = deferred
         self.tcrc = tacacsrc.Tacacsrc()
@@ -584,7 +582,6 @@ class TriggerSSHTransport(SSHClientTransport, object):
     Call with magic factory attributes 'creds', a tuple of login
     credentials, and 'channel', the class of channel to open.
     """
-
     def verifyHostKey(self, pubKey, fingerprint):
         """Verify host key, but don't actually verify. Awesome."""
         return defer.succeed(1)
@@ -736,7 +733,6 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
 
 class TriggerSSHConnection(SSHConnection, object):
     """Used to manage, you know, an SSH connection."""
-
     def serviceStarted(self):
         """Open the channel once we start."""
         log.msg('channel = %r' % self.transport.factory.channel)
@@ -820,7 +816,6 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
     'action' is a Protocol that will be connected to the session after login.
     Use it to interact with the user and pass along commands.
     """
-
     def __init__(self, deferred, action, creds=None, display_banner=None,
                  init_commands=None):
         self.protocol = TriggerSSHTransport
@@ -838,7 +833,6 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
     Intended to be used as a parent of automated SSH channels (e.g. Junoscript,
     NetScreen, NetScaler) to eliminate boiler plate in those subclasses.
     """
-
     def __init__(self, deferred, commands, creds=None, incremental=None,
                  with_errors=False, timeout=None, channel=None,
                  command_interval=0, prompt_pattern=None):
@@ -945,9 +939,10 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
         # Honor the command_interval and then send the next command in the
         # stack
         else:
-            if self.command_interval > 0:
-                time.sleep(self.command_interval)
-            self._send_next()
+            if self.command_interval:
+                log.msg('Waiting %s seconds before sending next command' %
+                        self.command_interval)
+            reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
         """Send the next command in the stack."""
@@ -1004,7 +999,6 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
 
     Before you create your own subclass, see if you can't use me as-is!
     """
-    pass
 
 class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
@@ -1015,7 +1009,6 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     TriggerJunoscriptFactory) and walks all the way back up to the factory for
     its arguments.
     """
-
     def channelOpen(self, data):
         """Do this when channel opens."""
         self._setup_channelOpen(data)
@@ -1070,9 +1063,10 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         # Honor the command_interval and then send the next command in the
         # stack
         else:
-            if self.command_interval > 0:
-                time.sleep(self.command_interval)
-            self._send_next()
+            if self.command_interval:
+                log.msg('Waiting %s seconds before sending next command' %
+                        self.command_interval)
+            reactor.callLater(self.command_interval, self._send_next)
 
 class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
     """
@@ -1082,7 +1076,6 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
     first, because a prompt is not returned when an error is received. This had
     to be accounted for in the ``dataReceived()`` method.
     """
-
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         self.data += bytes
@@ -1113,10 +1106,10 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         if self.initialized:
             self.results.append(result)
 
-        if self.command_interval > 0:
-            time.sleep(self.command_interval)
-
-        self._send_next()
+        if self.command_interval:
+            log.msg('Waiting %s seconds before sending next command' %
+                    self.command_interval)
+        reactor.callLater(self.command_interval, self._send_next)
 
 #==================
 # XML Stuff (for Junoscript)
@@ -1128,7 +1121,6 @@ class IncrementalXMLTreeBuilder(XMLTreeBuilder):
     We need this because JunoScript treats the entire session as one XML
     document. IETF NETCONF fixes that.
     """
-
     def __init__(self, callback, *args, **kwargs):
         self._endhandler = callback
         XMLTreeBuilder.__init__(self, *args, **kwargs)
@@ -1137,7 +1129,6 @@ class IncrementalXMLTreeBuilder(XMLTreeBuilder):
         """Do this when we're out of XML!"""
         return self._endhandler(XMLTreeBuilder._end(self, tag))
 
-
 #==================
 # Telnet Channels
 #==================
@@ -1145,7 +1136,6 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
     """
     Factory for a telnet connection.
     """
-
     def __init__(self, deferred, action, creds=None, loginpw=None,
                  enablepw=None, init_commands=None):
         self.protocol = TriggerTelnet
@@ -1157,9 +1147,9 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
 
 class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
     """
-    Telnet-based session login state machine. Primarily used by IOS-like type devices.
+    Telnet-based session login state machine. Primarily used by IOS-like type
+    devices.
     """
-
     def __init__(self, timeout=settings.TELNET_TIMEOUT):
         self.protocol = TelnetProtocol()
         self.waiting_for = [
@@ -1313,7 +1303,6 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
     Take a list of commands, and send them to the device until we run out or
     one errors. Wait for a prompt after each.
     """
-
     def __init__(self, dev, commands, incremental=None, with_errors=False,
                  timeout=None, command_interval=0):
         self.dev = dev
@@ -1397,9 +1386,10 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
             self.factory.err = exceptions.IoslikeCommandFailure(result)
             self.loseConnection()
         else:
-            if self.command_interval > 0:
-                time.sleep(self.command_interval)
-            self._send_next()
+            if self.command_interval:
+                log.msg('Waiting %s seconds before sending next command' %
+                        self.command_interval)
+            reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
         """Send the next command in the stack."""

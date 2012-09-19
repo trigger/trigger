@@ -147,6 +147,8 @@ Default::
 
     'aol'
 
+.. setting:: FIREWALL_DIR
+
 FIREWALL_DIR
 ~~~~~~~~~~~~
 
@@ -156,6 +158,8 @@ Default::
 
     '/data/firewalls'
 
+.. setting:: TFTPROOT_DIR
+
 TFTPROOT_DIR
 ~~~~~~~~~~~~
 
@@ -164,6 +168,8 @@ Location of the tftproot directory.
 Default::
 
     '/data/tftproot'
+
+.. setting:: INTERNAL_NETWORKS
 
 INTERNAL_NETWORKS
 ~~~~~~~~~~~~~~~~~
@@ -176,6 +182,8 @@ Default::
 
   [IPy.IP("10.0.0.0/8"), IPy.IP("172.16.0.0/12"), IPy.IP("192.168.0.0/16")]
 
+.. setting:: SUCCESS_EMAILS
+
 SUCCESS_EMAILS
 ~~~~~~~~~~~~~~
 
@@ -185,6 +193,8 @@ A list of email addresses to email when things go well (such as from ``load_acl
 Default::
 
     []
+
+.. setting:: FAILURE_EMAILS
 
 FAILURE_EMAILS
 ~~~~~~~~~~~~~~
@@ -424,7 +434,7 @@ NETDEVICES_FORMAT
 ~~~~~~~~~~~~~~~~~
 
 One of ``json``, ``rancid``, ``sqlite``, ``xml``. This MUST match the actual
-format of ``NETDEVICES_FILE`` or it won't work for obvious reasons.
+format of :setting:`NETDEVICES_FILE` or it won't work for obvious reasons.
 
 Please note that RANCID support is experimental. If you use it you must specify
 the path to the RANCID directory.
@@ -443,7 +453,7 @@ NETDEVICES_FILE
 
 Path to netdevices device metadata source file, which is used to populate
 `~trigger.netdevices.NetDevices`. This may be JSON, RANCID, a SQLite3 database,
-or XML. You must set ``NETDEVICES_FORMAT`` to match the type of data.
+or XML. You must set :setting:`NETDEVICES_FORMAT` to match the type of data.
 
 Please note that RANCID support is experimental. If you use it you must specify
 the path to the RANCID directory.
@@ -467,11 +477,13 @@ whether to treat the RANCID root as a normal instance, or as the root to
 multiple instances.
 
 You may override this location by setting the ``RANCID_RECURSE_SUBDIRS``
-environment variable to a any ``True`` value.
+environment variable to any ``True`` value.
 
 Default::
 
     False
+
+.. setting:: VALID_OWNERS
 
 VALID_OWNERS
 ~~~~~~~~~~~~
@@ -490,6 +502,8 @@ Default::
 Redis settings
 --------------
 
+.. setting:: REDIS_HOST
+
 REDIS_HOST
 ~~~~~~~~~~
 
@@ -499,6 +513,8 @@ Default::
 
     '127.0.0.1'
 
+.. setting:: REDIS_PORT
+
 REDIS_PORT
 ~~~~~~~~~~
 
@@ -507,6 +523,8 @@ The Redis port.
 Default::
 
     6379
+
+.. setting:: REDIS_DB
 
 REDIS_DB
 ~~~~~~~~
@@ -526,6 +544,8 @@ your MySQL database.
 
 These are all self-explanatory, I hope.
 
+.. setting:: DATABASE_NAME
+
 DATABASE_NAME
 ~~~~~~~~~~~~~
 
@@ -534,6 +554,8 @@ The name of the database.
 Default::
 
     ''
+
+.. setting:: DATABASE_USER
 
 DATABASE_USER
 ~~~~~~~~~~~~~
@@ -544,6 +566,8 @@ Default::
 
     ''
 
+.. setting:: DATABASE_PASSWORD
+
 DATABASE_PASSWORD
 ~~~~~~~~~~~~~~~~~
 
@@ -553,6 +577,8 @@ Default::
 
     ''
 
+.. setting:: DATABASE_HOST
+
 DATABASE_HOST
 ~~~~~~~~~~~~~
 
@@ -561,6 +587,8 @@ The host on which your MySQL databse resides.
 Default::
 
     '127.0.0.1'
+
+.. setting:: DATABASE_PORT
 
 DATABASE_PORT
 ~~~~~~~~~~~~~
@@ -578,6 +606,8 @@ These are various settings that control what files may be modified, by various
 tools and libraries within the Trigger suite. These settings are specific to
 the functionality found within the :mod:`trigger.acl` module.
 
+.. setting:: IGNORED_ACLS
+
 IGNORED_ACLS
 ~~~~~~~~~~~~
 
@@ -589,6 +619,8 @@ Default::
 
     []
 
+.. setting:: NONMOD_ACLS
+
 NONMOD_ACLS
 ~~~~~~~~~~~
 
@@ -599,6 +631,8 @@ expects ACLs to be prefixed with ``'acl.'``.
 Default::
 
     []
+
+.. setting:: VIPS
 
 VIPS
 ~~~~
@@ -621,6 +655,8 @@ All of the following esttings are currently only used by ``load_acl``. If and
 when the ``load_acl`` functionality gets moved into the library API, this may
 change.
 
+.. setting:: AUTOLOAD_FILTER
+
 AUTOLOAD_FILTER
 ~~~~~~~~~~~~~~~
 
@@ -631,6 +667,8 @@ loads (``load_acl --auto``).  This setting was renamed from
 Default::
 
     []
+
+.. setting:: AUTOLOAD_FILTER_THRESH
 
 AUTOLOAD_FILTER_THRESH
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -647,6 +685,8 @@ Default::
 
     {}
 
+.. setting:: AUTOLOAD_BULK_THRESH
+
 AUTOLOAD_BULK_THRESH
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -658,11 +698,13 @@ Default::
 
     10
 
+.. setting:: BULK_MAX_HITS
+
 BULK_MAX_HITS
 ~~~~~~~~~~~~~
 
 This is a dictionary mapping of filter names to the number of bulk hits. Use
-this to override ``BULK_MAX_HITS_DEFAULT``. Please note that this number is
+this to override :setting:`BULK_MAX_HITS_DEFAULT`. Please note that this number is
 used PER EXECUTION of ``load_acl --auto``. For example if you ran it once per
 hour, and your bounce window were 3 hours, this number should be the total
 number of expected devices per ACL within that allotted bounce window. Yes this
@@ -679,10 +721,12 @@ Default::
 
     {}
 
+.. setting:: BULK_MAX_HITS_DEFAULT
+
 BULK_MAX_HITS_DEFAULT
 ~~~~~~~~~~~~~~~~~~~~~
 
-If an ACL is bulk but not defined in ``BULK_MAX_HITS``, use this number as
+If an ACL is bulk but not defined in :setting:`BULK_MAX_HITS`, use this number as
 max_hits. For example using the default value of 1, that means load on one
 device per ACL, per data center or site location, per ``load_acl --auto``
 execution.
@@ -693,6 +737,8 @@ Default::
 
 On-Call Engineer Display settings
 ---------------------------------
+
+.. setting:: GET_CURRENT_ONCALL
 
 GET_CURRENT_ONCALL
 ~~~~~~~~~~~~~~~~~~
@@ -713,6 +759,8 @@ Default::
 
 CM Ticket Creation settings
 ---------------------------
+
+.. setting:: CREATE_CM_TICKET
 
 CREATE_CM_TICKET
 ~~~~~~~~~~~~~~~~

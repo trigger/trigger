@@ -759,8 +759,13 @@ def main():
             sys.exit(1)
 
         print '\nSubmitting CM ticket...'
-        cm_ticketnum = create_cm_ticket(work, oncall)
-
+        # catch failures to create a ticket
+        try:
+            cm_ticketnum = create_cm_ticket(work, oncall)
+        except:
+            # create_cm_ticket is user defined
+            # so we don't know what exceptions can be returned
+            cm_ticketnum = None
         if not cm_ticketnum:
             if opts.auto:
                 email_users(settings.FAILURE_EMAILS, "LOAD_ACL FAILURE",

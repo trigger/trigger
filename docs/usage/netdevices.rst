@@ -271,7 +271,7 @@ database file you can leverage in other ways outside of Trigger.
 .. literalinclude:: ../../conf/netdevices.sql
     :language: sql
 
-To use SQLite, create a database using the schema provided within Trigger souce
+To use SQLite, create a database using the schema provided within Trigger source
 distribution at ``conf/netdevices.sql``. You will need to populate the
 database full of rows with the columns above and set :setting:`NETDEVICES_FORMAT` to
 ``'sqlite'``.
@@ -290,17 +290,18 @@ has three things it requires before you can properly do this:
 How it works
 ------------
 
-The NetDevices object itself is an immutable, dictionary-like Singleton_ object.
-If you don't know what a Singleton is, it means that the actual there can only
-really only be one instance in any program. The actual instance object itself an
-instance of the inner :class:`~trigger.netdevices.NetDevices._actual` class which
-is stored in the module object as ``NetDevices._Singleton``. This is done as a
-performance boost because many Trigger components require a NetDevices instance,
-and if we had to keep creating new ones, we'd be waiting forever each time one
-had to parse :setting:`NETDEVICES_FILE` all over again.
+The `~trigger.netdevices.NetDevices` object itself is an immutable,
+dictionary-like Singleton_ object. If you don't know what a Singleton is, it
+means that there can only be one instance of this object in any program. The
+actual instance object itself an instance of the inner
+:class:`~trigger.netdevices.NetDevices._actual` class which is stored in the
+module object as ``NetDevices._Singleton``. This is done as a performance boost
+because many Trigger components require a NetDevices instance, and if we had to
+keep creating new ones, we'd be waiting each time one had to parse
+:setting:`NETDEVICES_FILE` all over again.
 
 Upon startup, each device object/element/row found within :setting:`NETDEVICES_FILE` is
-used to create a `~trigger.netdevices.NetDevice` object.  This object pulls in
+used to create a `~trigger.netdevices.NetDevice` object. This object pulls in
 ACL associations from `~trigger.acl.db.AclsDB`.
 
 .. _Singleton: http://en.wikipedia.org/wiki/Singleton_pattern

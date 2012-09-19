@@ -2,8 +2,8 @@
 Trigger Development
 ===================
 
-The Trigger developement team is currently a one-man operation led by `Jathan McCollum
-<http://about.me/jathanism>`_, aka ``jathanism``.
+The Trigger developement team is currently a one-man operation led by `Jathan
+McCollum <http://about.me/jathanism>`_, aka ``jathanism``.
 
 Contributing
 ============
@@ -80,7 +80,8 @@ contributors.
 Releases
 ========
 
-We use `semantic versioning <http://semver.org>`_. Version numbers should follow this format:: 
+We use `semantic versioning <http://semver.org>`_. Version numbers should
+follow this format::
 
     {Major version}.{Minor version}.{Revision number}.{Build number (optional)}
 
@@ -97,8 +98,8 @@ technology or an overhaul to be more object-oriented.
 
 Major releases will often be backwards-incompatible with the previous line of
 development, though this is not a requirement, just a usual happenstance.
-Users should expect to have to make at least some changes to their fabfiles
-when switching between major versions.
+Users should expect to have to make at least some changes to their
+``settings.py`` when switching between major versions.
 
 Minor
 -----
@@ -110,8 +111,8 @@ since the previous minor release. (And, naturally, some of them will involve
 both at the same time.)
 
 These releases are guaranteed to be backwards-compatible with all other
-releases containing the same major version number, so a fabfile that works
-with 1.0 should also work fine with 1.1 or even 1.9.
+releases containing the same major version number, so a ``settings.py`` that
+works with 1.0 should also work fine with 1.1 or even 1.9.
 
 Bugfix/tertiary
 ---------------

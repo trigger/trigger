@@ -100,7 +100,7 @@ The `Python redis <http://pypi.python.org/pypi/redis>`_ client is required
 to interact with Redis.
 
 Trigger currently assumes that you're running Redis on localhost and on the
-default port (6379). If you would like to change this, update ``REDIS_HOST`` in
+default port (6379). If you would like to change this, update :setting:`REDIS_HOST` in
 `settings.py` to reflect the IP address or hostname of your Redis instance.
 
 Used by:

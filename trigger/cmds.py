@@ -413,13 +413,12 @@ class Commando(object):
     #=======================================
 
     def to_base(self, device, commands=None, extra=None):
-        print '%s is a %s' % (device, device.deviceType)
         commands = commands or self.commands
-        print 'sending %r to %s' % (commands, device)
+        print 'Sending %r to %s' % (commands, device)
         return commands
 
     def from_base(self, results, device):
-        print 'received %r from %s' % (results, device)
+        print 'Received %r from %s' % (results, device)
         self.store_results(device, self.map_results(self.commands, results))
 
     #=======================================

@@ -2,6 +2,42 @@
 Changelog
 =========
 
+1.2.1
+=====
+
+- :bug:`30` Bugfix in ``bin/acl`` where tftproot was hard-coded. It now reads
+  from :setting:`TFTPROOT_DIR`.
+- :feature:`37` Fixed misleading "make discard" output from
+  ``bin/check_access``, to use the ``Term.extra`` attribute to store a
+  user-friendly comment to make it clear that the term's action has been
+  modified by the "make discard" keyword.
+- :feature:`39`  Call ``create_cm_ticket()`` in a ``try..commit`` block so it
+  can't crash ``bin/load_acl``.
+- :bug:`40` Update dot_gorc.example with ``[init_commands]``.
+- :bug:`43` Bugfix in bin/acl to address incorrect exception reference from
+  when exceptions were cleaned up in release 1.2.
+- Simplified basic `~trigger.cmds.Commando` example in ``docs/index.rst``.
+- Simplified activity output in `~trigger.cmds.Commando` base to/from methods
+- Replaced all calls to ``time.sleep()`` with ``reactor.callLater()`` within
+  `~trigger.twister` support of the ``command_interval`` argument to Twisted
+  state machine constructors.
+- Added a way to do SSH version detection within `~trigger.utils.network`
+
+  - Enhanced `~trigger.utils.networktest_tcp_port` to support optional
+    ``check_result`` and ``expected_result`` arguments. If ``check_result`` is
+    set, the first line of output is retreived from the connection and the
+    starting characters must match ``expected_result``.
+  - Added a `~trigger.utils.network.test_ssh` function to shortcut to check
+    port 22 for a banner. Defaults to SSHv2.
+  - SSH auto-detection in `~trigger.netdevices.NetDevices` objects now uses
+    `~trigger.utils.network.test_ssh`.
+
+- Added a new `~trigger.utils.crypt_md5` password-hashing function.
+- Added proper argument signature to `~trigger.acl.db.get_netdevices`.
+- Updated misnamed ``BadPolicerNameError`` to `~trigger.exceptions.BadPolicerName`
+- More and better documentation improvements, including new documentation for
+  ``bin/acl_script``.
+
 1.2
 ===
 

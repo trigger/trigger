@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -25,7 +24,7 @@ set(['juniper-router.policer', 'juniper-router-protect'])
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2010-2011, AOL Inc.'
+__copyright__ = 'Copyright 2010-2012, AOL Inc.'
 
 from collections import defaultdict
 import redis
@@ -38,15 +37,10 @@ from trigger.conf import settings
 ACLSDB_BACKUP = './acls.csv'
 DEBUG = False
 
+# The redis instance. It doesn't care if it can't reach Redis until you actually
+# try to talk to Redis.
 r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT,
                 db=settings.REDIS_DB)
-
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-
 
 # Exports
 __all__ = (
@@ -191,10 +185,10 @@ def populate_implicit_acls(nd=None):
         [r.sadd('acls:implicit:%s' % dev.nodeName, acl) for acl in autoacl(dev)]
     r.save()
 
-def get_netdevices():
+def get_netdevices(production_only=True, with_acls=True):
     """Shortcut to import, instantiate, and return a NetDevices instance."""
     from trigger.netdevices import NetDevices
-    return NetDevices()
+    return NetDevices(production_only=production_only, with_acls=with_acls)
 
 def get_all_acls(nd=None):
     """

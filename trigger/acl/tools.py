@@ -119,6 +119,7 @@ def check_access(terms_to_check, new_term, quiet=True, format='junos',
         for comment in t.comments:
             if 'trigger: make discard' in comment:
                 t.setaction('discard') #.action[0] = 'discard'
+                t.extra = ' altered from accept for display purposes '
 
         for k,v in t.match.iteritems():
 

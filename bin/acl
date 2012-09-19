@@ -23,6 +23,7 @@ import sys
 from trigger.utils.cli import get_terminal_width
 from trigger.acl.queue import Queue
 from trigger.acl.db import AclsDB, get_matching_acls
+from trigger.conf import settings
 from trigger import exceptions
 
 # Setup
@@ -86,8 +87,9 @@ queue = Queue()
 
 # Do the work.
 if opts.mode == 'liststaged':
-    print 'Access-lists currently staged in /home/tftp (listed by date):\n'
-    os.chdir('/home/tftp')
+    tfdir = settings.TFTPROOT_DIR
+    print 'Access-lists currently staged in %s (listed by date):\n' % tfdir
+    os.chdir(tfdir)
     os.system('ls -ltr acl.*')
 
 elif opts.mode == 'list':
@@ -135,7 +137,7 @@ elif changers:
             for acl in opts.remove:
                 try:
                     print aclsdb.remove_acl(dev, acl)
-                except ModifyACLSetError, err:
+                except exceptions.ACLSetError, err:
                     print err
             #should also conside adding a comment about autoacls if it was for opts.remove
 

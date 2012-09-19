@@ -88,7 +88,7 @@ class BadForwardingClassName(ActionError):
 class BadIPSecSAName(ActionError):
     """Raised when an IPSec SA name is invalid."""
 
-class BadPolicerNameError(ActionError):
+class BadPolicerName(ActionError):
     """Raised when a policer name is invalid."""
 
 # Argument matching errors

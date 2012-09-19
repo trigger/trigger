@@ -7,7 +7,7 @@ Functions that perform network-based things like ping, port tests, etc.
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2011, AOL Inc.'
+__copyright__ = 'Copyright 2009-2012, AOL Inc.'
 
 import commands
 import socket
@@ -16,7 +16,7 @@ from trigger.conf import settings
 
 
 # Exports
-__all__ = ('ping', 'test_tcp_port', 'address_is_internal',)
+__all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal',)
 
 
 # Functions
@@ -24,9 +24,14 @@ def ping(host, count=1, timeout=5):
     """
     Returns pass/fail for a ping. Supports POSIX only.
 
-    :param host: Hostname or address
-    :param count: Repeat count
-    :param timeout: Timeout in seconds
+    :param host:
+        Hostname or address
+
+    :param count:
+        Repeat count
+
+    :param timeout:
+        Timeout in seconds
 
     >>> from trigger.utils import network
     >>> network.ping('aol.com')
@@ -39,39 +44,81 @@ def ping(host, count=1, timeout=5):
 
     # Linux RC: 0 = success, 256 = failure, 512 = unknown host
     # Darwin RC: 0 = success, 512 = failure, 17408 = unknown host
-    if status != 0:
-        return False
-    return True
+    return status == 0
 
-def test_tcp_port(host, port=23, timeout=5):
+def test_tcp_port(host, port=23, timeout=5, check_result=False,
+                  expected_result=''):
     """
-    Attempts to connect to a TCP port. Returns a boolean.
+    Attempts to connect to a TCP port. Returns a Boolean.
 
-    :param host: Hostname or address
-    :param port: Destination port
-    :param timeout: Timeout in seconds
+    If ``check_result`` is set, the first line of output is retreived from the
+    connection and the starting characters must match ``expected_result``.
 
-    >>> network.test_tcp_port('aol.com', 80)
+    :param host:
+        Hostname or address
+
+    :param port:
+        Destination port
+
+    :param timeout:
+        Timeout in seconds
+
+    :param check_result:
+        Whether or not to do a string check (e.g. version banner)
+
+    :param expected_result:
+        The expected result!
+
+    >>> test_tcp_port('aol.com', 80)
     True
-    >>> network.test_tcp_port('aol.com', 12345)
+    >>> test_tcp_port('aol.com', 12345)
     False
     """
     try:
         t = telnetlib.Telnet(host, port, timeout)
-        t.close()
+        if check_result:
+            result = t.read_some()
+            t.close()
+            return result.startswith(expected_result)
     except (socket.timeout, socket.error):
         return False
 
+    t.close()
     return True
+
+def test_ssh(host, port=22, timeout=5, version='SSH-2.0'):
+    """
+    Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
+
+    :param host:
+        Hostname or address
+
+    :param port:
+        Destination port
+
+    :param timeout:
+        Timeout in seconds
+
+    :param version:
+        The SSH version prefix (e.g. "SSH-2.0")
+
+    >>> test_ssh('localhost')
+    True
+    >>> test_ssh('localhost', version='SSH-1.5')
+    False
+    """
+    return test_tcp_port(host, port, timeout, check_result=True,
+                         expected_result=version)
 
 def address_is_internal(ip):
     """
-    Determines if an IP address is internal to your network. Relies on 
+    Determines if an IP address is internal to your network. Relies on
     networks specified in :mod:`settings.INTERNAL_NETWORKS`.
 
-    :param ip: IP address to test. 
+    :param ip:
+        IP address to test.
 
-    >>> network.address_is_internal('1.1.1.1')
+    >>> address_is_internal('1.1.1.1')
     False
     """
     for i in settings.INTERNAL_NETWORKS:

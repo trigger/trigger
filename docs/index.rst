@@ -89,7 +89,7 @@ vendors:
 
 It's worth noting that other vendors may actually work with the current
 libraries, but they have not been tested. The mapping of supported platforms is
-stored in ``settings.py`` as ``settings.SUPPORTED_PLATFORMS``. Modify it at
+specified in ``settings.py`` as :setting:`SUPPORTED_PLATFORMS`. Modify it at
 your own risk!
 
 Getting Started
@@ -127,9 +127,9 @@ in progress, but it's not a bad start. Please have a look and give us
 Documentation
 =============
 
-Please note that all documentation is written with users of Python 2.6 in mind.
-It's safe to assume that Trigger will not work properly on Python versions
-earlier than Python 2.6.
+Please note that all documentation is written with users of Python 2.6 or
+higher in mind. It's safe to assume that Trigger will not work properly on
+Python versions earlier than Python 2.6.
 
 For now, most of our documentation is automatically generated form the source
 code documentation, which is usually very detailed. As we move along, this will
