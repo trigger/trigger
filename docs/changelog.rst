@@ -2,6 +2,8 @@
 Changelog
 =========
 
+.. _v1.2.2:
+
 1.2.2
 =====
 
@@ -17,7 +19,7 @@ Changelog
 
   - A new pluggable notification system has been added in
     `~trigger.utils.notifications`, which defaults to email notifications.
-    New event handlers and even types can be easily added and specified
+    New event handlers and event types can be easily added and specified
     with the configuration using :setting:`NOTIFICATION_HANDLERS`.
 
   - The following changes have been made to ``bin/load_acl``:
@@ -43,6 +45,8 @@ Changelog
     `~trigger.utils.importlib`, and ``trigger.conf.import_path()`` was moved to
     `~trigger.utils.importlib.import_module_from_path()` to bring these import
     tools under one roof.
+
+.. _v1.2.1:
 
 1.2.1
 =====
@@ -79,6 +83,8 @@ Changelog
 - Updated misnamed ``BadPolicerNameError`` to `~trigger.exceptions.BadPolicerName`
 - More and better documentation improvements, including new documentation for
   ``bin/acl_script``.
+
+.. _v1.2:
 
 1.2
 ===
@@ -221,6 +227,8 @@ Changelog
 
 - :feature:`24` ``bin/gong`` will now display the reason when it fails to
   connect to a device.
+
+.. _v1.1:
 
 1.1
 ===
