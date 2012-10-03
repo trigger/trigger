@@ -16,7 +16,7 @@ from trigger.conf import settings
 
 
 # Exports
-__all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal',)
+__all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal')
 
 
 # Functions
@@ -86,9 +86,12 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False,
     t.close()
     return True
 
-def test_ssh(host, port=22, timeout=5, version='SSH-2.0'):
+def test_ssh(host, port=22, timeout=5, version=('SSH-1.99', 'SSH-2.0')):
     """
     Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
+
+    Note that the default of ('SSH-1.99', 'SSH-2.0') both indicate SSHv2 per
+    RFC 4253. (Ref: http://en.wikipedia.org/wiki/Secure_Shell#Version_1.99)
 
     :param host:
         Hostname or address
@@ -100,7 +103,8 @@ def test_ssh(host, port=22, timeout=5, version='SSH-2.0'):
         Timeout in seconds
 
     :param version:
-        The SSH version prefix (e.g. "SSH-2.0")
+        The SSH version prefix (e.g. "SSH-2.0"). This may also be a tuple of
+        prefixes.
 
     >>> test_ssh('localhost')
     True

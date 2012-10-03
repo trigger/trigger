@@ -16,6 +16,9 @@ from simpleparse.error import ParserSyntaxError
 class TriggerError(Exception):
     """A base exception for all Trigger-related errors."""
 
+class ImproperlyConfigured(TriggerError):
+    """Raised when something is improperly... configured..."""
+
 #####################
 # ACL Exceptions
 #####################
@@ -138,9 +141,6 @@ class UnsupportedVendor(CommandoError):
 class MissingPlatform(CommandoError):
     """Raised when a specific device platform is not supported."""
 
-class ImproperlyConfigured(CommandoError):
-    """Raised when something is improperly... configured..."""
-
 #####################
 # Twister Exceptions
 #####################
@@ -194,7 +194,13 @@ class JunoscriptCommandFailure(CommandFailure):
 # NetDevices Exceptions
 #####################
 class NetDeviceError(TriggerError):
-    "A base exception for all NetDevices related errors."""
+    """A base exception for all NetDevices related errors."""
 
 class BadVendorName(NetDeviceError):
     """Raised when a Vendor object has a problem with the name."""
+
+#####################
+# Notification Exceptions
+#####################
+class NotificationFailure(TriggerError):
+    """Raised when a notification fails and has not been silenced."""

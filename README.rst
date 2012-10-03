@@ -43,17 +43,3 @@ Getting Started
 ===============
 
 The best way to get started is to read the documentation hosted by `Read the Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org <http://trigger.readthedocs.org>`_. There you will find everything you need to get going including usage examples, installation and configuration instructions, and more!
-
-Contributors
-============
-
-The following people have contributed to Trigger at some point during its
-lifetime: 
-
-- Jathan McCollum
-- Eileen Tschetter
-- Mark Ellzey Thomas
-- Michael Shields
-- Jeff Sullivan (for the best error message ever)
-- `Nick Sinopoli <https://github.com/NSinopoli>`_ (for graciously giving us the
-  name Trigger!)

@@ -2,6 +2,48 @@
 Changelog
 =========
 
+1.2.2
+=====
+
+- :feature:`16` Arista support was added to ``bin/load_acl``
+- :bug:`45` Added "SSH-1.99" as a valid SSHv2 version in
+  `~trigger.utils.network.test_ssh()` to fix a bug in which devices presenting
+  this banner were errantly falling back to telnet and causing weird behavior
+  during interactive sessions.
+- :feature:`46` Changed `~trigger.twister.connect()` to pass the vendor name to
+  `~trigger.gorc.get_init_commands()` so that it is more explicit when
+  debugging.
+- :feature:`29` Added an extensible event notification system
+
+  - A new pluggable notification system has been added in
+    `~trigger.utils.notifications`, which defaults to email notifications.
+    New event handlers and even types can be easily added and specified
+    with the configuration using :setting:`NOTIFICATION_HANDLERS`.
+
+  - The following changes have been made to ``bin/load_acl``:
+
+    - All alerts are now using the new notification system
+    - ``email_users()`` moved to `~trigger.utils.notifications.send_email()`
+    - All calls to send failures now call
+      `~trigger.utils.notifications.send_notification()`
+    - All calls to send successes now calls
+      `~trigger.utils.notifications.send_email()`
+
+  - In support of the new notification system, the following config
+    settings have been added:
+
+    - :setting:`EMAIL_SENDER` - The default email sender
+    - :setting:`NOTIFICATION_SENDER` - The default notification sender
+    - :setting:`SUCCESS_RECIPIENTS` - Hosts/addresses to send successes
+    - :setting:`FAILURE_RECIPIENTS` - Hosts/addresses to send failures
+    - :setting:`NOTIFICATION_HANDLERS` - A list of handler functions to
+      process in order
+
+  - A new utility module has been added to import modules in
+    `~trigger.utils.importlib`, and ``trigger.conf.import_path()`` was moved to
+    `~trigger.utils.importlib.import_module_from_path()` to bring these import
+    tools under one roof.
+
 1.2.1
 =====
 
@@ -23,16 +65,16 @@ Changelog
   state machine constructors.
 - Added a way to do SSH version detection within `~trigger.utils.network`
 
-  - Enhanced `~trigger.utils.networktest_tcp_port` to support optional
+  - Enhanced `~trigger.utils.network.test_tcp_port()` to support optional
     ``check_result`` and ``expected_result`` arguments. If ``check_result`` is
     set, the first line of output is retreived from the connection and the
     starting characters must match ``expected_result``.
-  - Added a `~trigger.utils.network.test_ssh` function to shortcut to check
+  - Added a `~trigger.utils.network.test_ssh()` function to shortcut to check
     port 22 for a banner. Defaults to SSHv2.
   - SSH auto-detection in `~trigger.netdevices.NetDevices` objects now uses
-    `~trigger.utils.network.test_ssh`.
+    `~trigger.utils.network.test_ssh()`.
 
-- Added a new `~trigger.utils.crypt_md5` password-hashing function.
+- Added a new `~trigger.utils.crypt_md5()` password-hashing function.
 - Added proper argument signature to `~trigger.acl.db.get_netdevices`.
 - Updated misnamed ``BadPolicerNameError`` to `~trigger.exceptions.BadPolicerName`
 - More and better documentation improvements, including new documentation for
@@ -47,7 +89,7 @@ Changelog
     metadata. A new RANCID compatibility module has been added at
     `~trigger.rancid`, with support for either single or multiple instance
     configurations. Multiple instances support can be toggled by setting
-    :setting:`RANCID_RECURSE_SUBDIRS`` to ``True``.
+    :setting:`RANCID_RECURSE_SUBDIRS` to ``True``.
 
   - The following changes have been made to `~trigger.netdevices`:
 
@@ -129,12 +171,12 @@ Changelog
       as ``dev.connect()``.
     - New helper methods added to `~trigger.netdevices.NetDevice` objects:
 
-      - SSH functionality methods: `~trigger.netdevices.NetDevice.has_ssh`
-        (port connection test), `~trigger.netdevices.NetDevice.can_ssh_async`
-        (device supports async), `~trigger.netdevices.NetDevice.can_ssh_pty`
+      - SSH functionality methods: `~trigger.netdevices.NetDevice.has_ssh()`
+        (port connection test), `~trigger.netdevices.NetDevice.can_ssh_async()`
+        (device supports async), `~trigger.netdevices.NetDevice.can_ssh_pty()`
         (device supports pty)
-      - `~trigger.netdevices.NetDevice.is_ioslike` to test if a device is
-        IOS-like as specified by ``settings.IOSLIKE_VENDORS``
+      - `~trigger.netdevices.NetDevice.is_ioslike()` to test if a device is
+        IOS-like as specified by :setting:`IOSLIKE_VENDORS`.
       - `~trigger.netdevices.NetDevice.is_netscreen` to test if a device is a
         NetScreen firewall
       - `~trigger.netdevices.NetDevice.is_reachable` to test if a device
@@ -143,15 +185,15 @@ Changelog
   - The following changes have been made to `~trigger.conf.settings`:
 
     - A mapping of officially supported platforms has been defined at
-      ``settings.SUPPORTED_PLATFORMS``
-    - ``settings.VALID_VENDORS`` has been renamed to ``settings.SUPPORTED_VENDORS``
+      :setting:`SUPPORTED_PLATFORMS`
+    - :setting:`VALID_VENDORS` has been renamed to :setting:`SUPPORTED_VENDORS`
     - A mapping of officially supported device types has been defined at
-      ``settings.SUPPORTED_TYPES``
-    - You may now disable telnet fallback by toggling ``settings.TELNET_ENABLED``
+      :setting:`SUPPORTED_TYPES`
+    - You may now disable telnet fallback by toggling :setting:`TELNET_ENABLED`
     - You may now disable SSH for pty or async by vendor/type using
-      ``settings.SSH_PTY_DISABLED`` and ``settings.SSH_ASYNC_DISABLED``
+      :setting:`SSH_PTY_DISABLED` and :setting:`SSH_ASYNC_DISABLED`
       respectively
-    - ``settings.SSH_TYPES`` has been removed as it is no longer needed
+    - :setting:`SSH_TYPES` has been removed as it is no longer needed
 
   - `~trigger.cmds.Commando` experimentally using the new
     ``NetDevice.execute()`` method
@@ -175,7 +217,7 @@ Changelog
   - The `~trigger.cmds.Commando` was updated to support A10, NetScreen. Brocade,
     Arista changed to use SSH vs. telnet.
   - All prompt-matching patterns moved to top of `trigger.twister` as constants
-  - A10 added to ``settings.IOSLIKE_VENDORS````
+  - A10 added to :setting:`IOSLIKE_VENDORS`
 
 - :feature:`24` ``bin/gong`` will now display the reason when it fails to
   connect to a device.
@@ -310,6 +352,9 @@ Changelog
 
 Legacy Versions
 ===============
+
+Trigger was renumbered to version 1.0 when it was publicly released on April 2,
+2012. This legacy version history is incompleted, but is kept here for posterity.
 
 1.6.1
 -----

@@ -182,29 +182,6 @@ Default::
 
   [IPy.IP("10.0.0.0/8"), IPy.IP("172.16.0.0/12"), IPy.IP("192.168.0.0/16")]
 
-.. setting:: SUCCESS_EMAILS
-
-SUCCESS_EMAILS
-~~~~~~~~~~~~~~
-
-A list of email addresses to email when things go well (such as from ``load_acl
---auto``).
-
-Default::
-
-    []
-
-.. setting:: FAILURE_EMAILS
-
-FAILURE_EMAILS
-~~~~~~~~~~~~~~
-
-A list of email addresses to email when things go not well.
-
-Default::
-
-    []
-
 .. setting:: VENDOR_MAP
 
 VENDOR_MAP
@@ -773,3 +750,110 @@ function that takes any arguments and returns ``None``.
 Default::
 
     _create_cm_ticket_stub
+
+Notification settings
+---------------------
+
+.. setting:: EMAIL_SENDER
+
+EMAIL_SENDER
+~~~~~~~~~~~~
+
+.. versionadded:: 1.2.2
+
+The default email sender for email notifications. It's probably a good idea to
+make this a no-reply address.
+
+Default::
+
+    'nobody@not.real'
+
+.. setting:: SUCCESS_EMAILS
+
+SUCCESS_EMAILS
+~~~~~~~~~~~~~~
+
+A list of email addresses to email when things go well (such as from ``load_acl
+--auto``).
+
+Default::
+
+    []
+
+.. setting:: FAILURE_EMAILS
+
+FAILURE_EMAILS
+~~~~~~~~~~~~~~
+
+A list of email addresses to email when things go not well.
+
+Default::
+
+    []
+
+.. setting:: NOTIFICATION_SENDER
+
+NOTIFICATION_SENDER
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2.2
+
+The default sender for integrated notifications. This defaults to the
+fully-qualified domain name (FQDN) for the local host.
+
+Default::
+
+    socket.gethostname()
+
+.. setting:: SUCCESS_RECIPIENTS
+
+SUCCESS_RECIPIENTS
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2.2
+
+Destinations (hostnames, addresses) to notify when things go well.
+
+Default::
+
+    []
+
+.. setting:: FAILURE_RECIPIENTS
+
+FAILURE_RECIPIENTS
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2.2
+
+Destinations (hostnames, addresses) to notify when things go not well.
+
+Default::
+
+    []
+
+.. setting:: NOTIFICATION_HANDLERS
+
+NOTIFICATION_HANDLERS
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2.2
+
+This is a list of fully-qualified import paths for event handler functions.
+Each path should end with a callable that handles a notification event and
+returns ``True`` in the event of a successful notification, or ``None``.
+
+To activate a handler, add it to this list. Each handler is represented by a
+string: the full Python path to the handler's function name.
+
+Handlers are processed in order. Once an event is succesfully handled, all
+processing stops so that each event is only handled once.
+
+Until this documentation improves, for a good example of how to create a
+custom handler, review the source code for
+`~trigger.utils.notifications.handlers.email_handler()`.
+
+Default::
+
+    [
+        'trigger.utils.notifications.handlers.email_handler',
+    ]

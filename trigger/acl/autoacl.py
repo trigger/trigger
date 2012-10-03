@@ -24,8 +24,9 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2010-2012, AOL Inc.'
 
+from trigger.conf import settings
+from trigger.utils.importlib import import_module_from_path
 import warnings
-from trigger.conf import settings, import_path
 
 __all__ = ('autoacl',)
 
@@ -37,7 +38,7 @@ try:
     # Placeholder for the custom autoacl module that will provide the autoacl()
     # function. Either of these operations will raise an ImportError if they
     # don't work, so it's safe to have them within the same try statement.
-    _autoacl_module = import_path(module_path, '_autoacl_module')
+    _autoacl_module = import_module_from_path(module_path, '_autoacl_module')
     from _autoacl_module import autoacl
 except ImportError:
     msg = 'Function autoacl() could not be found in %s, using default!' % module_path

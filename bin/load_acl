@@ -16,7 +16,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shi
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2003-2012, AOL Inc.'
-__version__ = '1.6.10'
+__version__ = '1.7'
 
 # Dist imports
 from collections import defaultdict
@@ -45,6 +45,7 @@ from trigger.conf import settings
 from trigger.netdevices import NetDevices
 from trigger.twister import execute_junoscript, execute_ioslike
 from trigger.utils.cli import print_severed_head, NullDevice, pretty_time, min_sec
+from trigger.utils.notifications import send_notification, send_email
 
 # Globals
 # Pull in these functions from settings
@@ -436,6 +437,8 @@ def ioslike_cmds(acls, dev, nonce):
         A nonce to use when staging the ACL file for TFTP
     """
     template_base = {
+        # two sets of identical strings
+        'arista': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
         'cisco': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
         'brocade': 'copy tftp run %s acl.%s.%s\n',
         'foundry': 'copy tftp run %s acl.%s.%s\n',
@@ -665,33 +668,6 @@ def run(stdscr, work, jobs, failures):
 
     reactor.run()
 
-def email_users(addresses, subject, body, fromaddr=settings.EMAIL_SENDER):
-    """
-    Emails... users... Sender is implied from ``settings`` unless otherwise
-    specified.
-
-    :param addresses:
-        List of email recipients
-
-    :param subject:
-        The email subject
-
-    :param body:
-        The email body
-
-    :param fromaddr:
-        The email sender (optional)
-    """
-    import smtplib
-    fromaddr = settings.EMAIL_SENDER
-    for email in addresses:
-        header = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n' % \
-            (fromaddr, email, subject )
-        message = header + body
-        server = smtplib.SMTP('localhost')
-        server.sendmail(fromaddr, email, message)
-        server.quit()
-
 def main():
     """The Main Event."""
     global opts
@@ -730,7 +706,6 @@ def main():
     if debug_fakeout():
         print 'DEBUG FAKEOUT ENABLED'
         failures = {}
-        #run(None, work, opts.jobs, queue, failures)
         run(None, work, opts.jobs, failures)
         sys.exit(1)
 
@@ -753,9 +728,9 @@ def main():
         oncall = get_current_oncall()
         if not oncall:
             if opts.auto:
-                email_users(settings.FAILURE_EMAILS, "LOAD_ACL FAILURE",
-                        "Unable to get current ONCALL information!")
-            log.err("Unable to get oncall information!", logLevel=logging.CRITICAL)
+                send_notification("LOAD_ACL FAILURE",
+                                  "Unable to get current ON-CALL information!")
+            log.err("Unable to get on-call information!", logLevel=logging.CRITICAL)
             sys.exit(1)
 
         print '\nSubmitting CM ticket...'
@@ -768,8 +743,8 @@ def main():
             cm_ticketnum = None
         if not cm_ticketnum:
             if opts.auto:
-                email_users(settings.FAILURE_EMAILS, "LOAD_ACL FAILURE",
-                        "Unable to create CM ticket!")
+                send_notification("LOAD_ACL FAILURE",
+                                  "Unable to create CM ticket!")
             log.err("Unable to create CM ticket!", logLevel=logging.CRITICAL)
             sys.exit(1)
 
@@ -792,7 +767,6 @@ def main():
             stdscr.idlok(1)
             stdscr.scrollok(0)
             curses.noecho()
-        #run(stdscr, work, opts.jobs, queue, failures)
         run(stdscr, work, opts.jobs, failures)
     finally:
         if not opts.no_curses:
@@ -810,11 +784,13 @@ def main():
 
     if opts.auto:
         if failed_count:
-            email_users(settings.FAILURE_EMAILS, "LOAD_ACL FAILURE",
-                    "%d ACLS failed to load! See logfile: %s on jumphost." % (failed_count, tmpfile))
+            send_notification("LOAD_ACL FAILURE",
+                              "%d ACLS failed to load! See logfile: %s on jumphost." %
+                              (failed_count, tmpfile))
         else:
-            email_users(settings.SUCCESS_EMAILS, "LOAD ACL SUCCESS!",
-                "%d acls loaded successfully! see log file: %s" % (acl_count, tmpfile))
+            send_email(settings.SUCCESS_EMAILS, "LOAD ACL SUCCESS!",
+                       "%d acls loaded successfully! see log file: %s" % (acl_count,
+                       tmpfile), settings.EMAIL_SENDER)
 
 
     log.msg("%d failures" % failed_count)

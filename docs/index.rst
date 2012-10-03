@@ -66,6 +66,10 @@ vendors:
   + MLX routers
   + VDX switches
 
++ Citrix Systems
+
+  + NetScaler application delivery controllers and server load balancers
+
 + Cisco Systems
 
   + All router and switch platforms running IOS
@@ -82,10 +86,6 @@ vendors:
 
   + All router and switch platforms running Junos
   + NetScreen firewalls running ScreenOS (Junos not yet supported)
-
-+ Citrix Systems
-
-  + NetScaler application delivery controllers and server load balancers
 
 It's worth noting that other vendors may actually work with the current
 libraries, but they have not been tested. The mapping of supported platforms is

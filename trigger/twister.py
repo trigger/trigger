@@ -215,7 +215,7 @@ def connect(device, init_commands=None, output_logger=None, login_errback=None,
     # Fetch the initial commands for the device
     if init_commands is None:
         from trigger import gorc
-        init_commands = gorc.get_init_commands(device.vendor)
+        init_commands = gorc.get_init_commands(device.vendor.name)
 
     # Sane defaults
     if login_errback is None:

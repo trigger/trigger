@@ -22,11 +22,10 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2010-2012, AOL Inc.'
 
-import os
-import sys
-import warnings
-
 from . import global_settings
+import os
+from trigger.utils.importlib import import_module_from_path
+import warnings
 
 # Defaults
 DEFAULT_LOCATION = '/etc/trigger/settings.py'
@@ -35,38 +34,7 @@ SETTINGS_FILE = os.environ.get(ENVIRONMENT_VARIABLE, DEFAULT_LOCATION)
 
 
 # Exports
-__all__ = ('settings', 'DummySettings', 'import_path', 'BaseSettings',
-           'Settings')
-
-
-# Functions
-def import_path(full_path, global_name):
-    """
-    Import a file with full path specification. Allows one to
-    import from anywhere, something ``__import__`` does not do.
-
-    Also adds the module to ``sys.modules`` as module_name
-
-    :param full_path: The absolute path to the module .py file
-    :param global_name: The name assigned to the module in sys.modules. To avoid
-        confusion, the global_name should be the same as the variable to which
-        you're assigning the returned module.
-
-    Returns a module object.
-    """
-    path, filename = os.path.split(full_path)
-    module, ext = os.path.splitext(filename)
-    sys.path.append(path)
-
-    try:
-        mymodule = __import__(module)
-        sys.modules[global_name] = mymodule
-    except ImportError:
-        raise ImportError('Module could not be imported from %s.' % full_path)
-    finally:
-        del sys.path[-1]
-
-    return mymodule
+__all__ = ('settings', 'DummySettings', 'BaseSettings', 'Settings')
 
 
 # Classes
@@ -94,7 +62,7 @@ class Settings(BaseSettings):
         # Store the settings module in case someone later cares
         self.SETTINGS_MODULE = settings_module
 
-        mod = import_path(settings_module, 'settings')
+        mod = import_module_from_path(settings_module, 'settings')
 
         # Settings that should be converted into tuples if they're mistakenly entered
         # as strings.

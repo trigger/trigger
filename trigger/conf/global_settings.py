@@ -2,8 +2,9 @@
 # pointed-to by the TRIGGER_SETTINGS environment variable. This is pretty much
 # an exact duplication of how Django does this.
 
-import os
 import IPy
+import os
+import socket
 
 #===============================
 # Global Settings
@@ -39,17 +40,6 @@ INTERNAL_NETWORKS = [
     IPy.IP("10.0.0.0/8"),
     IPy.IP("172.16.0.0/12"),
     IPy.IP("192.168.0.0/16"),
-]
-
-# Who to email when things go well (e.g. load_acl --auto)
-SUCCESS_EMAILS = [
-    #'neteng@example.com',
-]
-
-# Who to email when things go not well (e.g. load_acl --auto)
-FAILURE_EMAILS = [
-    #'primarypager@example.com',
-    #'secondarypager@example.com',
 ]
 
 # The tuple of supported vendors derived from the values of VENDOR_MAP
@@ -302,3 +292,42 @@ def _create_cm_ticket_stub(**args):
 
 # If you don't want to use this feature, just have the function return None.
 CREATE_CM_TICKET = _create_cm_ticket_stub
+
+#===============================
+# Notifications
+#===============================
+# Email sender for integrated toosl. Usually a good idea to make this a
+# no-reply address.
+EMAIL_SENDER = 'nobody@not.real'
+
+# Who to email when things go well (e.g. load_acl --auto)
+SUCCESS_EMAILS = [
+    #'neteng@example.com',
+]
+
+# Who to email when things go not well (e.g. load_acl --auto)
+FAILURE_EMAILS = [
+    #'primarypager@example.com',
+    #'secondarypager@example.com',
+]
+
+# The default sender for integrated notifications. This defaults to the fqdn
+# for the localhost.
+NOTIFICATION_SENDER = socket.gethostname()
+
+# Destinations (hostnames, addresses) to notify when things go well.
+SUCCESS_RECIPIENTS = [
+    # 'foo.example.com',
+]
+
+# Destinations (hostnames, addresses) to notify when things go not well.
+FAILURE_RECIPIENTS = [
+    # socket.gethostname(), # The fqdn for the localhost
+]
+
+# This is a list of fully-qualified paths. Each path should end with a callable
+# that handles a notification event and returns ``True`` in the event of a
+# successful notification, or ``None``.
+NOTIFICATION_HANDLERS = [
+    'trigger.utils.notifications.handlers.email_handler',
+]
