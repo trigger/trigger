@@ -11,3 +11,4 @@ lifetime:
 - Jeff Sullivan (for the best error message ever)
 - `Nick Sinopoli <https://github.com/NSinopoli>`_ (for graciously giving us the
   name Trigger!)
+- `Jason Long <https://github.com/sh0x>`_
