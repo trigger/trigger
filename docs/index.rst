@@ -35,7 +35,7 @@ network devices with ease. Here are some of things that make Trigger tick:
 
 .. versionadded:: 1.2
 
-+ Import your metadata from an existing `RANCID <www.shrubbery.net/rancid/>`_
++ Import your metadata from an existing `RANCID <http://www.shrubbery.net/rancid/>`_
   installation to get up-and-running quickly!
 
 .. _examples-index:
@@ -95,6 +95,15 @@ your own risk!
 Getting Started
 ===============
 
+.. _interactive-mode:
+
+Before you begin
+----------------
+
+You might be required to tinker with some Python code. Don't worry, we'll be gentle!
+
+.. include:: interactive_mode.rst
+
 .. _install-docs:
 
 Installation
@@ -143,6 +152,7 @@ use Trigger's major functionality.
     development
     examples
     installation
+    interactive_mode
     license
     overview
 
