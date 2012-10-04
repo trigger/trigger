@@ -248,7 +248,10 @@ For the purpose of basic config, we'll just use the sample ``netdevices.xml`` fi
 Verifying Functionality
 =======================
 
-Once the dependencies are installed, try doing stuff.
+Once the dependencies are installed, fire up your trusty Python interpreter in
+interactive mode and try doing stuff.
+
+.. include:: interactive_mode.rst
 
 NetDevices
 ----------
