@@ -1396,6 +1396,9 @@ class Matches(MyDict):
         for port in ports:
             try:
                 if port[0] == 0:
+                    # Omit ports if 0-65535
+                    if port[1] == 65535:
+                        continue
                     a.append('lt %s' % (port[1]+1))
                 elif port[1] == 65535:
                     a.append('gt %s' % (port[0]-1))
