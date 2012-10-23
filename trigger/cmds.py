@@ -16,7 +16,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2009-2012, AOL Inc.'
-__version__ = '2.0'
+__version__ = '2.0.1'
 
 import datetime
 import itertools
@@ -519,9 +519,6 @@ class NetACLInfo(Commando):
                 bits = 0
         return netmask
 
-    def errback(self, data):
-        print "ERROR: ", data
-
     #=======================================
     # Vendor-specific generate (to_)/parse (from_) methods
     #=======================================
@@ -548,12 +545,9 @@ class NetACLInfo(Commando):
     def from_cisco(self, data, device):
         """Parse IOS config based on EBNF grammar"""
         self.results[device.nodeName] = data #"MY OWN IOS DATA"
+        alld = data[0]
 
-        alld = ''
-        awesome = ''
-        for line in data:
-            alld += line
-
+        log.msg('Parsing interface data (%d bytes)' % len(alld))
         self.config[device] = _parse_ios_interfaces(alld)
 
         return True
@@ -759,21 +753,11 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
 
     interfaces = pp.Dict( pp.ZeroOrMore(iface_info) )
 
-    # And results!
-    #this is where the parsing is actually happening
-
+    # This is where the parsing is actually happening
     try:
         results = interfaces.parseString(data)
-        #print results
-    except:  # (ParseException, ParseFatalException, RecursiveGrammarException): #err:
-        #pass
-        #print "caught some type of error"
-        #print err.line
-        #print " "*(err.column-1) + "^"
-        #print err
-
-        #sys.stderr.write("parseString threw an exception")
-        results = dict()
+    except: # (ParseException, ParseFatalException, RecursiveGrammarException):
+        results = {}
 
     return _cleanup_interface_results(results) if auto_cleanup else results
 
@@ -786,10 +770,6 @@ def _cleanup_interface_results(results):
         * Down/un-addressed interfaces are skipped
         * Bare IP/CIDR addresses are converted to IPy.IP objects
     """
-
-    #print "in cleanup"
-    #print results
-
     interfaces = sorted(results.keys())
     newdict = {}
     for interface in interfaces:
