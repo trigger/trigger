@@ -775,7 +775,7 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
         #sys.stderr.write("parseString threw an exception")
         results = dict()
 
-    return cleanup_interface_results(results) if auto_cleanup else results
+    return _cleanup_interface_results(results) if auto_cleanup else results
 
 def _cleanup_interface_results(results):
     """
