@@ -98,6 +98,9 @@ class Commando(object):
     # The commands to run
     commands = []
 
+    # How results are stored (defaults to dict)
+    results = {}
+
     def __init__(self, devices=None, commands=None, incremental=None,
                  max_conns=10, verbose=False, timeout=30,
                  production_only=True, allow_fallback=True):
@@ -115,7 +118,7 @@ class Commando(object):
         self.curr_conns = 0
         self.jobs = []
         self.errors = {}
-        self.results = {}
+        self.results = self.results
         self.deferrals = self._setup_jobs()
         self.supported_platforms = self._validate_platforms()
 
@@ -165,8 +168,8 @@ class Commando(object):
             try:
                 devobj = self.nd.find(str(dev))
             except KeyError:
+                msg = 'Device not found in NetDevices: %s' % dev
                 if self.verbose:
-                    msg = 'Device not found in NetDevices: %s' % dev
                     print 'ERROR:', msg
 
                 # Track the errors and keep moving
@@ -363,6 +366,7 @@ class Commando(object):
         :param results:
             The results to store. Anything you want really.
         """
+        log.msg("Storing results for %r: %r" % (device.nodeName, results))
         self.results[device.nodeName] = results
         return True
 
@@ -379,6 +383,7 @@ class Commando(object):
     def reactor_running(self):
         """Return whether reactor event loop is running or not"""
         from twisted.internet import reactor
+        log.msg("Reactor running? %s" % reactor.running)
         return reactor.running
 
     def _stop(self):
@@ -841,7 +846,9 @@ class ShowClock(Commando):
         """
         Parse and store a datetime
         """
-        print 'received %r from %s' % (results, device)
+        msg = 'Received %r from %s' % (results, device)
+        print msg
+        log.msg(msg)
         mapped = self.map_results(self.commands, results)
         for cmd, res in mapped.iteritems():
             mapped[cmd] = self._parse_datetime(res, fmt)
