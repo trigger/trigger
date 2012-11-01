@@ -469,6 +469,13 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
     channel = TriggerSSHGenericChannel
     prompt_pattern = IOSLIKE_PROMPT_PAT
     method = 'IOS-like'
+
+    ##jathan
+    if device.vendor == 'arista':
+        channel = TriggerSSHAristaChannel
+        method = 'Arista'
+    ##jathan
+
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval, channel,
                                prompt_pattern, method)
@@ -840,8 +847,10 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         if channel is None:
             raise TwisterError('You must specify an SSH channel class')
 
+        ##jathan
         if prompt_pattern is None:
             prompt_pattern = DEFAULT_PROMPT_PAT
+        ##jathan
 
         self.protocol = TriggerSSHTransport
         self.display_banner = None
@@ -854,7 +863,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         self.prompt = re.compile(prompt_pattern)
         TriggerClientFactory.__init__(self, deferred, creds)
 
-class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
+class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
     """
     Base class for SSH channels.
 
@@ -889,11 +898,12 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
         self._setup_channelOpen(data)
         self.initialized = False
         self.data = ''
-        #self.conn.sendRequest(self, 'shell', '')
-        self.conn.sendRequest(self, 'shell', '', wantReply=True).addCallback(self._gotResponse)
+        d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
+        d.addCallback(self._gotResponse)
+        d.addErrback(self._ebShellOpen)
 
-        # Don't call _send_next() here, since we expect to see a prompt, which
-        # will kick off initialization.
+        # Don't call _send_next() here, since we (might) expect to see a
+        # prompt, which will kick off initialization.
 
     def _gotResponse(self, _):
         """
@@ -902,27 +912,31 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin):
 
         If the shell never establishes, this won't be called.
         """
-        log.msg('Got response!')
-        #self.write('\n')
+        log.msg('Got shell request response!')
+
+    def _ebShellOpen(self, reason):
+        log.msg('shell request failed: %s' % reason)
 
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         # Append to the data buffer
+        log.msg('GOT TO dataReceived!')
         self.data += bytes
-        #log.msg('BYTES: %r' % bytes)
-        #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
-        #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
+                (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+        log.msg('BYTES: %r' % bytes)
 
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
         if not m:
-            #log.msg('STATE: prompt match failure', debug=True)
+            log.msg('STATE: prompt match failure', debug=True)
             return None
         log.msg('STATE: prompt %r' % m.group(), debug=True)
 
         # Strip the prompt from the match result
         result = self.data[:m.start()]
         result = result[result.find('\n')+1:]
+        log.msg('RESULT BYTES = %s' %len(result))
 
         # Only keep the results once we've sent any initial_commands
         if self.initialized:
@@ -999,6 +1013,196 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
 
     Before you create your own subclass, see if you can't use me as-is!
     """
+
+class TriggerSSHLinuxChannel(TriggerSSHChannelBase):
+    """
+    Run commands on a Linux system.
+    """
+    def channelOpen(self, data):
+        """Do this when the channel opens."""
+        # In testing the largest packets we see are of this size. If this ever
+        # changes, adjust it here.
+        self.max_len = 16384 # Used for raw data buffer
+        super(TriggerSSHLinuxChannel, self).channelOpen(data)
+
+    def _gotResponse(self, _):
+        """
+        Potentially useful if you want to do something after the shell is
+        initialized.
+
+        If the shell never establishes, this won't be called.
+        """
+        log.msg('Got BACONS!')
+        #self._send_next()
+
+    def _ebShellOpen(self, reason):
+        log.msg('shell request failed: %s' % reason)
+
+    def dataReceived(self, bytes):
+        """Do this when we receive data."""
+        log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
+                (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+        log.msg('BYTES RECV: %r' % bytes)
+        self.data += bytes
+
+        if len(bytes) == self.max_len:
+            log.msg('BYTES ARE FULL, CONTINUING')
+            return None
+
+        log.msg('SAVING BUFFER TO RESULT')
+        result = self.data
+
+        # Only keep the results once we've sent any initial_commands
+        if self.initialized:
+            log.msg('STORING RESULT')
+            self.results.append(result)
+
+        # By default we're checking for IOS-like errors because most vendors
+        # fall under this category.
+        if has_ioslike_error(result) and not self.with_errors:
+            log.msg('ERROR: %r' % result, debug=True)
+            self.factory.err = exceptions.CommandFailure(result)
+            self.loseConnection()
+            return None
+
+        # Honor the command_interval and then send the next command in the
+        # stack
+        else:
+            if self.command_interval:
+                log.msg('Waiting %s seconds before sending next command' %
+                        self.command_interval)
+            reactor.callLater(self.command_interval, self._send_next)
+
+
+class TriggerSSHAristaChannel(TriggerSSHLinuxChannel):
+    """Arista based on Linux"""
+    def channelOpen(self, data):
+        """Do this when channel opens."""
+        super(TriggerSSHAristaChannel, self).channelOpen(data)
+        self._send_next()
+
+    def _send_next(self):
+        self.resetTimeout()
+        self.data = ''
+
+        if self.incremental:
+            self.incremental(self.results)
+
+        try:
+            next_command = self.commanditer.next()
+            log.msg('COMMAND: next command=%s' % next_command, debug=True)
+        except StopIteration:
+            log.msg('CHANNEL: out of commands, closing...', debug=True)
+            self.loseConnection()
+            return None
+
+        if next_command is None:
+            self.results.append(None)
+            self._send_next()
+        else:
+            log.msg('sending SSH command %r' % next_command, debug=True)
+            d = self.conn.sendRequest(self, 'exec', NS(next_command), wantReply=True)
+            d.addCallback(self._gotResponse)
+            d.addErrback(self._ebShellOpen)
+
+class _TriggerSSHAristaChannel(TriggerSSHChannelBase):
+    """
+    Arista channel
+    """
+    def channelOpen(self, data):
+        """Do this when channel opens."""
+        #super(TriggerSSHLinuxChannel, self).channelOpen(data)
+        self._setup_channelOpen(data)
+        self.initialized = False
+        self.data = ''
+        #d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
+        #d.addCallback(self._gotResponse)
+        #d.addErrback(self._ebShellOpen)
+        self._send_next()
+
+    def _send_next(self):
+        self.resetTimeout()
+        self.data = ''
+
+        """
+        if not self.initialized:
+            log.msg('Not initialized, sending init commands', debug=True)
+            if self.initialize:
+                next_init = self.initialize.pop(0)
+                log.msg('Sending: %r' % next_init, debug=True)
+                self.write(next_init)
+                return None
+            else:
+                self.initialized = True
+        """
+        self.initialized = True
+
+        if self.incremental:
+            self.incremental(self.results)
+
+        try:
+            next_command = self.commanditer.next()
+            log.msg('COMMAND: next command=%s' % next_command, debug=True)
+        except StopIteration:
+            log.msg('CHANNEL: out of commands, closing...', debug=True)
+            self.loseConnection()
+            return None
+
+        if next_command is None:
+            self.results.append(None)
+            self._send_next()
+        else:
+            log.msg('sending SSH command %r' % next_command, debug=True)
+            d = self.conn.sendRequest(self, 'exec', NS(next_command), wantReply=True)
+            d.addCallback(self._gotResponse)
+            d.addErrback(self._ebShellOpen)
+
+    def dataReceived(self, bytes):
+        """Do this when we receive data."""
+        # Append to the data buffer
+        self.data += bytes
+        log.msg('BYTES: %r' % bytes)
+        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
+                (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+
+        # Keep going til you get a prompt match
+        """
+        m = self.prompt.search(self.data)
+        if not m:
+            #log.msg('STATE: prompt match failure', debug=True)
+            return None
+        log.msg('STATE: prompt %r' % m.group(), debug=True)
+
+        # Strip the prompt from the match result
+        result = self.data[:m.start()]
+        result = result[result.find('\n')+1:]
+        """
+        #result = self.data[self.data.find('\n')+1:]
+        #log.msg('GOT RESULT: %r' % result)
+        result = self.data
+
+        # Only keep the results once we've sent any initial_commands
+        if self.initialized:
+            #self.results.append(result)
+            log.msg('GOT RESULT: %r' % result)
+            self.results.append(result)
+
+        # By default we're checking for IOS-like errors because most vendors
+        # fall under this category.
+        if has_ioslike_error(result) and not self.with_errors:
+            log.msg('ERROR: %r' % result, debug=True)
+            self.factory.err = exceptions.CommandFailure(result)
+            self.loseConnection()
+            return None
+
+        # Honor the command_interval and then send the next command in the
+        # stack
+        else:
+            if self.command_interval:
+                log.msg('Waiting %s seconds before sending next command' %
+                        self.command_interval)
+            reactor.callLater(self.command_interval, self._send_next)
+
 
 class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
