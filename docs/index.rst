@@ -273,6 +273,14 @@ Wiki
 We will use GitHub's built-in wiki located at
 `https://github.com/aol/trigger/wiki <https://github.com/aol/trigger/wiki>`_.
 
+.. _openhatch:
+
+OpenHatch
+---------
+
+Find Trigger on Openhatch at 
+`http://openhatch.org/+projects/Trigger <http://openhatch.org/+projects/Trigger>`_!
+
 .. _license:
 
 License

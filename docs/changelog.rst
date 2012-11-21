@@ -2,6 +2,22 @@
 Changelog
 =========
 
+.. _v1.2.3:
+
+1.2.3
+=====
+
++ :feature:`47` Added parsing of ranges for ``fragment-offset`` statements in
+  Juniper ACLs.
++ :bug:`49` Changed ACL parser to omit src/dst ports if port range is
+  ``0-65535``.
++ :bug:`50` Fix typo that was causing Cisco parsing to generate an unhandled
+  exception within `~trigger.cmds.NetACLInfo`.
++ Minor bugfix when checking device names and printing a warning within
+  `~trigger.cmds.Commando`.
++ Updated docs to say we're using a interactive Python interpreter and added
+  OpenHatch profile to contact info.
+
 .. _v1.2.2:
 
 1.2.2

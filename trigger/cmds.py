@@ -16,7 +16,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2009-2012, AOL Inc.'
-__version__ = '2.0'
+__version__ = '2.0.1'
 
 import datetime
 import itertools
@@ -98,6 +98,9 @@ class Commando(object):
     # The commands to run
     commands = []
 
+    # How results are stored (defaults to dict)
+    results = {}
+
     def __init__(self, devices=None, commands=None, incremental=None,
                  max_conns=10, verbose=False, timeout=30,
                  production_only=True, allow_fallback=True):
@@ -115,7 +118,7 @@ class Commando(object):
         self.curr_conns = 0
         self.jobs = []
         self.errors = {}
-        self.results = {}
+        self.results = self.results
         self.deferrals = self._setup_jobs()
         self.supported_platforms = self._validate_platforms()
 
@@ -165,8 +168,8 @@ class Commando(object):
             try:
                 devobj = self.nd.find(str(dev))
             except KeyError:
+                msg = 'Device not found in NetDevices: %s' % dev
                 if self.verbose:
-                    msg = 'Device not found in NetDevices: %s' % dev
                     print 'ERROR:', msg
 
                 # Track the errors and keep moving
@@ -363,6 +366,7 @@ class Commando(object):
         :param results:
             The results to store. Anything you want really.
         """
+        log.msg("Storing results for %r: %r" % (device.nodeName, results))
         self.results[device.nodeName] = results
         return True
 
@@ -379,6 +383,7 @@ class Commando(object):
     def reactor_running(self):
         """Return whether reactor event loop is running or not"""
         from twisted.internet import reactor
+        log.msg("Reactor running? %s" % reactor.running)
         return reactor.running
 
     def _stop(self):
@@ -519,9 +524,6 @@ class NetACLInfo(Commando):
                 bits = 0
         return netmask
 
-    def errback(self, data):
-        print "ERROR: ", data
-
     #=======================================
     # Vendor-specific generate (to_)/parse (from_) methods
     #=======================================
@@ -548,12 +550,9 @@ class NetACLInfo(Commando):
     def from_cisco(self, data, device):
         """Parse IOS config based on EBNF grammar"""
         self.results[device.nodeName] = data #"MY OWN IOS DATA"
+        alld = data[0]
 
-        alld = ''
-        awesome = ''
-        for line in data:
-            alld += line
-
+        log.msg('Parsing interface data (%d bytes)' % len(alld))
         self.config[device] = _parse_ios_interfaces(alld)
 
         return True
@@ -759,23 +758,13 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
 
     interfaces = pp.Dict( pp.ZeroOrMore(iface_info) )
 
-    # And results!
-    #this is where the parsing is actually happening
-
+    # This is where the parsing is actually happening
     try:
         results = interfaces.parseString(data)
-        #print results
-    except:  # (ParseException, ParseFatalException, RecursiveGrammarException): #err:
-        #pass
-        #print "caught some type of error"
-        #print err.line
-        #print " "*(err.column-1) + "^"
-        #print err
+    except: # (ParseException, ParseFatalException, RecursiveGrammarException):
+        results = {}
 
-        #sys.stderr.write("parseString threw an exception")
-        results = dict()
-
-    return cleanup_interface_results(results) if auto_cleanup else results
+    return _cleanup_interface_results(results) if auto_cleanup else results
 
 def _cleanup_interface_results(results):
     """
@@ -786,10 +775,6 @@ def _cleanup_interface_results(results):
         * Down/un-addressed interfaces are skipped
         * Bare IP/CIDR addresses are converted to IPy.IP objects
     """
-
-    #print "in cleanup"
-    #print results
-
     interfaces = sorted(results.keys())
     newdict = {}
     for interface in interfaces:
@@ -861,7 +846,9 @@ class ShowClock(Commando):
         """
         Parse and store a datetime
         """
-        print 'received %r from %s' % (results, device)
+        msg = 'Received %r from %s' % (results, device)
+        print msg
+        log.msg(msg)
         mapped = self.map_results(self.commands, results)
         for cmd, res in mapped.iteritems():
             mapped[cmd] = self._parse_datetime(res, fmt)
