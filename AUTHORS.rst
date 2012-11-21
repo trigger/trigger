@@ -12,3 +12,5 @@ lifetime:
 - `Nick Sinopoli <https://github.com/NSinopoli>`_ (for graciously giving us the
   name Trigger!)
 - `Jason Long <https://github.com/sh0x>`_
+- Michael Harding
+- William White
