@@ -367,7 +367,7 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
 
     factory = TriggerSSHChannelFactory(d, commands, creds, incremental,
                                        with_errors, timeout, channel,
-                                       command_interval, prompt_pattern)
+                                       command_interval, prompt_pattern, device)
 
     log.msg('Trying %s SSH to %s' % (method, device), debug=True)
     reactor.connectTCP(device.nodeName, 22, factory)
@@ -845,7 +845,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
     """
     def __init__(self, deferred, commands, creds=None, incremental=None,
                  with_errors=False, timeout=None, channel=None,
-                 command_interval=0, prompt_pattern=None):
+                 command_interval=0, prompt_pattern=None, device=None):
 
         if channel is None:
             raise TwisterError('You must specify an SSH channel class')
@@ -870,6 +870,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         self.channel = channel
         self.command_interval = command_interval
         self.prompt = re.compile(prompt_pattern)
+        self.device = device
         TriggerClientFactory.__init__(self, deferred, creds)
         ##jathan
         #self.results = []
@@ -885,12 +886,12 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
     """
     name = 'session'
 
-    def _setup_channelOpen(self, data):
+    def _setup_channelOpen(self):
         """
         Call me in your subclass in self.channelOpen()::
 
             def channelOpen(self, data):
-                self._setup_channelOpen(data)
+                self._setup_channelOpen()
                 self.conn.sendRequest(self, 'shell', '')
                 # etc.
         """
@@ -910,14 +911,39 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         self.command_interval = self.factory.command_interval
         self.prompt = self.factory.prompt
         self.setTimeout(self.factory.timeout)
+        self.device = self.factory.device
         self.initialize = [] # Commands to run at startup e.g. ['enable\n']
+        self.initialized = False
+
+        if self.device is not None:
+            paging_map = {
+                'cisco': 'terminal length 0\n',
+                'arista': 'terminal length 0\n',
+                'foundry': 'skip-page-display\n',
+                'brocade': self._disable_paging_brocade(self.device),
+                'dell': 'terminal datadump\n',
+            }
+            self.initialize = [paging_map.get(self.device.vendor.name)]
+        log.msg('My initialize commands: %r' % self.initialize, debug=True)
+
+    def _disable_paging_brocade(self, dev):
+        """
+        Brocade MLX routers and VDX switches require different commands to
+        disable paging. Based on the device type, emits the proper command.
+
+        :param dev:
+            A Brocade NetDevice object
+        """
+        if dev.is_switch():
+            return 'terminal length 0\n'
+        elif dev.is_router():
+            return 'skip-page-display\n'
+
+        return None
 
     def channelOpen(self, data):
         """Do this when the channel opens."""
-        self._setup_channelOpen(data)
-        ##jathan
-        #self.initialized = False
-        ##jathan
+        self._setup_channelOpen()
         self.data = ''
         d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
         d.addCallback(self._gotResponse)
@@ -926,7 +952,7 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         # Don't call _send_next() here, since we (might) expect to see a
         # prompt, which will kick off initialization.
 
-    def _gotResponse(self, _):
+    def _gotResponse(self, response):
         """
         Potentially useful if you want to do something after the shell is
         initialized.
@@ -936,16 +962,17 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         log.msg('Got shell request response!')
 
     def _ebShellOpen(self, reason):
-        log.msg('shell request failed: %s' % reason)
+        log.msg('Shell request failed: %s' % reason)
 
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         # Append to the data buffer
         log.msg('GOT TO dataReceived!')
         self.data += bytes
-        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
-                (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
         log.msg('BYTES: %r' % bytes)
+        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
+                (self.remoteWindowLeft, self.localMaxPacket, len(bytes),
+                 len(self.data)))
 
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
@@ -971,8 +998,7 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
             self.loseConnection()
             return None
 
-        # Honor the command_interval and then send the next command in the
-        # stack
+        # Honor the command_interval and then send the next command
         else:
             if self.command_interval:
                 log.msg('Waiting %s seconds before sending next command' %
@@ -982,13 +1008,15 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
     def _send_next(self):
         """Send the next command in the stack."""
         # Reset the timeout and the buffer for each new command
-        self.resetTimeout()
         self.data = ''
+        self.resetTimeout()
 
         if not self.initialized:
-            log.msg('COMMANDS NOT INITIALIZED')
+            log.msg('Not initialized, sending init commands', debug=True)
             if self.initialize:
-                self.write(self.initialize.pop(0))
+                next_init = self.initialize.pop(0)
+                log.msg('Sending initialize command: %r' % next_init)
+                self.write(next_init)
                 return None
             else:
                 log.msg('Successfully initialized for command execution')
@@ -1267,7 +1295,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
     def channelOpen(self, data):
         """Do this when channel opens."""
-        self._setup_channelOpen(data)
+        self._setup_channelOpen()
         self.conn.sendRequest(self, 'exec', NS('junoscript'))
         _xml = '<?xml version="1.0" encoding="us-ascii"?>\n'
         _xml += '<junoscript version="1.0" hostname="%s" release="7.6R2.9">\n' % socket.getfqdn()
@@ -1656,10 +1684,11 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
             log.msg('Not initialized, sending init commands', debug=True)
             if self.initialize:
                 next_init = self.initialize.pop(0)
-                log.msg('Sending: %r' % next_init, debug=True)
+                log.msg('Sending initialize command: %r' % next_init)
                 self.write(next_init)
                 return None
             else:
+                log.msg('Successfully initialized for command execution')
                 self.initialized = True
 
         if self.incremental:
