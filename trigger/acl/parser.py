@@ -1311,7 +1311,7 @@ class Matches(MyDict):
             arg = map(do_protocol_lookup, arg)
             check_range(arg, 0, 255)
         elif key == 'fragment-offset':
-            arg = map(int, arg)
+            arg = map(do_port_lookup, arg)
             check_range(arg, 0, 8191)
         elif key == 'icmp-type':
             arg = map(do_icmp_type_lookup, arg)
@@ -1396,6 +1396,9 @@ class Matches(MyDict):
         for port in ports:
             try:
                 if port[0] == 0:
+                    # Omit ports if 0-65535
+                    if port[1] == 65535:
+                        continue
                     a.append('lt %s' % (port[1]+1))
                 elif port[1] == 65535:
                     a.append('gt %s' % (port[0]-1))
@@ -1845,7 +1848,6 @@ keyword_match('destination-address', 'cidr / ipv4')
 keyword_match('destination-prefix-list', 'jword')
 keyword_match('first-fragment')
 keyword_match('fragment-flags', 'fragment_flag')
-keyword_match('fragment-offset', 'digits')
 keyword_match('ip-options', 'ip_option')
 keyword_match('is-fragment')
 keyword_match('prefix-list', 'jword')
@@ -1867,6 +1869,7 @@ range_match('dscp', 'dscp')
 range_match('ether-type', 'alphanums')
 range_match('esp-spi', 'alphanums')
 range_match('forwarding-class', 'jword')
+range_match('fragment-offset', 'port')
 range_match('icmp-code', 'icmp_code')
 range_match('icmp-type', 'icmp_type')
 range_match('interface-group', 'digits')
