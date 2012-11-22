@@ -94,6 +94,7 @@ def stop_reactor():
     """Stop the reactor if it's already running."""
     from twisted.internet import reactor
     if reactor.running:
+        log.msg('Stopping reactor')
         reactor.stop()
 
 #==================
@@ -349,7 +350,7 @@ def execute(device, commands, creds=None, incremental=None, with_errors=False,
 def execute_generic_ssh(device, commands, creds=None, incremental=None,
                         with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                         command_interval=0, channel=None, prompt_pattern=None,
-                        method='Generic'):
+                        method='Generic', connection=None):
     """
     Use default SSH channel to execute commands on a device. Should work with
     anything not wonky.
@@ -364,15 +365,37 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
         channel = TriggerSSHGenericChannel
     if prompt_pattern is None:
         prompt_pattern = DEFAULT_PROMPT_PAT
+    if connection is None:
+        connection = TriggerSSHConnection
 
     factory = TriggerSSHChannelFactory(d, commands, creds, incremental,
                                        with_errors, timeout, channel,
-                                       command_interval, prompt_pattern, device)
+                                       command_interval, prompt_pattern,
+                                       device, connection)
 
     log.msg('Trying %s SSH to %s' % (method, device), debug=True)
     reactor.connectTCP(device.nodeName, 22, factory)
     return d
 
+def execute_exec_ssh(device, commands, creds=None, incremental=None,
+                     with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
+                     command_interval=0):
+    """
+    Use multiplexed SSH 'exec' command channels to execute commands.
+
+    This will maintain a single SSH connection and run each new command in a
+    separate channel after the previous command completes.
+
+    Please see `~trigger.twister.execute` for a full description of the
+    arguments and how this works.
+    """
+    channel = TriggerSSHCommandChannel
+    prompt_pattern = ''
+    method = 'Exec'
+    connection = TriggerSSHMultiplexConnection
+    return execute_generic_ssh(device, commands, creds, incremental,
+                               with_errors, timeout, command_interval, channel,
+                               prompt_pattern, method, connection)
 
 def execute_junoscript(device, commands, creds=None, incremental=None,
                        with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -412,7 +435,6 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
     # Try SSH if it's available and enabled
     if device.can_ssh_async():
         log.msg('execute_ioslike: SSH ENABLED for %s' % device.nodeName)
-        #return execute_ioslike_ssh(device, commands, *args, **kwargs)
         return execute_ioslike_ssh(device=device, commands=commands,
                                    creds=creds, incremental=incremental,
                                    with_errors=with_errors, timeout=timeout,
@@ -421,7 +443,6 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
     # Fallback to telnet if it's enabled
     elif settings.TELNET_ENABLED:
         log.msg('execute_ioslike: TELNET ENABLED for %s' % device.nodeName)
-        #return execute_ioslike_telnet(device, commands, *args, **kwargs)
         return execute_ioslike_telnet(device=device, commands=commands,
                                       creds=creds, incremental=incremental,
                                       with_errors=with_errors, timeout=timeout,
@@ -468,17 +489,16 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
 
     channel = TriggerSSHGenericChannel
     prompt_pattern = IOSLIKE_PROMPT_PAT
-    method = 'IOS-like'
 
-    ##jathan
+    # Hackery to determine the right "IOS-like" SSH function
     if device.vendor == 'arista':
-        channel = TriggerSSHAristaChannel
-        method = 'Arista'
-    ##jathan
+        return execute_exec_ssh(device, commands, creds, incremental,
+                                with_errors, timeout, command_interval)
+    else:
+        return execute_generic_ssh(device, commands, creds, incremental,
+                                   with_errors, timeout, command_interval,
+                                   channel, prompt_pattern, method)
 
-    return execute_generic_ssh(device, commands, creds, incremental,
-                               with_errors, timeout, command_interval, channel,
-                               prompt_pattern, method)
 
 def execute_netscreen(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -527,12 +547,16 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
 #==================
 # Client Basics
 #==================
-class TriggerClientFactory(ClientFactory):
+class TriggerClientFactory(ClientFactory, object):
     """
     Factory for all clients. Subclass me.
     """
     def __init__(self, deferred, creds=None, init_commands=None):
         self.d = deferred
+        self.results = []
+        self.err = None
+
+        # Setup the credentials
         self.tcrc = tacacsrc.Tacacsrc()
         if creds is None:
             log.msg('creds not defined, fetching...', debug=True)
@@ -540,13 +564,7 @@ class TriggerClientFactory(ClientFactory):
             creds = self.tcrc.creds.get(realm, tacacsrc.get_device_password(realm))
         self.creds = creds
 
-        ##jathan
-        #self.results = None
-        self.results = []
-        ##jathan
-        self.err = None
-
-        # Setup and run the initial commands
+        # Setup the initial commands
         if init_commands is None:
             init_commands = [] # We need this to be a list
         self.init_commands = init_commands
@@ -589,20 +607,25 @@ class TriggerSSHTransport(SSHClientTransport, object):
     """
     SSH transport with Trigger's defaults.
 
-    Call with magic factory attributes 'creds', a tuple of login
-    credentials, and 'channel', the class of channel to open.
+    Call with magic factory attributes ``creds``, a tuple of login
+    credentials, and ``connection_class``, the class of channel to open, and
+    ``commands``, the list of commands to pass to the connection.
     """
     def verifyHostKey(self, pubKey, fingerprint):
         """Verify host key, but don't actually verify. Awesome."""
-        return defer.succeed(1)
+        return defer.succeed(True)
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""
-        self.requestService(TriggerSSHUserAuth(
-                self.factory.creds.username, TriggerSSHConnection()))
+        #ua = TriggerSSHUserAuth(self.factory.creds.username,
+        #                        TriggerSSHConnection(self.factory.commands))
+        ua = TriggerSSHUserAuth(self.factory.creds.username,
+                                self.factory.connection_class(self.factory.commands))
+        self.requestService(ua)
 
     def receiveError(self, reason, desc):
         """Do this when we receive an error."""
+        log.msg('Received an error, reason: %s, desc: %s)' % (reason, desc))
         self.sendDisconnect(reason, desc)
 
     def connectionLost(self, reason):
@@ -742,15 +765,89 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
             return d
 
 class TriggerSSHConnection(SSHConnection, object):
-    """Used to manage, you know, an SSH connection."""
+    """
+    Used to manage, you know, an SSH connection.
+
+    Optionally takes a list of commands that may be passed on.
+    """
+    def __init__(self, commands=None, *args, **kwargs):
+        super(TriggerSSHConnection, self).__init__()
+        self.commands = commands
+
     def serviceStarted(self):
         """Open the channel once we start."""
-        log.msg('channel = %r' % self.transport.factory.channel)
-        self.openChannel(self.transport.factory.channel(conn=self))
+        log.msg('channel = %r' % self.transport.factory.channel_class)
+        self.channel_class = self.transport.factory.channel_class
+        self.command_interval = self.transport.factory.command_interval
+        self.transport.factory.connection_success(self, self.transport)
+
+        # Abstracted out so we can do custom stuff with self.openChannel
+        self._channelOpener()
+
+    def _channelOpener(self):
+        """This is what calls ``self.channelOpen()``"""
+        # Default behavior: Single channel/conn
+        self.openChannel(self.channel_class(conn=self))
 
     def channelClosed(self, channel):
-        """Close the channel when we're done."""
+        """
+        Forcefully close the transport connection when a channel closes
+        connection. This is assuming only one channel is open.
+        """
+        log.msg('Forcefully closing transport connection!')
         self.transport.loseConnection()
+
+class TriggerSSHMultiplexConnection(TriggerSSHConnection):
+    """
+    Used for multiplexing SSH 'exec' channels on a single connection.
+
+    Opens a new channel for each command in the stack once the previous channel
+    has closed. In this pattern the Connection and the Channel are intertwined.
+    """
+    def _channelOpener(self):
+        log.msg('Multiplex connection started')
+        self.work = self.commands[:]
+        self.send_command()
+
+    def channelClosed(self, channel):
+        """Close the channel when we're done. But not the transport connection"""
+        log.msg('CHANNEL %s closed' % channel.id)
+        SSHConnection.channelClosed(self, channel)
+
+    def send_command(self):
+        """
+        Send the next command in the stack once the previous channel has closed.
+        """
+        try:
+            command = self.work.pop(0)
+        except IndexError:
+            log.msg('ALL COMMANDS HAVE FINISHED!')
+            return None
+
+        def command_completed(result, chan):
+            log.msg('command completed: %r' % chan.command)
+            return result
+
+        def command_failed(failure, chan):
+            log.msg('command failed: %r' % chan.command)
+            return failure
+
+        def log_status(result):
+            log.msg('COMMANDS LEN: %s' % len(self.commands))
+            log.msg(' RESULTS LEN: %s' % len(self.transport.factory.results))
+            return result
+
+        log.msg('SENDING NEXT COMMAND: %s' % command)
+
+        # Send the command to the channel
+        chan = self.channel_class(command, conn=self)
+
+        d = defer.Deferred()
+        reactor.callLater(self.command_interval, d.callback, self.openChannel(chan))
+        d.addCallback(command_completed, chan)
+        d.addErrback(command_failed, chan)
+        d.addBoth(log_status)
+        return d
 
 #==================
 # SSH PTY Stuff
@@ -844,37 +941,47 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
     NetScreen, NetScaler) to eliminate boiler plate in those subclasses.
     """
     def __init__(self, deferred, commands, creds=None, incremental=None,
-                 with_errors=False, timeout=None, channel=None,
-                 command_interval=0, prompt_pattern=None, device=None):
+                 with_errors=False, timeout=None, channel_class=None,
+                 command_interval=0, prompt_pattern=None, device=None,
+                 connection_class=None):
 
-        if channel is None:
-            raise TwisterError('You must specify an SSH channel class')
-
-        ##jathan
+        # Fallback to sane defaults if they aren't specified
+        if channel_class is None:
+            channel_class = TriggerSSHGenericChannel
+        if connection_class is None:
+            connection_class = TriggerSSHConnection
         if prompt_pattern is None:
             prompt_pattern = DEFAULT_PROMPT_PAT
-        ##jathan
 
         self.protocol = TriggerSSHTransport
         self.display_banner = None
         self.commands = commands
-        ## jathan
         self.commanditer = iter(commands)
-        self.all_done = False
-        self.completed_commands = []
         self.initialized = False
-        ## jathan
         self.incremental = incremental
         self.with_errors = with_errors
         self.timeout = timeout
-        self.channel = channel
+        self.channel_class = channel_class
         self.command_interval = command_interval
         self.prompt = re.compile(prompt_pattern)
         self.device = device
+        self.connection_class = connection_class
         TriggerClientFactory.__init__(self, deferred, creds)
-        ##jathan
-        #self.results = []
-        ##jathan
+
+    def buildProtocol(self, addr):
+        self.protocol = self.protocol()
+        self.protocol.factory = self
+        return self.protocol
+
+    def stopFactory(self):
+        # IF we're out of channels, shut it down!
+        log.msg('All done!')
+
+    def connection_success(self, conn, transport):
+        log.msg('Connection success.')
+        self.conn = conn
+        self.transport = transport
+        log.msg('Connection information: %s' % self.transport)
 
 class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
     """
@@ -897,15 +1004,9 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         """
         self.factory = self.conn.transport.factory
         log.msg('COMMANDS: %r' % self.factory.commands)
-        ##jathan
-        #self.commanditer = iter(self.factory.commands)
         self.commanditer = self.factory.commanditer
-        self.completed_commands = self.factory.completed_commands
-        self.all_done = self.factory.all_done
         self.initialized = self.factory.initialized
         self.results = self.factory.results
-        ##jathan
-        #self.results = self.factory.results = []
         self.with_errors = self.factory.with_errors
         self.incremental = self.factory.incremental
         self.command_interval = self.factory.command_interval
@@ -959,10 +1060,10 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
 
         If the shell never establishes, this won't be called.
         """
-        log.msg('Got shell request response!')
+        log.msg('Got channel request response!')
 
     def _ebShellOpen(self, reason):
-        log.msg('Shell request failed: %s' % reason)
+        log.msg('Channel request failed: %s' % reason)
 
     def dataReceived(self, bytes):
         """Do this when we receive data."""
@@ -995,6 +1096,8 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('ERROR: %r' % result, debug=True)
             self.factory.err = exceptions.CommandFailure(result)
+            #self.loseConnection()
+            log.msg('SOME KIND OF ERROR TO CAUSE DISCONNECT')
             self.loseConnection()
             return None
 
@@ -1044,6 +1147,7 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         Terminate the connection. Link this to the transport method of the same
         name.
         """
+        log.msg('FORCEFULLY CLOSING TRANSPORT CONNECTION')
         self.conn.transport.loseConnection()
 
     def timeoutConnection(self):
@@ -1063,226 +1167,87 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
     Before you create your own subclass, see if you can't use me as-is!
     """
 
-class TriggerSSHLinuxChannel(TriggerSSHChannelBase):
+class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     """
-    Run commands on a Linux system.
+    Run SSH commands on a system using 'exec'
+
+    This will multiplex channels over a single connection. Because of the
+    nature of the multiplexing setup, the master list of commands is stored on
+    the SSH connection, and the state of each command is stored within each
+    individual channel which feeds its result back to the factory.
     """
+    def __init__(self, command, *args, **kwargs):
+        super(TriggerSSHCommandChannel, self).__init__(*args, **kwargs)
+        self.command = command
+        self.result = None
+        self.data = ''
+
     def channelOpen(self, data):
         """Do this when the channel opens."""
-        # In testing the largest packets we see are of this size. If this ever
-        # changes, adjust it here.
-        self.max_len = 16384 # Used for raw data buffer
-        super(TriggerSSHLinuxChannel, self).channelOpen(data)
+        self._setup_channelOpen()
+        log.msg('Channel was opened')
+        d = self.conn.sendRequest(self, 'exec', NS(self.command), wantReply=True)
+        d.addCallback(self._gotResponse)
+        d.addErrback(self._ebShellOpen)
 
     def _gotResponse(self, _):
         """
-        Potentially useful if you want to do something after the shell is
-        initialized.
-
         If the shell never establishes, this won't be called.
         """
-        log.msg('Got shell response!')
+        log.msg('CHANNEL %s: Exec finished.' % self.id)
+        self.conn.sendEOF(self)
 
     def _ebShellOpen(self, reason):
-        log.msg('shell request failed: %s' % reason)
+        log.msg('CHANNEL %s: Channel request failed: %s' % (reason, self.id))
 
     def dataReceived(self, bytes):
-        """Do this when we receive data."""
         self.data += bytes
-        log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
-                (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
-        log.msg('BYTES RECV: %r' % bytes)
-
-        #if len(bytes) == self.max_len:
-        if len(bytes) == self.max_len or not bytes.endswith('\n'):
-            log.msg('BYTES ARE FULL, CONTINUING')
-            return None
-
-        log.msg('SAVING BUFFER TO RESULT')
-        result = self.data
-
-        # Only keep the results once we've sent any initial_commands
-        if self.initialized:
-            log.msg('STORING RESULT')
-            self.results.append(result)
-            log.msg('RESULTS: %r' % self.results)
-
-        # By default we're checking for IOS-like errors because most vendors
-        # fall under this category.
-        if has_ioslike_error(result) and not self.with_errors:
-            log.msg('ERROR: %r' % result, debug=True)
-            self.factory.err = exceptions.CommandFailure(result)
-            self.loseConnection()
-            return None
-
-        # Honor the command_interval and then send the next command in the
-        # stack
-        else:
-            if self.command_interval:
-                log.msg('Waiting %s seconds before sending next command' %
-                        self.command_interval)
-            reactor.callLater(self.command_interval, self._send_next)
-
-class TriggerSSHAristaChannel(TriggerSSHLinuxChannel):
-    """Arista based on Linux"""
-    def channelOpen(self, data):
-        """Do this when channel opens."""
-        #super(TriggerSSHAristaChannel, self).channelOpen(data)
-        self._setup_channelOpen(data)
-        self.data = ''
-        self.max_len = 16384 # Used for raw data buffer
-
-        # Since we don't get anything on connect, we have to just go!
-        self.deferreds = defer.DeferredList([defer.Deferred()])
-        self._send_next()
-        #d = defer.Deferred()
-        #d.addCallback(self._send_next)
-
-    def request_exit_status(self, data):
-        log.msg('channel status: %s' % data)
+        #log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
+        #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+        #log.msg('BYTES RECV: %r' % bytes)
 
     def eofReceived(self):
-        if not self.all_done:
-            log.msg("remote eof received; BUT WE'RE NOT DONE YET")
-
-    def closeReceived(self):
-        if not self.all_done:
-            log.msg("remote close received; BUT WE'RE NOT DONE YET")
-            return None
-        else:
-            self.loseConnection()
-
-    def _send_next(self):
-        """Send the next command in the stack."""
-        # Reset the timeout and the buffer for each new command
-        self.resetTimeout()
-        self.data = ''
-
-        if not self.initialized:
-            log.msg('COMMANDS NOT INITIALIZED')
-            if self.initialize:
-                self.write(self.initialize.pop(0))
-                return None
-            else:
-                log.msg('Successfully initialized for command execution')
-                self.initialized = True
-
-        if self.incremental:
-            self.incremental(self.results)
-
-        try:
-            next_command = self.commanditer.next()
-        except StopIteration:
-            log.msg('CHANNEL: out of commands, closing...', debug=True)
-            self.loseConnection()
-            return None
-
-        if next_command is None:
-            self.results.append(None)
-            self._send_next()
-        else:
-            log.msg('sending SSH command %r' % next_command, debug=True)
-            self.write(next_command + '\n')
-
-
-class _TriggerSSHAristaChannel(TriggerSSHChannelBase):
-    """
-    Arista channel
-    """
-    def channelOpen(self, data):
-        """Do this when channel opens."""
-        #super(TriggerSSHLinuxChannel, self).channelOpen(data)
-        self._setup_channelOpen(data)
-        self.initialized = False
-        self.data = ''
-        #d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
-        #d.addCallback(self._gotResponse)
-        #d.addErrback(self._ebShellOpen)
-        self._send_next()
-
-    def _send_next(self):
-        self.resetTimeout()
-        self.data = ''
-
-        """
-        if not self.initialized:
-            log.msg('Not initialized, sending init commands', debug=True)
-            if self.initialize:
-                next_init = self.initialize.pop(0)
-                log.msg('Sending: %r' % next_init, debug=True)
-                self.write(next_init)
-                return None
-            else:
-                self.initialized = True
-        """
-        self.initialized = True
-
-        if self.incremental:
-            self.incremental(self.results)
-
-        try:
-            next_command = self.commanditer.next()
-            log.msg('COMMAND: next command=%s' % next_command, debug=True)
-        except StopIteration:
-            log.msg('CHANNEL: out of commands, closing...', debug=True)
-            self.loseConnection()
-            return None
-
-        if next_command is None:
-            self.results.append(None)
-            self._send_next()
-        else:
-            log.msg('sending SSH command %r' % next_command, debug=True)
-            d = self.conn.sendRequest(self, 'exec', NS(next_command), wantReply=True)
-            d.addCallback(self._gotResponse)
-            d.addErrback(self._ebShellOpen)
-
-    def dataReceived(self, bytes):
-        """Do this when we receive data."""
-        # Append to the data buffer
-        self.data += bytes
-        log.msg('BYTES: %r' % bytes)
-        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
-                (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
-
-        # Keep going til you get a prompt match
-        """
-        m = self.prompt.search(self.data)
-        if not m:
-            #log.msg('STATE: prompt match failure', debug=True)
-            return None
-        log.msg('STATE: prompt %r' % m.group(), debug=True)
-
-        # Strip the prompt from the match result
-        result = self.data[:m.start()]
-        result = result[result.find('\n')+1:]
-        """
-        #result = self.data[self.data.find('\n')+1:]
-        #log.msg('GOT RESULT: %r' % result)
+        log.msg('CHANNEL %s: EOF received.' % self.id)
         result = self.data
-
-        # Only keep the results once we've sent any initial_commands
-        if self.initialized:
-            #self.results.append(result)
-            log.msg('GOT RESULT: %r' % result)
-            self.results.append(result)
 
         # By default we're checking for IOS-like errors because most vendors
         # fall under this category.
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('ERROR: %r' % result, debug=True)
             self.factory.err = exceptions.CommandFailure(result)
-            self.loseConnection()
-            return None
 
-        # Honor the command_interval and then send the next command in the
-        # stack
+        # Honor the command_interval and then send the next command
         else:
-            if self.command_interval:
-                log.msg('Waiting %s seconds before sending next command' %
-                        self.command_interval)
-            reactor.callLater(self.command_interval, self._send_next)
+            self.result = result
+            self.conn.transport.factory.results.append(self.result)
+            self.send_next_command()
 
+    def send_next_command(self):
+        """Send the next command in the stack stored on the connection"""
+        log.msg('CHANNEL %s sending next command!' % self.id)
+        self.conn.send_command()
+
+    def closeReceived(self):
+        log.msg('CHANNEL %s: Close received.' % self.id)
+        self.loseConnection()
+
+    def loseConnection(self):
+        """Default loseConnection"""
+        log.msg("LOSING CHANNEL CONNECTION")
+        SSHChannel.loseConnection(self)
+
+    def closed(self):
+        log.msg('channel %s closed' % self.id)
+        log.msg('CONN CHANNELS: %s' % len(self.conn.channels))
+
+        # If we're out of channels, shut it down!
+        if len(self.conn.transport.factory.results) == len(self.conn.commands):
+            log.msg('RESULTS MATCHES COMMANDS SENT.')
+            self.conn.transport.loseConnection()
+
+    def request_exit_status(self, data):
+        exitStatus = int(struct.unpack('>L', data)[0])
+        log.msg('Exit status: %s' % exitStatus)
 
 class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
