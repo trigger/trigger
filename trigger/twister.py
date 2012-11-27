@@ -489,6 +489,7 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
 
     channel = TriggerSSHGenericChannel
     prompt_pattern = IOSLIKE_PROMPT_PAT
+    method = 'IOS-like'
 
     # Hackery to determine the right "IOS-like" SSH function
     if device.vendor == 'arista':
@@ -498,7 +499,6 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
         return execute_generic_ssh(device, commands, creds, incremental,
                                    with_errors, timeout, command_interval,
                                    channel, prompt_pattern, method)
-
 
 def execute_netscreen(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -545,7 +545,7 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
 
 # Classes
 #==================
-# Client Basics
+# Client Factories
 #==================
 class TriggerClientFactory(ClientFactory, object):
     """
@@ -587,6 +587,10 @@ class TriggerClientFactory(ClientFactory, object):
             log.msg('Got results: %r' % self.results)
             self.d.callback(self.results)
 
+    def stopFactory(self):
+        # IF we're out of channels, shut it down!
+        log.msg('All done!')
+
     def _init_commands(self, protocol):
         """
         Execute any initial commands specified.
@@ -603,6 +607,72 @@ class TriggerClientFactory(ClientFactory, object):
             else:
                 self.initialized = True
 
+    def connection_success(self, conn, transport):
+        log.msg('Connection success.')
+        self.conn = conn
+        self.transport = transport
+        log.msg('Connection information: %s' % self.transport)
+
+class TriggerSSHChannelFactory(TriggerClientFactory):
+    """
+    Intended to be used as a parent of automated SSH channels (e.g. Junoscript,
+    NetScreen, NetScaler) to eliminate boiler plate in those subclasses.
+    """
+    def __init__(self, deferred, commands, creds=None, incremental=None,
+                 with_errors=False, timeout=None, channel_class=None,
+                 command_interval=0, prompt_pattern=None, device=None,
+                 connection_class=None):
+
+        # Fallback to sane defaults if they aren't specified
+        if channel_class is None:
+            channel_class = TriggerSSHGenericChannel
+        if connection_class is None:
+            connection_class = TriggerSSHConnection
+        if prompt_pattern is None:
+            prompt_pattern = DEFAULT_PROMPT_PAT
+
+        self.protocol = TriggerSSHTransport
+        self.display_banner = None
+        self.commands = commands
+        self.commanditer = iter(commands)
+        self.initialized = False
+        self.incremental = incremental
+        self.with_errors = with_errors
+        self.timeout = timeout
+        self.channel_class = channel_class
+        self.command_interval = command_interval
+        self.prompt = re.compile(prompt_pattern)
+        self.device = device
+        self.connection_class = connection_class
+        TriggerClientFactory.__init__(self, deferred, creds)
+
+    def buildProtocol(self, addr):
+        self.protocol = self.protocol()
+        self.protocol.factory = self
+        return self.protocol
+
+class TriggerSSHPtyClientFactory(TriggerClientFactory):
+    """
+    Factory for an interactive SSH connection.
+
+    'action' is a Protocol that will be connected to the session after login.
+    Use it to interact with the user and pass along commands.
+    """
+    def __init__(self, deferred, action, creds=None, display_banner=None,
+                 init_commands=None):
+        self.protocol = TriggerSSHTransport
+        self.action = action
+        self.action.factory = self
+        self.display_banner = display_banner
+        self.channel_class = TriggerSSHPtyChannel
+        self.connection_class = TriggerSSHConnection
+        self.commands = []
+        self.command_interval = 0
+        TriggerClientFactory.__init__(self, deferred, creds, init_commands)
+
+#==================
+# SSH Basics
+#==================
 class TriggerSSHTransport(SSHClientTransport, object):
     """
     SSH transport with Trigger's defaults.
@@ -916,73 +986,9 @@ class TriggerSSHPtyChannel(SSHChannel):
         winsz = fcntl.ioctl(stdin_fileno, tty.TIOCGWINSZ, '12345678')
         return struct.unpack('4H', winsz)
 
-class TriggerSSHPtyClientFactory(TriggerClientFactory):
-    """
-    Factory for an interactive SSH connection.
-
-    'action' is a Protocol that will be connected to the session after login.
-    Use it to interact with the user and pass along commands.
-    """
-    def __init__(self, deferred, action, creds=None, display_banner=None,
-                 init_commands=None):
-        self.protocol = TriggerSSHTransport
-        self.action = action
-        self.action.factory = self
-        self.display_banner = display_banner
-        self.channel = TriggerSSHPtyChannel
-        TriggerClientFactory.__init__(self, deferred, creds, init_commands)
-
 #==================
 # SSH Channels
 #==================
-class TriggerSSHChannelFactory(TriggerClientFactory):
-    """
-    Intended to be used as a parent of automated SSH channels (e.g. Junoscript,
-    NetScreen, NetScaler) to eliminate boiler plate in those subclasses.
-    """
-    def __init__(self, deferred, commands, creds=None, incremental=None,
-                 with_errors=False, timeout=None, channel_class=None,
-                 command_interval=0, prompt_pattern=None, device=None,
-                 connection_class=None):
-
-        # Fallback to sane defaults if they aren't specified
-        if channel_class is None:
-            channel_class = TriggerSSHGenericChannel
-        if connection_class is None:
-            connection_class = TriggerSSHConnection
-        if prompt_pattern is None:
-            prompt_pattern = DEFAULT_PROMPT_PAT
-
-        self.protocol = TriggerSSHTransport
-        self.display_banner = None
-        self.commands = commands
-        self.commanditer = iter(commands)
-        self.initialized = False
-        self.incremental = incremental
-        self.with_errors = with_errors
-        self.timeout = timeout
-        self.channel_class = channel_class
-        self.command_interval = command_interval
-        self.prompt = re.compile(prompt_pattern)
-        self.device = device
-        self.connection_class = connection_class
-        TriggerClientFactory.__init__(self, deferred, creds)
-
-    def buildProtocol(self, addr):
-        self.protocol = self.protocol()
-        self.protocol.factory = self
-        return self.protocol
-
-    def stopFactory(self):
-        # IF we're out of channels, shut it down!
-        log.msg('All done!')
-
-    def connection_success(self, conn, transport):
-        log.msg('Connection success.')
-        self.conn = conn
-        self.transport = transport
-        log.msg('Connection information: %s' % self.transport)
-
 class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
     """
     Base class for SSH channels.
