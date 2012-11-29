@@ -385,7 +385,7 @@ class NetDevice(object):
 
     @property
     def bounce(self):
-        return site_bounce(self.site, oncallid=self.onCallID)
+        return site_bounce(self.site, owning_team=self.owningTeam)
 
     @property
     def shortName(self):

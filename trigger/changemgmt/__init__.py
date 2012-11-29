@@ -11,7 +11,16 @@ from datetime import datetime, timedelta
 from pytz import timezone, UTC
 
 # Defaults
-ET = timezone('US/Eastern')
+DEFAULT_BOUNCE_TZ = timezone('US/Eastern')
+DEFAULT_BOUNCE_SITE = 'DTC'
+DEFAULT_BOUNCE_REALM = 'BBEN'
+DEFAULT_BOUNCE_GROUP = (DEFAULT_BOUNCE_SITE, DEFAULT_BOUNCE_REALM)
+DEFAULT_BOUNCE_COLOR = 'red'
+BOUNCE_VALUE_MAP = {
+    'red': 3,
+    'yellow': 2,
+    'green': 1,
+}
 
 
 # Classes
@@ -23,11 +32,16 @@ class BounceStatus(object):
     against those strings.  Objects can also be compared against each other.
     'red' > 'yellow' > 'green'.
     """
-    def __init__(self, str):
-        self.str = str
-        self.value = {'red': 3, 'yellow': 2, 'green': 1}[str]
+    def __init__(self, status_name):
+        self.status_name = status_name
+        self.value = BOUNCE_VALUE_MAP[status_name]
+
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, self.status_name)
+
     def __str__(self):
-        return self.str
+        return self.status_name
+
     def __cmp__(self, other):
         try:
             return self.value.__cmp__(other.value)
@@ -53,18 +67,23 @@ class BounceWindow(object):
         assert len(status_by_hour) == 24
         # Make sure each status occurs at least once, or next_ok()
         # might never return.
-        for status in 'red', 'yellow', 'green':
+        for status in BOUNCE_VALUE_MAP:
             assert status in status_by_hour
         self._status_by_hour = status_by_hour
 
+    def __repr__(self):
+        return "<%s: current status: %s>" % (self.__class__.__name__,
+                                             str(self.status()))
+
     def status(self, when=None):
         """Return a BounceStatus object for the specified time, or for now."""
-        when_et = (when or datetime.now(tz=UTC)).astimezone(ET)
-        # Return red during weekend moratorium, otherwise look it up.
+        when_et = (when or datetime.now(tz=UTC)).astimezone(DEFAULT_BOUNCE_TZ)
+
+        # Return default during weekend moratorium, otherwise look it up.
         if (when_et.weekday() >= 5 or
             when_et.weekday() == 0 and when_et.hour < 4 or
             when_et.weekday() == 4 and when_et.hour >= 12):
-            return BounceStatus('red')
+            return BounceStatus(DEFAULT_BOUNCE_COLOR)
         else:
             return self._status_by_hour[when_et.hour]
 
@@ -84,16 +103,29 @@ class BounceWindow(object):
             when += timedelta(hours=1)
         return when
 
-def site_bounce(site, oncallid=None):
+    def dump(self):
+        """Dump a mapping of hour to status"""
+        return dict(enumerate(self._status_by_hour))
+
+# Map owningTeam definitions to realm name (temporary)
+REALM_MAP = {
+    'AOL Transit Data Network': 'ATDN',
+}
+
+def lookup_realm(owning_team):
+    """Given an owning team, return the mapped bounce realm"""
+    return REALM_MAP.get(owning_team, DEFAULT_BOUNCE_REALM)
+
+def site_bounce(site, owning_team=None):
     """Return the bounce window for the given site."""
-    group = oncallid == '80' and 'ATDN' or 'BBEN'
+    realm = lookup_realm(owning_team)
     try:
-        return _predefined[(site, group)]
+        return _predefined[(site, realm)]
     except KeyError:
         # This is ugly.  However, since NetDB contains all sorts of random
         # data for the "site" field, it's hard to do much better.  Throwing
         # an exception is not an option considering the low data quality.
-        return _predefined[('DTC', 'BBEN')]
+        return _predefined[DEFAULT_BOUNCE_GROUP]
 
 
 #
