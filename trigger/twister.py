@@ -83,12 +83,31 @@ def is_awaiting_confirmation(prompt):
     """
     Checks if a prompt is asking for us for confirmation and returns a Boolean.
 
-    :param prompt: The prompt string to check
+    :param prompt:
+        The prompt string to check
     """
     log.msg('Got confirmation prompt: %r' % prompt)
     prompt = prompt.lower()
     matchlist = CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
+
+def _disable_paging_brocade(device):
+    """
+    Brocade MLX routers and VDX switches require different commands to disable
+    paging. Based on the device type, emits the proper command.
+
+    :param device:
+        A Brocade NetDevice object
+    """
+    if device is None:
+        return None
+
+    if device.is_switch():
+        return 'terminal length 0\n'
+    elif device.is_router():
+        return 'skip-page-display\n'
+
+    return None
 
 def stop_reactor():
     """Stop the reactor if it's already running."""
@@ -687,8 +706,6 @@ class TriggerSSHTransport(SSHClientTransport, object):
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""
-        #ua = TriggerSSHUserAuth(self.factory.creds.username,
-        #                        TriggerSSHConnection(self.factory.commands))
         ua = TriggerSSHUserAuth(self.factory.creds.username,
                                 self.factory.connection_class(self.factory.commands))
         self.requestService(ua)
@@ -736,7 +753,6 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
 
     def getPassword(self, prompt=None):
         """Send along the password."""
-        #self.getPassword()
         log.msg('Performing password authentication', debug=True)
         return defer.succeed(self.transport.factory.creds.password)
 
@@ -1011,7 +1027,6 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         self.factory = self.conn.transport.factory
         log.msg('COMMANDS: %r' % self.factory.commands)
         self.commanditer = self.factory.commanditer
-        self.initialized = self.factory.initialized
         self.results = self.factory.results
         self.with_errors = self.factory.with_errors
         self.incremental = self.factory.incremental
@@ -1019,34 +1034,9 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         self.prompt = self.factory.prompt
         self.setTimeout(self.factory.timeout)
         self.device = self.factory.device
-        self.initialize = [] # Commands to run at startup e.g. ['enable\n']
-        self.initialized = False
-
-        if self.device is not None:
-            paging_map = {
-                'cisco': 'terminal length 0\n',
-                'arista': 'terminal length 0\n',
-                'foundry': 'skip-page-display\n',
-                'brocade': self._disable_paging_brocade(self.device),
-                'dell': 'terminal datadump\n',
-            }
-            self.initialize = [paging_map.get(self.device.vendor.name)]
+        self.initialized = self.factory.initialized
+        self.initialize = self.device.startup_commands
         log.msg('My initialize commands: %r' % self.initialize, debug=True)
-
-    def _disable_paging_brocade(self, dev):
-        """
-        Brocade MLX routers and VDX switches require different commands to
-        disable paging. Based on the device type, emits the proper command.
-
-        :param dev:
-            A Brocade NetDevice object
-        """
-        if dev.is_switch():
-            return 'terminal length 0\n'
-        elif dev.is_router():
-            return 'skip-page-display\n'
-
-        return None
 
     def channelOpen(self, data):
         """Do this when the channel opens."""
@@ -1074,26 +1064,24 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         # Append to the data buffer
-        log.msg('GOT TO dataReceived!')
         self.data += bytes
         log.msg('BYTES: %r' % bytes)
-        log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
-                (self.remoteWindowLeft, self.localMaxPacket, len(bytes),
-                 len(self.data)))
+        #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
+        #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes),
+        #         len(self.data)))
 
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
         if not m:
-            log.msg('STATE: prompt match failure', debug=True)
+            #log.msg('STATE: prompt match failure', debug=True)
             return None
         log.msg('STATE: prompt %r' % m.group(), debug=True)
 
         # Strip the prompt from the match result
         result = self.data[:m.start()]
         result = result[result.find('\n')+1:]
-        log.msg('RESULT BYTES = %s' %len(result))
 
-        # Only keep the results once we've sent any initial_commands
+        # Only keep the results once we've sent any startup_commands
         if self.initialized:
             self.results.append(result)
 
@@ -1102,8 +1090,6 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('ERROR: %r' % result, debug=True)
             self.factory.err = exceptions.CommandFailure(result)
-            #self.loseConnection()
-            log.msg('SOME KIND OF ERROR TO CAUSE DISCONNECT')
             self.loseConnection()
             return None
 
@@ -1121,9 +1107,9 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         self.resetTimeout()
 
         if not self.initialized:
-            log.msg('Not initialized, sending init commands', debug=True)
-            if self.initialize:
-                next_init = self.initialize.pop(0)
+            log.msg('Not initialized, sending startup commands', debug=True)
+            if self.startup_commands:
+                next_init = self.startup_commands.pop(0)
                 log.msg('Sending initialize command: %r' % next_init)
                 self.write(next_init)
                 return None
@@ -1153,13 +1139,14 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         Terminate the connection. Link this to the transport method of the same
         name.
         """
-        log.msg('FORCEFULLY CLOSING TRANSPORT CONNECTION')
+        log.msg('Forcefully closing transport connection')
         self.conn.transport.loseConnection()
 
     def timeoutConnection(self):
         """
         Do this when the connection times out.
         """
+        log.msg('Timed out while sending commands to %s' % self.device)
         self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
         self.loseConnection()
 
@@ -1210,7 +1197,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         self.data += bytes
         #log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
         #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
-        #log.msg('BYTES RECV: %r' % bytes)
+        log.msg('BYTES RECV: %r' % bytes)
 
     def eofReceived(self):
         log.msg('CHANNEL %s: EOF received.' % self.id)
@@ -1334,7 +1321,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         self.data += bytes
-        #log.msg('BYTES: %r' % bytes, debug=True)
+        log.msg('BYTES: %r' % bytes, debug=True)
         #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
         #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
 
@@ -1487,6 +1474,8 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
         action.connectionMade()
         action.dataReceived(data)
 
+        self.host = self.transport.connector.host
+
     def state_enable(self):
         """
         Special Foundry breakage because they don't do auto-enable from
@@ -1506,7 +1495,7 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
             pw = self.factory.loginpw
         else:
             from trigger.netdevices import NetDevices
-            pw = NetDevices().find(self.transport.connector.host).loginPW
+            pw = NetDevices().find(self.host).loginPW
 
         # Workaround to avoid TypeError when concatenating 'NoneType' and
         # 'str'. This *should* result in a LoginFailure.
@@ -1526,7 +1515,7 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
             pw = self.factory.enablepw
         else:
             from trigger.netdevices import NetDevices
-            pw = NetDevices().find(self.transport.connector.host).enablePW
+            pw = NetDevices().find(self.host).enablePW
         log.msg('Sending password %s' % pw, debug=True)
         self.write(pw + '\n')
         self.waiting_for = [('#', self.state_logged_in),
@@ -1543,11 +1532,13 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
     def state_raise_error(self):
         """Do this when we get a login failure."""
         self.waiting_for = []
+        log.msg('Failed logging into %s' % self.host)
         self.factory.err = exceptions.LoginFailure('%r' % self.data.rstrip())
         self.loseConnection()
 
     def timeoutConnection(self):
         """Do this when we timeout logging in."""
+        log.msg('Timed out while logging into %s' % self.host)
         self.factory.err = exceptions.LoginTimeout('Timed out while logging in')
         self.loseConnection()
 
@@ -1558,9 +1549,9 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
     Take a list of commands, and send them to the device until we run out or
     one errors. Wait for a prompt after each.
     """
-    def __init__(self, dev, commands, incremental=None, with_errors=False,
+    def __init__(self, device, commands, incremental=None, with_errors=False,
                  timeout=None, command_interval=0):
-        self.dev = dev
+        self.device = device
         self._commands = commands
         self.commanditer = iter(commands)
         self.incremental = incremental
@@ -1568,32 +1559,9 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
         self.timeout = timeout
         self.command_interval = command_interval
         self.prompt =  re.compile(IOSLIKE_PROMPT_PAT)
-
-        # Commands used to disable paging.
-        paging_map = {
-            'cisco': 'terminal length 0\n',
-            'arista': 'terminal length 0\n',
-            'foundry': 'skip-page-display\n',
-            'brocade': self._disable_paging_brocade(dev),
-            'dell': 'terminal datadump\n',
-        }
-        self.initialize = [paging_map.get(dev.vendor.name)] # must be a list
-        log.msg('My initialize commands: %r' % self.initialize, debug=True)
+        self.startup_commands = self.device.startup_commands
+        log.msg('My initialize commands: %r' % self.startup_commands, debug=True)
         self.initialized = False
-
-    def _disable_paging_brocade(self, dev):
-        """
-        Brocade MLX routers and VDX switches require different commands to
-        disable paging. Based on the device type, emits the proper command.
-
-        :param dev: A Brocade NetDevice object
-        """
-        if dev.is_switch():
-            return 'terminal length 0\n'
-        elif dev.is_router():
-            return 'skip-page-display\n'
-
-        return None
 
     def connectionMade(self):
         """Do this when we connect."""
@@ -1601,14 +1569,14 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
         self.results = self.factory.results = []
         self.data = ''
         log.msg('connectionMade, data: %r' % self.data, debug=True)
+
         # Don't call _send_next, since we expect to see a prompt, which
         # will kick off initialization.
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
-        log.msg('dataReceived, got bytes: %r' % bytes, debug=True)
+        log.msg('BYTES: %r' % bytes, debug=True)
         self.data += bytes
-        log.msg('dataReceived, got data: %r' % self.data, debug=True)
 
         # See if the prompt matches, and if it doesn't, see if it is waiting
         # for more input (like a [y/n]) prompt), and continue, otherwise return
@@ -1652,9 +1620,9 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
         self.resetTimeout()
 
         if not self.initialized:
-            log.msg('Not initialized, sending init commands', debug=True)
-            if self.initialize:
-                next_init = self.initialize.pop(0)
+            log.msg('Not initialized, sending startup commands', debug=True)
+            if self.startup_commands:
+                next_init = self.startup_commands.pop(0)
                 log.msg('Sending initialize command: %r' % next_init)
                 self.write(next_init)
                 return None
@@ -1676,10 +1644,11 @@ class IoslikeSendExpect(Protocol, TimeoutMixin):
             self.results.append(None)
             self._send_next()
         else:
-            log.msg('Sending command: %r' % next_command, debug=True)
+            log.msg('Sending command %r to %s' % (next_command, self.device), debug=True)
             self.write(next_command + '\n')
 
     def timeoutConnection(self):
         """Do this when we timeout."""
+        log.msg('Timed out while sending commands to %s' % self.device)
         self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
         self.loseConnection()
