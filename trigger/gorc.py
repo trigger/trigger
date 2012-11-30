@@ -58,7 +58,7 @@ INIT_COMMANDS_SECTION = 'init_commands'
 # out by filter_commands()
 ALLOWED_COMMANDS = (
     'set', 'show', 'get', 'ping', 'traceroute', 'who', 'whoami', 'monitor',
-    'term', 'terminal',
+    'term', 'terminal', 'cli',
 )
 
 
