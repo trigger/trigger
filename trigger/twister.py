@@ -19,21 +19,13 @@ import socket
 import struct
 import sys
 import tty
-from xml.etree.ElementTree import Element, ElementTree, XMLTreeBuilder, tostring
+from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
+                                   tostring)
 from twisted.conch.ssh.channel import SSHChannel
-from twisted.conch.ssh.common import getNS, NS
+from twisted.conch.ssh import common, session, transport, userauth
 from twisted.conch.ssh.connection import SSHConnection
-from twisted.conch.ssh.session import packRequest_pty_req
-from twisted.conch.ssh.transport import (DISCONNECT_CONNECTION_LOST,
-                                         DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT,
-                                         DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE)
-from twisted.conch.ssh.transport import SSHClientTransport
-from twisted.conch.ssh.userauth import SSHUserAuthClient
-from twisted.conch.telnet import Telnet, TelnetProtocol, ProtocolTransportMixin
-from twisted.internet import defer, reactor, stdio, task
-from twisted.internet.error import ConnectionDone, ConnectionLost
-from twisted.internet.error import ConnectionRefusedError
-from twisted.internet.protocol import ClientFactory, Protocol
+from twisted.conch import telnet
+from twisted.internet import defer, error, protocol, reactor, stdio
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 
@@ -90,24 +82,6 @@ def is_awaiting_confirmation(prompt):
     prompt = prompt.lower()
     matchlist = CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
-
-def _disable_paging_brocade(device):
-    """
-    Brocade MLX routers and VDX switches require different commands to disable
-    paging. Based on the device type, emits the proper command.
-
-    :param device:
-        A Brocade NetDevice object
-    """
-    if device is None:
-        return None
-
-    if device.is_switch():
-        return 'terminal length 0\n'
-    elif device.is_router():
-        return 'skip-page-display\n'
-
-    return None
 
 def stop_reactor():
     """Stop the reactor if it's already running."""
@@ -566,7 +540,7 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
 #==================
 # Client Factories
 #==================
-class TriggerClientFactory(ClientFactory, object):
+class TriggerClientFactory(protocol.ClientFactory, object):
     """
     Factory for all clients. Subclass me.
     """
@@ -692,7 +666,7 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
 #==================
 # SSH Basics
 #==================
-class TriggerSSHTransport(SSHClientTransport, object):
+class TriggerSSHTransport(transport.SSHClientTransport, object):
     """
     SSH transport with Trigger's defaults.
 
@@ -719,33 +693,31 @@ class TriggerSSHTransport(SSHClientTransport, object):
         """
         Detect when the transport connection is lost, such as when the
         remote end closes the connection prematurely (hosts.allow, etc.)
-
-        :param reason: A Failure instance containing the error object
         """
         super(TriggerSSHTransport, self).connectionLost(reason)
         log.msg('Transport connection lost: %s' % reason.value)
         log.msg('%s' % dir(reason))
 
         # Only throw an error if this wasn't user-initiated (reason: 10)
-        if getattr(self, 'disc_reason', None) == DISCONNECT_CONNECTION_LOST:
+        if getattr(self, 'disc_reason', None) == transport.DISCONNECT_CONNECTION_LOST:
             pass
-        elif reason.type == ConnectionLost:
+        elif reason.type == error.ConnectionLost:
             # Emulate the most common OpenSSH reason for this to happen
             msg = 'ssh_exchange_identification: Connection closed by remote host'
             #msg = 'Connection closed by remote host or in an unclean way'
             self.factory.err = exceptions.SSHConnectionLost(
-                DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT, msg
+                transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT, msg
             )
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
         log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc), debug=True)
-        if reason != DISCONNECT_CONNECTION_LOST:
+        if reason != transport.DISCONNECT_CONNECTION_LOST:
             self.factory.err = exceptions.SSHConnectionLost(reason, desc)
         self.disc_reason = reason # This is checked in connectionLost()
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
 
-class TriggerSSHUserAuth(SSHUserAuthClient):
+class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
     """Perform user authentication over SSH."""
     # We are not yet in a world where network devices support publickey
     # authentication, so these are it.
@@ -781,7 +753,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
     def ssh_USERAUTH_BANNER(self, packet):
         """Display SSH banner."""
         if self.transport.factory.display_banner:
-            banner, language = getNS(packet)
+            banner, language = common.getNS(packet)
             self.transport.factory.display_banner(banner, language)
 
     def ssh_USERAUTH_FAILURE(self, packet):
@@ -794,7 +766,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
 
         See the base docstring for the method signature.
         """
-        canContinue, partial = getNS(packet)
+        canContinue, partial = common.getNS(packet)
         partial = ord(partial)
         log.msg('Previous method: %r ' % self.lastAuth, debug=True)
 
@@ -840,7 +812,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
             method = iterator.next()
         except StopIteration:
             #self.transport.sendDisconnect(
-            #    DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE,
+            #    transport.DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE,
             #    'no more authentication methods available')
             self.transport.factory.err = exceptions.LoginFailure(
                 'No more authentication methods available')
@@ -938,7 +910,7 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
 #==================
 # SSH PTY Stuff
 #==================
-class Interactor(Protocol):
+class Interactor(protocol.Protocol):
     """
     Creates an interactive shell.
 
@@ -946,7 +918,7 @@ class Interactor(Protocol):
     """
     def __init__(self, log_to=None):
         self._log_to = log_to
-        #Protocol.__init__(self)
+        #protocol.Protocol.__init__(self)
 
     def _log(self, data):
         if self._log_to is not None:
@@ -954,7 +926,7 @@ class Interactor(Protocol):
 
     def connectionMade(self):
         """Fire up stdin/stdout once we connect."""
-        c = Protocol()
+        c = protocol.Protocol()
         c.dataReceived = self.write
         self.stdio = stdio.StandardIO(c)
 
@@ -970,8 +942,8 @@ class TriggerSSHPtyChannel(SSHChannel):
 
     def channelOpen(self, data):
         """Setup the terminal when the channel opens."""
-        pr = packRequest_pty_req(os.environ['TERM'],
-                                 self._get_window_size(), '')
+        pr = session.packRequest_pty_req(os.environ['TERM'],
+                                         self._get_window_size(), '')
         self.conn.sendRequest(self, 'pty-req', pr)
         self.conn.sendRequest(self, 'shell', '')
         signal.signal(signal.SIGWINCH, self._window_resized)
@@ -1035,8 +1007,8 @@ class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
         self.setTimeout(self.factory.timeout)
         self.device = self.factory.device
         self.initialized = self.factory.initialized
-        self.initialize = self.device.startup_commands
-        log.msg('My initialize commands: %r' % self.initialize, debug=True)
+        self.startup_commands = self.device.startup_commands
+        log.msg('My startup commands: %r' % self.startup_commands, debug=True)
 
     def channelOpen(self, data):
         """Do this when the channel opens."""
@@ -1179,7 +1151,8 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         """Do this when the channel opens."""
         self._setup_channelOpen()
         log.msg('Channel was opened')
-        d = self.conn.sendRequest(self, 'exec', NS(self.command), wantReply=True)
+        d = self.conn.sendRequest(self, 'exec', common.NS(self.command),
+                                  wantReply=True)
         d.addCallback(self._gotResponse)
         d.addErrback(self._ebShellOpen)
 
@@ -1254,7 +1227,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     def channelOpen(self, data):
         """Do this when channel opens."""
         self._setup_channelOpen()
-        self.conn.sendRequest(self, 'exec', NS('junoscript'))
+        self.conn.sendRequest(self, 'exec', common.NS('junoscript'))
         _xml = '<?xml version="1.0" encoding="us-ascii"?>\n'
         _xml += '<junoscript version="1.0" hostname="%s" release="7.6R2.9">\n' % socket.getfqdn()
         self.write(_xml)
@@ -1387,13 +1360,13 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
         self.action.factory = self
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
-class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
+class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     """
     Telnet-based session login state machine. Primarily used by IOS-like type
     devices.
     """
     def __init__(self, timeout=settings.TELNET_TIMEOUT):
-        self.protocol = TelnetProtocol()
+        self.protocol = telnet.TelnetProtocol()
         self.waiting_for = [
             ('Username: ', self.state_username),                  # Most
             ('Please Enter Login Name  : ', self.state_username), # OLD Foundry
@@ -1405,7 +1378,7 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
         self.applicationDataReceived = self.login_state_machine
         self.timeout = timeout
         self.setTimeout(self.timeout)
-        Telnet.__init__(self)
+        telnet.Telnet.__init__(self)
 
     def enableRemote(self, option):
         """
@@ -1542,7 +1515,7 @@ class TriggerTelnet(Telnet, ProtocolTransportMixin, TimeoutMixin):
         self.factory.err = exceptions.LoginTimeout('Timed out while logging in')
         self.loseConnection()
 
-class IoslikeSendExpect(Protocol, TimeoutMixin):
+class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     """
     Action for use with TriggerTelnet as a state machine.
 
