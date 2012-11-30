@@ -21,8 +21,7 @@ import sys
 import tty
 from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
                                    tostring)
-from twisted.conch.ssh.channel import SSHChannel
-from twisted.conch.ssh import common, session, transport, userauth
+from twisted.conch.ssh import channel, common, session, transport, userauth
 from twisted.conch.ssh.connection import SSHConnection
 from twisted.conch import telnet
 from twisted.internet import defer, error, protocol, reactor, stdio
@@ -342,8 +341,9 @@ def execute(device, commands, creds=None, incremental=None, with_errors=False,
 
 def execute_generic_ssh(device, commands, creds=None, incremental=None,
                         with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
-                        command_interval=0, channel=None, prompt_pattern=None,
-                        method='Generic', connection=None):
+                        command_interval=0, channel_class=None,
+                        prompt_pattern=None, method='Generic',
+                        connection_class=None):
     """
     Use default SSH channel to execute commands on a device. Should work with
     anything not wonky.
@@ -354,17 +354,17 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
     d = defer.Deferred()
 
     # Fallback to sane defaults if they aren't specified
-    if channel is None:
-        channel = TriggerSSHGenericChannel
+    if channel_class is None:
+        channel_class = TriggerSSHGenericChannel
     if prompt_pattern is None:
         prompt_pattern = DEFAULT_PROMPT_PAT
-    if connection is None:
-        connection = TriggerSSHConnection
+    if connection_class is None:
+        connection_class = TriggerSSHConnection
 
     factory = TriggerSSHChannelFactory(d, commands, creds, incremental,
-                                       with_errors, timeout, channel,
+                                       with_errors, timeout, channel_class,
                                        command_interval, prompt_pattern,
-                                       device, connection)
+                                       device, connection_class)
 
     log.msg('Trying %s SSH to %s' % (method, device), debug=True)
     reactor.connectTCP(device.nodeName, 22, factory)
@@ -382,13 +382,14 @@ def execute_exec_ssh(device, commands, creds=None, incremental=None,
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    channel = TriggerSSHCommandChannel
+    channel_class = TriggerSSHCommandChannel
     prompt_pattern = ''
     method = 'Exec'
-    connection = TriggerSSHMultiplexConnection
+    connection_class = TriggerSSHMultiplexConnection
     return execute_generic_ssh(device, commands, creds, incremental,
-                               with_errors, timeout, command_interval, channel,
-                               prompt_pattern, method, connection)
+                               with_errors, timeout, command_interval,
+                               channel_class, prompt_pattern, method,
+                               connection_class)
 
 def execute_junoscript(device, commands, creds=None, incremental=None,
                        with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -405,12 +406,12 @@ def execute_junoscript(device, commands, creds=None, incremental=None,
 
     assert device.vendor == 'juniper'
 
-    channel = TriggerSSHJunoscriptChannel
+    channel_class = TriggerSSHJunoscriptChannel
     prompt_pattern = ''
     method = 'Junoscript'
     return execute_generic_ssh(device, commands, creds, incremental,
-                               with_errors, timeout, command_interval, channel,
-                               prompt_pattern, method)
+                               with_errors, timeout, command_interval,
+                               channel_class, prompt_pattern, method)
 
 def execute_ioslike(device, commands, creds=None, incremental=None,
                     with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -480,7 +481,7 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
     """
     assert device.is_ioslike()
 
-    channel = TriggerSSHGenericChannel
+    channel_class = TriggerSSHGenericChannel
     prompt_pattern = IOSLIKE_PROMPT_PAT
     method = 'IOS-like'
 
@@ -491,7 +492,7 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
     else:
         return execute_generic_ssh(device, commands, creds, incremental,
                                    with_errors, timeout, command_interval,
-                                   channel, prompt_pattern, method)
+                                   channel_class, prompt_pattern, method)
 
 def execute_netscreen(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -510,12 +511,12 @@ def execute_netscreen(device, commands, creds=None, incremental=None,
     if not creds:
         creds = tacacsrc.get_device_password(device.nodeName)
 
-    channel = TriggerSSHGenericChannel
+    channel_class = TriggerSSHGenericChannel
     prompt_pattern = SCREENOS_PROMPT_PAT
     method = 'NetScreen'
     return execute_generic_ssh(device, commands, creds, incremental,
-                               with_errors, timeout, command_interval, channel,
-                               prompt_pattern, method)
+                               with_errors, timeout, command_interval,
+                               channel_class, prompt_pattern, method)
 
 def execute_netscaler(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -528,12 +529,12 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
     """
     assert device.is_netscaler()
 
-    channel = TriggerSSHNetscalerChannel
+    channel_class = TriggerSSHNetscalerChannel
     prompt_pattern = NETSCALER_PROMPT_PAT
     method = 'NetScaler'
     return execute_generic_ssh(device, commands, creds, incremental,
-                               with_errors, timeout, command_interval, channel,
-                               prompt_pattern, method)
+                               with_errors, timeout, command_interval,
+                               channel_class, prompt_pattern, method)
 
 
 # Classes
@@ -936,7 +937,7 @@ class Interactor(protocol.Protocol):
         self._log(data)
         self.stdio.write(data)
 
-class TriggerSSHPtyChannel(SSHChannel):
+class TriggerSSHPtyChannel(channel.SSHChannel):
     """Used by pty_connect() to turn up an SSH pty channel."""
     name = 'session'
 
@@ -977,7 +978,7 @@ class TriggerSSHPtyChannel(SSHChannel):
 #==================
 # SSH Channels
 #==================
-class TriggerSSHChannelBase(SSHChannel, TimeoutMixin, object):
+class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     """
     Base class for SSH channels.
 
@@ -1200,7 +1201,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     def loseConnection(self):
         """Default loseConnection"""
         log.msg("LOSING CHANNEL CONNECTION")
-        SSHChannel.loseConnection(self)
+        channel.SSHChannel.loseConnection(self)
 
     def closed(self):
         log.msg('channel %s closed' % self.id)
