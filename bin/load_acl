@@ -16,7 +16,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shi
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2003-2012, AOL Inc.'
-__version__ = '1.7'
+__version__ = '1.8'
 
 # Dist imports
 from collections import defaultdict
@@ -395,13 +395,16 @@ def get_work(opts, args):
 
     return work
 
-def junoscript_cmds(acls):
+def junoscript_cmds(acls, dev):
     """
     Return a list of Junoscript commands to load the given ACLs, and a
     matching list of tuples (acls remaining, human-readable status message).
 
     :param acls:
         A collection of ACL names
+
+    :param dev:
+        A Juniper `~trigger.netdevices.NetDevice` object
     """
     xml = [Element('lock-configuration')]
     status = ['locking configuration']
@@ -413,7 +416,8 @@ def junoscript_cmds(acls):
         xml.append(lc)
         status.append('loading ACL ' + acl)
 
-    xml.append(Element('commit-configuration'))
+    # Add the proper commit command
+    xml.extend(dev.commit_commands)
     status.append('committing for ' + ','.join(acls))
     status.append('done for' + ','.join(acls) )
 
@@ -447,7 +451,9 @@ def ioslike_cmds(acls, dev, nonce):
     template = template_base[dev.vendor.name]
     cmds = [template % (get_tftp_source(dev), acl, nonce) for acl in acls]
     status = ['loading ACL ' + acl for acl in acls]
-    cmds.append('write mem')
+
+    # Add the proper write mem command
+    cmds.extend(dev.commit_commands)
     status.append('saving config for ' + ','.join(acls))
     status.append('done for ' + ','.join(acls))
 
@@ -591,7 +597,7 @@ def activate(work, active, failures, jobs, redraw):
         active[dev] = 'connecting'
 
         if dev.vendor == 'juniper':
-            cmds, status = junoscript_cmds(acls)
+            cmds, status = junoscript_cmds(acls, dev)
             execute = execute_junoscript
         else:
             nonce = os.urandom(8).encode('hex')
