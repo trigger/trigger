@@ -120,12 +120,29 @@ def site_bounce(site, owning_team=None):
     """Return the bounce window for the given site."""
     realm = lookup_realm(owning_team)
     try:
-        return _predefined[(site, realm)]
+        return bounce_windows[(site, realm)]
     except KeyError:
         # This is ugly.  However, since NetDB contains all sorts of random
         # data for the "site" field, it's hard to do much better.  Throwing
         # an exception is not an option considering the low data quality.
-        return _predefined[DEFAULT_BOUNCE_GROUP]
+        return bounce_windows[DEFAULT_BOUNCE_GROUP]
+
+
+# Import bounce window configuration from a file path
+"""
+from trigger.conf import settings
+from trigger.utils.importlib import import_module_from_path
+import warnings
+
+module_path = settings.BOUNCE_FILE
+
+try:
+    _bounce_module = import_module_from_path(module_path, '_bounce_module')
+    from _bounce_module import bounce_windows
+except ImportError:
+    msg = 'Bounce mappings could not be found in %s. using default!' % module_path
+    warnings.warn(msg, RuntimeWarning)
+"""
 
 
 #
@@ -137,7 +154,7 @@ _b = BounceWindow
 G = BounceStatus('green')
 Y = BounceStatus('yellow')
 R = BounceStatus('red')
-_predefined = {         #   0     3     6     9     12    15    18    21
+bounce_windows = {         #   0     3     6     9     12    15    18    21
     ('TKP', 'BBEN'):    _b([Y,Y,Y,Y,Y,R,R,R,R,R,R,R,R,R,R,G,G,G,G,Y,Y,Y,Y,Y]),
     ('NTC', 'BBEN'):    _b([R,R,R,R,R,G,G,G,G,G,G,Y,Y,Y,Y,Y,R,R,R,R,R,R,R,R]),
     ('COL', 'BBEN'):    _b([R,Y,Y,Y,Y,G,G,G,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,R,R,R,R,R]),
@@ -197,19 +214,19 @@ _predefined = {         #   0     3     6     9     12    15    18    21
 }
 
 # Additions that are not in the list, sigh.
-_predefined[('BRA', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('DUS', 'BBEN')] = _predefined[('FRR', 'BBEN')]
-_predefined[('HAR', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('LBA', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('LOG', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('LOS', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('MAN', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('NQT', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('REA', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('SLO', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('STO', 'BBEN')] = _predefined[('LOH', 'BBEN')]
-_predefined[('SZD', 'BBEN')] = _predefined[('LOH', 'BBEN')]
+bounce_windows[('BRA', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('DUS', 'BBEN')] = bounce_windows[('FRR', 'BBEN')]
+bounce_windows[('HAR', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('LBA', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('LOG', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('LOS', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('MAN', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('NQT', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('REA', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('SLO', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('STO', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
+bounce_windows[('SZD', 'BBEN')] = bounce_windows[('LOH', 'BBEN')]
 # and for ATDN:
-_predefined[('FRR', 'ATDN')] = _predefined[('FRA', 'ATDN')]
-_predefined[('DUS', 'ATDN')] = _predefined[('FRA', 'ATDN')]
-_predefined[('PRX', 'ATDN')] = _predefined[('PRS', 'ATDN')]
+bounce_windows[('FRR', 'ATDN')] = bounce_windows[('FRA', 'ATDN')]
+bounce_windows[('DUS', 'ATDN')] = bounce_windows[('FRA', 'ATDN')]
+bounce_windows[('PRX', 'ATDN')] = bounce_windows[('PRS', 'ATDN')]
