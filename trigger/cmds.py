@@ -531,13 +531,13 @@ class NetACLInfo(Commando):
     def to_cisco(self, dev, commands=None, extra=None):
         """This is the "show me all interface information" command we pass to
         IOS devices"""
-        return ['show  configuration | include ^(interface | ip address | ip access-group | description|!)']
+        return ['show configuration | include ^(interface | ip address | ip access-group | description|!)']
 
     def to_arista(self, dev, commands=None, extra=None):
         """
         Similar to IOS, but:
 
-           + Arista has now "show conf" so we have to do "show run"
+           + Arista has no "show conf" so we have to do "show run"
            + The regex used in the CLI for Arista is more "precise" so we have to change the pattern a little bit compared to the on in generate_ios_cmd
 
         """

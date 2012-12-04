@@ -32,9 +32,33 @@ def yesno(prompt, default=False, autoyes=False):
     """
     Present a yes-or-no prompt, get input, and return a boolean.
 
-    :param prompt: Prompt text
-    :param default: Yes if True; No if False
-    :param autoyes: Automatically return True
+    The ``default`` argument is ignored if ``autoyes`` is set.
+
+    :param prompt:
+        Prompt text
+
+    :param default:
+        Yes if True; No if False
+
+    :param autoyes:
+        Automatically return True
+
+    Default behavior (hitting "enter" returns ``False``)::
+
+        >>> yesno('Blow up the moon?')
+        Blow up the moon? (y/N)
+        False
+
+    Reversed behavior (hitting "enter" returns ``True``)::
+
+        >>> yesno('Blow up the moon?', default=True)
+        Blow up the moon? (Y/n)
+        True
+
+    Automatically return ``True`` with ``autoyes``; no prompt is displayed::
+
+        >>> yesno('Blow up the moon?', autoyes=True)
+        True
     """
     if autoyes:
         return True
@@ -119,7 +143,8 @@ def pretty_time(t):
     Print a pretty version of timestamp, including timezone info. Expects
     the incoming datetime object to have proper tzinfo.
 
-    :param t: A ``datetime.datetime`` object
+    :param t:
+        A ``datetime.datetime`` object
 
     >>> import datetime
     >>> from pytz import timezone
@@ -153,7 +178,8 @@ def min_sec(secs):
     """
     Takes an epoch timestamp and returns string of minutes:seconds.
 
-    :param secs: Timestamp (in seconds)
+    :param secs:
+        Timestamp (in seconds)
 
     >>> import time 
     >>> start = time.time()  # Wait a few seconds

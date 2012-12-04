@@ -180,6 +180,15 @@ VALID_OWNERS = (
     #'Enterprise Networking',
 )
 
+# Fields and values defined here will dictate which Juniper devices receive a
+# ``commit-configuration full`` when populating ``NetDevice.commit_commands`.
+# The fields and values must match the objects exactly or it will fallback to
+# ``commit-configuration``.
+JUNIPER_FULL_COMMIT_FIELDS = {
+    #'deviceType': 'SWITCH',
+    #'make': 'EX4200',
+}
+
 #===============================
 # Redis Settings
 #===============================
