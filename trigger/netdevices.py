@@ -25,9 +25,10 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 # Imports (duh?)
+import copy
 import itertools
 import os
 import sys
@@ -47,11 +48,14 @@ try:
 except ImportError:
     import json
 import sqlite3
-from xml.etree.cElementTree import parse
+import xml.etree.cElementTree as ET
 
 
 # Constants
 SUPPORTED_FORMATS = ('json', 'rancid', 'sqlite', 'xml')
+JUNIPER_COMMIT = ET.Element('commit-configuration')
+JUNIPER_COMMIT_FULL = copy.copy(JUNIPER_COMMIT)
+ET.SubElement(JUNIPER_COMMIT_FULL, 'full')
 
 
 # Exports
@@ -83,7 +87,7 @@ def _parse_xml(data_source):
     """
     # Parsing the complete file into a tree once and extracting outthe device
     # nodes is faster than using iterparse(). Curses!!
-    xml = parse(data_source).findall('device')
+    xml = ET.parse(data_source).findall('device')
 
     # This is a generator within a generator. Trust me, it works in _populate()
     data = (((e.tag, e.text) for e in node.getchildren()) for node in xml)
@@ -309,6 +313,9 @@ class NetDevice(object):
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
 
+        # Assign the configuration commit commands (e.g. 'write memory')
+        self.commit_commands = self._determine_commit_commands()
+
     def _populate_data(self, data):
         """
         Populate the custom attribute data
@@ -340,6 +347,45 @@ class NetDevice(object):
         """Try to make a guess what the device type is"""
         self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
                                                      settings.FALLBACK_TYPE)
+
+    def _determine_commit_commands(self):
+        """
+        Return the proper "commit" command. (e.g. write mem, etc.)
+        """
+        if self.is_ioslike():
+            return self._ioslike_commit()
+        elif self.vendor == 'juniper':
+            return self._juniper_commit()
+        elif self.is_netscaler():
+            return ['save config']
+        else:
+            return []
+
+    def _ioslike_commit(self):
+        """
+        Return proper 'write memory' command for IOS-like devices.
+        """
+        if self.vendor == 'brocade' and self.is_switch():
+            return ['copy running-config startup-config', 'y']
+        else:
+            return ['write memory']
+
+    def _juniper_commit(self, fields=settings.JUNIPER_FULL_COMMIT_FIELDS):
+        """
+        Return proper ``commit-configuration`` element for a Juniper
+        device.
+        """
+        default = [JUNIPER_COMMIT]
+        if not fields:
+            return default
+
+        # Either it's a normal "commit-configuration"
+        for attr, val in fields.iteritems():
+            if not getattr(self, attr) == val:
+                return default
+
+        # Or it's a "commit-configuration full"
+        return [JUNIPER_COMMIT_FULL]
 
     def _bind_dynamic_methods(self):
         """

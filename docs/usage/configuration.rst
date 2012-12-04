@@ -476,6 +476,28 @@ Default::
 
     ()
 
+.. setting:: JUNIPER_FULL_COMMIT_FIELDS
+
+JUNIPER_FULL_COMMIT_FIELDS
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fields and values defined here will dictate which Juniper devices receive a
+``commit-configuration full`` when populating
+`~trigger.netdevices.NetDevice.commit_commands`. The fields and values must
+match the objects exactly or it will fallback to ``commit-configuration``.
+
+Example::
+
+    # Perform "commit full" on all Juniper EX4200 switches.
+    JUNIPER_FULL_COMMIT_FIELDS = {
+        'deviceType': 'SWITCH',
+        'make': 'EX4200',
+    }
+
+Default ::
+
+    {}
+
 Redis settings
 --------------
 
