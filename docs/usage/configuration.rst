@@ -399,7 +399,8 @@ NetDevices settings
 AUTOACL_FILE
 ~~~~~~~~~~~~
 
-Path to the explicit module file for autoacl.py so that we can still perform ``from trigger.acl.autoacl import autoacl`` without modifying ``sys.path``.
+Path to the explicit module file for autoacl.py so that we can still perform
+``from trigger.acl.autoacl import autoacl`` without modifying ``sys.path``.
 
 Default::
 
@@ -497,6 +498,73 @@ Example::
 Default ::
 
     {}
+
+Bounce Window settings
+----------------------
+
+.. setting:: BOUNCE_FILE
+
+BOUNCE_FILE
+~~~~~~~~~~~
+
+.. versionadded:: 1.3
+
+The path of the explicit module file containing custom bounce window mappings.
+This file is expected to define a ``bounce()`` function that takes a
+`~trigger.netdevice.NetDevices` object as an argument and returns a
+`~trigger.changemgmt.BounceWindow` object.
+
+You may override the default location of the module containing the ``bounce()``
+function by setting the ``BOUNCE_FILE`` environment variable to the path of the
+file.
+
+Default::
+
+    '/etc/trigger/bounce.py'
+
+.. setting:: BOUNCE_DEFAULT_TZ
+
+BOUNCE_DEFAULT_TZ
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.3
+
+The name of the default timezone for bounce windows. `Olson zoneinfo names
+<http://en.wikipedia.org/wiki/Tz_database#Names_of_time_zones>`_ are used for
+this in the format of *Area/Location*. All `~trigger.changemgmt.BounceWindow`
+objects are configured using "US/Eastern".
+
+Default::
+
+    'US/Eastern'
+
+.. setting:: BOUNCE_DEFAULT_COLOR
+
+BOUNCE_DEFAULT_COLOR
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.3
+
+The default fallback window color for bounce windows. Must be one of 'green',
+'yellow', or 'red'.
+
+:green:
+    **Low Risk**. Minor impact on user or customer environments. Backing-out
+    the change, if required, is easily accomplished. User notification is often
+    unnecessary.
+
+:yellow:
+    **Medium Risk**. Potential exists for substantially impacting user or
+    customer environments. Backing-out the change, if required, can be
+    accomplished in a reasonable timeframe.
+
+:red:
+    **High Risk**. The highest potential impact on users or cutomers. Any
+    non-standard add, move or change falls into this category. Backing-out of a
+    high-risk change may be time-consuming or difficult.
+
+Default::
+    'red'
 
 Redis settings
 --------------

@@ -191,6 +191,26 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 }
 
 #===============================
+# Bounce Windows/Change Mgmt
+#===============================
+
+# Path of the explicit module file for bounce.py containing custom bounce
+# window mappings.
+BOUNCE_FILE = os.environ.get('BOUNCE_FILE', os.path.join(PREFIX, 'bounce.py'))
+
+# Default bounce timezone. All BounceWindow objects are configured using
+# US/Eastern for now.
+BOUNCE_DEFAULT_TZ = 'US/Eastern'
+
+# The default fallback window color for bounce windows. Must be one of
+# ('green', 'yellow', or 'red').
+#
+#     green: Low risk
+#    yellow: Medium risk
+#       red: High risk
+BOUNCE_DEFAULT_COLOR = 'red'
+
+#===============================
 # Redis Settings
 #===============================
 

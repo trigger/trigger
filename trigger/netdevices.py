@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """
-The heart and soul of Trigger, NetDevices is an abstract interface to network device metadata
-and ACL associations.
+The heart and soul of Trigger, NetDevices is an abstract interface to network
+device metadata and ACL associations.
 
-Parses netdevices.xml and makes available a dictionary of :class:`~trigger.netdevices.NetDevice`
-objects, which is keyed by the FQDN of every network device.
+Parses :setting:`NETDEVICES_FILE` and makes available a dictionary of
+`~trigger.netdevices.NetDevice` objects, which is keyed by the FQDN of every
+network device.
 
 Other interfaces are non-public.
 
@@ -25,22 +26,20 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
-# Imports (duh?)
+# Imports
 import copy
 import itertools
 import os
 import sys
 import time
-from twisted.python import log
-from UserDict import DictMixin
 from trigger.conf import settings
-from trigger.changemgmt import site_bounce, BounceStatus
 from trigger.acl.db import AclsDB
 from trigger.utils import network
-from trigger import exceptions
-from trigger import rancid
+from trigger import changemgmt, exceptions, rancid
+from twisted.python import log
+from UserDict import DictMixin
 
 # Parser imports
 try:
@@ -238,8 +237,8 @@ def device_match(name, production_only=True):
 
             choice = input('Enter a device number: ') - 1
             match = None if choice < 0 else matches[choice]
-            #print 'Choice:', choice
-            #print 'You chose: %s' % match
+            log.msg('Choice: %s' % choice)
+            log.msg('You chose: %s' % match)
         else:
             print "No matches for '%s'." % name
 
@@ -249,13 +248,16 @@ def device_match(name, production_only=True):
 # Classes
 class NetDevice(object):
     """
-    Almost all the attributes are populated by netdevices._populate() and are
-    mostly dependent upon the source data. This is prone to implementation
-    problems and should be revisited in the long-run as there are certain
-    fields that are baked into the core functionality of Trigger.
+    An object that represents a distinct network device and its metadata.
 
-    Users usually won't create `NetDevice` objects directly! Rely instead upon
-    `NetDevices` to do this for you.
+    Almost all of the attributes are populated by
+    `~trigger.netdevices._populate()` and are mostly dependent upon the source
+    data. This is prone to implementation problems and should be revisited in
+    the long-run as there are certain fields that are baked into the core
+    functionality of Trigger.
+
+    Users usually won't create these objects directly! Rely instead upon
+    `~trigger.netdevice.NetDevices` to do this for you.
     """
     def __init__(self, data=None, with_acls=None):
         # Here comes all of the bare minimum set of attributes a NetDevice
@@ -439,7 +441,7 @@ class NetDevice(object):
         Populate the associated ACLs for this device.
 
         :param aclsdb:
-            An `~trigger.acl.db.AclsDB` instance
+            An `~trigger.acl.db.AclsDB` object.
         """
         if not aclsdb:
             return None
@@ -465,7 +467,7 @@ class NetDevice(object):
 
     @property
     def bounce(self):
-        return site_bounce(self.site, oncallid=self.onCallID)
+        return changemgmt.bounce(self)
 
     @property
     def shortName(self):
@@ -473,18 +475,33 @@ class NetDevice(object):
 
     def allowable(self, action, when=None):
         """
-        Ok to perform the specified action? Returns a boolean value. False
-        means a bounce window conflict. For now 'load-acl' is the only valid
-        action and moratorium status is not checked.
+        Return whether it's okay to perform the specified ``action``.
+
+        False means a bounce window conflict. For now ``'load-acl'`` is the
+        only valid action and moratorium status is not checked.
+
+        :param action:
+            The action to check.
+
+        :param when:
+            A datetime object.
         """
         assert action == 'load-acl'
-        return self.bounce.status(when) == BounceStatus('green')
+        return self.bounce.status(when) == changemgmt.BounceStatus('green')
 
     def next_ok(self, action, when=None):
-        """Return the next time at or after the specified time (default now)
-        that it will be ok to perform the specified action."""
+        """
+        Return the next time at or after the specified time (default now)
+        that it will be ok to perform the specified action.
+
+        :param action:
+            The action to check.
+
+        :param when:
+            A datetime object.
+        """
         assert action == 'load-acl'
-        return self.bounce.next_ok(BounceStatus('green'), when)
+        return self.bounce.next_ok(changemgmt.BounceStatus('green'), when)
 
     def is_router(self):
         """Am I a router?"""
@@ -500,7 +517,7 @@ class NetDevice(object):
 
     def is_netscaler(self):
         """Am I a NetScaler?"""
-        return all([self.deviceType=='SWITCH', self.vendor=='citrix'])
+        return all([self.is_switch(), self.vendor=='citrix'])
 
     def is_netscreen(self):
         """Am I a NetScreen running ScreenOS?"""
@@ -509,8 +526,7 @@ class NetDevice(object):
 
     def is_ioslike(self):
         """
-        Am I an IOS-like device (as determined by
-        ``settings.IOSLIKE_VENDORS``)?
+        Am I an IOS-like device (as determined by :settings:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
 
