@@ -2,6 +2,22 @@
 Changelog
 =========
 
+.. _v1.2.4:
+
+1.2.4
+=====
+
++ The commands required to commit/save the configuration on a device are now
+  attached to `~trigger.netdevices.NetDevice` objects under the
+  `~trigger.netdevices.NetDevice.commit_commands` attribute, to make it easier
+  to execute these commands without having to determine them for yourself.
++ :feature:`56` Added a way to optionally perform a ``commit full`` operation
+  on Juniper devices by defining a dictionary of attributes and values for
+  matching devices using :setting:`JUNIPER_FULL_COMMIT_FIELDS`. This modifies
+  the ``commit_commands`` that are assigned when the
+  `~trigger.netdevices.NetDevice` object is created.
++ :bug:`33` Console paging is now disabled by default for async SSH channels.
+
 .. _v1.2.3:
 
 1.2.3
