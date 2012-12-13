@@ -526,13 +526,7 @@ class TriggerClientFactory(ClientFactory):
     """
     def __init__(self, deferred, creds=None, init_commands=None):
         self.d = deferred
-        self.tcrc = tacacsrc.Tacacsrc()
-        if creds is None:
-            log.msg('creds not defined, fetching...', debug=True)
-            realm = settings.DEFAULT_REALM
-            creds = self.tcrc.creds.get(realm, tacacsrc.get_device_password(realm))
-        self.creds = creds
-
+        self.creds = tacacsrc.validate_credentials(creds)
         self.results = None
         self.err = None
 

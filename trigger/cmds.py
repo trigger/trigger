@@ -64,6 +64,11 @@ class Commando(object):
     :param commands:
         (Optional) A list of commands to execute on the ``devices``.
 
+    :param creds:
+        (Optional) A 3-tuple of (username, password, realm). If only (username,
+        password) are provided, realm will be populated from
+        :setting:`DEFAULT_REALM`. If unset it will fetch from ``.tacacsrc``.
+
     :param incremental:
         (Optional) A callback that will be called with an empty sequence upon
         connection and then called every time a result comes back from the
@@ -101,14 +106,15 @@ class Commando(object):
     # How results are stored (defaults to dict)
     results = {}
 
-    def __init__(self, devices=None, commands=None, incremental=None,
-                 max_conns=10, verbose=False, timeout=30,
+    def __init__(self, devices=None, commands=None, creds=None,
+                 incremental=None, max_conns=10, verbose=False, timeout=30,
                  production_only=True, allow_fallback=True):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
 
         self.devices = devices
         self.commands = self.commands or (commands or []) # Always fallback to []
+        self.creds = creds
         self.incremental = incremental
         self.max_conns = max_conns
         self.verbose = verbose
@@ -217,7 +223,8 @@ class Commando(object):
 
             # Setup the async Deferred object with a timeout and error printing.
             commands = self.generate(device)
-            async = device.execute(commands, incremental=self.incremental,
+            async = device.execute(commands, creds=self.creds,
+                                   incremental=self.incremental,
                                    timeout=self.timeout, with_errors=True)
 
             # Add the parser callback for great justice!
