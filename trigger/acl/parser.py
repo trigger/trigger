@@ -11,6 +11,11 @@ router model, software version) for full support.  The realistic goal
 is to catch all the errors that we see in practice, and to accept all
 the ACLs that we use in practice, rather than to try to reject *every*
 invalid ACL and accept *every* valid ACL.
+
+>>> from trigger.acl import parse
+>>> aclobj = parse("access-list 123 permit tcp any host 10.20.30.40 eq 80")
+>>> aclobj.terms
+[<Term: None>]
 """
 
 __author__ = 'Jathan McCollum, Michael Shields'
@@ -2070,7 +2075,13 @@ def parse(input_data):
     Parse a complete ACL and return an ACL object. This should be the only 
     external interface to the parser.
 
-    :param data: An ACL policy as a string or file-like object.
+    >>> from trigger.acl import parse
+    >>> aclobj = parse("access-list 123 permit tcp any host 10.20.30.40 eq 80")
+    >>> aclobj.terms
+    [<Term: None>]
+
+    :param input_data:
+        An ACL policy as a string or file-like object.
     """
     parser = ACLParser(grammar)
 
