@@ -315,8 +315,11 @@ class NetDevice(object):
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
 
+        # Set the correct command(s) to run on startup based on deviceType
+        self.startup_commands = self._set_startup_commands()
+
         # Assign the configuration commit commands (e.g. 'write memory')
-        self.commit_commands = self._determine_commit_commands()
+        self.commit_commands = self._set_commit_commands()
 
     def _populate_data(self, data):
         """
@@ -350,7 +353,38 @@ class NetDevice(object):
         self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
                                                      settings.FALLBACK_TYPE)
 
-    def _determine_commit_commands(self):
+    def _set_startup_commands(self):
+        """
+        Set the commands to run at startup. For now they are just ones to
+        disable pagination.
+        """
+        def disable_paging_brocade():
+            """
+            Brocade MLX routers and VDX switches require different commands to
+            disable paging. Yay complexity!
+            """
+            if self.is_switch():
+                return 'terminal length 0\n'
+            elif self.is_router():
+                return 'skip-page-display\n'
+            return None
+
+        # Commands used to disable paging.
+        paging_map = {
+            'arista': 'terminal length 0\n',
+            'cisco': 'terminal length 0\n',
+            'brocade': disable_paging_brocade(),
+            'dell': 'terminal datadump\n',
+            'foundry': 'skip-page-display\n',
+        }
+
+        cmd = paging_map.get(self.vendor.name)
+        if cmd is not None:
+            return [cmd] # This must be a list
+
+        return []
+
+    def _set_commit_commands(self):
         """
         Return the proper "commit" command. (e.g. write mem, etc.)
         """
