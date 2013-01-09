@@ -372,6 +372,7 @@ class NetDevice(object):
         # Commands used to disable paging.
         paging_map = {
             'arista': 'terminal length 0\n',
+            'aruba': 'no paging\n',
             'cisco': 'terminal length 0\n',
             'brocade': disable_paging_brocade(),
             'dell': 'terminal datadump\n',

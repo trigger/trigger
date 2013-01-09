@@ -41,6 +41,7 @@ from trigger.utils import network, cli
 # Constants
 CONTINUE_PROMPTS = ['continue?', 'proceed?', '(y/n):', '[y/n]:']
 DEFAULT_PROMPT_PAT = r'\S+#' # Will match most hardware
+ARUBA_PROMPT_PAT = r'\(\S+\)(?: \(\S+\))?\s?#'
 IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
 SCREENOS_PROMPT_PAT = '(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$'
 NETSCALER_PROMPT_PAT = '\sDone\n$' # ' Done \n' only
@@ -485,6 +486,12 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
     prompt_pattern = IOSLIKE_PROMPT_PAT
     method = 'IOS-like'
 
+    # Aruba is IOS-like except when it comes to async SSH channels (derp)
+    if device.vendor == 'aruba':
+        channel_class = TriggerSSHArubaChannel
+        prompt_pattern = ARUBA_PROMPT_PAT
+        method = 'Aruba'
+
     # Hackery to determine the right "IOS-like" SSH function
     if device.vendor == 'arista':
         return execute_exec_ssh(device, commands, creds, incremental,
@@ -548,7 +555,7 @@ class TriggerClientFactory(protocol.ClientFactory, object):
     def __init__(self, deferred, creds=None, init_commands=None):
         self.d = deferred
         self.creds = tacacsrc.validate_credentials(creds)
-        self.results = None
+        self.results = []
         self.err = None
 
         # Setup and run the initial commands
@@ -1116,6 +1123,10 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
         self.loseConnection()
 
+    def request_exit_status(self, data):
+        status = struct.unpack('>L', data)[0]
+        log.msg('Exit status: %s' % status)
+
 class TriggerSSHGenericChannel(TriggerSSHChannelBase):
     """
     An SSH channel using all of the Trigger defaults to interact with network
@@ -1125,6 +1136,21 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
 
     Before you create your own subclass, see if you can't use me as-is!
     """
+
+class TriggerSSHArubaChannel(TriggerSSHChannelBase):
+    """
+    Aruba won't give you a shell without a pty, so we have to do a 'pty-req'.
+    """
+    def channelOpen(self, data):
+        self._setup_channelOpen()
+        self.data = ''
+
+        # Request a pty even tho we are not actually using one.
+        pr = session.packRequest_pty_req(os.environ['TERM'], (80, 24, 0, 0), '')
+        self.conn.sendRequest(self, 'pty-req', pr)
+        d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
+        d.addCallback(self._gotResponse)
+        d.addErrback(self._ebShellOpen)
 
 class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     """
@@ -1223,6 +1249,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         self._setup_channelOpen()
         self.conn.sendRequest(self, 'exec', common.NS('junoscript'))
         _xml = '<?xml version="1.0" encoding="us-ascii"?>\n'
+        # TODO (jathan): Make the release version dynamic at some point
         _xml += '<junoscript version="1.0" hostname="%s" release="7.6R2.9">\n' % socket.getfqdn()
         self.write(_xml)
         self.xmltb = IncrementalXMLTreeBuilder(self._endhandler)
