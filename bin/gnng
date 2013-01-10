@@ -5,25 +5,28 @@
 gnng - Fetches network devices interfaces and displays them in a table view.
 
 Fetches interface information from routing and firewall devices. This includes
-network and IP information along with the inbound and outbound filters that 
+network and IP information along with the inbound and outbound filters that
 may be applied to the interface. Works on Juniper, Netscreen, Foundry, and Cisco
 devices.
 """
+
 __author__ = 'Jathan McCollum, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
-__version__ = '1.15'
+__copyright__ = 'Copyright 2003-2013, AOL Inc.'
+__version__ = '1.2'
 
-import re
-import math
-import os
-import sys
-import pprint
+from collections import namedtuple
+import csv
 import cStringIO
-import operator
 from IPy import IP
+import math
+import operator
 from optparse import OptionParser
+import os
+import re
+from sqlite3 import dbapi2 as sqlite
+import sys
 from twisted.python import log
 from xml.etree.cElementTree import ElementTree, Element, SubElement, dump
 
@@ -32,33 +35,44 @@ from trigger.cmds import NetACLInfo
 
 #log.startLogging(sys.stdout, setStdout=False)
 
-DEBUG = False
-max_connections = 30 
-current_connections = 0
+# Constants
+DEBUG = os.getenv('DEBUG')
+MAX_CONNS = 10
+ROW_LABELS = ('Interface', 'Addresses', 'Subnets', 'ACLs IN', 'ACLs OUT',
+              'Description')
 
+# Namedtuples
+RowData = namedtuple('RowData', 'all_rows subnet_table')
+DottyData = namedtuple('DottyData', 'graph links')
+
+# Functions
 def parse_args(argv):
     parser = OptionParser(usage='%prog [options] [routers]', description='''GetNets-NG
 
 Fetches interface information from routing and firewall devices. This includes
-network and IP information along with the inbound and outbound filters that 
-may be applied to the interface. Works on Juniper, Netscreen, Foundry, and Cisco
-devices.''')
-    parser.add_option('-a', '--all', action='store_true', 
+network and IP information along with the inbound and outbound filters that
+may be applied to the interface. Skips un-numbered and disabled interfaces by
+default. Works on Cisco, Foundry, Juniper, and NetScreen devices.''')
+    parser.add_option('-a', '--all', action='store_true',
                       help='run on all devices')
-    parser.add_option('-j', '--jobs', type='int', default=10,
-                      help='maximum simultaneous connections to maintain.')
     parser.add_option('-c', '--csv', action='store_true',
                       help='output the data in CSV format instead.')
-    parser.add_option('-s', '--sqldb', type='str', 
+    parser.add_option('-d', '--include-disabled', action='store_true',
+                      help='include disabled interfaces.')
+    parser.add_option('-u', '--include-unnumbered', action='store_true',
+                      help='include un-numbered interfaces.')
+    parser.add_option('-j', '--jobs', type='int', default=MAX_CONNS,
+                      help='maximum simultaneous connections to maintain.')
+    parser.add_option('-N', '--nonprod', action='store_false', default=True,
+                      help='Look for production and non-production devices.')
+    parser.add_option('-s', '--sqldb', type='str',
                       help='output to SQLite DB')
     parser.add_option('', '--dotty', action='store_true',
                       help='output connect-to information in dotty format.')
-    parser.add_option('', '--filter-on-group', action='append', 
+    parser.add_option('', '--filter-on-group', action='append',
                       help='Run on all devices owned by this group')
-    parser.add_option('', '--filter-on-type', action='append', 
+    parser.add_option('', '--filter-on-type', action='append',
                       help='Run on all devices with this device type')
-    parser.add_option('-N', '--nonprod', action='store_false', default=True,
-                      help='Look for production and non-production devices.')
 
     opts, args = parser.parse_args(argv)
 
@@ -67,13 +81,13 @@ devices.''')
         sys.exit(1)
 
     return opts, args
-    
+
 def fetch_router_list(args):
     """Turns a list of device names into device objects, skipping unsupported,
     invalid, or filtered devices."""
     nd = NetDevices(production_only=opts.nonprod)
     ret = []
-    blocked_groups = [] 
+    blocked_groups = []
     if args:
         for arg in args:
             if not pass_filters(nd.find(arg)):
@@ -103,8 +117,8 @@ def pass_filters(device):
         if device.deviceType not in opts.filter_on_type:
             return False
 
-    return True 
-    
+    return True
+
 def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify='left',
            separateRows=False, prefix='', postfix='', wrapfunc=lambda x:x, wraplast=True):
     """Indents a table by column.
@@ -113,7 +127,7 @@ def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify='left',
        - headerChar: Character to be used for the row separator line
          (if hasHeader==True or separateRows==True).
        - delim: The column delimiter.
-       - justify: Determines how are data justified in their column. 
+       - justify: Determines how are data justified in their column.
          Valid values are 'left','right' and 'center'.
        - separateRows: True if rows are to be separated by a line
          of 'headerChar's.
@@ -152,13 +166,14 @@ def indent(rows, hasHeader=False, headerChar='-', delim=' | ', justify='left',
         if separateRows or hasHeader: print >> output, rowSeparator; hasHeader=False
     return output.getvalue()
 
-# written by Mike Brown
-# http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/148061
 def wrap_onspace(text, width):
     """
     A word-wrap function that preserves existing line breaks
     and most spaces in the text. Expects that existing line
     breaks are posix newlines (\n).
+
+    Written by Mike Brown
+    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/148061
     """
     return reduce(lambda line, word, width=width: '%s%s%s' %
                   (line,
@@ -180,12 +195,11 @@ def wrap_always(text, width):
        It doesn't split the text in words."""
     return '\n'.join([ text[width*i:width*(i+1)] \
                        for i in xrange(int(math.ceil(1.*len(text)/width))) ])
-    
+
 def write_sqldb(sqlfile, dev, rows):
     """Write device fields to sqlite db"""
-    from sqlite3 import dbapi2 as sqlite
     create_table = False
-    
+
     if not os.path.isfile(sqlfile):
         create_table = True
 
@@ -204,7 +218,7 @@ def write_sqldb(sqlfile, dev, rows):
             iface_subnets VARCHAR(1024),
             iface_inacl   VARCHAR(32),
             iface_outacl  VARCHAR(32),
-            iface_descr   VARCHAR(1024) 
+            iface_descr   VARCHAR(1024)
         );
         ''')
         cursor.execute('''
@@ -217,21 +231,20 @@ def write_sqldb(sqlfile, dev, rows):
 
     for row in rows:
         iface, addrs, snets, inacl, outacl, desc = row
-        
         cursor.execute('''
             INSERT INTO dev_nets (
-                device_name, 
+                device_name,
                 iface_name,
                 iface_addrs,
                 iface_subnets,
                 iface_inacl,
                 iface_outacl,
-                iface_descr ) 
+                iface_descr )
             VALUES (
-                '%s', '%s', '%s', 
-                '%s', '%s', '%s', '%s' 
+                '%s', '%s', '%s',
+                '%s', '%s', '%s', '%s'
             );''' % (
-                dev, iface, addrs, 
+                dev, iface, addrs,
                 snets, inacl, outacl, desc )
         )
 
@@ -239,12 +252,187 @@ def write_sqldb(sqlfile, dev, rows):
     cursor.close()
     connection.close()
 
-    
-if __name__ == '__main__':
-    routers = []
-    global opts
+def get_interface_data(devices, production_only=True, max_conns=MAX_CONNS):
+    """
+    Fetch interface information from ``devices`` and return it as a dict.
 
-    opts, args = parse_args(sys.argv)
+    :param devices:
+        List of device hostnames
+
+    :param production_only:
+        Whether to include only devices marked as "PRODUCTION"
+
+    :param max_conns:
+        Max number of simultaneous connections
+    """
+    ninfo = NetACLInfo(devices=devices, production_only=production_only,
+                       max_conns=max_conns)
+    ninfo.run()
+    if DEBUG:
+        print 'NetACLInfo done!'
+
+    return ninfo.config
+
+def build_output(main_data, opts, labels=None):
+    """
+    Iterate the interface data, then build and return row data.
+
+    :param main_data:
+        Dictionary of interface data
+
+    :param opts:
+        OptionParser object
+
+    :param labels:
+        Row labels for table output
+    """
+    if labels is None:
+        labels = ROW_LABELS
+
+    subnet_table = {}
+    all_rows = []
+    for dev, data in main_data.iteritems():
+        rows = []
+        if not opts.csv and not opts.dotty:
+            print "DEVICE: %s" % dev
+
+        interfaces = sorted(data)
+        for interface in interfaces:
+            iface = data[interface]
+
+            # Maybe skip down interfaces
+            if 'addr' not in iface and not opts.include_disabled:
+                continue
+
+            if DEBUG:
+                print '>>> ', interface
+
+            addrs   = iface['addr']
+            subns   = iface['subnets']
+            acls_in  = iface['acl_in']
+            acls_out = iface['acl_out']
+            desctext = ' '.join(iface.get('description')).replace(' : ', ':')
+
+            # Maybe skip un-numbered interfaces
+            if not addrs and not opts.include_unnumbered:
+                continue
+
+            # Trim the description
+            if not opts.csv:
+                desctext = desctext[0:50]
+
+            addresses = []
+            subnets   = []
+
+            for a in addrs:
+                addresses.append(a.strNormal())
+
+            for s in subns:
+                subnets.append(s.strNormal())
+
+                if s in subnet_table:
+                    subnet_table[s].append((dev, interface, addrs))
+                else:
+                    subnet_table[s] = [(dev, interface, addrs)]
+
+            if DEBUG:
+                print '\t in:', acls_in
+                print '\t ou:', acls_out
+            rows.append([interface, ' '.join(addresses),
+             ' '.join(subnets), '\n'.join(acls_in), '\n'.join(acls_out), desctext])
+
+        all_rows.append(rows)
+
+    return RowData(all_rows, subnet_table)
+
+def handle_output(all_rows, opts):
+    """
+    Do stuff with the output data.
+
+    :param all_rows:
+        A list of lists of row data
+
+    :param opts:
+        OptionParser object
+    """
+    for rows in all_rows:
+
+        if opts.csv:
+            writer = csv.writer(sys.stdout)
+            for row in rows:
+                writer.writerow([dev] + row)
+        elif opts.dotty:
+            continue
+        elif opts.sqldb:
+            write_sqldb(opts.sqldb, dev, rows)
+        else:
+            print_table(rows)
+
+def print_table(rows, labels=None, has_header=True, separate_rows=False,
+                wrapfunc=None, delim=' | ', wrap_last=False):
+    """
+    Print the interface table for a device
+    """
+    if labels is None:
+        labels = ROW_LABELS
+    if wrapfunc is None:
+        wrapfunc = lambda x: wrap_onspace(x, 20)
+
+    print indent([labels] + rows, hasHeader=has_header,
+                 separateRows=separate_rows, wrapfunc=wrapfunc, delim=delim,
+                 wraplast=wrap_last)
+
+def output_dotty(subnet_table, display=True):
+    """
+    Output and return dotty config for a ``subnet_table``
+
+    :param subnet_table:
+        Dict mapping subnets to devices and interfaces
+    """
+    links = {}
+
+    for ip, devs in subnet_table.iteritems():
+        if len(devs) > 1: #and IP(ip).prefixlen() >= 30:
+            router1 = devs[0][0]
+            router2 = devs[1][0]
+
+            kf1 = router1 in links
+            kf2 = router2 in links
+
+            if kf1:
+                if router2 not in links[router1]:
+                    links[router1].append(router2)
+
+            elif kf2:
+                if router1 not in links[router2]:
+                    links[router2].append(router1)
+
+            else:
+                links[router1] = [router2]
+
+    if not links:
+        print 'No valid links for dotty generation.'
+        return None
+
+    nd = NetDevices() # This uses the pre-existing NetDevices singleton
+
+    graph = '''graph network {
+    overlap=scale; center=true; orientation=land;
+    resolution=0.10; rankdir=LR; ratio=fill;
+    node [fontname=Courier, fontsize=10]'''
+
+    for leaf, subleaves in links.iteritems():
+        for subleaf in subleaves:
+            graph += '"%s"--"%s"\n' % (nd[leaf].shortName, nd[subleaf].shortName)
+        #print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
+    graph += '\n}'
+
+    if display:
+        print graph
+
+    return DottyData(graph, links)
+
+def main():
 
     if opts.all:
         routers = fetch_router_list(None)
@@ -254,119 +442,15 @@ if __name__ == '__main__':
     if not routers:
         sys.exit(1)
 
-    main_data = {}
-
-    ninfo = NetACLInfo(devices=routers, production_only=opts.nonprod)
-    ninfo.run()
-    if DEBUG: 
-        print 'NetACLInfo done!'
-
-    main_data = ninfo.config
-    
-    subnet_table = {}
-    labels = ('Interface', 'Addresses', 'Subnets', 'ACLS IN', 'ACLS OUT', 'Description')
-    for dev, data in main_data.iteritems():
-        rows = []
-        if not opts.csv and not opts.dotty: 
-            print "DEVICE: %s" % dev
-
-        interfaces = sorted(data.keys())
-        for interface in interfaces:
-            iface = data[interface]
-
-            # Skip down interfaces
-            if 'addr' not in iface:
-                continue
-
-            if DEBUG: 
-                print '>>> ', interface
-
-            def make_ipy(nets):
-                return [IP(x[0]) for x in nets]
-            def make_cidrs(nets):
-                print 'GOT nets:', nets
-                return [IP(x[0]).make_net(x[1]) for x in nets]
-
-            #addrs   = make_ipy(iface['addr'])
-            #if DEBUG:
-            #    print 'GOT ADDRS:', addrs
-            #subns   = make_cidrs(iface.get('subnets', []) or iface['addr'])
-            #acls_in  = iface.get('acl_in', [])
-            #acls_out = iface.get('acl_out', [])
-            #desctext = ' '.join(iface.get('description', [])).replace(' : ', ':')
-            addrs   = iface['addr']
-            subns   = iface['subnets']
-            acls_in  = iface['acl_in']
-            acls_out = iface['acl_out']
-            desctext = ' '.join(iface.get('description')).replace(' : ', ':')
-
-            if not opts.csv:
-                desctext = desctext[0:50]
-            if not addrs:
-                continue
-            
-            addresses = [] 
-            subnets   = [] 
-
-            for x in addrs:
-                addresses.append(x.strNormal())
-            
-            for x in subns:
-                subnets.append(x.strNormal())
-
-                if x in subnet_table:
-                    subnet_table[x].append((dev, interface, addrs))
-                else:
-                    subnet_table[x] = [(dev, interface, addrs)]
-
-            if DEBUG:
-                print '\t in:', acls_in
-                print '\t ou:', acls_out
-            rows.append([interface, ' '.join(addresses), 
-             ' '.join(subnets), '\n'.join(acls_in), '\n'.join(acls_out), desctext])
-
-        if opts.csv:
-            import csv
-            writer = csv.writer(sys.stdout)
-            for row in rows:
-                writer.writerow([dev]+row)
-        elif opts.dotty:
-            continue
-        elif opts.sqldb:
-            write_sqldb(opts.sqldb, dev, rows)
-        else: 
-            print indent([labels]+rows, hasHeader=True, separateRows=False, 
-              wrapfunc=lambda x: wrap_onspace(x,20), delim=' | ',wraplast=False)
-        
-    links = {}
-            
-    for ip,devs in subnet_table.iteritems():
-        if len(devs) > 1: #and IP(ip).prefixlen() >= 30:
-            router1 = devs[0][0]
-            router2 = devs[1][0]
-
-            kf1 = links.has_key(router1)
-            kf2 = links.has_key(router2)
-
-            if kf1:
-                if router2 not in links[router1]:
-                    links[router1].append(router2)
-            
-            elif kf2:
-                if router1 not in links[router2]:
-                    links[router2].append(router1)
-
-            else:
-                links[router1] = [router2] 
+    main_data = get_interface_data(devices=routers, production_only=opts.nonprod)
+    all_rows, subnet_table = build_output(main_data, opts)
+    handle_output(all_rows, opts)
 
     if opts.dotty:
-        print '''graph network {
-    overlap=scale; center=true; orientation=land; 
-    resolution=0.10; rankdir=LR; ratio=fill;
-    node [fontname=Courier, fontsize=10]'''
-        nd = NetDevices()
-        for leaf,subleaves in links.iteritems():
-            for subleaf in subleaves:
-                print '"%s"--"%s"' % (nd[leaf].shortName, nd[subleaf].shortName)
-            #print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
-        print '}'
+        output_dotty(subnet_table)
+
+if __name__ == '__main__':
+    global opts
+    opts, args = parse_args(sys.argv)
+
+    main()
