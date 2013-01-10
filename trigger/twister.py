@@ -61,7 +61,7 @@ def has_ioslike_error(s):
     """Test whether a string seems to contain an IOS-like error."""
     tests = (
         s.startswith('%'),     # Cisco, Arista
-        '\n%' in s,            # Foundry
+        '\n%' in s,            # Aruba, Foundry
         'syntax error: ' in s, # Brocade VDX
     )
 
@@ -1007,6 +1007,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         self.prompt = self.factory.prompt
         self.setTimeout(self.factory.timeout)
         self.device = self.factory.device
+        self.data = ''
         self.initialized = self.factory.initialized
         self.startup_commands = self.device.startup_commands
         log.msg('My startup commands: %r' % self.startup_commands, debug=True)
@@ -1014,7 +1015,6 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     def channelOpen(self, data):
         """Do this when the channel opens."""
         self._setup_channelOpen()
-        self.data = ''
         d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
         d.addCallback(self._gotResponse)
         d.addErrback(self._ebShellOpen)
@@ -1143,7 +1143,6 @@ class TriggerSSHArubaChannel(TriggerSSHChannelBase):
     """
     def channelOpen(self, data):
         self._setup_channelOpen()
-        self.data = ''
 
         # Request a pty even tho we are not actually using one.
         pr = session.packRequest_pty_req(os.environ['TERM'], (80, 24, 0, 0), '')
