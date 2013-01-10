@@ -12,7 +12,7 @@ and removed.
 __author__ = 'Jathan McCollum, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
+__copyright__ = 'Copyright 2003-2013, AOL Inc.'
 __version__ = '1.4'
 
 import sys, os, time, signal, IPy
@@ -27,11 +27,6 @@ import time
 stop_all = False
 debug = False
 
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
 
 def log(type, msg):
     if type == 'debug' and debug == 0:

@@ -21,7 +21,7 @@ invalid ACL and accept *every* valid ACL.
 __author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2011, AOL Inc.'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
 
 import IPy
 from IPy import _prefixlenToNetmask
@@ -32,14 +32,8 @@ from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
 from simpleparse.parser import Parser
 import pprint
 import socket
-
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-
 from trigger import exceptions
+
 
 # Exports
 __all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
