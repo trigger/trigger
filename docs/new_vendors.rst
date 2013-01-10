@@ -15,7 +15,7 @@ Checklist
 
 You need to account for the following:
 
-Interactive (pty) sessions 
+Interactive (pty) sessions
 --------------------------
 
 + Does it support telnet?
@@ -31,7 +31,7 @@ Async factory method (execute_) for remote execution
   - Does it support SSH exec? Try execute_exec_ssh
   - Does it support SSH shell? Try execute_generic_ssh
 
-+ What is the prompt pattern? 
++ What is the prompt pattern?
 + What is the command to disable paging?
 
   - add 'vendor_name': 'disable paging command\n' to trigger.netdevices.NetDevice._set_startup_commands.paging_map dictionary.
@@ -51,7 +51,7 @@ Add the vendor name to the following:
 - add 'vendor_name': 'DEVICE_TYPE' to settings.DEFAULT_TYPES
 - add 'vendor_name' to settings.IOSLIKE_VENDORS
 
-Error messages/timeouts 
+Error messages/timeouts
 -----------------------
 
 Determine how error messages are displayed, and what default timeouts (if any) need to be accounted for.
