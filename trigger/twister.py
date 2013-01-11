@@ -8,9 +8,8 @@ I/O framework. The Trigger Twister is just like the Mersenne Twister, except not
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
 
-from copy import copy
 import fcntl
 import os
 import re
@@ -60,9 +59,10 @@ def has_junoscript_error(tag):
 def has_ioslike_error(s):
     """Test whether a string seems to contain an IOS-like error."""
     tests = (
-        s.startswith('%'),     # Cisco, Arista
-        '\n%' in s,            # Aruba, Foundry
-        'syntax error: ' in s, # Brocade VDX
+        s.startswith('%'),                 # Cisco, Arista
+        '\n%' in s,                        # Aruba, Foundry
+        'syntax error: ' in s,             # Brocade VDX
+        s.startswith('Invalid input -> '), # Brocade MLX
     )
 
     return any(tests)
