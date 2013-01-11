@@ -486,11 +486,14 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
     prompt_pattern = IOSLIKE_PROMPT_PAT
     method = 'IOS-like'
 
-    # Aruba is IOS-like except when it comes to async SSH channels (derp)
+    # Test if device requires shell + pty-req
+    if device.requires_async_pty:
+        channel_class = TriggerSSHAsyncPtyChannel
+        method = 'Async PTY'
+
+    # Aruba requires its own prompt pattern
     if device.vendor == 'aruba':
-        channel_class = TriggerSSHArubaChannel
         prompt_pattern = ARUBA_PROMPT_PAT
-        method = 'Aruba'
 
     # Hackery to determine the right "IOS-like" SSH function
     if device.vendor == 'arista':
@@ -938,7 +941,9 @@ class Interactor(protocol.Protocol):
         self.stdio.write(data)
 
 class TriggerSSHPtyChannel(channel.SSHChannel):
-    """Used by pty_connect() to turn up an SSH pty channel."""
+    """
+    Used by pty_connect() to turn up an interactive SSH pty channel.
+    """
     name = 'session'
 
     def channelOpen(self, data):
@@ -1137,9 +1142,16 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
     Before you create your own subclass, see if you can't use me as-is!
     """
 
-class TriggerSSHArubaChannel(TriggerSSHChannelBase):
+class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
     """
-    Aruba won't give you a shell without a pty, so we have to do a 'pty-req'.
+    An SSH channel that requests a non-interactive pty intended for async
+    usage.
+
+    Some devices won't allow a shell without a pty, so we have to do a
+    'pty-req'.
+
+    This is distinctly different from ~trigger.twister.TriggerSSHPtyChannel`
+    which is intended for interactive end-user sessions.
     """
     def channelOpen(self, data):
         self._setup_channelOpen()

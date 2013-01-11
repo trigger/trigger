@@ -321,6 +321,9 @@ class NetDevice(object):
         # Assign the configuration commit commands (e.g. 'write memory')
         self.commit_commands = self._set_commit_commands()
 
+        # Determine whether we require an async pty SSH channel
+        self.requires_async_pty = self._set_requires_async_pty()
+
     def _populate_data(self, data):
         """
         Populate the custom attribute data
@@ -352,6 +355,17 @@ class NetDevice(object):
         """Try to make a guess what the device type is"""
         self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
                                                      settings.FALLBACK_TYPE)
+
+    def _set_requires_async_pty(self):
+        """
+        Set whether a device requires an async pty (see:
+            `~trigger.twister.TriggerSSHAsyncPtyChannel`).
+        """
+        RULES = (
+            self.vendor == 'aruba',
+            self.vendor == 'brocade' and self.is_switch(), # Brocade ADX/VDX
+        )
+        return any(RULES)
 
     def _set_startup_commands(self):
         """
