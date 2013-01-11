@@ -19,7 +19,6 @@ __version__ = '1.2'
 from collections import namedtuple
 import csv
 import cStringIO
-from IPy import IP
 import math
 import operator
 from optparse import OptionParser
@@ -28,10 +27,9 @@ import re
 from sqlite3 import dbapi2 as sqlite
 import sys
 from twisted.python import log
-from xml.etree.cElementTree import ElementTree, Element, SubElement, dump
 
-from trigger.netdevices import NetDevices
 from trigger.cmds import NetACLInfo
+from trigger.netdevices import NetDevices
 
 #log.startLogging(sys.stdout, setStdout=False)
 
@@ -392,7 +390,7 @@ def output_dotty(subnet_table, display=True):
     links = {}
 
     for ip, devs in subnet_table.iteritems():
-        if len(devs) > 1: #and IP(ip).prefixlen() >= 30:
+        if len(devs) > 1:
             router1 = devs[0][0]
             router2 = devs[1][0]
 
