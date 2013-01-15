@@ -11,12 +11,17 @@ router model, software version) for full support.  The realistic goal
 is to catch all the errors that we see in practice, and to accept all
 the ACLs that we use in practice, rather than to try to reject *every*
 invalid ACL and accept *every* valid ACL.
+
+>>> from trigger.acl import parse
+>>> aclobj = parse("access-list 123 permit tcp any host 10.20.30.40 eq 80")
+>>> aclobj.terms
+[<Term: None>]
 """
 
 __author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2011, AOL Inc.'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
 
 import IPy
 from IPy import _prefixlenToNetmask
@@ -27,14 +32,8 @@ from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
 from simpleparse.parser import Parser
 import pprint
 import socket
-
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-
 from trigger import exceptions
+
 
 # Exports
 __all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
@@ -577,11 +576,18 @@ class MyIPy(IPy.IP):
             rs += ' except'
         return rs
 
+    def __contains__(self, item):
+        """
+        Should return True if item is in self and negated is False, False otherwise.
+        """
+        matched = IPy.IP.__contains__(self, item)
+        return matched and not self.negated
+
 def IP(arg):
     """Wrapper for IPy.IP to intercept exception text and make it more user-friendly."""
     # Junos 'except' handling is currently here, but arguably should be moved
     # to MyIP
-    negated = False
+    negated = getattr(arg, 'negated', False) # Maintain previously assigned value
     try:
         try:
             if arg.endswith('except'):
@@ -1476,9 +1482,11 @@ class Matches(MyDict):
         keys.sort(lambda x, y: cmp(junos_match_order[x], junos_match_order[y]))
         for s in keys:
             matches = map(self.junos_str, self[s])
+            has_negated_addrs = any(m for m in matches if m.endswith(' except'))
             if s in address_matches:
-                # check to see if any of the added is any, and if so break out.
-                if '0.0.0.0/0' in matches: 
+                # Check to see if any of the added is any, and if so break out,
+                # but only if none of the addresses is "negated".
+                if '0.0.0.0/0' in matches and not has_negated_addrs:
                     continue
                 a.append(s + ' {')
                 a += ['    ' + x + ';' for x in matches]
@@ -2115,7 +2123,13 @@ def parse(input_data):
     Parse a complete ACL and return an ACL object. This should be the only 
     external interface to the parser.
 
-    :param data: An ACL policy as a string or file-like object.
+    >>> from trigger.acl import parse
+    >>> aclobj = parse("access-list 123 permit tcp any host 10.20.30.40 eq 80")
+    >>> aclobj.terms
+    [<Term: None>]
+
+    :param input_data:
+        An ACL policy as a string or file-like object.
     """
     parser = ACLParser(grammar)
 
