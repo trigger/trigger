@@ -540,6 +540,11 @@ class MyIPy(IPy.IP):
     Just like IPy.IP, but with corrected sorting. Regular IPy sorts by prefix
     length before network base.
     """
+    def __init__(self, *args, **kwargs):
+        IPy.IP.__init__(self, *args, **kwargs)
+        self.ismy = True # a quick flag to test type
+        self.negated = False # set 'negated' variable
+
     def __cmp__(self, other): 
         diff = cmp(self.ip, other.ip)
         if diff == 0:
@@ -547,23 +552,54 @@ class MyIPy(IPy.IP):
         else:
             return diff
 
+    # no __repr__ yet, as we don't have the ability to read
+    # in excepted values yet
+
+    def __repr__(self):
+        # just stick an 'except' at the end if except is set
+        # since we don't code to accept this in the constructor
+        # really just provided, for now, as a debugging aid
+        rs = IPy.IP.__repr__(self)
+        if self.negated:
+            # insert ' except' into the repr.
+            # yes, it's a hack
+            rs = rs.split("'")
+            rs[-2] += ' except'
+            rs = "'".join(rs)
+        return rs
+
+    def __str__(self):
+        # IPy is not a new-style class, so the following doesn't
+        # work
+#        return super(MyIPy, self).__str__()
+        rs = IPy.IP.__str__(self)
+        if self.negated:
+            rs += ' except'
+        return rs
+
 def IP(arg):
     """Wrapper for IPy.IP to intercept exception text and make it more user-friendly."""
+    # Junos 'except' handling is currently here, but arguably should be moved
+    # to MyIP
+    negated = False
     try:
-        return MyIPy(arg)
+        try:
+            if arg.endswith('except'):
+                arg = arg.rstrip('except')
+                negated = True
+        except:
+            pass
+        try:
+            arg = arg.rstrip() # remove any trailing whitespace
+        except:
+            pass
+        myip = MyIPy(arg)
+        if negated:
+            myip.negated = True
+        return myip
     except Exception as e:
-        raise ValueError('Bad network block: %s' % arg)
-
-class IPold(IPy.IP):
-    """Just like IPy.IP, but with corrected sorting.
-    Regular IPy sorts by prefix length before network base."""
-
-    def __cmp__(self, other):
-        diff = cmp(self.ip, other.ip)
-        if diff == 0:
-            return cmp(self.prefixlen(), other.prefixlen())
-        else:
-            return diff
+        raise e
+#        raise ValueError('Bad network block: %s' % arg)
 
 class Comment(object):
     """
@@ -1334,7 +1370,10 @@ class Matches(MyDict):
             arg = map(int, arg)
             check_range(arg, 0, 65535)
         elif key in ('address', 'source-address', 'destination-address'):
-            arg = map(IP, arg)
+            # not sure if the following map is needed
+            # if a 'IPy.IP' type (which includes MyIP), preserve it
+            arg = map(lambda(a): a if isinstance(a,IPy.IP)
+                      else IP(a), arg)
         elif key in ('prefix-list', 'source-prefix-list',   
                      'destination-prefix-list'):
             for pl in arg:
@@ -1414,8 +1453,13 @@ class Matches(MyDict):
 
         :param addrs: List of IP address objects.
         """
+
         a = []
         for addr in addrs:
+            # xxx flag negated addresses?
+            if addr.negated:
+                raise exceptions.VendorSupportLacking(
+                    'negated addresses are not supported in IOS')
             if addr.prefixlen() == 0:
                 a.append('any')
             elif addr.prefixlen() == 32:
@@ -1597,8 +1641,9 @@ rules = {
     'word':            '[a-zA-Z0-9_.-]+',
     'anychar':            "[ a-zA-Z0-9.$:()&,/'_-]",
 
-    'ipv4':            ('digits, (".", digits)*', IP),
-    'cidr':            ('ipv4, "/", digits', IP),
+    'ipv4p':            ('digits, (".", digits)*'),
+    'ipv4':            ('ipv4p,(ws+,"except")?', IP),
+    'cidr':            ('ipv4p, "/", digits,(ws+,"except")?', IP),
     'macaddr':            '[0-9a-fA-F:]+',
 
     'protocol':            (literals(Protocol.name2num) + ' / digits',
