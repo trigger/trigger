@@ -24,7 +24,6 @@ __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
 
 import IPy
-from IPy import _prefixlenToNetmask
 from simpleparse import objectgenerator
 from simpleparse.common import comments, strings
 from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
@@ -1427,7 +1426,7 @@ class Matches(MyDict):
             return '%s-%s' % pair # Tuples back to ranges.
         except TypeError:
             try:
-                return pair.prefixlen() == 32 and str(pair)+'/32' or str(pair)
+                return pair.prefixlen() == 32 and str(pair) + '/32' or str(pair)
             except AttributeError:
                 return str(pair)
 
@@ -1469,10 +1468,10 @@ class Matches(MyDict):
             if addr.prefixlen() == 0:
                 a.append('any')
             elif addr.prefixlen() == 32:
-                a.append('host ' + str(addr.net()))
+                a.append('host %s' % addr.net())
             else:
-                stupid_mask = str(IP(2**(32-addr.prefixlen())-1))
-                a.append('%s %s' % (addr.net(), stupid_mask))
+                inverse_mask = make_inverse_mask(addr.prefixlen())
+                a.append('%s %s' % (addr.net(), inverse_mask))
         return a
 
     def output_junos(self):
@@ -1673,8 +1672,21 @@ rules = {
 #
 
 
+def make_inverse_mask(prefixlen):
+    """
+    Return an IP object of the inverse mask of the CIDR prefix.
+
+    :param prefixlen:
+        CIDR prefix
+    """
+    inverse_bits = 2 ** (32 - prefixlen) - 1
+    return IP(inverse_bits)
+
+
 # Build a table to unwind Cisco's weird inverse netmask.
-inverse_mask_table = dict([(IP(2**(32-x)-1), x) for x in range(0, 33)])
+# TODO (jathan): These don't actually get sorted properly, but it doesn't seem
+# to have mattered up until now. Worth looking into it at some point, though.
+inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(0, 33)])
 
 def handle_ios_match(a):
     protocol, source, dest = a[:3]
