@@ -100,10 +100,10 @@ class Commando(object):
     # Defaults to all supported platforms
     platforms = settings.SUPPORTED_PLATFORMS
 
-    # The commands to run
-    commands = []
+    # The commands to run (defaults to [])
+    commands = None
 
-    # How results are stored (defaults to dict)
+    # How results are stored (defaults to {})
     results = {}
 
     def __init__(self, devices=None, commands=None, creds=None,
@@ -124,7 +124,7 @@ class Commando(object):
         self.curr_conns = 0
         self.jobs = []
         self.errors = {}
-        self.results = self.results
+        self.results = self.results or {} # Always fallback to {}
         self.deferrals = self._setup_jobs()
         self.supported_platforms = self._validate_platforms()
 
