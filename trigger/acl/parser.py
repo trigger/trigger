@@ -1587,30 +1587,31 @@ errs = {
 }
 
 rules = {
-    'digits':            '[0-9]+',
-    '<digits_suppressed>': '[0-9]+',
-    '<ts>':            '[ \\t]+',
-    '<ws>':            '[ \\t\\n]+',
-    '<EOL>':            "('\r'?,'\n')/EOF",
-    'alphanums':    '[a-zA-z0-9]+',
-    'word':            '[a-zA-Z0-9_.-]+',
-    'anychar':            "[ a-zA-Z0-9.$:()&,/'_-]",
+    'digits':     '[0-9]+',
+    '<digits_s>': '[0-9]+',
+    '<ts>':       '[ \\t]+',
+    '<ws>':       '[ \\t\\n]+',
+    '<EOL>':      "('\r'?,'\n')/EOF",
+    'alphanums':  '[a-zA-Z0-9]+',
+    'word':       '[a-zA-Z0-9_.-]+',
+    'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
+    'hex':        '[0-9a-fA-F:]+',
 
-    'ipv4':            ('digits, (".", digits)*', IP),
-    'cidr':            ('ipv4, "/", digits', IP),
-    'macaddr':            '[0-9a-fA-F:]+',
-
-    'protocol':            (literals(Protocol.name2num) + ' / digits',
-                     do_protocol_lookup),
-    'tcp':            ('"tcp" / "6"', Protocol('tcp')),
-    'udp':            ('"udp" / "17"', Protocol('udp')),
-    'icmp':            ('"icmp" / "1"', Protocol('icmp')),
-    'icmp_type':    (literals(icmp_types) + ' / digits', do_icmp_type_lookup),
-    'icmp_code':    (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
-    'port':            (literals(ports) + ' / digits', do_port_lookup),
-    'dscp':            (literals(dscp_names) + ' / digits', do_dscp_lookup),
-    #'root':            'ws?, junos_raw_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
-    'root':            'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
+    'ipv4':       ('digits,?-hex,  (".", digits)*', IP),
+    'ipv6':       ('hex, (":", hex)*', IP),
+    'cidr':       ('(ipv4 / ipv6), "/", digits', IP),
+    #'macaddr':    '[0-9a-fA-F:]+',
+    'macaddr':    'hex',
+    'protocol':   (literals(Protocol.name2num) + ' / digits',
+                   do_protocol_lookup),
+    'tcp':        ('"tcp" / "6"', Protocol('tcp')),
+    'udp':        ('"udp" / "17"', Protocol('udp')),
+    'icmp':       ('"icmp" / "1"', Protocol('icmp')),
+    'icmp_type':  (literals(icmp_types) + ' / digits', do_icmp_type_lookup),
+    'icmp_code':  (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
+    'port':       (literals(ports) + ' / digits', do_port_lookup),
+    'dscp':       (literals(dscp_names) + ' / digits', do_dscp_lookup),
+    'root':       'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
 }
 
 
@@ -1771,7 +1772,7 @@ rules.update({
 
     S('icomment'):            ('"!", ts?, icomment_body', lambda x: x),
     'icomment_body':            ('-"\n"*', Comment),
-    S('ios_remark_line'):   ('("access-list", ts, digits_suppressed, ts)?, "remark", ts, remark_body', lambda x: x),
+    S('ios_remark_line'):   ('("access-list", ts, digits_s, ts)?, "remark", ts, remark_body', lambda x: x),
     'remark_body':            ('-"\n"*', Remark),
 
     '>ios_line<':            ('ts?, (ios_acl_line / ios_ext_line / "end")?, '
@@ -1842,15 +1843,15 @@ def keyword_match(keyword, arg=None):
                 tokens += arg + ', jsemi'
             rules[S(prod)] = (tokens, lambda x, k=k: {k: x})
 
-keyword_match('address', 'cidr / ipv4')
-keyword_match('destination-address', 'cidr / ipv4')
+keyword_match('address', 'cidr / ipv4 / ipv6')
+keyword_match('destination-address', 'cidr / ipv4 / ipv6')
 keyword_match('destination-prefix-list', 'jword')
 keyword_match('first-fragment')
 keyword_match('fragment-flags', 'fragment_flag')
 keyword_match('ip-options', 'ip_option')
 keyword_match('is-fragment')
 keyword_match('prefix-list', 'jword')
-keyword_match('source-address', 'cidr / ipv4') 
+keyword_match('source-address', 'cidr / ipv4 / ipv6')
 keyword_match('source-prefix-list', 'jword')
 keyword_match('tcp-established')
 keyword_match('tcp-flags', 'tcp_flag')
@@ -2088,8 +2089,6 @@ def parse(input_data):
     success, children, nextchar = parser.parse(data)
 
     if success and nextchar == len(data):
-        #import pprint
-        #pprint.pprint(adrsbk)
         assert len(children) == 1
         return children[0]
     else:
