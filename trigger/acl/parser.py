@@ -18,7 +18,7 @@ invalid ACL and accept *every* valid ACL.
 [<Term: None>]
 """
 
-__author__ = 'Jathan McCollum, Michael Shields'
+__author__ = 'Jathan McCollum, Mike Harding, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
@@ -29,7 +29,6 @@ from simpleparse.common import comments, strings
 from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
                                            dispatchList)
 from simpleparse.parser import Parser
-import pprint
 import socket
 from trigger import exceptions
 
@@ -497,13 +496,6 @@ class RangeList(object):
                 else: 
                     if elt[0] <= obj <= elt[1]:
                         return True
-
-            ## Comparing a port range to an int (single port) should ALWAYS return False!!
-            #elif isinstance(obj,tuple):
-            #    if isinstance(elt, int):
-            #        return False
-            #    elif obj[0] <= elt <= obj[1]:
-            #        return True
 
             elif hasattr(elt, '__contains__'):
                 if obj in elt:
@@ -2154,8 +2146,6 @@ def parse(input_data):
     success, children, nextchar = parser.parse(data)
 
     if success and nextchar == len(data):
-        #import pprint
-        #pprint.pprint(adrsbk)
         assert len(children) == 1
         return children[0]
     else:
