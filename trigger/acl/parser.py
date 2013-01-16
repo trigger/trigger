@@ -18,7 +18,7 @@ invalid ACL and accept *every* valid ACL.
 [<Term: None>]
 """
 
-__author__ = 'Jathan McCollum, Michael Shields'
+__author__ = 'Jathan McCollum, Michael Harding, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
@@ -37,7 +37,7 @@ from trigger import exceptions
 
 # Exports
 __all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
-           'literals', 'IP', 'do_protocol_lookup', 'ports', 'Policer',
+           'literals', 'do_protocol_lookup', 'ports', 'Policer',
            'PolicerGroup', 'make_nondefault_processor', 'ACLParser', 'strip_comments',
            'ACLProcessor', 'default_processor', 'S')
 
@@ -534,25 +534,44 @@ class RangeList(object):
     def __iter__(self):
         return self.data.__iter__()
 
-class MyIPy(IPy.IP):
+class TIP(IPy.IP):
     """
-    Just like IPy.IP, but with corrected sorting. Regular IPy sorts by prefix
-    length before network base.
+    CLass based on IPy.IP, but with extensions for Trigger.
+    Currently, only the only extension is the ability to
+    negate a network block.
+    Only used internally within the parser, as it's not
+    complete (doesn't interact well with IPy.IP objects).
+    Does not handle IPv6 yet.
     """
-    def __init__(self, *args, **kwargs):
-        IPy.IP.__init__(self, *args, **kwargs)
-        self.ismy = True # a quick flag to test type
-        self.negated = False # set 'negated' variable
+    def __init__(self, data, **kwargs):
+        # insert logic to handle 'except'
+        # preserve negated flag if it exists already
+        negated=getattr(data,'negated',False)
+        # is data a string?
+        if isinstance(data, (str, unicode)):
+            d = data.split()
+            if len(d)==2 and d[-1]=='except':
+                negated=True
+                data=d[0]
+        IPy.IP.__init__(self, data, **kwargs)
+        self.negated = negated # set 'negated' variable
 
-    def __cmp__(self, other): 
-        diff = cmp(self.ip, other.ip)
-        if diff == 0:
-            return cmp(self.prefixlen(), other.prefixlen())
+    # needs to be different for negation
+    # arbitrary decision is, use IP compare, and then
+    # break ties where negated > not negated
+    def __cmp__(self, other):
+        # compute base comparison
+        bc = IPy.IP.__cmp__(self, other)
+        if bc != 0:
+            return bc
+        # 
+        if self.negated == other.negated:
+            return bc
+        # arbitrarily, make negated > not negated
+        if self.negated:
+            return 1
         else:
-            return diff
-
-    # no __repr__ yet, as we don't have the ability to read
-    # in excepted values yet
+            return -1
 
     def __repr__(self):
         # just stick an 'except' at the end if except is set
@@ -570,7 +589,7 @@ class MyIPy(IPy.IP):
     def __str__(self):
         # IPy is not a new-style class, so the following doesn't
         # work
-#        return super(MyIPy, self).__str__()
+#        return super(TIP, self).__str__()
         rs = IPy.IP.__str__(self)
         if self.negated:
             rs += ' except'
@@ -578,34 +597,16 @@ class MyIPy(IPy.IP):
 
     def __contains__(self, item):
         """
-        Should return True if item is in self and negated is False, False otherwise.
+        Containment logic, including except.
         """
+        # how do deal when one item is an IP?
+        # calculate XOR
+        xo = self.negated ^ item.negated
+        # if one item is negated, it's never contained
+        if xo:
+            return False
         matched = IPy.IP.__contains__(self, item)
-        return matched and not self.negated
-
-def IP(arg):
-    """Wrapper for IPy.IP to intercept exception text and make it more user-friendly."""
-    # Junos 'except' handling is currently here, but arguably should be moved
-    # to MyIP
-    negated = getattr(arg, 'negated', False) # Maintain previously assigned value
-    try:
-        try:
-            if arg.endswith('except'):
-                arg = arg.rstrip('except')
-                negated = True
-        except:
-            pass
-        try:
-            arg = arg.rstrip() # remove any trailing whitespace
-        except:
-            pass
-        myip = MyIPy(arg)
-        if negated:
-            myip.negated = True
-        return myip
-    except Exception as e:
-        raise e
-#        raise ValueError('Bad network block: %s' % arg)
+        return matched ^ self.negated
 
 class Comment(object):
     """
@@ -1376,10 +1377,7 @@ class Matches(MyDict):
             arg = map(int, arg)
             check_range(arg, 0, 65535)
         elif key in ('address', 'source-address', 'destination-address'):
-            # not sure if the following map is needed
-            # if a 'IPy.IP' type (which includes MyIP), preserve it
-            arg = map(lambda(a): a if isinstance(a,IPy.IP)
-                      else IP(a), arg)
+            arg = map(TIP, arg)
         elif key in ('prefix-list', 'source-prefix-list',   
                      'destination-prefix-list'):
             for pl in arg:
@@ -1471,7 +1469,7 @@ class Matches(MyDict):
             elif addr.prefixlen() == 32:
                 a.append('host ' + str(addr.net()))
             else:
-                stupid_mask = str(IP(2**(32-addr.prefixlen())-1))
+                stupid_mask = str(TIP(2**(32-addr.prefixlen())-1))
                 a.append('%s %s' % (addr.net(), stupid_mask))
         return a
 
@@ -1650,8 +1648,8 @@ rules = {
     'anychar':            "[ a-zA-Z0-9.$:()&,/'_-]",
 
     'ipv4p':            ('digits, (".", digits)*'),
-    'ipv4':            ('ipv4p,(ws+,"except")?', IP),
-    'cidr':            ('ipv4p, "/", digits,(ws+,"except")?', IP),
+    'ipv4':            ('ipv4p,(ws+,"except")?', TIP),
+    'cidr':            ('ipv4p, "/", digits,(ws+,"except")?', TIP),
     'macaddr':            '[0-9a-fA-F:]+',
 
     'protocol':            (literals(Protocol.name2num) + ' / digits',
@@ -1674,7 +1672,7 @@ rules = {
 
 
 # Build a table to unwind Cisco's weird inverse netmask.
-inverse_mask_table = dict([(IP(2**(32-x)-1), x) for x in range(0, 33)])
+inverse_mask_table = dict([(TIP(2**(32-x)-1), x) for x in range(0, 33)])
 
 def handle_ios_match(a):
     protocol, source, dest = a[:3]
@@ -1763,9 +1761,9 @@ rules.update({
     'kw_any':                    ('"any"', None),
     'host_ipv4':            '"host", ts, ipv4',
     S('ios_masked_ipv4'):   ('ipv4, ts, ipv4_inverse_mask',
-                             lambda (net, length): IP('%s/%d' % (net, length))),
+                             lambda (net, length): TIP('%s/%d' % (net, length))),
     'ipv4_inverse_mask':    (literals(inverse_mask_table),
-                             lambda x: inverse_mask_table[IP(x)]),
+                             lambda x: inverse_mask_table[TIP(x)]),
 
     'kw_ip':                    ('"ip"', None),
     S('ios_match'):            ('kw_ip / protocol, ts, ios_ip, ts, ios_ip, '
