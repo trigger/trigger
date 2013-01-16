@@ -125,8 +125,9 @@ class Commando(object):
         self.jobs = []
         self.errors = {}
         self.results = self.results or {} # Always fallback to {}
-        self.deferrals = self._setup_jobs()
+        #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
+        self._setup_jobs()
 
     def _validate_platforms(self):
         """
@@ -236,6 +237,7 @@ class Commando(object):
 
             # If worker add fails, still decrement and track the error
             async.addErrback(self.errback, device)
+            #self.deferrals.append(async)
 
         # Do this once we've exhausted the job queue
         else:
