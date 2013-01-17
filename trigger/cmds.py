@@ -15,8 +15,8 @@ example of one might create a subclass. Better documentation is in the works!
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2012, AOL Inc.'
-__version__ = '2.0.1'
+__copyright__ = 'Copyright 2009-2013, AOL Inc.'
+__version__ = '2.1'
 
 import datetime
 import itertools
@@ -514,24 +514,11 @@ class NetACLInfo(Commando):
 
     def IPsubnet(self, addr):
         '''Given '172.20.1.4/24', return IP('172.20.1.0/24').'''
-        net, mask = addr.split('/')
-        netbase = (IP(net).int() &
-                   (0xffffffffL ^ (2**(32-int(mask))-1)))
-        return IP('%d/%s' % (netbase, mask))
+        return IP(addr, make_net=True)
 
-    def ipv4_cidr_to_netmask(bits):
-        """ Convert CIDR bits to netmask """
-        netmask = ''
-        for i in range(4):
-            if i:
-                netmask += '.'
-            if bits >= 8:
-                netmask += '%d' % (2**8-1)
-                bits -= 8
-            else:
-                netmask += '%d' % (256-2**(8-bits))
-                bits = 0
-        return netmask
+    def IPhost(self, addr):
+        '''Given '172.20.1.4/24', return IP('172.20.1.4/32').'''
+        return IP(addr[:addr.index('/')]) # Only keep before "/"
 
     #=======================================
     # Vendor-specific generate (to_)/parse (from_) methods
@@ -649,7 +636,7 @@ class NetACLInfo(Commando):
                         for node in family2.findall('%saddress/%sname' % (ns, ns)):
                             ip = node.text
                             dta[ifname]['subnets'].append(self.IPsubnet(ip))
-                            dta[ifname]['addr'].append(IP(ip[:ip.index('/')]))
+                            dta[ifname]['addr'].append(self.IPhost(ip))
 
         self.config[device] = dta
         return True
@@ -787,7 +774,6 @@ def _cleanup_interface_results(results):
     interfaces = sorted(results.keys())
     newdict = {}
     for interface in interfaces:
-        #print interface
         iface_info = results[interface]
 
         # Skip down interfaces
@@ -801,7 +787,6 @@ def _cleanup_interface_results(results):
         new_int['subnets'] = _make_cidrs(iface_info.get('subnets', []) or iface_info['addr'])
         new_int['acl_in'] = list(iface_info.get('acl_in', []))
         new_int['acl_out'] = list(iface_info.get('acl_out', []))
-        #new_int['description'] = ' '.join(iface_info.get('description', [])).replace(' : ', ':')
         new_int['description'] = list(iface_info.get('description', []))
 
     return newdict
