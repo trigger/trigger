@@ -301,7 +301,7 @@ adrsbk = { 'svc':{'group':{}, 'book':{}}, 'addr':{'group':{},'book':{}} }
 
 class MyDict(dict):
     """
-    A dictionary subclass to collect common behavior changes used in container 
+    A dictionary subclass to collect common behavior changes used in container
     classes for the ACL components: Modifiers, Matches.
     """
     def __init__(self, d=None, **kwargs):
@@ -362,8 +362,8 @@ class RangeList(object):
     without collapsing into ranges.
 
     This is currently used to just store match conditions (e.g. protocols,
-    ports), but could be fleshed out into a general-purpose class.  One 
-    thing to think about is how/whether to handle a list of tuples as distinct 
+    ports), but could be fleshed out into a general-purpose class.  One
+    thing to think about is how/whether to handle a list of tuples as distinct
     from a list of ranges.  Should we just store them as xrange objects?
     Should the object appear as discrete elements by default, for example
     in len(), with the collapsed view as a method, or should we keep it
@@ -449,7 +449,7 @@ class RangeList(object):
         if not l:
             return l
         try:
-            return xrange(l[0][0], l[0][1]+1) + self._expand(l[1:]) 
+            return xrange(l[0][0], l[0][1]+1) + self._expand(l[1:])
         except AttributeError:        # not incrementable
             return l
         except (TypeError, IndexError):
@@ -473,7 +473,7 @@ class RangeList(object):
         if self.data < other:
             return -1
         elif self.data > other:
-            return 0 
+            return 0
         else:
             return 0
 
@@ -493,7 +493,7 @@ class RangeList(object):
                     rng = xrange(elt[0], elt[1] + 1)
                     if obj[0] in rng and obj[1] in rng:
                         return True
-                else: 
+                else:
                     if elt[0] <= obj <= elt[1]:
                         return True
 
@@ -528,7 +528,7 @@ class RangeList(object):
 class TIP(IPy.IP):
     """
     Class based on IPy.IP, but with extensions for Trigger.
-    
+
     Currently, only the only extension is the ability to negate a network
     block. Only used internally within the parser, as it's not complete
     (doesn't interact well with IPy.IP objects). Does not handle IPv6 yet.
@@ -651,7 +651,7 @@ class Remark(Comment):
 class PolicerGroup(object):
     """Container for Policer objects. Juniper only."""
     def __init__(self, format=None):
-        self.policers = [] 
+        self.policers = []
         self.format   = format
         global Comments
         self.comments = Comments
@@ -660,10 +660,10 @@ class PolicerGroup(object):
     def output(self, format=None, *largs, **kwargs):
         if format is None:
             format = self.format
-        return getattr(self,'output_' + format)(*largs, **kwargs) 
+        return getattr(self,'output_' + format)(*largs, **kwargs)
 
     def output_junos(self, replace=False):
-        output =[]
+        output = []
         for ent in self.policers:
             for x in ent.output():
                 output.append(x)
@@ -672,11 +672,11 @@ class PolicerGroup(object):
             return ['firewall {', 'replace:'] + ['    '+x for x in output] + ['}']
         else:
             return output
-    
+
 class ACL(object):
     """
     An abstract access-list object intended to be created by the :func:`parse`
-    function. 
+    function.
     """
     def __init__(self, name=None, terms=None, format=None, family=None):
         check_name(name, exceptions.ACLNameError, max_len=24)
@@ -708,9 +708,9 @@ class ACL(object):
 
     def output_junos(self, replace=False, family=None):
         """
-        Output the ACL in JunOS format.  
+        Output the ACL in JunOS format.
 
-        :param replace: If set the ACL is wrapped in a 
+        :param replace: If set the ACL is wrapped in a
             ``firewall { replace: ... }`` section.
         :param family: If set, the value is used to wrap the ACL in a
             ``family inet { ...}`` section.
@@ -761,7 +761,7 @@ class ACL(object):
 
     def output_ios(self, replace=False):
         """
-        Output the ACL in IOS traditional format.  
+        Output the ACL in IOS traditional format.
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
@@ -785,14 +785,14 @@ class ACL(object):
 
     def output_ios_brocade(self, replace=False, receive_acl=False):
         """
-        Output the ACL in Brocade-flavored IOS format.  
+        Output the ACL in Brocade-flavored IOS format.
 
         The difference between this and "traditional" IOS are:
 
             - Stripping of comments
             - Appending of ``ip rebind-acl`` or ``ip rebind-receive-acl`` line
 
-        :param replace: If set the ACL is preceded by a ``no access-list`` line. 
+        :param replace: If set the ACL is preceded by a ``no access-list`` line.
         :param receive_acl: If set the ACL is suffixed with a ``ip
             rebind-receive-acl' instead of ``ip rebind-acl``.
         """
@@ -813,9 +813,9 @@ class ACL(object):
 
     def output_ios_named(self, replace=False):
         """
-        Output the ACL in IOS named format.  
+        Output the ACL in IOS named format.
 
-        :param replace: If set the ACL is preceded by a ``no access-list`` line. 
+        :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
         if self.name == None:
             raise exceptions.MissingACLName('IOS format requires a name')
@@ -831,7 +831,7 @@ class ACL(object):
 
     def output_iosxr(self, replace=False):
         """
-        Output the ACL in IOS XR format.  
+        Output the ACL in IOS XR format.
 
         :param replace: If set the ACL is preceded by a ``no ipv4 access-list`` line.
         """
@@ -1117,12 +1117,12 @@ class Policer(object):
                         if type == 'bandwidth-limit':
                             limit = self.str2bits(value)
                             if limit > 32000000000 or limit < 32000:
-                                raise "bandwidth-limit must be between 32000bps and 32000000000bps" 
+                                raise "bandwidth-limit must be between 32000bps and 32000000000bps"
                             self.exceedings.append((type, limit))
                         elif type == 'burst-size-limit':
                             limit = self.str2bits(value)
                             if limit > 100000000 or limit < 1500:
-                                raise "burst-size-limit must be between 1500B and 100,000,000B" 
+                                raise "burst-size-limit must be between 1500B and 100,000,000B"
                             self.exceedings.append((type, limit))
                         elif type == 'bandwidth-percent':
                             limit = int(value)
@@ -1164,7 +1164,7 @@ class Policer(object):
             output.append('    then {')
         for x in self.actions:
             output.append('        %s;' % x)
-        
+
         if self.actions:
             output.append('    }')
         output.append('}')
@@ -1216,7 +1216,7 @@ class Protocol(object):
     def __cmp__(self, other):
         '''Protocol(6) == 'tcp' == 6 == Protocol('6').'''
         return self.value.__cmp__(Protocol(other).value)
-    
+
     def __hash__(self):
         return hash(self.value)
 
@@ -1365,7 +1365,7 @@ class Matches(MyDict):
             check_range(arg, 0, 65535)
         elif key in ('address', 'source-address', 'destination-address'):
             arg = map(TIP, arg)
-        elif key in ('prefix-list', 'source-prefix-list',   
+        elif key in ('prefix-list', 'source-prefix-list',
                      'destination-prefix-list'):
             for pl in arg:
                 check_name(pl, exceptions.MatchError)
@@ -1625,31 +1625,31 @@ errs = {
 }
 
 rules = {
-    'digits':            '[0-9]+',
-    '<digits_suppressed>': '[0-9]+',
-    '<ts>':            '[ \\t]+',
-    '<ws>':            '[ \\t\\n]+',
-    '<EOL>':            "('\r'?,'\n')/EOF",
-    'alphanums':    '[a-zA-z0-9]+',
-    'word':            '[a-zA-Z0-9_.-]+',
-    'anychar':            "[ a-zA-Z0-9.$:()&,/'_-]",
+    'digits':     '[0-9]+',
+    '<digits_s>': '[0-9]+',
+    '<ts>':       '[ \\t]+',
+    '<ws>':       '[ \\t\\n]+',
+    '<EOL>':      "('\r'?,'\n')/EOF",
+    'alphanums':  '[a-zA-Z0-9]+',
+    'word':       '[a-zA-Z0-9_.-]+',
+    'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
+    'hex':        '[0-9a-fA-F]+',
+    'ipchars':    '[0-9a-fA-F:.]+',
 
-    'ipv4p':            ('digits, (".", digits)*'),
-    'ipv4':            ('ipv4p,(ws+,"except")?', TIP),
-    'cidr':            ('ipv4p, "/", digits,(ws+,"except")?', TIP),
-    'macaddr':            '[0-9a-fA-F:]+',
-
-    'protocol':            (literals(Protocol.name2num) + ' / digits',
-                     do_protocol_lookup),
-    'tcp':            ('"tcp" / "6"', Protocol('tcp')),
-    'udp':            ('"udp" / "17"', Protocol('udp')),
-    'icmp':            ('"icmp" / "1"', Protocol('icmp')),
-    'icmp_type':    (literals(icmp_types) + ' / digits', do_icmp_type_lookup),
-    'icmp_code':    (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
-    'port':            (literals(ports) + ' / digits', do_port_lookup),
-    'dscp':            (literals(dscp_names) + ' / digits', do_dscp_lookup),
-    #'root':            'ws?, junos_raw_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
-    'root':            'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
+    'ipv4':       ('digits, (".", digits)*', TIP),
+    'ipaddr':     ('ipchars', TIP),
+    'cidr':       ('(ipaddr / ipv4), "/", digits', TIP),
+    'macaddr':    'hex, (":", hex)+',
+    'protocol':   (literals(Protocol.name2num) + ' / digits',
+                   do_protocol_lookup),
+    'tcp':        ('"tcp" / "6"', Protocol('tcp')),
+    'udp':        ('"udp" / "17"', Protocol('udp')),
+    'icmp':       ('"icmp" / "1"', Protocol('icmp')),
+    'icmp_type':  (literals(icmp_types) + ' / digits', do_icmp_type_lookup),
+    'icmp_code':  (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
+    'port':       (literals(ports) + ' / digits', do_port_lookup),
+    'dscp':       (literals(dscp_names) + ' / digits', do_dscp_lookup),
+    'root':       'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
 }
 
 
@@ -1812,18 +1812,18 @@ rules.update({
                              '"extended", ts, word',
                              lambda x: {'no': True, 'name': x[0]}),
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
-    S('ios_rebind_acl_line'): ('"ip", ts, "rebind-acl", ts, word', 
+    S('ios_rebind_acl_line'): ('"ip", ts, "rebind-acl", ts, word',
                               lambda x: {'name': x[0], 'format': 'ios_brocade'}),
                               #lambda x: {'name': x[0], 'format': 'ios'}),
 
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
-    S('ios_rebind_receive_acl_line'): ('"ip", ts, "rebind-receive-acl", ts, word', 
-                                lambda x: {'name': x[0], 'format': 'ios_brocade', 
+    S('ios_rebind_receive_acl_line'): ('"ip", ts, "rebind-receive-acl", ts, word',
+                                lambda x: {'name': x[0], 'format': 'ios_brocade',
                                            'receive_acl': True}),
 
     S('icomment'):            ('"!", ts?, icomment_body', lambda x: x),
     'icomment_body':            ('-"\n"*', Comment),
-    S('ios_remark_line'):   ('("access-list", ts, digits_suppressed, ts)?, "remark", ts, remark_body', lambda x: x),
+    S('ios_remark_line'):   ('("access-list", ts, digits_s, ts)?, "remark", ts, remark_body', lambda x: x),
     'remark_body':            ('-"\n"*', Remark),
 
     '>ios_line<':            ('ts?, (ios_acl_line / ios_ext_line / "end")?, '
@@ -1857,7 +1857,7 @@ rules.update({
                              lambda x: Comment(x[0])),
     '<comment_start>':            '"/*"',
     '<comment_stop>':            '"*/"',
-    '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'], 
+    '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
 
     ## custom force single-line comments only:
     'jcomment_body':            '-("*/" / "\n")*',
@@ -1894,15 +1894,15 @@ def keyword_match(keyword, arg=None):
                 tokens += arg + ', jsemi'
             rules[S(prod)] = (tokens, lambda x, k=k: {k: x})
 
-keyword_match('address', 'cidr / ipv4')
-keyword_match('destination-address', 'cidr / ipv4')
+keyword_match('address', 'cidr / ipaddr')
+keyword_match('destination-address', 'cidr / ipaddr')
 keyword_match('destination-prefix-list', 'jword')
 keyword_match('first-fragment')
 keyword_match('fragment-flags', 'fragment_flag')
 keyword_match('ip-options', 'ip_option')
 keyword_match('is-fragment')
 keyword_match('prefix-list', 'jword')
-keyword_match('source-address', 'cidr / ipv4') 
+keyword_match('source-address', 'cidr / ipaddr')
 keyword_match('source-prefix-list', 'jword')
 keyword_match('tcp-established')
 keyword_match('tcp-flags', 'tcp_flag')
@@ -1991,7 +1991,7 @@ def handle_junos_term(d):
 # for this but it made the parser substantially slower.
 rules.update({
     S('junos_raw_acl'):         ('"filter", jws, jword, jws?, ' + \
-                                    braced_list('junos_term / junos_policer'), 
+                                    braced_list('junos_term / junos_policer'),
                                     handle_junos_acl),
     'junos_replace_acl':        ('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
     S('junos_replace_family_acl'): ('"firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
@@ -2001,13 +2001,13 @@ rules.update({
     'junos_filter_family':      ('"family", ws, junos_family_type'),
     'junos_family_type':        ('"inet" / "inet6"'),
     'opaque_braced_group':      ('"{", jws?, (jword / "[" / "]" / ";" / '
-                                    'opaque_braced_group / jws)*, "}"', 
+                                    'opaque_braced_group / jws)*, "}"',
                                     lambda x: x),
     S('junos_term'):            ('maybe_inactive, "term", jws, junos_term_name, '
                                     'jws?, ' + braced_list('junos_from / junos_then'),
                                     lambda x: handle_junos_term(dict_sum(x))),
     S('junos_term_name'):       ('jword', lambda x: {'name': x[0]}),
-    'maybe_inactive':           ('("inactive:", jws)?', 
+    'maybe_inactive':           ('("inactive:", jws)?',
                                     lambda x: {'inactive': len(x) > 0}),
     S('junos_from'):            ('"from", jws?, ' + braced_list('junos_match'),
                                     lambda x: {'match': Matches(dict_sum(x))}),
@@ -2015,27 +2015,27 @@ rules.update({
                                     braced_list('junos_action/junos_modifier, jsemi'),
                                     dict_sum),
     S('junos_policer'):         ('"policer", jws, junos_term_name, jws?, ' +
-                                    braced_list('junos_exceeding / junos_policer_then'), 
-                                    lambda x: Policer(x[0]['name'], x[1:])), 
-    S('junos_policer_then'):    ('"then", jws?, ' + 
+                                    braced_list('junos_exceeding / junos_policer_then'),
+                                    lambda x: Policer(x[0]['name'], x[1:])),
+    S('junos_policer_then'):    ('"then", jws?, ' +
                                     braced_list('junos_policer_action, jsemi')),
     S('junos_policer_action'):  ('junos_discard / junos_fwd_class / '\
-                                    '("loss-priority", jws, jword)', 
+                                    '("loss-priority", jws, jword)',
                                     lambda x: {'action':x}),
     'junos_discard':            ('"discard"'),
-    'junos_loss_pri':           ('"loss-priority", jws, jword', 
+    'junos_loss_pri':           ('"loss-priority", jws, jword',
                                     lambda x: {'loss-priority':x[0]}),
-    'junos_fwd_class':          ('"forwarding-class", jws, jword', 
+    'junos_fwd_class':          ('"forwarding-class", jws, jword',
                                     lambda x: {'forwarding-class':x[0]}),
     'junos_filter_specific':    ('"filter-specific"'),
-    S('junos_exceeding'):       ('"if-exceeding", jws?, ' + 
-                                    braced_list('junos_bw_limit/junos_bw_perc/junos_burst_limit'), 
+    S('junos_exceeding'):       ('"if-exceeding", jws?, ' +
+                                    braced_list('junos_bw_limit/junos_bw_perc/junos_burst_limit'),
                                     lambda x: {'if-exceeding':x}),
-    S('junos_bw_limit'):        ('"bandwidth-limit", jws, word, jsemi', 
-                                    lambda x: ('bandwidth-limit',x[0])), 
-    S('junos_bw_perc'):         ('"bandwidth-percent", jws, alphanums, jsemi', 
+    S('junos_bw_limit'):        ('"bandwidth-limit", jws, word, jsemi',
+                                    lambda x: ('bandwidth-limit',x[0])),
+    S('junos_bw_perc'):         ('"bandwidth-percent", jws, alphanums, jsemi',
                                     lambda x: ('bandwidth-percent',x[0])),
-    S('junos_burst_limit'):     ('"burst-size-limit", jws, alphanums, jsemi', 
+    S('junos_burst_limit'):     ('"burst-size-limit", jws, alphanums, jsemi',
                                     lambda x: ('burst-size-limit',x[0])),
     S('junos_match'):           (' / '.join(junos_match_types), dict_sum),
 
@@ -2118,7 +2118,7 @@ class ACLParser(Parser):
 
 def parse(input_data):
     """
-    Parse a complete ACL and return an ACL object. This should be the only 
+    Parse a complete ACL and return an ACL object. This should be the only
     external interface to the parser.
 
     >>> from trigger.acl import parse
