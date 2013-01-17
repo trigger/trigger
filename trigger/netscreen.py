@@ -732,8 +732,7 @@ class NSPolicy(NetScreen):
             else:
                 name = 'n%s' % (addr.strNormal())
 
-            found = NSAddress(name=name, zone=zone,
-                addr=addr.strNormal())
+            found = NSAddress(name=name, zone=zone, addr=addr.strNormal())
 
             address_book.append(found)
         addresses.append(found)
@@ -746,7 +745,7 @@ class NSPolicy(NetScreen):
         self.add_address(address, self.destination_zone,
             self.address_book, self.destination_addresses)
 
-    def add_service(self, protocol, source_port=(1,65535), destination_port=(1,65535)):
+    def add_service(self, protocol, source_port=(1, 65535), destination_port=(1, 65535)):
         found = None
         if not protocol:
             raise "no protocol defined in add_service"
