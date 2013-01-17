@@ -1633,12 +1633,13 @@ rules = {
     'alphanums':  '[a-zA-Z0-9]+',
     'word':       '[a-zA-Z0-9_.-]+',
     'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
-    'hex':        '[0-9a-fA-F:]+',
+    'hex':        '[0-9a-fA-F]+',
+    'ipchars':    '[0-9a-fA-F:.]+',
 
-    'ipv4':       ('digits, ?-hex,  (".", digits)*', TIP),
-    'ipv6':       ('hex, (":", hex)*', TIP),
-    'cidr':       ('(ipv4 / ipv6), "/", digits', TIP),
-    'macaddr':    'hex',
+    'ipv4':       ('digits, (".", digits)*', TIP),
+    'ipaddr':     ('ipchars', TIP),
+    'cidr':       ('(ipaddr / ipv4), "/", digits', TIP),
+    'macaddr':    'hex, (":", hex)+',
     'protocol':   (literals(Protocol.name2num) + ' / digits',
                    do_protocol_lookup),
     'tcp':        ('"tcp" / "6"', Protocol('tcp')),
@@ -1893,15 +1894,15 @@ def keyword_match(keyword, arg=None):
                 tokens += arg + ', jsemi'
             rules[S(prod)] = (tokens, lambda x, k=k: {k: x})
 
-keyword_match('address', 'cidr / ipv4 / ipv6')
-keyword_match('destination-address', 'cidr / ipv4 / ipv6')
+keyword_match('address', 'cidr / ipaddr')
+keyword_match('destination-address', 'cidr / ipaddr')
 keyword_match('destination-prefix-list', 'jword')
 keyword_match('first-fragment')
 keyword_match('fragment-flags', 'fragment_flag')
 keyword_match('ip-options', 'ip_option')
 keyword_match('is-fragment')
 keyword_match('prefix-list', 'jword')
-keyword_match('source-address', 'cidr / ipv4 / ipv6')
+keyword_match('source-address', 'cidr / ipaddr')
 keyword_match('source-prefix-list', 'jword')
 keyword_match('tcp-established')
 keyword_match('tcp-flags', 'tcp_flag')
