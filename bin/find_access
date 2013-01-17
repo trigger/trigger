@@ -8,15 +8,13 @@ find_access - Like check_access but reports on networks inside of networks.
 __author__ = 'Jathan McCollum, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2012, AOL Inc.'
-__version__ = '1.5.1'
+__copyright__ = 'Copyright 2009-2013, AOL Inc.'
+__version__ = '1.6'
 
-import sys
-from simpleparse.error import ParserSyntaxError
-from trigger.acl import parse
 from optparse import OptionParser
-import pprint
-import IPy
+from simpleparse.error import ParserSyntaxError
+import sys
+from trigger.acl.parser import parse, TIP
 
 def parse_args(argv):
     parser = OptionParser(usage='%prog [options] [acls]', add_help_option=False, 
@@ -123,11 +121,11 @@ def do_work(acl_files):
     
     if opts.source_network:
         for x in opts.source_network.split(','):
-            sources.append(IPy.IP(x))
+            sources.append(TIP(x))
 
     if opts.destination_network:
         for x in opts.destination_network.split(','):
-            dests.append(IPy.IP(x))
+            dests.append(TIP(x))
 
     if opts.ports:
         for x in opts.ports.split(','):
