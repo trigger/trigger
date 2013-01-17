@@ -1635,10 +1635,9 @@ rules = {
     'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
     'hex':        '[0-9a-fA-F:]+',
 
-    'ipv4':       ('digits,?-hex,  (".", digits)*', IP),
-    'ipv6':       ('hex, (":", hex)*', IP),
-    'cidr':       ('(ipv4 / ipv6), "/", digits', IP),
-    #'macaddr':    '[0-9a-fA-F:]+',
+    'ipv4':       ('digits, ?-hex,  (".", digits)*', TIP),
+    'ipv6':       ('hex, (":", hex)*', TIP),
+    'cidr':       ('(ipv4 / ipv6), "/", digits', TIP),
     'macaddr':    'hex',
     'protocol':   (literals(Protocol.name2num) + ' / digits',
                    do_protocol_lookup),
