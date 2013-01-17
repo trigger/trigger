@@ -10,10 +10,10 @@ __author__ = 'Jathan McCollum, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2007-2012, AOL Inc.'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import IPy
-from trigger.acl.parser import (Protocol, check_range, literals, IP,
+from trigger.acl.parser import (Protocol, check_range, literals, TIP,
                                 do_protocol_lookup, make_nondefault_processor,
                                 ACLParser, ACLProcessor, default_processor, S)
 from trigger.acl.tools import create_trigger_term
@@ -51,8 +51,8 @@ class NetScreen(object):
             'word':      '[a-zA-Z0-9_:./-]+',
             'anychar':   "[ a-zA-Z0-9.$:()&,/'_-]",
             'nonspace':  "[a-zA-Z0-9.$:()&,/'_-]+",
-            'ipv4':      ('digits, (".", digits)*', IP),
-            'cidr':      ('ipv4, "/", digits', IP),
+            'ipv4':      ('digits, (".", digits)*', TIP),
+            'cidr':      ('ipv4, "/", digits', TIP),
             'macaddr':   '[0-9a-fA-F:]+',
             'protocol':  (literals(Protocol.name2num) + ' / digits',
                             do_protocol_lookup),
@@ -165,13 +165,13 @@ class NetScreen(object):
                     ret[key] = [val]
         return ret
 
-    def netmask2cidr(self, ipstr):
+    def netmask2cidr(self, iptuple):
         """Converts dotted-quad netmask to cidr notation"""
-        if len(ipstr) == 2:
-            ipstr = str(ipstr[0].strNormal() + '/' +
-                ipstr[1].strNormal())
-            return IP(ipstr)
-        return IP(ipstr[0].strNormal())
+        if len(iptuple) == 2:
+            addr, mask = iptuple
+            ipstr = addr.strNormal() + '/' + mask.strNormal()
+            return TIP(ipstr)
+        return TIP(iptuple[0].strNormal())
 
     def handle_raw_netscreen(self,rows):
         """
@@ -559,7 +559,7 @@ class NSAddress(NetScreen):
     def __init__(self, name=None, zone=None, addr=None, comment=None):
         self.name = None
         self.zone = None
-        self.addr = IPy.IP('0.0.0.0/0')
+        self.addr = TIP('0.0.0.0/0')
         self.comment = ''
         if name:
             self.set_name(name)
@@ -572,7 +572,7 @@ class NSAddress(NetScreen):
 
     def set_address(self, addr):
         try:
-            a = IPy.IP(addr)
+            a = TIP(addr)
         except Exception, e:
             raise e
         self.addr = a
@@ -724,7 +724,7 @@ class NSPolicy(NetScreen):
         self.isglobal = isglobal
 
     def add_address(self, address, zone, address_book, addresses):
-        addr = IPy.IP(address)
+        addr = TIP(address)
         found = address_book.find(addr, zone)
         if not found:
             if addr.prefixlen() == 32:
