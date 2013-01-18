@@ -61,6 +61,10 @@ vendors:
 
   + All 7000-family switch platforms
 
++ Aruba Networks
+
+  + All Mobility Controller platforms
+
 + Brocade Networks
 
   + MLX routers

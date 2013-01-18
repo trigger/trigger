@@ -8,14 +8,14 @@ check_access - Determines whether access is permitted by a given ACL.
 __author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '1.1.9'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
+__version__ = '1.2'
 
 import optparse
 import sys
 from simpleparse.error import ParserSyntaxError
 
-from trigger.acl import parse, IP, Protocol, Term, Comment
+from trigger.acl.parser import parse, TIP, Protocol, Term, Comment
 from trigger.acl.tools import check_access, create_trigger_term
 
 optp = optparse.OptionParser(description='''\
@@ -35,11 +35,11 @@ source = dest = protocol = port = []
 if args[1] == 'any':
     source = []
 else:
-    source = [IP(args[1])]
+    source = [TIP(args[1])]
 if args[2] == 'any':
     dest = []
 else:
-    dest = [IP(args[2])]
+    dest = [TIP(args[2])]
 
 if len(args) <= 3:
     protocol = []
@@ -69,12 +69,10 @@ new_term.comments.append(Comment('check_access: ADD THIS TERM'))
 try:
     acl = parse(file(acl_file))
     permitted = None
-except ParserSyntaxError, e:
+except ParserSyntaxError as e:
     etxt = str(e).split()
-    print 'Cannot parse %s:' % acl_file, ' '.join(etxt[1:])
-    sys.exit(0)
+    sys.exit('Cannot parse %s:' % acl_file, ' '.join(etxt[1:]))
 
-#permitted = check_access(acl.terms, new_term, opts.quiet, format=acl.format)
 permitted = check_access(acl.terms, new_term, opts.quiet, format=acl.format,
                          acl_name=acl.name)
 

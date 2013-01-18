@@ -44,15 +44,16 @@ INTERNAL_NETWORKS = [
 
 # The tuple of supported vendors derived from the values of VENDOR_MAP
 SUPPORTED_VENDORS = (
-        'a10',
-        'arista',
-        'brocade',
-        'cisco',
-        'citrix',
-        'dell',
-        'foundry',
-        'juniper',
-        'netscreen'
+    'a10',
+    'arista',
+    'aruba',
+    'brocade',
+    'cisco',
+    'citrix',
+    'dell',
+    'foundry',
+    'juniper',
+    'netscreen'
 )
 VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 
@@ -65,6 +66,7 @@ VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 VENDOR_MAP = {
     'A10 NETWORKS': 'a10',
     'ARISTA NETWORKS': 'arista',
+    'ARUBA NETWORKS': 'aruba',
     'BROCADE': 'brocade',
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
@@ -79,6 +81,7 @@ VENDOR_MAP = {
 SUPPORTED_PLATFORMS = {
     'a10': ['SWITCH'],
     'arista': ['SWITCH'],                         # Your "Cloud" network vendor
+    'aruba': ['SWITCH'],                          # Aruba Wi-Fi controllers
     'brocade': ['ROUTER', 'SWITCH'],
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
@@ -97,6 +100,7 @@ SUPPORTED_TYPES = ('FIREWALL', 'ROUTER', 'SWITCH')
 DEFAULT_TYPES = {
     'a10': 'SWITCH',
     'arista': 'SWITCH',
+    'aruba': 'SWITCH',
     'brocade': 'SWITCH',
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
@@ -145,6 +149,7 @@ SSH_ASYNC_DISABLED = {
 IOSLIKE_VENDORS = (
     'a10',
     'arista',
+    'aruba',
     'brocade',
     'cisco',
     'dell',
@@ -188,6 +193,26 @@ JUNIPER_FULL_COMMIT_FIELDS = {
     #'deviceType': 'SWITCH',
     #'make': 'EX4200',
 }
+
+#===============================
+# Bounce Windows/Change Mgmt
+#===============================
+
+# Path of the explicit module file for bounce.py containing custom bounce
+# window mappings.
+BOUNCE_FILE = os.environ.get('BOUNCE_FILE', os.path.join(PREFIX, 'bounce.py'))
+
+# Default bounce timezone. All BounceWindow objects are configured using
+# US/Eastern for now.
+BOUNCE_DEFAULT_TZ = 'US/Eastern'
+
+# The default fallback window color for bounce windows. Must be one of
+# ('green', 'yellow', or 'red').
+#
+#     green: Low risk
+#    yellow: Medium risk
+#       red: High risk
+BOUNCE_DEFAULT_COLOR = 'red'
 
 #===============================
 # Redis Settings

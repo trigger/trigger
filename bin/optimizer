@@ -12,34 +12,29 @@ and removed.
 __author__ = 'Jathan McCollum, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
-__version__ = '1.4'
+__copyright__ = 'Copyright 2003-2013, AOL Inc.'
+__version__ = '1.5'
 
-import sys, os, time, signal, IPy
-from simpleparse.error import ParserSyntaxError
-from trigger.acl import parse, Comment, ACL
-from datetime import datetime, date, time, timedelta
+import copy
+import datetime
+import IPy
+import logging
 from optparse import OptionParser
-from copy import deepcopy, copy
-from pprint import pprint
+import signal
+from simpleparse.error import ParserSyntaxError
+import sys
 import time
+from trigger.acl.parser import parse, Comment, ACL, TIP
 
 stop_all = False
-debug = False
 
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
+# Logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s]: %(message)s"
+)
+log = logging.getLogger(__name__)
 
-def log(type, msg):
-    if type == 'debug' and debug == 0:
-        return
-    if type == 'dev' and dev == 0:
-        return
-    ts = datetime.now() 
-    print >>sys.stderr, "%s [%s]: %s" % (ts.ctime(),type,msg)
 
 def sig_handler(s,d):
     global stop_all
@@ -211,9 +206,9 @@ greater than pcount for the optimizer to 'focus' in on.
             else:
                 ports[port] = 1
 
-    for port,cnt in ports.iteritems():
+    for port, cnt in ports.iteritems():
         if cnt >= pcount:
-            log('info', 'port %s had a count of %d' % (str(port), cnt)) 
+            log.info('port %s had a count of %d' % (str(port), cnt))
             matched_ports[port] = 1
 
     for term in terms:
@@ -227,7 +222,7 @@ greater than pcount for the optimizer to 'focus' in on.
                 focused[term.name] = 1
                 break
 
-    log('info', '%d focused terms' % len(focused))
+    log.info('%d focused terms' % len(focused))
     return focused 
                 
 
@@ -288,8 +283,8 @@ def optimize_terms(terms, focused, which):
             if stop_all:
                 break
 
-            log('debug', 'Comparing term %s to term %s [%d terms deleted]' % \
-                (term1.name, term2.name, len(to_delete)))
+            log.debug('Comparing term %s to term %s [%d terms deleted]' %
+                      (term1.name, term2.name, len(to_delete)))
             if focused and not focused.has_key(term2.name):
                 continue
 
@@ -471,13 +466,13 @@ def terms_chunker(terms):
         if current_modifier == None:
             current_modifier = term.action[0]
         if current_modifier != term.action[0]:
-            ret.append(copy(current_chunk))
+            ret.append(copy.copy(current_chunk))
             current_chunk = []
             current_modifier = term.action[0]
 
         current_chunk.append(term)
 
-    ret.append(copy(current_chunk))
+    ret.append(copy.copy(current_chunk))
 
     return ret
         
@@ -485,23 +480,21 @@ def optimize(opts, terms, focused):
     global stop_all
 
     terms_old = terms
-    types = []
+    mtypes = []
     
     if not opts.no_source_ip:
-        types.append('source-address')
+        mtypes.append('source-address')
     if not opts.no_destination_ip:
-        types.append('destination-address')
+        mtypes.append('destination-address')
     if not opts.no_destination_port:
-        types.append('destination-port')
-
-    #types = ['source-address', 'destination-address', 'destination-port']
+        mtypes.append('destination-port')
 
     for term in terms:
-        for type in types:
-            if type == 'destination-port':
+        for mtype in mtypes:
+            if mtype == 'destination-port':
                 continue
-            if not term.match.has_key(type):
-                term.match[type] = [IPy.IP('0.0.0.0/0')]
+            if mtype not in term.match:
+                term.match[mtype] = [TIP('0.0.0.0/0')]
 
     chunks = terms_chunker(terms)
 
@@ -512,9 +505,9 @@ def optimize(opts, terms, focused):
         chunk_count = 0
 
         for chunk in chunks:
-            log('info', 'Optimizing %s [Chunk %d]' % (type, chunk_count))
+            log.info('Optimizing %s [Chunk %d]' % (type, chunk_count))
             chunks[chunk_count] = optimize_terms(chunk, focused, type)
-            log('info', 'TCount: %d/%d' % (len(terms_old), len(terms)))
+            log.info('TCount: %d/%d' % (len(terms_old), len(terms)))
             chunk_count += 1
         
     
@@ -530,27 +523,27 @@ def do_work(opts, files):
         if stop_all:
             return
 
-        log('info', 'Parsing %s' % acl_file)
+        log.info('Parsing %s' % acl_file)
 
         try:
             acl = parse(file(acl_file))
         except ParserSyntaxError, e:
             etxt = str(e).split()
-            log('error', etxt)
+            log.error(etxt)
             return
 
-        log('info', 'Done parsing')
+        log.info('Done parsing')
         
         orig_tcnt = len(acl.terms)
         
         if opts.focus:
-            log('info', 'Finding focused terms')
+            log.info('Finding focused terms')
             focused = focus_terms(opts.focus, acl.terms)
             if not focused:
-                log('warn', 'No focused terms could be found in acl %s' % (acl_file))
+                log.warn('No focused terms could be found in acl %s' % (acl_file))
                 continue
     
-            log('info', 'Done focused term')
+            log.info('Done focused term')
 
         passes = 1
 
@@ -565,7 +558,7 @@ def do_work(opts, files):
             if stop_all:
                 break
 
-            log('info', 'Optimization pass %d' % passes)
+            log.info('Optimization pass %d' % passes)
             terms = optimize(opts, terms_old, focused) 
 
             if opts.passes and passes >= opts.passes:
@@ -588,7 +581,7 @@ def do_work(opts, files):
                 if stop_all:
                     break
 
-                log('info','PORT Optimization pass %d' % passes)
+                log.info('PORT Optimization pass %d' % passes)
                 terms = optimize(opts, terms_old, focused)
 
                 if opts.passes and passes >= opts.passes:
@@ -616,7 +609,7 @@ if __name__ == '__main__':
     global opts
     opts, args = parse_args(sys.argv)
     if opts.debug:
-        debug = True
+        log.setLevel(logging.DEBUG)
 
     acl_files = args[1:] 
 
