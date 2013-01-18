@@ -748,11 +748,11 @@ def main():
             # so we don't know what exceptions can be returned
             cm_ticketnum = None
         if not cm_ticketnum:
+            es = "Unable to create CM ticket!"
             if opts.auto:
-                send_notification("LOAD_ACL FAILURE",
-                                  "Unable to create CM ticket!")
-            log.err("Unable to create CM ticket!", logLevel=logging.CRITICAL)
-            sys.exit(1)
+                send_notification("LOAD_ACL FAILURE", es)
+            log.err(es, logLevel=logging.CRITICAL)
+            sys.exit(es)
 
         cm_msg = "Created CM ticket #%s" % cm_ticketnum
         print cm_msg

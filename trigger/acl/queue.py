@@ -17,16 +17,16 @@ __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2010-2011, AOL Inc.'
 
 import os
+import sys
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
+import MySQLdb
 
 # Exports
 __all__ = ('Queue', 'QueueError',)
 
-
 # Exceptions
 class QueueError(Exception): pass
-
 
 # Classes
 class Queue(object):
@@ -47,12 +47,15 @@ class Queue(object):
     def _get_firewall_db_conn(self):
         """Returns a MySQL db connection used for the ACL queues using database
         settings found withing ``settings.py``."""
-        import MySQLdb
-        return MySQLdb.connect(host=settings.DATABASE_HOST,
-                               db=settings.DATABASE_NAME,
-                               port=settings.DATABASE_PORT,
-                               user=settings.DATABASE_USER,
-                               passwd=settings.DATABASE_PASSWORD)
+        try:
+            return MySQLdb.connect(host=settings.DATABASE_HOST,
+                                   db=settings.DATABASE_NAME,
+                                   port=settings.DATABASE_PORT,
+                                   user=settings.DATABASE_USER,
+                                   passwd=settings.DATABASE_PASSWORD)
+        # catch if we can't connect, and shut down
+        except MySQLdb.OperationalError as e:
+            sys.exit("Can't connect to the database - %s (error %d)" % (e[1],e[0]))
 
     def _normalize(self, arg):
         if arg.startswith('acl.'):
