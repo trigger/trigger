@@ -7,7 +7,9 @@ A collection of CLI tools and utilities used by Trigger.
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2008-2012, AOL Inc.'
+__copyright__ = 'Copyright 2008-2013, AOL Inc.'
+
+from . import cli, importlib, network, notifications, rcs, url
 
 def crypt_md5(passwd):
     """
