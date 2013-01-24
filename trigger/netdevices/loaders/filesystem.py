@@ -1,6 +1,13 @@
 """
-Wrapper for loading metadata the filesystem.
+Built-in Loader objects for loading `~trigger.netdevices.NetDevice` metadata
+from the filesystem.
 """
+
+__author__ = 'Jathan McCollum'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathan.mccollum@teamaol.com'
+__copyright__ = 'Copyright 2013, AOL Inc.'
+__version__ = '1.0'
 
 import itertools
 import os
@@ -14,6 +21,7 @@ except ImportError:
     import json
 import sqlite3
 import xml.etree.cElementTree as ET
+
 
 class JSONLoader(BaseLoader):
     """
@@ -126,6 +134,15 @@ class CSVLoader(BaseLoader):
     Wrapper for loading metadata via CSV from the filesystem.
 
     This leverages the functionality from the `~trigger.rancid`` library.
+
+    At the bare minimum your CSV file must be populated with 2-tuples of
+    "nodeName,manufacturer" (e.g. "test1-abc.net.aol.com,cisco"), separated by
+    newlines. The ``deviceType`` will default to whatever is specified in
+    :settings:`FALLBACK_TYPE` and ``deviceStatus`` will default to "up"
+    ("PRODUCTION").
+
+    At max you may provide "nodeName,vendor,deviceStatus,deviceType" just like
+    what you'd expect from RANCID's ``router.db`` file format.
     """
     is_usable = True
 

@@ -3,7 +3,7 @@ Wrapper for loading metadata from storage of some sort (e.g. filesystem,
 database)
 
 This uses NETDEVICE_LOADERS settings, which is a list of loaders to use.
-Each loader is expected to have this interface:
+Each loader is expected to have this interface::
 
     callable(data_source, **kwargs)
 
@@ -17,19 +17,28 @@ Each loader should have an ``is_usable`` attribute set. This is a boolean that
 specifies whether the loader can be used with this Python installation. Each
 loader is responsible for setting this when it is initialized.
 
-For example, the eggs oader (which is capable of loading metadata from Python
-eggs) sets ``is_usable`` to ``False`` if the "pkg_resources" module isn't
-installed, beacuse this module is required to read eggs.
+This code is based on Django's template loader code: http://bit.ly/WWOLU3
 """
+
+__author__ = 'Jathan McCollum'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathan.mccollum@teamaol.com'
+__copyright__ = 'Copyright 2013, AOL Inc.'
+__version__ = '1.0'
 
 from trigger.exceptions import ImproperlyConfigured, LoaderFailed
 from trigger.utils.importlib import import_module
 from trigger.conf import settings
+from twisted.python import log
 
 
+# Exports
+__all__ = ('BaseLoader', 'load_metadata')
+
+
+# Classes
 class BaseLoader(object):
     is_usable = False
-    format = None
 
     def __init__(self, *args, **kwargs):
         pass
@@ -53,29 +62,43 @@ class BaseLoader(object):
         """
         pass
 
+
+# Functions
 def find_data_loader(loader):
     """
-    Given a loader string/list/tuple, try to unpack, load it, and return the
+    Given a ``loader`` string/list/tuple, try to unpack, load it, and return the
     callable loader object.
+
+    If ``loader`` is specified as string, treat it as the fully-qualified
+    Python path to the callable Loader object.
+
+    Optionally, if `loader`` is a list/tuple, the first item in the tuple should be the
+    Loader's module path, and subsequent items are passed to the Loader object
+    during initialization. This could be useful in initializing a custom Loader
+    for a database backend, for example.
+
+    :param loader:
+        A string represnting the Python path to a Loader object, or list/tuple
+        of loader path and args to pass to the Loader.
     """
     if isinstance(loader, (tuple, list)):
         loader, args = loader[0], loader[1:]
     else:
         args = []
 
-    print "TRYING LOADER:", loader
-    print "    WITH ARGS:", args
+    log.msg("BUILDING LOADER: %s; WITH ARGS: %s" % (loader, args))
+    err_template = "Error importing data source loader %s: '%s'"
     if isinstance(loader, basestring):
         module, attr = loader.rsplit('.', 1)
         try:
             mod = import_module(module)
         except ImportError as err:
-            raise ImproperlyConfigured("Error importing data source loader %s: '%s'" % (loader, err))
+            raise ImproperlyConfigured(err_template % (loader, err))
 
         try:
             DataLoader = getattr(mod, attr)
         except AttributeError as err:
-            raise ImproperlyConfigured("Error importing data source loader %s: '%s'" % (loader, err))
+            raise ImproperlyConfigured(err_template % (loader, err))
 
         if hasattr(DataLoader, 'load_data_source'):
             func = DataLoader(*args)
@@ -83,12 +106,12 @@ def find_data_loader(loader):
             # Try loading module the old-fashioned way where string is full
             # path to callabale.
             if args:
-                raise ImproperlyConfigured("Error importing data source loader:%s: Can't pass arguments to function-based loader!" % loader)
+                raise ImproperlyConfigured("Error importing data source loader %s: Can't pass arguments to function-based loader!" % loader)
             func = DataLoader
 
         if not func.is_usable:
             import warnings
-            warnings.warn("Your NETDEVICES_LOADERS settings includes %r, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS." % loader)
+            warnings.warn("Your NETDEVICES_LOADERS setting includes %r, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS." % loader)
             return None
         else:
             return func
@@ -100,7 +123,14 @@ def load_metadata(data_source, **kwargs):
     Iterate thru data loaders to load metadata.
 
     Loaders should return an iterable of dict/2-tuples or ``None``. It will try
-    each one until it can return data. The first one to return data wins. 
+    each one until it can return data. The first one to return data wins.
+
+    :param data_source:
+        Typically a file path, but it can be any data format you desire that
+        can be passed onto a Loader object to retrieve metadata.
+
+    :param kwargs:
+        Optional keyword arguments you wish to pass to the Loader.
     """
     # Build a list of valid loader callables
     loaders = []
@@ -111,31 +141,25 @@ def load_metadata(data_source, **kwargs):
 
     # Iterate them and stop when you get data
     tried = []
-    print '\nLOADING DATA FROM:', data_source
+    log.msg('LOADING DATA FROM:', data_source)
     for loader in loaders:
-        print '\nTrying', loader
+        log.msg('TRYING LOADER:', loader)
         try:
             # Pass the args to the loader!
             data = loader(data_source, **kwargs)
-            print 'success!'
+            log.msg('LOADER: SUCCESS!')
         except LoaderFailed as err:
             tried.append(loader)
-            print '*** failure: %s' % err
+            log.msg('LOADER - FAILURE: %s' % err)
             continue
         else:
+            # Successfully parsed (we hope)
             if data is not None:
-                print '*** RETURNING RESULTS'
-                print '*** here is what we tried', tried
-                return data # Successfully parsed (we hope)
+                log.msg('LOADERS TRIED: %r' % tried)
+                return data
             else:
                 tried.append(loader)
-                continue 
+                continue
 
-    # We don't want to get to this point!
+    # All loaders failed. We don't want to get to this point!
     raise RuntimeError('No data loaders succeeded. Tried: %r' % tried)
-
-'''
-def get_data(data_format):
-    data = find_template(data_format)
-    return data
-'''
