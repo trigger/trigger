@@ -25,8 +25,8 @@ Example::
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '1.4.2'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
+__version__ = '2.0'
 
 # Imports
 import copy

@@ -160,6 +160,21 @@ IOSLIKE_VENDORS = (
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
 
+# A tuple of data loader classes, specified as strings. Optionally, a tuple can
+# be used instead of a string. The first item in the tuple should be the
+# Loader's module, subsequent items are passed to the Loader during
+# initialization.
+NETDEVICES_LOADERS = (
+    'trigger.netdevices.loaders.filesystem.XMLLoader',
+    'trigger.netdevices.loaders.filesystem.JSONLoader',
+    'trigger.netdevices.loaders.filesystem.SQLiteLoader',
+    'trigger.netdevices.loaders.filesystem.CSVLoader',
+    'trigger.netdevices.loaders.filesystem.RancidLoader',
+    # Example of a database loader where the db information is sent along as an
+    # argument. The args can be anything you want.
+    #['trigger.netdevices.loaders.mysql.Loader', {'dbuser': 'root', 'dbpass': 'abc123', 'dbhost': 'localhost', 'dbport': 3306}, 'bacon'],
+)
+
 # One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
 # NETDEVICES_FILE or it won't work for obvious reasons.
 NETDEVICES_FORMAT = os.environ.get('NETDEVICES_FORMAT', 'xml')
