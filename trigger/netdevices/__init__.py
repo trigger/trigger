@@ -4,7 +4,7 @@
 The heart and soul of Trigger, NetDevices is an abstract interface to network
 device metadata and ACL associations.
 
-Parses :setting:`NETDEVICES_FILE` and makes available a dictionary of
+Parses :setting:`NETDEVICES_SOURCE` and makes available a dictionary of
 `~trigger.netdevices.NetDevice` objects, which is keyed by the FQDN of every
 network device.
 
@@ -37,21 +37,15 @@ import time
 from trigger.conf import settings
 from trigger.acl.db import AclsDB
 from trigger.utils import network
+from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
 from twisted.python import log
 from UserDict import DictMixin
-
-# Parser imports
-try:
-    import simplejson as json # Prefer simplejson because of SPEED!
-except ImportError:
-    import json
-import sqlite3
 import xml.etree.cElementTree as ET
+from . import loader
 
 
 # Constants
-SUPPORTED_FORMATS = ('json', 'rancid', 'sqlite', 'xml')
 JUNIPER_COMMIT = ET.Element('commit-configuration')
 JUNIPER_COMMIT_FULL = copy.copy(JUNIPER_COMMIT)
 ET.SubElement(JUNIPER_COMMIT_FULL, 'full')
@@ -62,104 +56,19 @@ __all__ = ['device_match', 'NetDevice', 'NetDevices', 'Vendor']
 
 
 # Functions
-def _parse_json(data_source):
-    """
-    Parse 'netdevices.json' and return list of JSON objects.
-
-    :param data_source:
-        Absolute path to data file
-    """
-    with open(data_source, 'r') as contents:
-         # TODO (jathan): Can we somehow return an generator like the other
-         # _parse methods? Maybe using JSONDecoder?
-         data = json.load(contents)
-
-    return data
-
-def _parse_xml(data_source):
-    """
-    Parse 'netdevices.xml' and return a list of node 2-tuples (key, value).
-    These are as good as a dict without the extra dict() call.
-
-    :param data_source:
-        Absolute path to data file
-    """
-    # Parsing the complete file into a tree once and extracting outthe device
-    # nodes is faster than using iterparse(). Curses!!
-    xml = ET.parse(data_source).findall('device')
-
-    # This is a generator within a generator. Trust me, it works in _populate()
-    data = (((e.tag, e.text) for e in node.getchildren()) for node in xml)
-
-    return data
-
-def _parse_sqlite(data_source):
-    """
-    Parse 'netdevices.sql' and return a list of stuff.
-
-    :param data_source:
-        Absolute path to data file
-    """
-    connection = sqlite3.connect(data_source)
-    cursor = connection.cursor()
-
-    # Get the column names. This is a simple list strings.
-    colfetch  = cursor.execute('pragma table_info(netdevices)')
-    results = colfetch.fetchall()
-    columns = [r[1] for r in results]
-
-    # And the devices. This is a list of tuples whose values match the indexes
-    # of the column names.
-    devfetch = cursor.execute('select * from netdevices')
-    devrows = devfetch.fetchall()
-
-    # Another generator within a generator, which structurally is a list of
-    # lists containing 2-tuples (key, value).
-    data = (itertools.izip(columns, row) for row in devrows)
-
-    return data
-
-def _parse_rancid(rancid_root,
-                  recurse_subdirs=settings.RANCID_RECURSE_SUBDIRS):
-    """
-    Parse RANCID's ``router.db`` and return a generator of node 2-tuples (key,
-    value).
-
-    :param rancid_root:
-        Absolute path to the RANCID directory
-
-    :param recurse_subdirs:
-        Whether to treat RANCID as single or multiple instance
-    """
-    data = rancid.parse_rancid_data(rancid_root,
-                                    recurse_subdirs=recurse_subdirs)
-
-    return data
-
-def _munge_source_data(data_source=settings.NETDEVICES_FILE,
-                       data_format=settings.NETDEVICES_FORMAT):
+def _munge_source_data(data_source=settings.NETDEVICES_SOURCE):
     """
     Read the source data in the specified format, parse it, and return a
-    dictionary of objects.
 
-    :param data_source: Absolute path to source data file
-    :param format: One of 'xml', 'json', or 'sqlite'
+    :param data_source:
+        Absolute path to source data file
     """
-    assert data_format in SUPPORTED_FORMATS
+    log.msg('LOADING FROM: ', data_source)
+    kwargs = parse_url(data_source)
+    path = kwargs.pop('path')
+    return loader.load_metadata(path, **kwargs)
 
-    parsers = {
-        'xml': _parse_xml,
-        'json': _parse_json,
-        'sqlite': _parse_sqlite,
-        'rancid': _parse_rancid,
-    }
-    parser = parsers[data_format]
-    data = parser(data_source)
-
-    return data
-
-def _populate(netdevices, data_source, data_format, production_only,
-              with_acls):
+def _populate(netdevices, data_source, production_only, with_acls):
     """
     Populates the NetDevices with NetDevice objects.
 
@@ -167,8 +76,7 @@ def _populate(netdevices, data_source, data_format, production_only,
     objects.
     """
     #start = time.time()
-    device_data = _munge_source_data(data_source=data_source,
-                                     data_format=data_format)
+    device_data = _munge_source_data(data_source=data_source)
 
     # Populate AclsDB if `with_acls` is set
     aclsdb = AclsDB() if with_acls else None
@@ -733,8 +641,7 @@ class NetDevices(DictMixin):
         def __init__(self, production_only, with_acls):
             self._dict = {}
             _populate(netdevices=self._dict,
-                      data_source=settings.NETDEVICES_FILE,
-                      data_format=settings.NETDEVICES_FORMAT,
+                      data_source=settings.NETDEVICES_SOURCE,
                       production_only=production_only, with_acls=with_acls)
 
         def __getitem__(self, key):
