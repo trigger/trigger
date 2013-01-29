@@ -132,18 +132,16 @@ def load_metadata(data_source, **kwargs):
     :param kwargs:
         Optional keyword arguments you wish to pass to the Loader.
     """
-    # Build a list of valid loader callables
-    loaders = []
-    for loader_name in settings.NETDEVICES_LOADERS:
-        loader = find_data_loader(loader_name)
-        if loader is not None:
-            loaders.append(loader)
-
-    # Iterate them and stop when you get data
+    # Iterate and build a loader callables, call them, stop when we get data.
     tried = []
     log.msg('LOADING DATA FROM:', data_source)
-    for loader in loaders:
+    for loader_name in settings.NETDEVICES_LOADERS:
+        loader = find_data_loader(loader_name)
         log.msg('TRYING LOADER:', loader)
+        if loader is None:
+            log.msg('CANNOT USE LOADER:', loader)
+            continue
+
         try:
             # Pass the args to the loader!
             data = loader(data_source, **kwargs)

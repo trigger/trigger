@@ -90,7 +90,6 @@ class RancidLoader(BaseLoader):
         try:
             return self.get_data(data_source, recurse_subdirs)
         except Exception as err:
-            print 'OMG FAIL:', err
             raise LoaderFailed("Tried %r; and failed: %r" % (data_source, err))
 
 class SQLiteLoader(BaseLoader):
@@ -117,7 +116,6 @@ class SQLiteLoader(BaseLoader):
 
         # Another generator within a generator, which structurally is a list of
         # lists containing 2-tuples (key, value).
-        print 'GOT ROWS:', devrows[0]
         data = (itertools.izip(columns, row) for row in devrows)
 
         return data
