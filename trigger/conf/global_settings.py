@@ -164,14 +164,25 @@ IOSLIKE_VENDORS = (
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
 
-# One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
-# NETDEVICES_FILE or it won't work for obvious reasons.
-NETDEVICES_FORMAT = os.environ.get('NETDEVICES_FORMAT', 'xml')
+# A tuple of data loader classes, specified as strings. Optionally, a tuple can
+# be used instead of a string. The first item in the tuple should be the
+# Loader's module, subsequent items are passed to the Loader during
+# initialization.
+NETDEVICES_LOADERS = (
+    'trigger.netdevices.loaders.filesystem.XMLLoader',
+    'trigger.netdevices.loaders.filesystem.JSONLoader',
+    'trigger.netdevices.loaders.filesystem.SQLiteLoader',
+    'trigger.netdevices.loaders.filesystem.RancidLoader',
+    'trigger.netdevices.loaders.filesystem.CSVLoader',
+)
 
-# Path to netdevices device metadata source file, which is used to populate
-# trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
-# You must set NETDEVICES_FORMAT to match the type of data.
-NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', os.path.join(PREFIX, 'netdevices.xml'))
+# A path or URL to netdevices device metadata source data, which is used to populate
+# trigger.netdevices.NetDevices. For more information on this, see
+# NETDEVICES_LOADERS.
+NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX,
+                                                                     'netdevices.xml'))
+# Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
+NETDEVICES_FILE = NETDEVICES_SOURCE
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.
