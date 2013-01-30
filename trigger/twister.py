@@ -603,8 +603,7 @@ class TriggerClientFactory(protocol.ClientFactory, object):
         """
         if not self.initialized:
             log.msg('Not initialized, sending init commands', debug=True)
-            while self.init_commands:
-                next_init = self.init_commands.pop(0)
+            for next_init in self.init_commands:
                 log.msg('Sending: %r' % next_init, debug=True)
                 protocol.write(next_init + '\n')
             else:
@@ -874,7 +873,7 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
     """
     def _channelOpener(self):
         log.msg('Multiplex connection started')
-        self.work = self.commands[:]
+        self.work = list(self.commands) # Make sure this is a list :)
         self.send_command()
 
     def channelClosed(self, channel):
