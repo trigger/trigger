@@ -176,8 +176,7 @@ NETDEVICES_LOADERS = (
 )
 
 # A path or URL to netdevices device metadata source data, which is used to
-# populate
-# trigger.netdevices.NetDevices. For more information on this, see
+# populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
 NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.xml'))
 
