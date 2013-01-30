@@ -41,15 +41,20 @@ class VersionMismatch(TacacsrcError): pass
 
 
 # Functions
-def get_device_password(device=None):
+def get_device_password(device=None, tcrc=None):
     """
     Fetch the password for a device/realm or create a new entry for it.
     If device is not passed, ``settings.DEFAULT_REALM`` is used, which is default
     realm for most devices.
 
-    :param device: Realm or device name to updated
+    :param device:
+        Realm or device name to updated
+
+    :param device:
+        Optional `~trigger.tacacsrc.Tacacsrc` instance
     """
-    tcrc = Tacacsrc()
+    if tcrc is None:
+        tcrc = Tacacsrc()
 
     # If device isn't passed, assume we are initializing the .tacacsrc.
     try:
@@ -144,14 +149,12 @@ def validate_credentials(creds=None):
     """
     realm = settings.DEFAULT_REALM
 
-    proto = Credentials('foo', 'bar', realm)
-
     # If it isn't set or it's a string, or less than 1 or more than 3 items,
     # get from .tacacsrc
     if (not creds) or (type(creds) == str) or (len(creds) not in (2, 3)):
         log.msg('Creds not valid, fetching from .tacacsrc...')
         tcrc = Tacacsrc()
-        return tcrc.creds.get(realm, get_device_password(realm))
+        return tcrc.creds.get(realm, get_device_password(realm, tcrc))
 
     # If it's a dict, get the values
     if hasattr(creds, 'values'):
