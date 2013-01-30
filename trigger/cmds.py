@@ -93,6 +93,10 @@ class Commando(object):
         If set (default), allow fallback to base parse/generate methods when
         they are not customized in a subclass, otherwise an exception is raised
         when a method is called that has not been explicitly defined.
+
+    :param force_cli:
+        (Optional) Juniper only. If set, sends commands using CLI instead of
+        Junoscript.
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -108,7 +112,7 @@ class Commando(object):
 
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False, timeout=30,
-                 production_only=True, allow_fallback=True):
+                 production_only=True, allow_fallback=True, force_cli=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
 
@@ -121,6 +125,7 @@ class Commando(object):
         self.timeout = timeout # in seconds
         self.nd = NetDevices(production_only=production_only)
         self.allow_fallback = allow_fallback
+        self.force_cli = force_cli
         self.curr_conns = 0
         self.jobs = []
         self.errors = {}
@@ -226,7 +231,8 @@ class Commando(object):
             commands = self.generate(device)
             async = device.execute(commands, creds=self.creds,
                                    incremental=self.incremental,
-                                   timeout=self.timeout, with_errors=True)
+                                   timeout=self.timeout, with_errors=True,
+                                   force_cli=self.force_cli)
 
             # Add the parser callback for great justice!
             async.addCallback(self.parse, device)
@@ -444,6 +450,11 @@ class Commando(object):
         This just creates a series of ``<command>foo</command>`` elements to
         pass along to execute_junoscript()"""
         commands = commands or self.commands
+
+        # If we've set force_cli, use to_base() instead
+        if self.force_cli:
+            return self.to_base(device, commands, extra)
+
         ret = []
         for command in commands:
             cmd = Element('command')

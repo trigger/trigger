@@ -250,7 +250,7 @@ def connect(device, init_commands=None, output_logger=None, login_errback=None,
 #==================
 # Execute Factory functions
 #==================
-def _choose_execute(device):
+def _choose_execute(device, force_cli=False):
     """
     Return the appropriate execute_ function for the given ``device`` based on
     platform and SSH/Telnet availability.
@@ -265,7 +265,10 @@ def _choose_execute(device):
     elif device.is_netscreen():
         _execute = execute_netscreen
     elif device.vendor == 'juniper':
-        _execute = execute_junoscript
+        if force_cli:
+            _execute = execute_exec_ssh
+        else:
+            _execute = execute_junoscript
     else:
         def null(*args, **kwargs):
             """Does nothing."""
@@ -275,7 +278,7 @@ def _choose_execute(device):
     return _execute
 
 def execute(device, commands, creds=None, incremental=None, with_errors=False,
-            timeout=settings.DEFAULT_TIMEOUT, command_interval=0):
+            timeout=settings.DEFAULT_TIMEOUT, command_interval=0, force_cli=False):
     """
     Connect to a ``device`` and sequentially execute all the commands in the
     iterable ``commands``.
@@ -333,9 +336,12 @@ def execute(device, commands, creds=None, incremental=None, with_errors=False,
     :param command_interval:
         (Optional) Amount of time in seconds to wait between sending commands.
 
+    :param force_cli:
+        (Optional) Juniper-only: Force use of CLI instead of Junoscript.
+
     :returns: A Twisted ``Deferred`` object
     """
-    execute_func = _choose_execute(device)
+    execute_func = _choose_execute(device, force_cli=force_cli)
     return execute_func(device=device, commands=commands, creds=creds,
                         incremental=incremental, with_errors=with_errors,
                         timeout=timeout, command_interval=command_interval)
