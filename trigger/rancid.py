@@ -75,7 +75,8 @@ def _parse_delimited_file(root_dir, filename, delimiter=':'):
 
     return None
 
-def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None):
+def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None,
+                      delimiter=':'):
     """
     Parse a RANCID file and return generator representing a list of lists
     mapped  to the ``fields``.
@@ -88,8 +89,11 @@ def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None):
 
     :param fields:
         (Optional) A list of field names used to map to the device data
+
+    :param delimiter:
+        (Optional) Field delimiter
     """
-    device_data = _parse_delimited_file(rancid_root, filename)
+    device_data = _parse_delimited_file(rancid_root, filename, delimiter)
 
     # Make sure fields is not null and is some kind of iterable
     if not fields:

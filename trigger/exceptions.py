@@ -199,6 +199,9 @@ class NetDeviceError(TriggerError):
 class BadVendorName(NetDeviceError):
     """Raised when a Vendor object has a problem with the name."""
 
+class LoaderFailed(NetDeviceError):
+    """Raised when a metadata loader failed to load from data source."""
+
 #####################
 # Notification Exceptions
 #####################
