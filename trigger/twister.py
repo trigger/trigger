@@ -133,7 +133,6 @@ def pty_connect(device, action, creds=None, display_banner=None,
             return None
 
     # SSH?
-    #log.msg('SSH TYPES: %s' % settings.SSH_TYPES, debug=True)
     if device.can_ssh_pty():
         log.msg('SSH connection test PASSED')
         if hasattr(sys, 'ps1') or not sys.stderr.isatty() \
@@ -149,7 +148,6 @@ def pty_connect(device, action, creds=None, display_banner=None,
                                              init_commands)
         log.msg('Trying SSH to %s' % device, debug=True)
         port = 22
-        #reactor.connectTCP(device.nodeName, 22, factory)
 
     # or Telnet?
     else:
@@ -158,10 +156,11 @@ def pty_connect(device, action, creds=None, display_banner=None,
                                              init_commands=init_commands)
         log.msg('Trying telnet to %s' % device, debug=True)
         port = 23
-        #reactor.connectTCP(device.nodeName, 23, factory)
 
     reactor.connectTCP(device.nodeName, port, factory)
-    print '\nFetching credentials from %s' % factory.tcrc.file_name
+    # TODO (jathan): There has to be another way than calling Tacacsrc
+    # construtor AGAIN...
+    print '\nFetching credentials from %s' % tacacsrc.Tacacsrc().file_name
 
     return d
 
@@ -223,7 +222,8 @@ def connect(device, init_commands=None, output_logger=None, login_errback=None,
         d.addErrback(login_errback)
         d.addErrback(log.err)
         d.addCallback(lambda x: stop_reactor())
-    except AttributeError, err:
+    except AttributeError as err:
+        log.msg(err)
         sys.stderr.write('Could not connect to %s.\n' % device)
         return 2 # Bad exit code
 

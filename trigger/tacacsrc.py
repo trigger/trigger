@@ -399,7 +399,7 @@ class Tacacsrc(object):
             (self.__module__, strftime('%Y-%m-%d %H:%M:%S %Z', localtime()))]
 
         for realm, (uname, pwd, _) in self.creds.iteritems():
-            log.msg('encrypting %r' % ((uname, pwd),), debug=True)
+            #log.msg('encrypting %r' % ((uname, pwd),), debug=True)
             out.append('%s_uname_ = %s' % (realm, self._encrypt_old(uname)))
             out.append('%s_pwd_ = %s' % (realm, self._encrypt_old(pwd)))
 
