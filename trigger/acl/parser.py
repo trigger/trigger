@@ -537,29 +537,39 @@ class TIP(IPy.IP):
         # Insert logic to handle 'except' preserve negated flag if it exists
         # already
         negated = getattr(data, 'negated', False)
-        # is data a string?
+        # Is data a string?
         if isinstance(data, (str, unicode)):
             d = data.split()
             if len(d) == 2 and d[-1] == 'except':
                 negated = True
                 data = d[0]
         IPy.IP.__init__(self, data, **kwargs)
-        self.negated = negated # set 'negated' variable
+        self.negated = negated # Set 'negated' variable
 
-    # Needs to be different for negation. The arbitrary decision is, use IP
-    # compare, and then break ties where negated > not negated.
-    def __cmp__(self, other):
-        # compute base comparison
-        bc = IPy.IP.__cmp__(self, other)
-        if bc != 0:
-            return bc
-        if self.negated == other.negated:
-            return bc
-        # Arbitrarily, make negated > not negated
+        # Make it print prefixes for /32, /128 if we're negated (and therefore
+        # assuming we're being used in a Juniper ACL.
         if self.negated:
-            return 1
+            self.NoPrefixForSingleIp = False
+
+    def __cmp__(self, other):
+        # Regular IPy sorts by prefix length before network base, but Juniper
+        # (our baseline) does not. We also need comparisons to be different for
+        # negation. Following Juniper's sorting, use I Pcompare, and then break
+        # ties where negated < not negated.
+        diff = cmp(self.ip, other.ip)
+        if diff == 0:
+            # If the same IP, compare by prefixlen
+            diff = cmp(self.prefixlen(), other.prefixlen())
+        # If both negated, they're the same
+        if self.negated == other.negated:
+            return diff
+        # Sort to make negated < not negated
+        if self.negated:
+            diff = -1
         else:
-            return -1
+            diff = 1
+        # Return the base comparison
+        return diff
 
     def __repr__(self):
         # Just stick an 'except' at the end if except is set since we don't
@@ -567,11 +577,10 @@ class TIP(IPy.IP):
         # as a debugging aid.
         rs = IPy.IP.__repr__(self)
         if self.negated:
-            # insert ' except' into the repr.
-            # yes, it's a hack
+            # Insert ' except' into the repr. (Yes, it's a hack!)
             rs = rs.split("'")
-            rs[-2] += ' except'
-            rs = "'".join(rs)
+            rs[1] += ' except'
+            rs = "'".join(rs) # Restore original repr
         return rs
 
     def __str__(self):
@@ -588,9 +597,9 @@ class TIP(IPy.IP):
         """
         item = TIP(item)
         # Calculate XOR
-        xo = self.negated ^ item.negated
+        xor = self.negated ^ item.negated
         # If one item is negated, it's never contained.
-        if xo:
+        if xor:
             return False
         matched = IPy.IP.__contains__(self, item)
         return matched ^ self.negated
@@ -1406,21 +1415,25 @@ class Matches(MyDict):
         not a tuple, tries to treat it as IPs or failing that, casts it to a
         string.
 
-        :param pair: The 2-tuple to convert.
+        :param pair:
+            The 2-tuple to convert.
         """
         try:
             return '%s-%s' % pair # Tuples back to ranges.
         except TypeError:
             try:
-                return pair.prefixlen() == 32 and str(pair) + '/32' or str(pair)
+                # Make it print prefixes for /32, /128
+                pair.NoPrefixForSingleIp = False
             except AttributeError:
-                return str(pair)
+                pass
+        return str(pair)
 
     def ios_port_str(self, ports):
         """
         Convert a list of tuples back to ranges, then to strings.
 
-        :param ports: A list of port tuples, e.g. [(0,65535), (1,2)].
+        :param ports:
+            A list of port tuples, e.g. [(0,65535), (1,2)].
         """
         a = []
         for port in ports:
@@ -1442,9 +1455,9 @@ class Matches(MyDict):
         """
         Convert a list of addresses to IOS-style stupid strings.
 
-        :param addrs: List of IP address objects.
+        :param addrs:
+            List of IP address objects.
         """
-
         a = []
         for addr in addrs:
             # xxx flag negated addresses?
@@ -1467,12 +1480,18 @@ class Matches(MyDict):
         keys.sort(lambda x, y: cmp(junos_match_order[x], junos_match_order[y]))
         for s in keys:
             matches = map(self.junos_str, self[s])
+            print matches
             has_negated_addrs = any(m for m in matches if m.endswith(' except'))
+            print 'has negated addrs?', has_negated_addrs
             if s in address_matches:
                 # Check to see if any of the added is any, and if so break out,
                 # but only if none of the addresses is "negated".
+                print 'checking for quad0'
                 if '0.0.0.0/0' in matches and not has_negated_addrs:
+                    print '*************** >>>> OMG quad0 found!'
                     continue
+                else:
+                    print 'quad0 NOT found!'
                 a.append(s + ' {')
                 a += ['    ' + x + ';' for x in matches]
                 a.append('}')
@@ -1638,7 +1657,7 @@ rules = {
 
     'ipv4':       ('digits, (".", digits)*', TIP),
     'ipaddr':     ('ipchars', TIP),
-    'cidr':       ('(ipaddr / ipv4), "/", digits', TIP),
+    'cidr':       ('(ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
     'macaddr':    'hex, (":", hex)+',
     'protocol':   (literals(Protocol.name2num) + ' / digits',
                    do_protocol_lookup),
