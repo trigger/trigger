@@ -1480,18 +1480,12 @@ class Matches(MyDict):
         keys.sort(lambda x, y: cmp(junos_match_order[x], junos_match_order[y]))
         for s in keys:
             matches = map(self.junos_str, self[s])
-            print matches
             has_negated_addrs = any(m for m in matches if m.endswith(' except'))
-            print 'has negated addrs?', has_negated_addrs
             if s in address_matches:
                 # Check to see if any of the added is any, and if so break out,
                 # but only if none of the addresses is "negated".
-                print 'checking for quad0'
                 if '0.0.0.0/0' in matches and not has_negated_addrs:
-                    print '*************** >>>> OMG quad0 found!'
                     continue
-                else:
-                    print 'quad0 NOT found!'
                 a.append(s + ' {')
                 a += ['    ' + x + ';' for x in matches]
                 a.append('}')
