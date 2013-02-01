@@ -1429,6 +1429,8 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
 
     def login_state_machine(self, bytes):
         """Track user login state."""
+        self.host = self.transport.connector.host
+        log.msg('CONNECTOR HOST: ', self.transport.connector.host)
         self.data += bytes
         log.msg('STATE:  got data %r' % self.data, debug=True)
         for (text, next_state) in self.waiting_for:
@@ -1483,8 +1485,6 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         action.loseConnection = self.loseConnection
         action.connectionMade()
         action.dataReceived(data)
-
-        self.host = self.transport.connector.host
 
     def state_enable(self):
         """
