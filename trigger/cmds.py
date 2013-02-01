@@ -87,7 +87,7 @@ class Commando(object):
 
     :param timeout:
         (Optional) Time in seconds to wait for each command executed to return a
-        result. Set to ``None`` to disable timeout (not recommended!).
+        result. Set to ``None`` to disable timeout (not recommended).
 
     :param production_only:
         (Optional) If set, includes all devices instead of excluding any devices
@@ -111,8 +111,11 @@ class Commando(object):
     # The commands to run (defaults to [])
     commands = None
 
-    # The timeout for commands to return results
-    timeout = DEFAULT_TIMEOUT
+    # The timeout for commands to return results. We are setting this to 0
+    # so that if it's not overloaded in a subclass, the timeout value passed to
+    # the constructor will be preferred, especially if it is set to ``None``
+    # which Twisted uses to disable timeouts completely.
+    timeout = 0
 
     # How results are stored (defaults to {})
     results = {}
@@ -130,7 +133,7 @@ class Commando(object):
         self.incremental = incremental
         self.max_conns = max_conns
         self.verbose = verbose
-        self.timeout = self.timeout or timeout # in seconds
+        self.timeout = timeout if timeout != self.timeout else self.timeout # In seconds
         self.nd = NetDevices(production_only=production_only)
         self.allow_fallback = allow_fallback
         self.force_cli = force_cli
