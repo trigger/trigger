@@ -34,6 +34,10 @@ from trigger import exceptions
 __all__ = ('Commando', 'NetACLInfo', 'ShowClock')
 
 
+# Default timeout in seconds for commands to return a result
+DEFAULT_TIMEOUT = 30
+
+
 # Classes
 class Commando(object):
     """
@@ -83,7 +87,7 @@ class Commando(object):
 
     :param timeout:
         (Optional) Time in seconds to wait for each command executed to return a
-        result
+        result. Set to ``None`` to disable timeout (not recommended!).
 
     :param production_only:
         (Optional) If set, includes all devices instead of excluding any devices
@@ -107,12 +111,16 @@ class Commando(object):
     # The commands to run (defaults to [])
     commands = None
 
+    # The timeout for commands to return results
+    timeout = DEFAULT_TIMEOUT
+
     # How results are stored (defaults to {})
     results = {}
 
     def __init__(self, devices=None, commands=None, creds=None,
-                 incremental=None, max_conns=10, verbose=False, timeout=30,
-                 production_only=True, allow_fallback=True, force_cli=False):
+                 incremental=None, max_conns=10, verbose=False,
+                 timeout=DEFAULT_TIMEOUT, production_only=True,
+                 allow_fallback=True, force_cli=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
 
@@ -122,7 +130,7 @@ class Commando(object):
         self.incremental = incremental
         self.max_conns = max_conns
         self.verbose = verbose
-        self.timeout = timeout # in seconds
+        self.timeout = self.timeout or timeout # in seconds
         self.nd = NetDevices(production_only=production_only)
         self.allow_fallback = allow_fallback
         self.force_cli = force_cli
