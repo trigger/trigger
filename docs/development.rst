@@ -5,6 +5,8 @@ Trigger Development
 The Trigger developement team is currently a one-man operation led by `Jathan
 McCollum <http://about.me/jathanism>`_, aka ``jathanism``.
 
+.. _contributing:
+
 Contributing
 ============
 
@@ -124,3 +126,11 @@ feature modifications may (rarely) occur.
 This third number is sometimes omitted for the first major or minor release in
 a series, e.g. 1.2 or 2.0, and in these cases it can be considered an implicit
 zero (e.g. 2.0.0).
+
+.. _new_vendors:
+
+Adding Support for New Vendors
+==============================
+
+Interested in adding support for a new vendor to Trigger? Awesome! Please see
+:doc:`new_vendors` to get started. (Hint: It's a work in progress!)

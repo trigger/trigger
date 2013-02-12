@@ -26,7 +26,7 @@ from twisted.python import log
 
 # Exports
 __all__ = ('get_device_password', 'prompt_credentials', 'convert_tacacsrc',
-           'update_credentials', 'Tacacsrc')
+           'update_credentials', 'validate_credentials', 'Credentials', 'Tacacsrc')
 
 # Credential object stored in Tacacsrc.creds
 #Credentials = namedtuple('Credentials', 'username password')
@@ -41,15 +41,20 @@ class VersionMismatch(TacacsrcError): pass
 
 
 # Functions
-def get_device_password(device=None):
+def get_device_password(device=None, tcrc=None):
     """
     Fetch the password for a device/realm or create a new entry for it.
     If device is not passed, ``settings.DEFAULT_REALM`` is used, which is default
     realm for most devices.
 
-    :param device: Realm or device name to updated
+    :param device:
+        Realm or device name to updated
+
+    :param device:
+        Optional `~trigger.tacacsrc.Tacacsrc` instance
     """
-    tcrc = Tacacsrc()
+    if tcrc is None:
+        tcrc = Tacacsrc()
 
     # If device isn't passed, assume we are initializing the .tacacsrc.
     try:
@@ -126,6 +131,48 @@ def update_credentials(device, username=None):
     tcrc.write()
 
     return True
+
+def validate_credentials(creds=None):
+    """
+    Given a set of credentials, try to return a `~trigger.tacacsrc.Credentials`
+    object.
+
+    If ``creds`` is unset it will fetch from ``.tacacsrc``.
+
+    Expects either a 2-tuple of (username, password) or a 3-tuple of (username,
+    password, realm). If only (username, password) are provided, realm will be populated from
+    :setting:`DEFAULT_REALM`.
+
+    :param creds:
+        A tuple of credentials.
+
+    """
+    realm = settings.DEFAULT_REALM
+
+    # If it isn't set or it's a string, or less than 1 or more than 3 items,
+    # get from .tacacsrc
+    if (not creds) or (type(creds) == str) or (len(creds) not in (2, 3)):
+        log.msg('Creds not valid, fetching from .tacacsrc...')
+        tcrc = Tacacsrc()
+        return tcrc.creds.get(realm, get_device_password(realm, tcrc))
+
+    # If it's a dict, get the values
+    if hasattr(creds, 'values'):
+        log.msg('Creds is a dict, converting to values...')
+        creds = creds.values()
+
+    # If it's missing realm, add it.
+    if len(creds) == 2:
+        log.msg('Creds is a 2-tuple, making into namedtuple...')
+        username, password = creds
+        return Credentials(username, password, realm)
+
+    # Or just make it go...
+    elif len(creds) == 3:
+        log.msg('Creds is a 3-tuple, making into namedtuple...')
+        return Credentials(*creds)
+
+    raise RuntimeError('THIS SHOULD NOT HAVE HAPPENED!!')
 
 def convert_tacacsrc():
     """Converts old .tacacsrc to new .tacacsrc.gpg."""
@@ -355,7 +402,7 @@ class Tacacsrc(object):
             (self.__module__, strftime('%Y-%m-%d %H:%M:%S %Z', localtime()))]
 
         for realm, (uname, pwd, _) in self.creds.iteritems():
-            log.msg('encrypting %r' % ((uname, pwd),), debug=True)
+            #log.msg('encrypting %r' % ((uname, pwd),), debug=True)
             out.append('%s_uname_ = %s' % (realm, self._encrypt_old(uname)))
             out.append('%s_pwd_ = %s' % (realm, self._encrypt_old(pwd)))
 

@@ -8,19 +8,19 @@ fe - the File Editor. Uses RCS to maintain ACL policy versioning.
 __author__ = 'Jathan McCollum, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2002-2011, AOL Inc.'
-__version__ = '1.13'
+__copyright__ = 'Copyright 2002-2013, AOL Inc.'
+__version__ = '1.2'
 
 
 import os
 import re
+from simpleparse.error import ParserSyntaxError
 import sys
-import tty
 import termios
 
 from trigger import acl
+from trigger.acl.parser import TIP
 from trigger.utils.cli import yesno
-from simpleparse.error import ParserSyntaxError
 
 psa_checks = (
     (lambda t: 'source-port' in t.match, 'source port'),
@@ -80,7 +80,7 @@ def normalize(a):
     for t in a.terms:
         for addr in ('address', 'source-address', 'destination-address'):
             for block in t.match.get(addr, []):
-                if block == acl.IP('10/8'):
+                if block == TIP('10.0.0.0/8'):
                     print 'Matching on 10.0.0.0/8 is never correct'
                     for line in t.output(a.format):
                         print '    ' + line

@@ -61,6 +61,10 @@ vendors:
 
   + All 7000-family switch platforms
 
++ Aruba Networks
+
+  + All Mobility Controller platforms
+
 + Brocade Networks
 
   + MLX routers
@@ -209,8 +213,8 @@ Development
 
 Any hackers interested in improving Trigger (or even users interested in how
 Trigger is put together or released) please see the :doc:`development` page. It
-contains comprehensive info on contributing, repository layout, our release
-strategy, and more.
+contains comprehensive info on :ref:`contributing <contributing>`, repository
+layout, our release strategy, and more.
 
 .. _help:
 

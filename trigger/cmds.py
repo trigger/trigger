@@ -15,8 +15,8 @@ example of one might create a subclass. Better documentation is in the works!
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2012, AOL Inc.'
-__version__ = '2.0.1'
+__copyright__ = 'Copyright 2009-2013, AOL Inc.'
+__version__ = '2.1'
 
 import datetime
 import itertools
@@ -32,6 +32,10 @@ from trigger import exceptions
 
 # Exports
 __all__ = ('Commando', 'NetACLInfo', 'ShowClock')
+
+
+# Default timeout in seconds for commands to return a result
+DEFAULT_TIMEOUT = 30
 
 
 # Classes
@@ -64,6 +68,11 @@ class Commando(object):
     :param commands:
         (Optional) A list of commands to execute on the ``devices``.
 
+    :param creds:
+        (Optional) A 3-tuple of (username, password, realm). If only (username,
+        password) are provided, realm will be populated from
+        :setting:`DEFAULT_REALM`. If unset it will fetch from ``.tacacsrc``.
+
     :param incremental:
         (Optional) A callback that will be called with an empty sequence upon
         connection and then called every time a result comes back from the
@@ -78,7 +87,7 @@ class Commando(object):
 
     :param timeout:
         (Optional) Time in seconds to wait for each command executed to return a
-        result
+        result. Set to ``None`` to disable timeout (not recommended).
 
     :param production_only:
         (Optional) If set, includes all devices instead of excluding any devices
@@ -88,6 +97,10 @@ class Commando(object):
         If set (default), allow fallback to base parse/generate methods when
         they are not customized in a subclass, otherwise an exception is raised
         when a method is called that has not been explicitly defined.
+
+    :param force_cli:
+        (Optional) Juniper only. If set, sends commands using CLI instead of
+        Junoscript.
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -95,32 +108,42 @@ class Commando(object):
     # Defaults to all supported platforms
     platforms = settings.SUPPORTED_PLATFORMS
 
-    # The commands to run
-    commands = []
+    # The commands to run (defaults to [])
+    commands = None
 
-    # How results are stored (defaults to dict)
+    # The timeout for commands to return results. We are setting this to 0
+    # so that if it's not overloaded in a subclass, the timeout value passed to
+    # the constructor will be preferred, especially if it is set to ``None``
+    # which Twisted uses to disable timeouts completely.
+    timeout = 0
+
+    # How results are stored (defaults to {})
     results = {}
 
-    def __init__(self, devices=None, commands=None, incremental=None,
-                 max_conns=10, verbose=False, timeout=30,
-                 production_only=True, allow_fallback=True):
+    def __init__(self, devices=None, commands=None, creds=None,
+                 incremental=None, max_conns=10, verbose=False,
+                 timeout=DEFAULT_TIMEOUT, production_only=True,
+                 allow_fallback=True, force_cli=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
 
         self.devices = devices
         self.commands = self.commands or (commands or []) # Always fallback to []
+        self.creds = creds
         self.incremental = incremental
         self.max_conns = max_conns
         self.verbose = verbose
-        self.timeout = timeout # in seconds
+        self.timeout = timeout if timeout != self.timeout else self.timeout # In seconds
         self.nd = NetDevices(production_only=production_only)
         self.allow_fallback = allow_fallback
+        self.force_cli = force_cli
         self.curr_conns = 0
         self.jobs = []
         self.errors = {}
-        self.results = self.results
-        self.deferrals = self._setup_jobs()
+        self.results = self.results or {} # Always fallback to {}
+        #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
+        self._setup_jobs()
 
     def _validate_platforms(self):
         """
@@ -217,8 +240,10 @@ class Commando(object):
 
             # Setup the async Deferred object with a timeout and error printing.
             commands = self.generate(device)
-            async = device.execute(commands, incremental=self.incremental,
-                                   timeout=self.timeout, with_errors=True)
+            async = device.execute(commands, creds=self.creds,
+                                   incremental=self.incremental,
+                                   timeout=self.timeout, with_errors=True,
+                                   force_cli=self.force_cli)
 
             # Add the parser callback for great justice!
             async.addCallback(self.parse, device)
@@ -229,6 +254,7 @@ class Commando(object):
 
             # If worker add fails, still decrement and track the error
             async.addErrback(self.errback, device)
+            #self.deferrals.append(async)
 
         # Do this once we've exhausted the job queue
         else:
@@ -435,6 +461,11 @@ class Commando(object):
         This just creates a series of ``<command>foo</command>`` elements to
         pass along to execute_junoscript()"""
         commands = commands or self.commands
+
+        # If we've set force_cli, use to_base() instead
+        if self.force_cli:
+            return self.to_base(device, commands, extra)
+
         ret = []
         for command in commands:
             cmd = Element('command')
@@ -505,24 +536,11 @@ class NetACLInfo(Commando):
 
     def IPsubnet(self, addr):
         '''Given '172.20.1.4/24', return IP('172.20.1.0/24').'''
-        net, mask = addr.split('/')
-        netbase = (IP(net).int() &
-                   (0xffffffffL ^ (2**(32-int(mask))-1)))
-        return IP('%d/%s' % (netbase, mask))
+        return IP(addr, make_net=True)
 
-    def ipv4_cidr_to_netmask(bits):
-        """ Convert CIDR bits to netmask """
-        netmask = ''
-        for i in range(4):
-            if i:
-                netmask += '.'
-            if bits >= 8:
-                netmask += '%d' % (2**8-1)
-                bits -= 8
-            else:
-                netmask += '%d' % (256-2**(8-bits))
-                bits = 0
-        return netmask
+    def IPhost(self, addr):
+        '''Given '172.20.1.4/24', return IP('172.20.1.4/32').'''
+        return IP(addr[:addr.index('/')]) # Only keep before "/"
 
     #=======================================
     # Vendor-specific generate (to_)/parse (from_) methods
@@ -640,7 +658,7 @@ class NetACLInfo(Commando):
                         for node in family2.findall('%saddress/%sname' % (ns, ns)):
                             ip = node.text
                             dta[ifname]['subnets'].append(self.IPsubnet(ip))
-                            dta[ifname]['addr'].append(IP(ip[:ip.index('/')]))
+                            dta[ifname]['addr'].append(self.IPhost(ip))
 
         self.config[device] = dta
         return True
@@ -778,7 +796,6 @@ def _cleanup_interface_results(results):
     interfaces = sorted(results.keys())
     newdict = {}
     for interface in interfaces:
-        #print interface
         iface_info = results[interface]
 
         # Skip down interfaces
@@ -792,7 +809,6 @@ def _cleanup_interface_results(results):
         new_int['subnets'] = _make_cidrs(iface_info.get('subnets', []) or iface_info['addr'])
         new_int['acl_in'] = list(iface_info.get('acl_in', []))
         new_int['acl_out'] = list(iface_info.get('acl_out', []))
-        #new_int['description'] = ' '.join(iface_info.get('description', [])).replace(' : ', ':')
         new_int['description'] = list(iface_info.get('description', []))
 
     return newdict

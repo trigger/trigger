@@ -49,11 +49,9 @@ def email_handler(*args, **kwargs):
     """
     Default email notification handler.
     """
-    #from . import events
     try:
         event = events.EmailEvent(*args, **kwargs)
     except Exception as err:
-        print 'Got exception', err
         return None
     else:
         return event.handle()
@@ -110,7 +108,7 @@ def notify(*args, **kwargs):
         try:
             result = handler(*args, **kwargs)
         except Exception as err:
-            print 'Got exception: %s' % err
+            #print 'Got exception: %s' % err
             continue
         else:
             if result is not None:

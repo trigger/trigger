@@ -14,3 +14,4 @@ lifetime:
 - `Jason Long <https://github.com/sh0x>`_
 - `Michael Harding <https://github.com/mvh>`_
 - William White
+- `Allan Feid <https://github.com/crazed>`_

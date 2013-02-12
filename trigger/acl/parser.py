@@ -11,34 +11,31 @@ router model, software version) for full support.  The realistic goal
 is to catch all the errors that we see in practice, and to accept all
 the ACLs that we use in practice, rather than to try to reject *every*
 invalid ACL and accept *every* valid ACL.
+
+>>> from trigger.acl import parse
+>>> aclobj = parse("access-list 123 permit tcp any host 10.20.30.40 eq 80")
+>>> aclobj.terms
+[<Term: None>]
 """
 
-__author__ = 'Jathan McCollum, Michael Shields'
+__author__ = 'Jathan McCollum, Michael Harding, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2011, AOL Inc.'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
 
 import IPy
-from IPy import _prefixlenToNetmask
 from simpleparse import objectgenerator
 from simpleparse.common import comments, strings
 from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
                                            dispatchList)
 from simpleparse.parser import Parser
-import pprint
 import socket
-
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-
 from trigger import exceptions
+
 
 # Exports
 __all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
-           'literals', 'IP', 'do_protocol_lookup', 'ports', 'Policer',
+           'literals', 'do_protocol_lookup', 'ports', 'Policer',
            'PolicerGroup', 'make_nondefault_processor', 'ACLParser', 'strip_comments',
            'ACLProcessor', 'default_processor', 'S')
 
@@ -304,7 +301,7 @@ adrsbk = { 'svc':{'group':{}, 'book':{}}, 'addr':{'group':{},'book':{}} }
 
 class MyDict(dict):
     """
-    A dictionary subclass to collect common behavior changes used in container 
+    A dictionary subclass to collect common behavior changes used in container
     classes for the ACL components: Modifiers, Matches.
     """
     def __init__(self, d=None, **kwargs):
@@ -365,8 +362,8 @@ class RangeList(object):
     without collapsing into ranges.
 
     This is currently used to just store match conditions (e.g. protocols,
-    ports), but could be fleshed out into a general-purpose class.  One 
-    thing to think about is how/whether to handle a list of tuples as distinct 
+    ports), but could be fleshed out into a general-purpose class.  One
+    thing to think about is how/whether to handle a list of tuples as distinct
     from a list of ranges.  Should we just store them as xrange objects?
     Should the object appear as discrete elements by default, for example
     in len(), with the collapsed view as a method, or should we keep it
@@ -452,7 +449,7 @@ class RangeList(object):
         if not l:
             return l
         try:
-            return xrange(l[0][0], l[0][1]+1) + self._expand(l[1:]) 
+            return xrange(l[0][0], l[0][1]+1) + self._expand(l[1:])
         except AttributeError:        # not incrementable
             return l
         except (TypeError, IndexError):
@@ -476,7 +473,7 @@ class RangeList(object):
         if self.data < other:
             return -1
         elif self.data > other:
-            return 0 
+            return 0
         else:
             return 0
 
@@ -496,16 +493,9 @@ class RangeList(object):
                     rng = xrange(elt[0], elt[1] + 1)
                     if obj[0] in rng and obj[1] in rng:
                         return True
-                else: 
+                else:
                     if elt[0] <= obj <= elt[1]:
                         return True
-
-            ## Comparing a port range to an int (single port) should ALWAYS return False!!
-            #elif isinstance(obj,tuple):
-            #    if isinstance(elt, int):
-            #        return False
-            #    elif obj[0] <= elt <= obj[1]:
-            #        return True
 
             elif hasattr(elt, '__contains__'):
                 if obj in elt:
@@ -535,35 +525,84 @@ class RangeList(object):
     def __iter__(self):
         return self.data.__iter__()
 
-class MyIPy(IPy.IP):
+class TIP(IPy.IP):
     """
-    Just like IPy.IP, but with corrected sorting. Regular IPy sorts by prefix
-    length before network base.
+    Class based on IPy.IP, but with extensions for Trigger.
+
+    Currently, only the only extension is the ability to negate a network
+    block. Only used internally within the parser, as it's not complete
+    (doesn't interact well with IPy.IP objects). Does not handle IPv6 yet.
     """
-    def __cmp__(self, other): 
-        diff = cmp(self.ip, other.ip)
-        if diff == 0:
-            return cmp(self.prefixlen(), other.prefixlen())
-        else:
-            return diff
+    def __init__(self, data, **kwargs):
+        # Insert logic to handle 'except' preserve negated flag if it exists
+        # already
+        negated = getattr(data, 'negated', False)
+        # Is data a string?
+        if isinstance(data, (str, unicode)):
+            d = data.split()
+            if len(d) == 2 and d[-1] == 'except':
+                negated = True
+                data = d[0]
+        IPy.IP.__init__(self, data, **kwargs)
+        self.negated = negated # Set 'negated' variable
 
-def IP(arg):
-    """Wrapper for IPy.IP to intercept exception text and make it more user-friendly."""
-    try:
-        return MyIPy(arg)
-    except Exception as e:
-        raise ValueError('Bad network block: %s' % arg)
-
-class IPold(IPy.IP):
-    """Just like IPy.IP, but with corrected sorting.
-    Regular IPy sorts by prefix length before network base."""
+        # Make it print prefixes for /32, /128 if we're negated (and therefore
+        # assuming we're being used in a Juniper ACL.
+        if self.negated:
+            self.NoPrefixForSingleIp = False
 
     def __cmp__(self, other):
+        # Regular IPy sorts by prefix length before network base, but Juniper
+        # (our baseline) does not. We also need comparisons to be different for
+        # negation. Following Juniper's sorting, use I Pcompare, and then break
+        # ties where negated < not negated.
         diff = cmp(self.ip, other.ip)
         if diff == 0:
-            return cmp(self.prefixlen(), other.prefixlen())
-        else:
+            # If the same IP, compare by prefixlen
+            diff = cmp(self.prefixlen(), other.prefixlen())
+        # If both negated, they're the same
+        if self.negated == other.negated:
             return diff
+        # Sort to make negated < not negated
+        if self.negated:
+            diff = -1
+        else:
+            diff = 1
+        # Return the base comparison
+        return diff
+
+    def __repr__(self):
+        # Just stick an 'except' at the end if except is set since we don't
+        # code to accept this in the constructor really just provided, for now,
+        # as a debugging aid.
+        rs = IPy.IP.__repr__(self)
+        if self.negated:
+            # Insert ' except' into the repr. (Yes, it's a hack!)
+            rs = rs.split("'")
+            rs[1] += ' except'
+            rs = "'".join(rs) # Restore original repr
+        return rs
+
+    def __str__(self):
+        # IPy is not a new-style class, so the following doesn't work:
+        # return super(TIP, self).__str__()
+        rs = IPy.IP.__str__(self)
+        if self.negated:
+            rs += ' except'
+        return rs
+
+    def __contains__(self, item):
+        """
+        Containment logic, including except.
+        """
+        item = TIP(item)
+        # Calculate XOR
+        xor = self.negated ^ item.negated
+        # If one item is negated, it's never contained.
+        if xor:
+            return False
+        matched = IPy.IP.__contains__(self, item)
+        return matched ^ self.negated
 
 class Comment(object):
     """
@@ -621,7 +660,7 @@ class Remark(Comment):
 class PolicerGroup(object):
     """Container for Policer objects. Juniper only."""
     def __init__(self, format=None):
-        self.policers = [] 
+        self.policers = []
         self.format   = format
         global Comments
         self.comments = Comments
@@ -630,10 +669,10 @@ class PolicerGroup(object):
     def output(self, format=None, *largs, **kwargs):
         if format is None:
             format = self.format
-        return getattr(self,'output_' + format)(*largs, **kwargs) 
+        return getattr(self,'output_' + format)(*largs, **kwargs)
 
     def output_junos(self, replace=False):
-        output =[]
+        output = []
         for ent in self.policers:
             for x in ent.output():
                 output.append(x)
@@ -642,11 +681,11 @@ class PolicerGroup(object):
             return ['firewall {', 'replace:'] + ['    '+x for x in output] + ['}']
         else:
             return output
-    
+
 class ACL(object):
     """
     An abstract access-list object intended to be created by the :func:`parse`
-    function. 
+    function.
     """
     def __init__(self, name=None, terms=None, format=None, family=None):
         check_name(name, exceptions.ACLNameError, max_len=24)
@@ -678,9 +717,9 @@ class ACL(object):
 
     def output_junos(self, replace=False, family=None):
         """
-        Output the ACL in JunOS format.  
+        Output the ACL in JunOS format.
 
-        :param replace: If set the ACL is wrapped in a 
+        :param replace: If set the ACL is wrapped in a
             ``firewall { replace: ... }`` section.
         :param family: If set, the value is used to wrap the ACL in a
             ``family inet { ...}`` section.
@@ -731,7 +770,7 @@ class ACL(object):
 
     def output_ios(self, replace=False):
         """
-        Output the ACL in IOS traditional format.  
+        Output the ACL in IOS traditional format.
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
@@ -755,14 +794,14 @@ class ACL(object):
 
     def output_ios_brocade(self, replace=False, receive_acl=False):
         """
-        Output the ACL in Brocade-flavored IOS format.  
+        Output the ACL in Brocade-flavored IOS format.
 
         The difference between this and "traditional" IOS are:
 
             - Stripping of comments
             - Appending of ``ip rebind-acl`` or ``ip rebind-receive-acl`` line
 
-        :param replace: If set the ACL is preceded by a ``no access-list`` line. 
+        :param replace: If set the ACL is preceded by a ``no access-list`` line.
         :param receive_acl: If set the ACL is suffixed with a ``ip
             rebind-receive-acl' instead of ``ip rebind-acl``.
         """
@@ -783,9 +822,9 @@ class ACL(object):
 
     def output_ios_named(self, replace=False):
         """
-        Output the ACL in IOS named format.  
+        Output the ACL in IOS named format.
 
-        :param replace: If set the ACL is preceded by a ``no access-list`` line. 
+        :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
         if self.name == None:
             raise exceptions.MissingACLName('IOS format requires a name')
@@ -801,7 +840,7 @@ class ACL(object):
 
     def output_iosxr(self, replace=False):
         """
-        Output the ACL in IOS XR format.  
+        Output the ACL in IOS XR format.
 
         :param replace: If set the ACL is preceded by a ``no ipv4 access-list`` line.
         """
@@ -1087,12 +1126,12 @@ class Policer(object):
                         if type == 'bandwidth-limit':
                             limit = self.str2bits(value)
                             if limit > 32000000000 or limit < 32000:
-                                raise "bandwidth-limit must be between 32000bps and 32000000000bps" 
+                                raise "bandwidth-limit must be between 32000bps and 32000000000bps"
                             self.exceedings.append((type, limit))
                         elif type == 'burst-size-limit':
                             limit = self.str2bits(value)
                             if limit > 100000000 or limit < 1500:
-                                raise "burst-size-limit must be between 1500B and 100,000,000B" 
+                                raise "burst-size-limit must be between 1500B and 100,000,000B"
                             self.exceedings.append((type, limit))
                         elif type == 'bandwidth-percent':
                             limit = int(value)
@@ -1134,7 +1173,7 @@ class Policer(object):
             output.append('    then {')
         for x in self.actions:
             output.append('        %s;' % x)
-        
+
         if self.actions:
             output.append('    }')
         output.append('}')
@@ -1186,7 +1225,7 @@ class Protocol(object):
     def __cmp__(self, other):
         '''Protocol(6) == 'tcp' == 6 == Protocol('6').'''
         return self.value.__cmp__(Protocol(other).value)
-    
+
     def __hash__(self):
         return hash(self.value)
 
@@ -1334,8 +1373,8 @@ class Matches(MyDict):
             arg = map(int, arg)
             check_range(arg, 0, 65535)
         elif key in ('address', 'source-address', 'destination-address'):
-            arg = map(IP, arg)
-        elif key in ('prefix-list', 'source-prefix-list',   
+            arg = map(TIP, arg)
+        elif key in ('prefix-list', 'source-prefix-list',
                      'destination-prefix-list'):
             for pl in arg:
                 check_name(pl, exceptions.MatchError)
@@ -1376,21 +1415,25 @@ class Matches(MyDict):
         not a tuple, tries to treat it as IPs or failing that, casts it to a
         string.
 
-        :param pair: The 2-tuple to convert.
+        :param pair:
+            The 2-tuple to convert.
         """
         try:
             return '%s-%s' % pair # Tuples back to ranges.
         except TypeError:
             try:
-                return pair.prefixlen() == 32 and str(pair)+'/32' or str(pair)
+                # Make it print prefixes for /32, /128
+                pair.NoPrefixForSingleIp = False
             except AttributeError:
-                return str(pair)
+                pass
+        return str(pair)
 
     def ios_port_str(self, ports):
         """
         Convert a list of tuples back to ranges, then to strings.
 
-        :param ports: A list of port tuples, e.g. [(0,65535), (1,2)].
+        :param ports:
+            A list of port tuples, e.g. [(0,65535), (1,2)].
         """
         a = []
         for port in ports:
@@ -1412,17 +1455,22 @@ class Matches(MyDict):
         """
         Convert a list of addresses to IOS-style stupid strings.
 
-        :param addrs: List of IP address objects.
+        :param addrs:
+            List of IP address objects.
         """
         a = []
         for addr in addrs:
+            # xxx flag negated addresses?
+            if addr.negated:
+                raise exceptions.VendorSupportLacking(
+                    'negated addresses are not supported in IOS')
             if addr.prefixlen() == 0:
                 a.append('any')
             elif addr.prefixlen() == 32:
-                a.append('host ' + str(addr.net()))
+                a.append('host %s' % addr.net())
             else:
-                stupid_mask = str(IP(2**(32-addr.prefixlen())-1))
-                a.append('%s %s' % (addr.net(), stupid_mask))
+                inverse_mask = make_inverse_mask(addr.prefixlen())
+                a.append('%s %s' % (addr.net(), inverse_mask))
         return a
 
     def output_junos(self):
@@ -1432,9 +1480,11 @@ class Matches(MyDict):
         keys.sort(lambda x, y: cmp(junos_match_order[x], junos_match_order[y]))
         for s in keys:
             matches = map(self.junos_str, self[s])
+            has_negated_addrs = any(m for m in matches if m.endswith(' except'))
             if s in address_matches:
-                # check to see if any of the added is any, and if so break out.
-                if '0.0.0.0/0' in matches: 
+                # Check to see if any of the added is any, and if so break out,
+                # but only if none of the addresses is "negated".
+                if '0.0.0.0/0' in matches and not has_negated_addrs:
                     continue
                 a.append(s + ' {')
                 a += ['    ' + x + ';' for x in matches]
@@ -1588,30 +1638,31 @@ errs = {
 }
 
 rules = {
-    'digits':            '[0-9]+',
-    '<digits_suppressed>': '[0-9]+',
-    '<ts>':            '[ \\t]+',
-    '<ws>':            '[ \\t\\n]+',
-    '<EOL>':            "('\r'?,'\n')/EOF",
-    'alphanums':    '[a-zA-z0-9]+',
-    'word':            '[a-zA-Z0-9_.-]+',
-    'anychar':            "[ a-zA-Z0-9.$:()&,/'_-]",
+    'digits':     '[0-9]+',
+    '<digits_s>': '[0-9]+',
+    '<ts>':       '[ \\t]+',
+    '<ws>':       '[ \\t\\n]+',
+    '<EOL>':      "('\r'?,'\n')/EOF",
+    'alphanums':  '[a-zA-Z0-9]+',
+    'word':       '[a-zA-Z0-9_.-]+',
+    'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
+    'hex':        '[0-9a-fA-F]+',
+    'ipchars':    '[0-9a-fA-F:.]+',
 
-    'ipv4':            ('digits, (".", digits)*', IP),
-    'cidr':            ('ipv4, "/", digits', IP),
-    'macaddr':            '[0-9a-fA-F:]+',
-
-    'protocol':            (literals(Protocol.name2num) + ' / digits',
-                     do_protocol_lookup),
-    'tcp':            ('"tcp" / "6"', Protocol('tcp')),
-    'udp':            ('"udp" / "17"', Protocol('udp')),
-    'icmp':            ('"icmp" / "1"', Protocol('icmp')),
-    'icmp_type':    (literals(icmp_types) + ' / digits', do_icmp_type_lookup),
-    'icmp_code':    (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
-    'port':            (literals(ports) + ' / digits', do_port_lookup),
-    'dscp':            (literals(dscp_names) + ' / digits', do_dscp_lookup),
-    #'root':            'ws?, junos_raw_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
-    'root':            'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
+    'ipv4':       ('digits, (".", digits)*', TIP),
+    'ipaddr':     ('ipchars', TIP),
+    'cidr':       ('(ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
+    'macaddr':    'hex, (":", hex)+',
+    'protocol':   (literals(Protocol.name2num) + ' / digits',
+                   do_protocol_lookup),
+    'tcp':        ('"tcp" / "6"', Protocol('tcp')),
+    'udp':        ('"udp" / "17"', Protocol('udp')),
+    'icmp':       ('"icmp" / "1"', Protocol('icmp')),
+    'icmp_type':  (literals(icmp_types) + ' / digits', do_icmp_type_lookup),
+    'icmp_code':  (literals(icmp_codes) + ' / digits', do_icmp_code_lookup),
+    'port':       (literals(ports) + ' / digits', do_port_lookup),
+    'dscp':       (literals(dscp_names) + ' / digits', do_dscp_lookup),
+    'root':       'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
 }
 
 
@@ -1620,8 +1671,21 @@ rules = {
 #
 
 
+def make_inverse_mask(prefixlen):
+    """
+    Return an IP object of the inverse mask of the CIDR prefix.
+
+    :param prefixlen:
+        CIDR prefix
+    """
+    inverse_bits = 2 ** (32 - prefixlen) - 1
+    return TIP(inverse_bits)
+
+
 # Build a table to unwind Cisco's weird inverse netmask.
-inverse_mask_table = dict([(IP(2**(32-x)-1), x) for x in range(0, 33)])
+# TODO (jathan): These don't actually get sorted properly, but it doesn't seem
+# to have mattered up until now. Worth looking into it at some point, though.
+inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(0, 33)])
 
 def handle_ios_match(a):
     protocol, source, dest = a[:3]
@@ -1710,9 +1774,9 @@ rules.update({
     'kw_any':                    ('"any"', None),
     'host_ipv4':            '"host", ts, ipv4',
     S('ios_masked_ipv4'):   ('ipv4, ts, ipv4_inverse_mask',
-                             lambda (net, length): IP('%s/%d' % (net, length))),
+                             lambda (net, length): TIP('%s/%d' % (net, length))),
     'ipv4_inverse_mask':    (literals(inverse_mask_table),
-                             lambda x: inverse_mask_table[IP(x)]),
+                             lambda x: inverse_mask_table[TIP(x)]),
 
     'kw_ip':                    ('"ip"', None),
     S('ios_match'):            ('kw_ip / protocol, ts, ios_ip, ts, ios_ip, '
@@ -1761,18 +1825,18 @@ rules.update({
                              '"extended", ts, word',
                              lambda x: {'no': True, 'name': x[0]}),
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
-    S('ios_rebind_acl_line'): ('"ip", ts, "rebind-acl", ts, word', 
+    S('ios_rebind_acl_line'): ('"ip", ts, "rebind-acl", ts, word',
                               lambda x: {'name': x[0], 'format': 'ios_brocade'}),
                               #lambda x: {'name': x[0], 'format': 'ios'}),
 
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
-    S('ios_rebind_receive_acl_line'): ('"ip", ts, "rebind-receive-acl", ts, word', 
-                                lambda x: {'name': x[0], 'format': 'ios_brocade', 
+    S('ios_rebind_receive_acl_line'): ('"ip", ts, "rebind-receive-acl", ts, word',
+                                lambda x: {'name': x[0], 'format': 'ios_brocade',
                                            'receive_acl': True}),
 
     S('icomment'):            ('"!", ts?, icomment_body', lambda x: x),
     'icomment_body':            ('-"\n"*', Comment),
-    S('ios_remark_line'):   ('("access-list", ts, digits_suppressed, ts)?, "remark", ts, remark_body', lambda x: x),
+    S('ios_remark_line'):   ('("access-list", ts, digits_s, ts)?, "remark", ts, remark_body', lambda x: x),
     'remark_body':            ('-"\n"*', Remark),
 
     '>ios_line<':            ('ts?, (ios_acl_line / ios_ext_line / "end")?, '
@@ -1806,7 +1870,7 @@ rules.update({
                              lambda x: Comment(x[0])),
     '<comment_start>':            '"/*"',
     '<comment_stop>':            '"*/"',
-    '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'], 
+    '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
 
     ## custom force single-line comments only:
     'jcomment_body':            '-("*/" / "\n")*',
@@ -1843,15 +1907,15 @@ def keyword_match(keyword, arg=None):
                 tokens += arg + ', jsemi'
             rules[S(prod)] = (tokens, lambda x, k=k: {k: x})
 
-keyword_match('address', 'cidr / ipv4')
-keyword_match('destination-address', 'cidr / ipv4')
+keyword_match('address', 'cidr / ipaddr')
+keyword_match('destination-address', 'cidr / ipaddr')
 keyword_match('destination-prefix-list', 'jword')
 keyword_match('first-fragment')
 keyword_match('fragment-flags', 'fragment_flag')
 keyword_match('ip-options', 'ip_option')
 keyword_match('is-fragment')
 keyword_match('prefix-list', 'jword')
-keyword_match('source-address', 'cidr / ipv4') 
+keyword_match('source-address', 'cidr / ipaddr')
 keyword_match('source-prefix-list', 'jword')
 keyword_match('tcp-established')
 keyword_match('tcp-flags', 'tcp_flag')
@@ -1940,7 +2004,7 @@ def handle_junos_term(d):
 # for this but it made the parser substantially slower.
 rules.update({
     S('junos_raw_acl'):         ('"filter", jws, jword, jws?, ' + \
-                                    braced_list('junos_term / junos_policer'), 
+                                    braced_list('junos_term / junos_policer'),
                                     handle_junos_acl),
     'junos_replace_acl':        ('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
     S('junos_replace_family_acl'): ('"firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
@@ -1950,13 +2014,13 @@ rules.update({
     'junos_filter_family':      ('"family", ws, junos_family_type'),
     'junos_family_type':        ('"inet" / "inet6"'),
     'opaque_braced_group':      ('"{", jws?, (jword / "[" / "]" / ";" / '
-                                    'opaque_braced_group / jws)*, "}"', 
+                                    'opaque_braced_group / jws)*, "}"',
                                     lambda x: x),
     S('junos_term'):            ('maybe_inactive, "term", jws, junos_term_name, '
                                     'jws?, ' + braced_list('junos_from / junos_then'),
                                     lambda x: handle_junos_term(dict_sum(x))),
     S('junos_term_name'):       ('jword', lambda x: {'name': x[0]}),
-    'maybe_inactive':           ('("inactive:", jws)?', 
+    'maybe_inactive':           ('("inactive:", jws)?',
                                     lambda x: {'inactive': len(x) > 0}),
     S('junos_from'):            ('"from", jws?, ' + braced_list('junos_match'),
                                     lambda x: {'match': Matches(dict_sum(x))}),
@@ -1964,27 +2028,27 @@ rules.update({
                                     braced_list('junos_action/junos_modifier, jsemi'),
                                     dict_sum),
     S('junos_policer'):         ('"policer", jws, junos_term_name, jws?, ' +
-                                    braced_list('junos_exceeding / junos_policer_then'), 
-                                    lambda x: Policer(x[0]['name'], x[1:])), 
-    S('junos_policer_then'):    ('"then", jws?, ' + 
+                                    braced_list('junos_exceeding / junos_policer_then'),
+                                    lambda x: Policer(x[0]['name'], x[1:])),
+    S('junos_policer_then'):    ('"then", jws?, ' +
                                     braced_list('junos_policer_action, jsemi')),
     S('junos_policer_action'):  ('junos_discard / junos_fwd_class / '\
-                                    '("loss-priority", jws, jword)', 
+                                    '("loss-priority", jws, jword)',
                                     lambda x: {'action':x}),
     'junos_discard':            ('"discard"'),
-    'junos_loss_pri':           ('"loss-priority", jws, jword', 
+    'junos_loss_pri':           ('"loss-priority", jws, jword',
                                     lambda x: {'loss-priority':x[0]}),
-    'junos_fwd_class':          ('"forwarding-class", jws, jword', 
+    'junos_fwd_class':          ('"forwarding-class", jws, jword',
                                     lambda x: {'forwarding-class':x[0]}),
     'junos_filter_specific':    ('"filter-specific"'),
-    S('junos_exceeding'):       ('"if-exceeding", jws?, ' + 
-                                    braced_list('junos_bw_limit/junos_bw_perc/junos_burst_limit'), 
+    S('junos_exceeding'):       ('"if-exceeding", jws?, ' +
+                                    braced_list('junos_bw_limit/junos_bw_perc/junos_burst_limit'),
                                     lambda x: {'if-exceeding':x}),
-    S('junos_bw_limit'):        ('"bandwidth-limit", jws, word, jsemi', 
-                                    lambda x: ('bandwidth-limit',x[0])), 
-    S('junos_bw_perc'):         ('"bandwidth-percent", jws, alphanums, jsemi', 
+    S('junos_bw_limit'):        ('"bandwidth-limit", jws, word, jsemi',
+                                    lambda x: ('bandwidth-limit',x[0])),
+    S('junos_bw_perc'):         ('"bandwidth-percent", jws, alphanums, jsemi',
                                     lambda x: ('bandwidth-percent',x[0])),
-    S('junos_burst_limit'):     ('"burst-size-limit", jws, alphanums, jsemi', 
+    S('junos_burst_limit'):     ('"burst-size-limit", jws, alphanums, jsemi',
                                     lambda x: ('burst-size-limit',x[0])),
     S('junos_match'):           (' / '.join(junos_match_types), dict_sum),
 
@@ -2067,10 +2131,16 @@ class ACLParser(Parser):
 
 def parse(input_data):
     """
-    Parse a complete ACL and return an ACL object. This should be the only 
+    Parse a complete ACL and return an ACL object. This should be the only
     external interface to the parser.
 
-    :param data: An ACL policy as a string or file-like object.
+    >>> from trigger.acl import parse
+    >>> aclobj = parse("access-list 123 permit tcp any host 10.20.30.40 eq 80")
+    >>> aclobj.terms
+    [<Term: None>]
+
+    :param input_data:
+        An ACL policy as a string or file-like object.
     """
     parser = ACLParser(grammar)
 
@@ -2083,8 +2153,6 @@ def parse(input_data):
     success, children, nextchar = parser.parse(data)
 
     if success and nextchar == len(data):
-        #import pprint
-        #pprint.pprint(adrsbk)
         assert len(children) == 1
         return children[0]
     else:

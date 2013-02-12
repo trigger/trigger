@@ -11,21 +11,16 @@ acl_script - CLI interface to simplify complex modification to access-lists.
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2012, AOL Inc.'
-__version__ = '1.10'
+__copyright__ = 'Copyright 2003-2013, AOL Inc.'
+__version__ = '1.2'
+
 
 from optparse import OptionParser
-import re
-import glob
-import sys
-import getopt
 import os
-from datetime import datetime, date, time, timedelta
-from pytz import UTC, timezone
-from IPy import IP
-
+import re
+import sys
 import trigger.acl.tools as acl_tools
-from trigger.acl import parse
+from trigger.acl.parser import parse, TIP
 from trigger.netdevices import NetDevices
 from trigger.utils.cli import yesno
 from trigger.utils.rcs import RCS
@@ -241,26 +236,26 @@ NOTE when using --replace-defined:
 
     cnt = 0
     for i in opts.source_address:
-        opts.source_address[cnt] = IP(i)
+        opts.source_address[cnt] = TIP(i)
         cnt += 1
 
     cnt = 0
     for i in opts.destination_address:
-        opts.destination_address[cnt] = IP(i)
+        opts.destination_address[cnt] = TIP(i)
         cnt += 1
     for i in opts.destination_address_from_file:
         f = open(i, 'r')
         line = f.readline()
         while line:
             line = line.rstrip()
-            opts.destination_address.append(IP(line))
+            opts.destination_address.append(TIP(line))
             line = f.readline()
     for i in opts.source_address_from_file:
         f = open(i, 'r')
         line = f.readline()
         while line:
             line = line.rstrip()
-            opts.source_address.append(IP(line))
+            opts.source_address.append(TIP(line))
             line = f.readline()
 
     if len(argv) == 1 or not opts.acl or opts.help:

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """
-The heart and soul of Trigger, NetDevices is an abstract interface to network device metadata
-and ACL associations.
+The heart and soul of Trigger, NetDevices is an abstract interface to network
+device metadata and ACL associations.
 
-Parses netdevices.xml and makes available a dictionary of :class:`~trigger.netdevices.NetDevice`
-objects, which is keyed by the FQDN of every network device.
+Parses :setting:`NETDEVICES_SOURCE` and makes available a dictionary of
+`~trigger.netdevices.NetDevice` objects, which is keyed by the FQDN of every
+network device.
 
 Other interfaces are non-public.
 
@@ -24,35 +25,27 @@ Example::
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '1.4.1'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.'
+__version__ = '2.0'
 
-# Imports (duh?)
+# Imports
 import copy
 import itertools
 import os
 import sys
 import time
-from twisted.python import log
-from UserDict import DictMixin
 from trigger.conf import settings
-from trigger.changemgmt import site_bounce, BounceStatus
 from trigger.acl.db import AclsDB
 from trigger.utils import network
-from trigger import exceptions
-from trigger import rancid
-
-# Parser imports
-try:
-    import simplejson as json # Prefer simplejson because of SPEED!
-except ImportError:
-    import json
-import sqlite3
+from trigger.utils.url import parse_url
+from trigger import changemgmt, exceptions, rancid
+from twisted.python import log
+from UserDict import DictMixin
 import xml.etree.cElementTree as ET
+from . import loader
 
 
 # Constants
-SUPPORTED_FORMATS = ('json', 'rancid', 'sqlite', 'xml')
 JUNIPER_COMMIT = ET.Element('commit-configuration')
 JUNIPER_COMMIT_FULL = copy.copy(JUNIPER_COMMIT)
 ET.SubElement(JUNIPER_COMMIT_FULL, 'full')
@@ -63,104 +56,19 @@ __all__ = ['device_match', 'NetDevice', 'NetDevices', 'Vendor']
 
 
 # Functions
-def _parse_json(data_source):
-    """
-    Parse 'netdevices.json' and return list of JSON objects.
-
-    :param data_source:
-        Absolute path to data file
-    """
-    with open(data_source, 'r') as contents:
-         # TODO (jathan): Can we somehow return an generator like the other
-         # _parse methods? Maybe using JSONDecoder?
-         data = json.load(contents)
-
-    return data
-
-def _parse_xml(data_source):
-    """
-    Parse 'netdevices.xml' and return a list of node 2-tuples (key, value).
-    These are as good as a dict without the extra dict() call.
-
-    :param data_source:
-        Absolute path to data file
-    """
-    # Parsing the complete file into a tree once and extracting outthe device
-    # nodes is faster than using iterparse(). Curses!!
-    xml = ET.parse(data_source).findall('device')
-
-    # This is a generator within a generator. Trust me, it works in _populate()
-    data = (((e.tag, e.text) for e in node.getchildren()) for node in xml)
-
-    return data
-
-def _parse_sqlite(data_source):
-    """
-    Parse 'netdevices.sql' and return a list of stuff.
-
-    :param data_source:
-        Absolute path to data file
-    """
-    connection = sqlite3.connect(data_source)
-    cursor = connection.cursor()
-
-    # Get the column names. This is a simple list strings.
-    colfetch  = cursor.execute('pragma table_info(netdevices)')
-    results = colfetch.fetchall()
-    columns = [r[1] for r in results]
-
-    # And the devices. This is a list of tuples whose values match the indexes
-    # of the column names.
-    devfetch = cursor.execute('select * from netdevices')
-    devrows = devfetch.fetchall()
-
-    # Another generator within a generator, which structurally is a list of
-    # lists containing 2-tuples (key, value).
-    data = (itertools.izip(columns, row) for row in devrows)
-
-    return data
-
-def _parse_rancid(rancid_root,
-                  recurse_subdirs=settings.RANCID_RECURSE_SUBDIRS):
-    """
-    Parse RANCID's ``router.db`` and return a generator of node 2-tuples (key,
-    value).
-
-    :param rancid_root:
-        Absolute path to the RANCID directory
-
-    :param recurse_subdirs:
-        Whether to treat RANCID as single or multiple instance
-    """
-    data = rancid.parse_rancid_data(rancid_root,
-                                    recurse_subdirs=recurse_subdirs)
-
-    return data
-
-def _munge_source_data(data_source=settings.NETDEVICES_FILE,
-                       data_format=settings.NETDEVICES_FORMAT):
+def _munge_source_data(data_source=settings.NETDEVICES_SOURCE):
     """
     Read the source data in the specified format, parse it, and return a
-    dictionary of objects.
 
-    :param data_source: Absolute path to source data file
-    :param format: One of 'xml', 'json', or 'sqlite'
+    :param data_source:
+        Absolute path to source data file
     """
-    assert data_format in SUPPORTED_FORMATS
+    log.msg('LOADING FROM: ', data_source)
+    kwargs = parse_url(data_source)
+    path = kwargs.pop('path')
+    return loader.load_metadata(path, **kwargs)
 
-    parsers = {
-        'xml': _parse_xml,
-        'json': _parse_json,
-        'sqlite': _parse_sqlite,
-        'rancid': _parse_rancid,
-    }
-    parser = parsers[data_format]
-    data = parser(data_source)
-
-    return data
-
-def _populate(netdevices, data_source, data_format, production_only,
-              with_acls):
+def _populate(netdevices, data_source, production_only, with_acls):
     """
     Populates the NetDevices with NetDevice objects.
 
@@ -168,8 +76,7 @@ def _populate(netdevices, data_source, data_format, production_only,
     objects.
     """
     #start = time.time()
-    device_data = _munge_source_data(data_source=data_source,
-                                     data_format=data_format)
+    device_data = _munge_source_data(data_source=data_source)
 
     # Populate AclsDB if `with_acls` is set
     aclsdb = AclsDB() if with_acls else None
@@ -238,8 +145,8 @@ def device_match(name, production_only=True):
 
             choice = input('Enter a device number: ') - 1
             match = None if choice < 0 else matches[choice]
-            #print 'Choice:', choice
-            #print 'You chose: %s' % match
+            log.msg('Choice: %s' % choice)
+            log.msg('You chose: %s' % match)
         else:
             print "No matches for '%s'." % name
 
@@ -249,13 +156,16 @@ def device_match(name, production_only=True):
 # Classes
 class NetDevice(object):
     """
-    Almost all the attributes are populated by netdevices._populate() and are
-    mostly dependent upon the source data. This is prone to implementation
-    problems and should be revisited in the long-run as there are certain
-    fields that are baked into the core functionality of Trigger.
+    An object that represents a distinct network device and its metadata.
 
-    Users usually won't create `NetDevice` objects directly! Rely instead upon
-    `NetDevices` to do this for you.
+    Almost all of the attributes are populated by
+    `~trigger.netdevices._populate()` and are mostly dependent upon the source
+    data. This is prone to implementation problems and should be revisited in
+    the long-run as there are certain fields that are baked into the core
+    functionality of Trigger.
+
+    Users usually won't create these objects directly! Rely instead upon
+    `~trigger.netdevice.NetDevices` to do this for you.
     """
     def __init__(self, data=None, with_acls=None):
         # Here comes all of the bare minimum set of attributes a NetDevice
@@ -313,8 +223,14 @@ class NetDevice(object):
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
 
+        # Set the correct command(s) to run on startup based on deviceType
+        self.startup_commands = self._set_startup_commands()
+
         # Assign the configuration commit commands (e.g. 'write memory')
-        self.commit_commands = self._determine_commit_commands()
+        self.commit_commands = self._set_commit_commands()
+
+        # Determine whether we require an async pty SSH channel
+        self.requires_async_pty = self._set_requires_async_pty()
 
     def _populate_data(self, data):
         """
@@ -348,7 +264,50 @@ class NetDevice(object):
         self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
                                                      settings.FALLBACK_TYPE)
 
-    def _determine_commit_commands(self):
+    def _set_requires_async_pty(self):
+        """
+        Set whether a device requires an async pty (see:
+            `~trigger.twister.TriggerSSHAsyncPtyChannel`).
+        """
+        RULES = (
+            self.vendor == 'aruba',
+            self.vendor == 'brocade' and self.is_switch(), # Brocade ADX/VDX
+        )
+        return any(RULES)
+
+    def _set_startup_commands(self):
+        """
+        Set the commands to run at startup. For now they are just ones to
+        disable pagination.
+        """
+        def disable_paging_brocade():
+            """
+            Brocade MLX routers and VDX switches require different commands to
+            disable paging. Yay complexity!
+            """
+            if self.is_switch():
+                return 'terminal length 0\n'
+            elif self.is_router():
+                return 'skip-page-display\n'
+            return None
+
+        # Commands used to disable paging.
+        paging_map = {
+            'arista': 'terminal length 0\n',
+            'aruba': 'no paging\n',
+            'cisco': 'terminal length 0\n',
+            'brocade': disable_paging_brocade(),
+            'dell': 'terminal datadump\n',
+            'foundry': 'skip-page-display\n',
+        }
+
+        cmd = paging_map.get(self.vendor.name)
+        if cmd is not None:
+            return [cmd] # This must be a list
+
+        return []
+
+    def _set_commit_commands(self):
         """
         Return the proper "commit" command. (e.g. write mem, etc.)
         """
@@ -405,7 +364,7 @@ class NetDevice(object):
         Populate the associated ACLs for this device.
 
         :param aclsdb:
-            An `~trigger.acl.db.AclsDB` instance
+            An `~trigger.acl.db.AclsDB` object.
         """
         if not aclsdb:
             return None
@@ -431,7 +390,7 @@ class NetDevice(object):
 
     @property
     def bounce(self):
-        return site_bounce(self.site, oncallid=self.onCallID)
+        return changemgmt.bounce(self)
 
     @property
     def shortName(self):
@@ -439,18 +398,33 @@ class NetDevice(object):
 
     def allowable(self, action, when=None):
         """
-        Ok to perform the specified action? Returns a boolean value. False
-        means a bounce window conflict. For now 'load-acl' is the only valid
-        action and moratorium status is not checked.
+        Return whether it's okay to perform the specified ``action``.
+
+        False means a bounce window conflict. For now ``'load-acl'`` is the
+        only valid action and moratorium status is not checked.
+
+        :param action:
+            The action to check.
+
+        :param when:
+            A datetime object.
         """
         assert action == 'load-acl'
-        return self.bounce.status(when) == BounceStatus('green')
+        return self.bounce.status(when) == changemgmt.BounceStatus('green')
 
     def next_ok(self, action, when=None):
-        """Return the next time at or after the specified time (default now)
-        that it will be ok to perform the specified action."""
+        """
+        Return the next time at or after the specified time (default now)
+        that it will be ok to perform the specified action.
+
+        :param action:
+            The action to check.
+
+        :param when:
+            A datetime object.
+        """
         assert action == 'load-acl'
-        return self.bounce.next_ok(BounceStatus('green'), when)
+        return self.bounce.next_ok(changemgmt.BounceStatus('green'), when)
 
     def is_router(self):
         """Am I a router?"""
@@ -466,7 +440,7 @@ class NetDevice(object):
 
     def is_netscaler(self):
         """Am I a NetScaler?"""
-        return all([self.deviceType=='SWITCH', self.vendor=='citrix'])
+        return all([self.is_switch(), self.vendor=='citrix'])
 
     def is_netscreen(self):
         """Am I a NetScreen running ScreenOS?"""
@@ -475,8 +449,7 @@ class NetDevice(object):
 
     def is_ioslike(self):
         """
-        Am I an IOS-like device (as determined by
-        ``settings.IOSLIKE_VENDORS``)?
+        Am I an IOS-like device (as determined by :settings:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
 
@@ -668,8 +641,7 @@ class NetDevices(DictMixin):
         def __init__(self, production_only, with_acls):
             self._dict = {}
             _populate(netdevices=self._dict,
-                      data_source=settings.NETDEVICES_FILE,
-                      data_format=settings.NETDEVICES_FORMAT,
+                      data_source=settings.NETDEVICES_SOURCE,
                       production_only=production_only, with_acls=with_acls)
 
         def __getitem__(self, key):

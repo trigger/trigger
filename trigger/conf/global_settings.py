@@ -44,15 +44,16 @@ INTERNAL_NETWORKS = [
 
 # The tuple of supported vendors derived from the values of VENDOR_MAP
 SUPPORTED_VENDORS = (
-        'a10',
-        'arista',
-        'brocade',
-        'cisco',
-        'citrix',
-        'dell',
-        'foundry',
-        'juniper',
-        'netscreen'
+    'a10',
+    'arista',
+    'aruba',
+    'brocade',
+    'cisco',
+    'citrix',
+    'dell',
+    'foundry',
+    'juniper',
+    'netscreen'
 )
 VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 
@@ -65,6 +66,7 @@ VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 VENDOR_MAP = {
     'A10 NETWORKS': 'a10',
     'ARISTA NETWORKS': 'arista',
+    'ARUBA NETWORKS': 'aruba',
     'BROCADE': 'brocade',
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
@@ -79,6 +81,7 @@ VENDOR_MAP = {
 SUPPORTED_PLATFORMS = {
     'a10': ['SWITCH'],
     'arista': ['SWITCH'],                         # Your "Cloud" network vendor
+    'aruba': ['SWITCH'],                          # Aruba Wi-Fi controllers
     'brocade': ['ROUTER', 'SWITCH'],
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
@@ -97,6 +100,7 @@ SUPPORTED_TYPES = ('FIREWALL', 'ROUTER', 'SWITCH')
 DEFAULT_TYPES = {
     'a10': 'SWITCH',
     'arista': 'SWITCH',
+    'aruba': 'SWITCH',
     'brocade': 'SWITCH',
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
@@ -145,6 +149,7 @@ SSH_ASYNC_DISABLED = {
 IOSLIKE_VENDORS = (
     'a10',
     'arista',
+    'aruba',
     'brocade',
     'cisco',
     'dell',
@@ -159,14 +164,25 @@ IOSLIKE_VENDORS = (
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
 
-# One of 'xml', 'json', 'sqlite'. This MUST match the actual format of
-# NETDEVICES_FILE or it won't work for obvious reasons.
-NETDEVICES_FORMAT = os.environ.get('NETDEVICES_FORMAT', 'xml')
+# A tuple of data loader classes, specified as strings. Optionally, a tuple can
+# be used instead of a string. The first item in the tuple should be the
+# Loader's module, subsequent items are passed to the Loader during
+# initialization.
+NETDEVICES_LOADERS = (
+    'trigger.netdevices.loaders.filesystem.XMLLoader',
+    'trigger.netdevices.loaders.filesystem.JSONLoader',
+    'trigger.netdevices.loaders.filesystem.SQLiteLoader',
+    'trigger.netdevices.loaders.filesystem.RancidLoader',
+    'trigger.netdevices.loaders.filesystem.CSVLoader',
+)
 
-# Path to netdevices device metadata source file, which is used to populate
-# trigger.netdevices.NetDevices. This may be JSON, XML, or a SQLite3 database.
-# You must set NETDEVICES_FORMAT to match the type of data.
-NETDEVICES_FILE = os.environ.get('NETDEVICES_FILE', os.path.join(PREFIX, 'netdevices.xml'))
+# A path or URL to netdevices device metadata source data, which is used to
+# populate trigger.netdevices.NetDevices. For more information on this, see
+# NETDEVICES_LOADERS.
+NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX,
+                                                                     'netdevices.xml'))
+# Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
+NETDEVICES_FILE = NETDEVICES_SOURCE
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.
@@ -188,6 +204,26 @@ JUNIPER_FULL_COMMIT_FIELDS = {
     #'deviceType': 'SWITCH',
     #'make': 'EX4200',
 }
+
+#===============================
+# Bounce Windows/Change Mgmt
+#===============================
+
+# Path of the explicit module file for bounce.py containing custom bounce
+# window mappings.
+BOUNCE_FILE = os.environ.get('BOUNCE_FILE', os.path.join(PREFIX, 'bounce.py'))
+
+# Default bounce timezone. All BounceWindow objects are configured using
+# US/Eastern for now.
+BOUNCE_DEFAULT_TZ = 'US/Eastern'
+
+# The default fallback window color for bounce windows. Must be one of
+# ('green', 'yellow', or 'red').
+#
+#     green: Low risk
+#    yellow: Medium risk
+#       red: High risk
+BOUNCE_DEFAULT_COLOR = 'red'
 
 #===============================
 # Redis Settings

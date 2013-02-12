@@ -19,6 +19,7 @@ __all__.extend(core.__all__)
 
 # Events
 from . import events
+__all__.extend(events.__all__)
 
 # Handlers
 from . import handlers

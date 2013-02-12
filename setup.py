@@ -70,7 +70,7 @@ setup(
     name='trigger',
     version=__version__,
     author='Jathan McCollum',
-    author_email='jathan@gmail.com',
+    author_email='jathanism@aol.com',
     packages=find_packages(exclude='tests'),
     license='BSD',
     url='https://github.com/aol/trigger',
