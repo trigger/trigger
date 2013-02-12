@@ -2,6 +2,8 @@
 Changelog
 =========
 
+.. include:: trigger-1.3.rst
+
 .. _v1.2.4:
 
 1.2.4
