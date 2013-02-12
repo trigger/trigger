@@ -39,6 +39,10 @@ New in version 1.2:
 + Import your metadata from an existing RANCID installation to get
   up-and-running quickly!
 
+New in version 1.3:
+
++ Import your metadata from a CSV file and get up-and-running even quicker!
+
 Getting Started
 ===============
 
