@@ -19,9 +19,13 @@ try:
     import simplejson as json # Prefer simplejson because of SPEED!
 except ImportError:
     import json
-import sqlite3
 import xml.etree.cElementTree as ET
 
+try:
+    import sqlite3
+    SQLITE_AVAILABLE = True
+except ImportError:
+    SQLITE_AVAILABLE = False
 
 class JSONLoader(BaseLoader):
     """
@@ -98,7 +102,7 @@ class SQLiteLoader(BaseLoader):
 
     Parse 'netdevices.sql' and return a list of stuff.
     """
-    is_usable = True
+    is_usable = SQLITE_AVAILABLE
 
     def get_data(self, data_source, table_name='netdevices'):
         connection = sqlite3.connect(data_source)
