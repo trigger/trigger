@@ -20,7 +20,10 @@ import os
 import sys
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
-import MySQLdb
+try:
+    import MySQLdb
+except ImportError:
+    MySQLdb = None
 
 # Exports
 __all__ = ('Queue', 'QueueError',)
@@ -47,6 +50,8 @@ class Queue(object):
     def _get_firewall_db_conn(self):
         """Returns a MySQL db connection used for the ACL queues using database
         settings found withing ``settings.py``."""
+        if MySQLdb is None:
+            raise RuntimeError("You must install ``MySQL-python`` to use the queue")
         try:
             return MySQLdb.connect(host=settings.DATABASE_HOST,
                                    db=settings.DATABASE_NAME,

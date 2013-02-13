@@ -26,7 +26,7 @@ from twisted.python import log
 
 # Exports
 __all__ = ('get_device_password', 'prompt_credentials', 'convert_tacacsrc',
-           'update_credentials', 'Tacacsrc')
+           'update_credentials', 'validate_credentials', 'Credentials', 'Tacacsrc')
 
 # Credential object stored in Tacacsrc.creds
 #Credentials = namedtuple('Credentials', 'username password')

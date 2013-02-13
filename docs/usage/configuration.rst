@@ -22,6 +22,7 @@ disk in ``/etc/trigger`` and these are:
 
 * :mod:`trigger.acl.autoacl` at ``/etc/trigger/autoacl.py``
 * :mod:`trigger.conf` at ``/etc/trigger/settings.py``
+* :mod:`trigger.changemgmt.bounce` at ``/etc/trigger/bouncy.py``
 
 If your custom configuration either cannot be found or fails to import, Trigger
 will fallback to the defaults.
@@ -411,6 +412,10 @@ Default::
 NETDEVICES_FORMAT
 ~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 1.3
+   Replaced by the :setting:`NETDEVICES_LOADERS` plugin system. This variable
+   is no longer used in Trigger 1.3 and will be ignored.
+
 One of ``json``, ``rancid``, ``sqlite``, ``xml``. This MUST match the actual
 format of :setting:`NETDEVICES_FILE` or it won't work for obvious reasons.
 
@@ -429,6 +434,10 @@ Default::
 NETDEVICES_FILE
 ~~~~~~~~~~~~~~~
 
+.. deprecated:: 1.3
+   Replaced by :setting:`NETDEVICES_SOURCE`. If you are using Trigger 1.3 or
+   later, please do not define this variable.
+
 Path to netdevices device metadata source file, which is used to populate
 `~trigger.netdevices.NetDevices`. This may be JSON, RANCID, a SQLite3 database,
 or XML. You must set :setting:`NETDEVICES_FORMAT` to match the type of data.
@@ -437,6 +446,55 @@ Please note that RANCID support is experimental. If you use it you must specify
 the path to the RANCID directory.
 
 You may override this location by setting the ``NETDEVICES_FILE`` environment
+variable to the path of the file.
+
+Default::
+
+    '/etc/trigger/netdevices.xml'
+
+.. setting:: NETDEVICES_LOADERS
+
+NETDEVICES_LOADERS
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.3
+
+A tuple of data loader classes, specified as strings. Optionally, a tuple can
+be used instead of a string. The first item in the tuple should be the Loader's
+module, subsequent items are passed to the Loader during initialization.
+
+Loaders should inherit from `~trigger.netdevices.loader.BaseLoader`. For now,
+please see the source code for the pre-defined loader objects at
+``trigger/netdevices/loaders/filesystem.py`` for examples.
+
+Default::
+
+    (
+        'trigger.netdevices.loaders.filesystem.XMLLoader',
+        'trigger.netdevices.loaders.filesystem.JSONLoader',
+        'trigger.netdevices.loaders.filesystem.SQLiteLoader',
+        'trigger.netdevices.loaders.filesystem.CSVLoader',
+        'trigger.netdevices.loaders.filesystem.RancidLoader',
+    )
+
+.. setting:: NETDEVICES_SOURCE
+
+NETDEVICES_SOURCE
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.3
+
+A path or URL to netdevices device metadata source data, which is used to
+populate `~trigger.netdevices.NetDevices` with `~trigger.netdevices.NetDevice`
+objects. For more information on this, see :setting:`NETDEVICES_LOADERS`.
+
+This value may be as simple as an absolute path to a file on your local system,
+or it may be a fully-fledge URL such as
+``http://user:pass@myhost.com:8080/stuff?foo=bar#fragment-data``. This URL data
+is parsed and passed onto a `~trigger.netdevices.loader.BaseLoader` subclass
+for retrieving device metadata.
+
+You may override this location by setting the ``NETDEVICES_SOURCE`` environment
 variable to the path of the file.
 
 Default::
@@ -511,7 +569,7 @@ BOUNCE_FILE
 
 The path of the explicit module file containing custom bounce window mappings.
 This file is expected to define a ``bounce()`` function that takes a
-`~trigger.netdevice.NetDevices` object as an argument and returns a
+`~trigger.netdevices.NetDevice` object as an argument and returns a
 `~trigger.changemgmt.BounceWindow` object.
 
 You may override the default location of the module containing the ``bounce()``
@@ -564,6 +622,7 @@ The default fallback window color for bounce windows. Must be one of 'green',
     high-risk change may be time-consuming or difficult.
 
 Default::
+
     'red'
 
 Redis settings

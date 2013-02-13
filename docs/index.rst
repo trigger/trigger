@@ -38,6 +38,10 @@ network devices with ease. Here are some of things that make Trigger tick:
 + Import your metadata from an existing `RANCID <http://www.shrubbery.net/rancid/>`_
   installation to get up-and-running quickly!
 
+.. versionadded:: 1.3
+
++ Import your metadata from a CSV file and get up-and-running even quicker!
+
 .. _examples-index:
 
 Examples
@@ -67,6 +71,7 @@ vendors:
 
 + Brocade Networks
 
+  + ADX application delivery switches
   + MLX routers
   + VDX switches
 
@@ -213,8 +218,8 @@ Development
 
 Any hackers interested in improving Trigger (or even users interested in how
 Trigger is put together or released) please see the :doc:`development` page. It
-contains comprehensive info on contributing, repository layout, our release
-strategy, and more.
+contains comprehensive info on :ref:`contributing <contributing>`, repository
+layout, our release strategy, and more.
 
 .. _help:
 

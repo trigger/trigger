@@ -460,6 +460,18 @@ table td, table th {
 
 /* ADMONITIONS AND WARNINGS ------------------------------------------------- */
 
+/* When something id deprecated! */
+p.deprecated {
+    background-color: #ffe4e4;
+    border: 1px solid #f66;
+    padding: 7px;
+    /*
+    border-radius: 6px;
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    */
+}
+
 /* Shared by admonitions, warnings and sidebars */
 div.admonition,
 div.warning,
@@ -467,11 +479,9 @@ div.sidebar {
     font-size: 0.9em;
     margin: 2em;
     padding: 0;
-    /*
     border-radius: 6px;
     -moz-border-radius: 6px;
     -webkit-border-radius: 6px;
-    */
 }
 div.admonition p,
 div.warning p,
