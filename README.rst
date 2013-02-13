@@ -45,6 +45,8 @@ New in version 1.3:
 Getting Started
 ===============
 
+The best way to get started is to read the documentation hosted by `Read the Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org <http://trigger.readthedocs.org>`_. There you will find everything you need to get going including usage examples, installation and configuration instructions, and more!
+
 Before you begin
 ----------------
 
@@ -56,4 +58,3 @@ Before you begin
 + Each point release of Trigger is maintained as a tag branch. If you require a
   specific Trigger version, refer to these.
 
-The best way to get started is to read the documentation hosted by `Read the Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org <http://trigger.readthedocs.org>`_. There you will find everything you need to get going including usage examples, installation and configuration instructions, and more!
