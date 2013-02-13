@@ -576,7 +576,7 @@ class TIP(IPy.IP):
         # code to accept this in the constructor really just provided, for now,
         # as a debugging aid.
         rs = IPy.IP.__repr__(self)
-        if self.negated:
+        if getattr(self, 'negated', False):
             # Insert ' except' into the repr. (Yes, it's a hack!)
             rs = rs.split("'")
             rs[1] += ' except'
