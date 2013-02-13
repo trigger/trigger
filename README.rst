@@ -45,4 +45,15 @@ New in version 1.3:
 Getting Started
 ===============
 
+Before you begin
+----------------
+
++ The ``develop`` branch is the default branch, and while generally stable is
+  not considered production-ready. Use at your own risk!
++ The ``master`` branch is the stable branch, and will reflect the latest
+  production-ready changes. It is recommended that this is the branch you use
+  if you are installing Trigger for the first time.
++ Each point release of Trigger is maintained as a tag branch. If you require a
+  specific Trigger version, refer to these.
+
 The best way to get started is to read the documentation hosted by `Read the Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org <http://trigger.readthedocs.org>`_. There you will find everything you need to get going including usage examples, installation and configuration instructions, and more!
