@@ -118,7 +118,10 @@ class Commando(object):
     timeout = 0
 
     # How results are stored (defaults to {})
-    results = {}
+    results = None
+
+    # How errors are stored (defaults to {})
+    errors = None
 
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
@@ -133,14 +136,17 @@ class Commando(object):
         self.incremental = incremental
         self.max_conns = max_conns
         self.verbose = verbose
-        self.timeout = timeout if timeout != self.timeout else self.timeout # In seconds
+        self.timeout = timeout if timeout != self.timeout else self.timeout
         self.nd = NetDevices(production_only=production_only)
         self.allow_fallback = allow_fallback
         self.force_cli = force_cli
         self.curr_conns = 0
         self.jobs = []
-        self.errors = {}
-        self.results = self.results or {} # Always fallback to {}
+
+        # Always fallback to {} for these
+        self.errors = self.errors if self.errors is not None else {}
+        self.results = self.results if self.results is not None else {}
+
         #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
         self._setup_jobs()
@@ -171,7 +177,7 @@ class Commando(object):
         current connection count.
         """
         self.curr_conns -= 1
-        return True
+        return data
 
     def _increment_connections(self, data=None):
         """Increment connection count."""
@@ -184,6 +190,7 @@ class Commando(object):
         populates the job queue.
         """
         for dev in self.devices:
+            log.msg('Adding', dev)
             if self.verbose:
                 print 'Adding', dev
 
@@ -192,11 +199,12 @@ class Commando(object):
                 devobj = self.nd.find(str(dev))
             except KeyError:
                 msg = 'Device not found in NetDevices: %s' % dev
+                log.err(msg)
                 if self.verbose:
                     print 'ERROR:', msg
 
                 # Track the errors and keep moving
-                self.errors[dev] = msg
+                self.store_error(dev, msg)
                 continue
 
             # We only want to add devices for which we've enabled support in
@@ -234,6 +242,8 @@ class Commando(object):
             device = self.select_next_device()
 
             self._increment_connections()
+            log.msg('connections:', self.curr_conns)
+            log.msg('Adding work to queue...')
             if self.verbose:
                 print 'connections:', self.curr_conns
                 print 'Adding work to queue...'
@@ -248,19 +258,23 @@ class Commando(object):
             # Add the parser callback for great justice!
             async.addCallback(self.parse, device)
 
-            # Here we addBoth to continue on after pass/fail
+            # If parse fails, still decrement and track the error
+            async.addErrback(self.errback, device)
+
+            # Make sure any further uncaught errors get logged
+            async.addErrback(log.err)
+
+            # Here we addBoth to continue on after pass/fail, decrement the
+            # connections and move on.
             async.addBoth(self._decrement_connections)
             async.addBoth(lambda x: self._add_worker())
-
-            # If worker add fails, still decrement and track the error
-            async.addErrback(self.errback, device)
-            #self.deferrals.append(async)
 
         # Do this once we've exhausted the job queue
         else:
             if not self.curr_conns and self.reactor_running:
                 self._stop()
             elif not self.jobs and not self.reactor_running:
+                log.msg('No work left.')
                 if self.verbose:
                     print 'No work left.'
 
@@ -356,9 +370,10 @@ class Commando(object):
         :param device:
             A `~trigger.netdevices.NetDevice` object
         """
+        failure.trap(Exception)
         self.store_error(device, failure)
-        self._decrement_connections(failure)
-        return True
+        #self._decrement_connections(failure)
+        return failure
 
     def store_error(self, device, error):
         """
@@ -375,7 +390,8 @@ class Commando(object):
             The error to store. Anything you want really, but usually a Twisted
             ``Failure`` instance.
         """
-        self.errors[device.nodeName] = error
+        devname = str(device)
+        self.errors[devname] = error
         return True
 
     def store_results(self, device, results):
@@ -392,8 +408,9 @@ class Commando(object):
         :param results:
             The results to store. Anything you want really.
         """
-        log.msg("Storing results for %r: %r" % (device.nodeName, results))
-        self.results[device.nodeName] = results
+        devname = str(device)
+        log.msg("Storing results for %r: %r" % (devname, results))
+        self.results[devname] = results
         return True
 
     def map_results(self, commands=None, results=None):
@@ -414,6 +431,7 @@ class Commando(object):
 
     def _stop(self):
         """Stop the reactor event loop"""
+        log.msg('stopping reactor')
         if self.verbose:
             print 'stopping reactor'
 
@@ -422,6 +440,7 @@ class Commando(object):
 
     def _start(self):
         """Start the reactor event loop"""
+        log.msg('starting reactor')
         if self.verbose:
             print 'starting reactor'
 
@@ -429,8 +448,10 @@ class Commando(object):
             from twisted.internet import reactor
             reactor.run()
         else:
+            msg = "Won't start reactor with no work to do!"
+            log.msg(msg)
             if self.verbose:
-                print "Won't start reactor with no work to do!"
+                print msg
 
     def run(self):
         """
@@ -445,11 +466,11 @@ class Commando(object):
 
     def to_base(self, device, commands=None, extra=None):
         commands = commands or self.commands
-        print 'Sending %r to %s' % (commands, device)
+        log.msg('Sending %r to %s' % (commands, device))
         return commands
 
     def from_base(self, results, device):
-        print 'Received %r from %s' % (results, device)
+        log.msg('Received %r from %s' % (results, device))
         self.store_results(device, self.map_results(self.commands, results))
 
     #=======================================
