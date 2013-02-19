@@ -543,8 +543,8 @@ class TIP(IPy.IP):
             if len(d) == 2 and d[-1] == 'except':
                 negated = True
                 data = d[0]
-        IPy.IP.__init__(self, data, **kwargs)
         self.negated = negated # Set 'negated' variable
+        IPy.IP.__init__(self, data, **kwargs)
 
         # Make it print prefixes for /32, /128 if we're negated (and therefore
         # assuming we're being used in a Juniper ACL.
