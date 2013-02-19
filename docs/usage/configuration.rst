@@ -115,7 +115,7 @@ USE_GPG_AUTH
 
 Toggles whether or not we should use GPG authentication for storing TACACS
 credentials in the user's ``.tacacsrc`` file. Set to ``False`` to use the old
-.tackf encryptoin method, which sucks but requires almost no overhead.
+``.tackf`` encryption method, which sucks but requires almost no overhead.
 Should be ``False`` unless instructions/integration is ready for GPG. At this
 time the documentation for the GPG support is incomplete.
 
