@@ -128,7 +128,7 @@ class Commando(object):
                  timeout=DEFAULT_TIMEOUT, production_only=True,
                  allow_fallback=True, force_cli=False):
         if devices is None:
-            raise exceptions.ImproperlyConfigured('You must specify some ``devices`` to interact with!')
+            raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
         self.devices = devices
         self.commands = self.commands or (commands or []) # Always fallback to []
