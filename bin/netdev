@@ -21,7 +21,7 @@ def parse_args(argv):
     usage module, but replacing it is not a high priority."""
     parser = OptionParser(
         usage='%prog [options]',
-        description="\nCommand-line search interface for 'NetDevices' metdata.",
+        description="\nCommand-line search interface for 'NetDevices' metadata.",
         version='%prog ' + __version__
     )
 
