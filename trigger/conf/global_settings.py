@@ -139,9 +139,8 @@ SSH_PTY_DISABLED = {
 # would like to disable asynchronous (NON-interactive) SSH sessions, such as
 # when using twister or Commando to remotely control a device.
 SSH_ASYNC_DISABLED = {
-    'arista': ['SWITCH'],  # Known not to work w/ SSH ... yet
-    'brocade': ['SWITCH'], # Namely the Brocade VDX =(
     'dell': ['SWITCH'],    # Dell SSH is just straight up broken
+    'foundry': ['SWITCH'], # Old Foundry switches only do SSHv1
 }
 
 # Vendors that basically just emulate Cisco's IOS and can be treated
