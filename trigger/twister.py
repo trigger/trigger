@@ -78,7 +78,6 @@ def is_awaiting_confirmation(prompt):
     :param prompt:
         The prompt string to check
     """
-    log.msg('Got confirmation prompt: %r' % prompt)
     prompt = prompt.lower()
     matchlist = CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
@@ -1595,6 +1594,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         if not m:
             # If the prompt confirms set the index to the matched bytes,
             if is_awaiting_confirmation(self.data):
+                log.msg('Got confirmation prompt: %r' % prompt)
                 prompt_idx = self.data.find(bytes)
             else:
                 return None
