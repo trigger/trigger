@@ -151,6 +151,28 @@ IOSLIKE_VENDORS = (
     'foundry',
 )
 
+# The file path where .gorc is expected to be found.
+GORC_FILE = '~/.gorc'
+
+# The only root commands that are allowed to be executed when defined within
+# ``~.gorc``. They will be filtered # out by `~trigger.gorc.filter_commands()`.
+GORC_ALLOWED_COMMANDS = (
+    'cli',
+    'exit',
+    'get',
+    'monitor',
+    'ping',
+    'quit',
+    'set',
+    'show',
+    'start',
+    'term',
+    'terminal',
+    'traceroute',
+    'who',
+    'whoami'
+)
+
 #===============================
 # NetDevices
 #===============================

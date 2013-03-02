@@ -10,6 +10,10 @@ Changelog
 + :bug:`72` Bugfix in `~trigger.acl.parser.TIP` where an invalid network preifx
   (e.g. '1.2.3.1/31' would throw an ``AttributeError`` when checking the
   ``negated`` attribute and shadowing the original ``ValueError``.
++ :feature:`54` Moved static definition of commands permitted to be executed
+  when specified in a users' ``~/.gorc`` file into a new configuration setting
+  :setting:`GORC_ALLOWED_COMMANDS`. The file location may now also be
+  customized using :setting:`GORC_FILE`.
 
 .. _v1.3.0:
 

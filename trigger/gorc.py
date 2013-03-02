@@ -48,18 +48,11 @@ import ConfigParser
 import os
 import sys
 from twisted.python import log
+from trigger.conf import settings
 
 # Constants
-GORC_FILE = '~/.gorc'
-GORC_PATH = os.path.expanduser(GORC_FILE)
+GORC_PATH = os.path.expanduser(settings.GORC_FILE)
 INIT_COMMANDS_SECTION = 'init_commands'
-
-# The only root commands that are allowed to be executed. They will be filtered
-# out by filter_commands()
-ALLOWED_COMMANDS = (
-    'set', 'show', 'get', 'ping', 'traceroute', 'who', 'whoami', 'monitor',
-    'term', 'terminal',
-)
 
 
 # Exports
@@ -88,21 +81,27 @@ def read_config(filepath=GORC_PATH):
 
     raise RuntimeError('Something went crazy wrong with read_config()')
 
-def filter_commands(cmds):
+def filter_commands(cmds, allowed_commands=None):
     """
-    Filters out root commands that are not explicitly allowed by
-    ``ALLOWED_COMMANDS`` and returns the filtered list.
+    Filters root commands from ``cmds`` that are not explicitly allowed.
+
+    Allowed commands are defined using :setting:`GORC_ALLOWED_COMMANDS`.
 
     :param cmds:
         A list of commands that should be filtered
 
+    :param allowed_commands:
+        A list of commands that are allowed
+
     :returns:
-        filtered list of commands
+        Filtered list of commands
     """
+    if allowed_commands is None:
+        allowed_commands = settings.GORC_ALLOWED_COMMANDS
     ret = []
     for cmd in cmds:
         root = cmd.split()[0]
-        if root in ALLOWED_COMMANDS:
+        if root in allowed_commands:
             ret.append(cmd)
         else:
             log.msg('init_command not allowed: %r' % cmd, debug=True)
@@ -122,7 +121,7 @@ def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
         A parsed ConfigParser object
 
     :returns:
-        list of commands
+        List of commands
     """
     if config is None:
         log.msg('No config data, not sending init commands', debug=True)
