@@ -69,7 +69,11 @@ def has_ioslike_error(s):
 
 def has_netscaler_error(s):
     """Test whether a string seems to contain a NetScaler error."""
-    return s.startswith('ERROR:')
+    tests = (
+        s.startswith('ERROR: '),
+        '\nERROR: ' in s,
+    )
+    return any(tests)
 
 def is_awaiting_confirmation(prompt):
     """
