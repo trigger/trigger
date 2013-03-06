@@ -1051,7 +1051,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         """Do this when we receive data."""
         # Append to the data buffer
         self.data += bytes
-        log.msg('BYTES: %r' % bytes)
+        log.msg('[%s] BYTES: %r' % (self.device, bytes))
         #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
         #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes),
         #         len(self.data)))
@@ -1061,7 +1061,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         if not m:
             #log.msg('STATE: prompt match failure', debug=True)
             return None
-        log.msg('STATE: prompt %r' % m.group(), debug=True)
+        log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
 
         # Strip the prompt from the match result
         result = self.data[:m.start()]
@@ -1074,7 +1074,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # By default we're checking for IOS-like errors because most vendors
         # fall under this category.
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg('ERROR: %r' % result, debug=True)
+            log.msg('Command failed: %r on %s' % (result, self.device))
             self.factory.err = exceptions.CommandFailure(result)
             self.loseConnection()
             return None
@@ -1093,14 +1093,17 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         self.resetTimeout()
 
         if not self.initialized:
-            log.msg('Not initialized, sending startup commands', debug=True)
+            log.msg('Not initialized, sending startup commands to %s' %
+                    self.device)
             if self.startup_commands:
                 next_init = self.startup_commands.pop(0)
-                log.msg('Sending initialize command: %r' % next_init)
+                log.msg('Sending initialize command: %r to %s' % (next_init,
+                                                                  self.device))
                 self.write(next_init)
                 return None
             else:
-                log.msg('Successfully initialized for command execution')
+                log.msg('Successfully initialized for command execution on %s'
+                        % self.device)
                 self.initialized = True
 
         if self.incremental:
@@ -1109,7 +1112,8 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         try:
             next_command = self.commanditer.next()
         except StopIteration:
-            log.msg('CHANNEL: out of commands, closing...', debug=True)
+            log.msg('CHANNEL: out of commands, closing connection to %s...' %
+                    self.device)
             self.loseConnection()
             return None
 
@@ -1117,7 +1121,8 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             self.results.append(None)
             self._send_next()
         else:
-            log.msg('sending SSH command %r' % next_command, debug=True)
+            log.msg('Sending SSH command %r to %s' % (next_command,
+                                                      self.device))
             self.write(next_command + '\n')
 
     def loseConnection(self):
@@ -1125,7 +1130,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         Terminate the connection. Link this to the transport method of the same
         name.
         """
-        log.msg('Forcefully closing transport connection')
+        log.msg('Forcefully closing transport connection with %s' % self.device)
         self.conn.transport.loseConnection()
 
     def timeoutConnection(self):
@@ -1218,7 +1223,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         # By default we're checking for IOS-like errors because most vendors
         # fall under this category.
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg('ERROR: %r' % result, debug=True)
+            log.msg('Command failed: %r on %s' % (result, self.device))
             self.factory.err = exceptions.CommandFailure(result)
 
         # Honor the command_interval and then send the next command
@@ -1289,10 +1294,12 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
 
         try:
             next_command = self.commanditer.next()
-            log.msg('COMMAND: next command=%s' % next_command, debug=True)
+            log.msg('COMMAND: next command %s to %s' % (next_command,
+                                                        self.device))
 
         except StopIteration:
-            log.msg('CHANNEL: out of commands, closing...', debug=True)
+            log.msg('CHANNEL: out of commands, closing connection to %s...' %
+                    self.device)
             self.loseConnection()
             return None
 
@@ -1311,6 +1318,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         self.results.append(tag)
 
         if has_junoscript_error(tag) and not self.with_errors:
+            log.msg('Command failed: %r on %s' % (tag, self.device))
             self.factory.err = exceptions.JunoscriptCommandFailure(tag)
             self.loseConnection()
             return None
@@ -1343,6 +1351,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         if has_netscaler_error(self.data):
             err = self.data
             if not self.with_errors:
+                log.msg('Command failed: %r on %s' % (err, self.device))
                 self.factory.err = exceptions.NetscalerCommandFailure(err)
                 self.loseConnection()
                 return None
@@ -1354,7 +1363,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         if not m:
             #log.msg('STATE: prompt match failure', debug=True)
             return None
-        log.msg('STATE: prompt %r' % m.group(), debug=True)
+        log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
 
         result = self.data[:m.start()] # Strip ' Done\n' from results.
 
@@ -1619,7 +1628,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self.results.append(result)
 
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg('ERROR: %r' % result, debug=True)
+            log.msg('Command failed: %r on %s' % (result, self.device))
             self.factory.err = exceptions.IoslikeCommandFailure(result)
             self.loseConnection()
         else:

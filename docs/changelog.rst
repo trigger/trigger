@@ -14,6 +14,8 @@ Changelog
   when specified in a users' ``~/.gorc`` file into a new configuration setting
   :setting:`GORC_ALLOWED_COMMANDS`. The file location may now also be
   customized using :setting:`GORC_FILE`.
++ Enhanced logging within `~trigger.twister` to include the device name where
+  applicable and useful (such as in SSH channel debugging).
 
 .. _v1.3.0:
 
