@@ -137,7 +137,7 @@ def pty_connect(device, action, creds=None, display_banner=None,
 
     # SSH?
     if device.can_ssh_pty():
-        log.msg('SSH connection test PASSED')
+        log.msg('[%s] SSH connection test PASSED' % device)
         if hasattr(sys, 'ps1') or not sys.stderr.isatty() \
          or not sys.stdin.isatty() or not sys.stdout.isatty():
             # Shell not in interactive mode.
@@ -154,7 +154,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
 
     # or Telnet?
     else:
-        log.msg('SSH connection test FAILED, falling back to telnet')
+        log.msg('[%s] SSH connection test FAILED, falling back to telnet' %
+                device)
         factory = TriggerTelnetClientFactory(d, action, creds,
                                              init_commands=init_commands)
         log.msg('Trying telnet to %s' % device, debug=True)
@@ -812,7 +813,7 @@ class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
                               if meth not in self.authenticatedWith],
                              key=orderByPreference)
 
-        log.msg('can continue with: %s' % canContinue)
+        log.msg('Can continue with: %s' % canContinue)
         log.msg('Already tried: %s' % self.authenticatedWith, debug=True)
         return self._cbUserauthFailure(None, iter(canContinue))
 
@@ -895,11 +896,11 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
             return None
 
         def command_completed(result, chan):
-            log.msg('command completed: %r' % chan.command)
+            log.msg('Command completed: %r' % chan.command)
             return result
 
         def command_failed(failure, chan):
-            log.msg('command failed: %r' % chan.command)
+            log.msg('Command failed: %r' % chan.command)
             return failure
 
         def log_status(result):
@@ -1011,7 +1012,6 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 # etc.
         """
         self.factory = self.conn.transport.factory
-        log.msg('COMMANDS: %r' % self.factory.commands)
         self.commanditer = self.factory.commanditer
         self.results = self.factory.results
         self.with_errors = self.factory.with_errors
@@ -1020,10 +1020,12 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         self.prompt = self.factory.prompt
         self.setTimeout(self.factory.timeout)
         self.device = self.factory.device
+        log.msg('[%s] COMMANDS: %r' % (self.device, self.factory.commands))
         self.data = ''
         self.initialized = self.factory.initialized
         self.startup_commands = self.device.startup_commands
-        log.msg('My startup commands: %r' % self.startup_commands, debug=True)
+        log.msg('[%s] My startup commands: %r' % (self.device,
+                                                  self.startup_commands))
 
     def channelOpen(self, data):
         """Do this when the channel opens."""
@@ -1042,10 +1044,10 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
 
         If the shell never establishes, this won't be called.
         """
-        log.msg('Got channel request response!')
+        log.msg('[%s] Got channel request response!' % self.device)
 
     def _ebShellOpen(self, reason):
-        log.msg('Channel request failed: %s' % reason)
+        log.msg('[%s] Channel request failed: %s' % (self.device, reason))
 
     def dataReceived(self, bytes):
         """Do this when we receive data."""
@@ -1074,7 +1076,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # By default we're checking for IOS-like errors because most vendors
         # fall under this category.
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg('Command failed: %r on %s' % (result, self.device))
+            log.msg('[%s] Command failed: %r' % (self.device, result))
             self.factory.err = exceptions.CommandFailure(result)
             self.loseConnection()
             return None
@@ -1082,8 +1084,8 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # Honor the command_interval and then send the next command
         else:
             if self.command_interval:
-                log.msg('Waiting %s seconds before sending next command' %
-                        self.command_interval)
+                log.msg('[%s] Waiting %s seconds before sending next command' %
+                        (self.device, self.command_interval))
             reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
@@ -1093,17 +1095,17 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         self.resetTimeout()
 
         if not self.initialized:
-            log.msg('Not initialized, sending startup commands to %s' %
+            log.msg('[%s] Not initialized; sending startup commands' %
                     self.device)
             if self.startup_commands:
                 next_init = self.startup_commands.pop(0)
-                log.msg('Sending initialize command: %r to %s' % (next_init,
-                                                                  self.device))
+                log.msg('[%s] Sending initialize command: %r' % (self.device,
+                                                                 next_init))
                 self.write(next_init)
                 return None
             else:
-                log.msg('Successfully initialized for command execution on %s'
-                        % self.device)
+                log.msg('[%s] Successfully initialized for command execution' %
+                        self.device)
                 self.initialized = True
 
         if self.incremental:
@@ -1112,7 +1114,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         try:
             next_command = self.commanditer.next()
         except StopIteration:
-            log.msg('CHANNEL: out of commands, closing connection to %s...' %
+            log.msg('[%s] CHANNEL: out of commands, closing connection...' %
                     self.device)
             self.loseConnection()
             return None
@@ -1121,8 +1123,8 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             self.results.append(None)
             self._send_next()
         else:
-            log.msg('Sending SSH command %r to %s' % (next_command,
-                                                      self.device))
+            log.msg('[%s] Sending SSH command %r' % (self.device,
+                                                     next_command))
             self.write(next_command + '\n')
 
     def loseConnection(self):
@@ -1130,20 +1132,20 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         Terminate the connection. Link this to the transport method of the same
         name.
         """
-        log.msg('Forcefully closing transport connection with %s' % self.device)
+        log.msg('[%s] Forcefully closing transport connection' % self.device)
         self.conn.transport.loseConnection()
 
     def timeoutConnection(self):
         """
         Do this when the connection times out.
         """
-        log.msg('Timed out while sending commands to %s' % self.device)
+        log.msg('[%s] Timed out while sending commands' % self.device)
         self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
         self.loseConnection()
 
     def request_exit_status(self, data):
         status = struct.unpack('>L', data)[0]
-        log.msg('Exit status: %s' % status)
+        log.msg('[%s] Exit status: %s' % (self.device, status))
 
 class TriggerSSHGenericChannel(TriggerSSHChannelBase):
     """
@@ -1194,7 +1196,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     def channelOpen(self, data):
         """Do this when the channel opens."""
         self._setup_channelOpen()
-        log.msg('Channel was opened')
+        log.msg('[%s] Channel was opened' % self.device)
         d = self.conn.sendRequest(self, 'exec', common.NS(self.command),
                                   wantReply=True)
         d.addCallback(self._gotResponse)
@@ -1204,26 +1206,28 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         """
         If the shell never establishes, this won't be called.
         """
-        log.msg('CHANNEL %s: Exec finished.' % self.id)
+        log.msg('[%s] CHANNEL %s: Exec finished.' % (self.device, self.id))
         self.conn.sendEOF(self)
 
     def _ebShellOpen(self, reason):
-        log.msg('CHANNEL %s: Channel request failed: %s' % (reason, self.id))
+        log.msg('[%s] CHANNEL %s: Channel request failed: %s' % (self.device,
+                                                                 reason,
+                                                                 self.id))
 
     def dataReceived(self, bytes):
         self.data += bytes
         #log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
         #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
-        log.msg('BYTES RECV: %r' % bytes)
+        log.msg('[%s] BYTES RECV: %r' % (self.device, bytes))
 
     def eofReceived(self):
-        log.msg('CHANNEL %s: EOF received.' % self.id)
+        log.msg('[%s] CHANNEL %s: EOF received.' % (self.device, self.id))
         result = self.data
 
         # By default we're checking for IOS-like errors because most vendors
         # fall under this category.
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg('Command failed: %r on %s' % (result, self.device))
+            log.msg('[%s] Command failed: %r' % (self.device, result))
             self.factory.err = exceptions.CommandFailure(result)
 
         # Honor the command_interval and then send the next command
@@ -1234,30 +1238,31 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
 
     def send_next_command(self):
         """Send the next command in the stack stored on the connection"""
-        log.msg('CHANNEL %s sending next command!' % self.id)
+        log.msg('[%s] CHANNEL %s: sending next command!' % (self.device, self.id))
         self.conn.send_command()
 
     def closeReceived(self):
-        log.msg('CHANNEL %s: Close received.' % self.id)
+        log.msg('[%s] CHANNEL %s: Close received.' % (self.device, self.id))
         self.loseConnection()
 
     def loseConnection(self):
         """Default loseConnection"""
-        log.msg("LOSING CHANNEL CONNECTION")
+        log.msg("[%s] LOSING CHANNEL CONNECTION" % self.device)
         channel.SSHChannel.loseConnection(self)
 
     def closed(self):
-        log.msg('channel %s closed' % self.id)
-        log.msg('CONN CHANNELS: %s' % len(self.conn.channels))
+        log.msg('[%s] Channel %s closed' % (self.device, self.id))
+        log.msg('[%s] CONN CHANNELS: %s' % (self.device,
+                                            len(self.conn.channels)))
 
         # If we're out of channels, shut it down!
         if len(self.conn.transport.factory.results) == len(self.conn.commands):
-            log.msg('RESULTS MATCHES COMMANDS SENT.')
+            log.msg('[%s] RESULTS MATCHES COMMANDS SENT.' % self.device)
             self.conn.transport.loseConnection()
 
     def request_exit_status(self, data):
         exitStatus = int(struct.unpack('>L', data)[0])
-        log.msg('Exit status: %s' % exitStatus)
+        log.msg('[%s] Exit status: %s' % (self.device, exitStatus))
 
 class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
@@ -1282,7 +1287,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
 
     def dataReceived(self, data):
         """Do this when we receive data."""
-        #log.msg('BYTES: %r' % data, debug=True)
+        log.msg('[%s] BYTES: %r' % (self.device, data))
         self.xmltb.feed(data)
 
     def _send_next(self):
@@ -1294,11 +1299,11 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
 
         try:
             next_command = self.commanditer.next()
-            log.msg('COMMAND: next command %s to %s' % (next_command,
-                                                        self.device))
+            log.msg('[%s] COMMAND: next command %s' % (self.device,
+                                                       next_command))
 
         except StopIteration:
-            log.msg('CHANNEL: out of commands, closing connection to %s...' %
+            log.msg('[%s] CHANNEL: out of commands, closing connection...' %
                     self.device)
             self.loseConnection()
             return None
@@ -1318,7 +1323,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         self.results.append(tag)
 
         if has_junoscript_error(tag) and not self.with_errors:
-            log.msg('Command failed: %r on %s' % (tag, self.device))
+            log.msg('[%s] Command failed: %r' % (self.device, tag))
             self.factory.err = exceptions.JunoscriptCommandFailure(tag)
             self.loseConnection()
             return None
@@ -1327,8 +1332,8 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         # stack
         else:
             if self.command_interval:
-                log.msg('Waiting %s seconds before sending next command' %
-                        self.command_interval)
+                log.msg('[%s] Waiting %s seconds before sending next command' %
+                        (self.device, self.command_interval))
             reactor.callLater(self.command_interval, self._send_next)
 
 class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
@@ -1342,7 +1347,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         self.data += bytes
-        log.msg('BYTES: %r' % bytes, debug=True)
+        log.msg('[%s] BYTES: %r' % (self.device, bytes))
         #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
         #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
 
@@ -1351,7 +1356,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         if has_netscaler_error(self.data):
             err = self.data
             if not self.with_errors:
-                log.msg('Command failed: %r on %s' % (err, self.device))
+                log.msg('[%s] Command failed: %r' % (self.device, err))
                 self.factory.err = exceptions.NetscalerCommandFailure(err)
                 self.loseConnection()
                 return None
@@ -1371,8 +1376,8 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
             self.results.append(result)
 
         if self.command_interval:
-            log.msg('Waiting %s seconds before sending next command' %
-                    self.command_interval)
+            log.msg('[%s] Waiting %s seconds before sending next command' %
+                    (self.device, self.command_interval))
         reactor.callLater(self.command_interval, self._send_next)
 
 #==================
@@ -1436,19 +1441,22 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         Arista Networks hardware is the only vendor that needs this method
         right now.
         """
-        log.msg('TriggerTelnet.enableRemote option: %r' % option, debug=True)
+        #log.msg('[%s] enableRemote option: %r' % (self.host, option))
+        log.msg('enableRemote option: %r' % option)
         return True
 
     def login_state_machine(self, bytes):
         """Track user login state."""
         self.host = self.transport.connector.host
-        log.msg('CONNECTOR HOST: ', self.transport.connector.host)
+        log.msg('[%s] CONNECTOR HOST: %s' % (self.host,
+                                             self.transport.connector.host))
         self.data += bytes
-        log.msg('STATE:  got data %r' % self.data, debug=True)
+        log.msg('[%s] STATE:  got data %r' % (self.host, self.data))
         for (text, next_state) in self.waiting_for:
-            log.msg('STATE:  possible matches %r' % text, debug=True)
+            log.msg('[%s] STATE:  possible matches %r' % (self.host, text))
             if self.data.endswith(text):
-                log.msg('Entering state %r' % next_state.__name__, debug=True)
+                log.msg('[%s] Entering state %r' % (self.host,
+                                                    next_state.__name__))
                 self.resetTimeout()
                 next_state()
                 self.data = ''
@@ -1482,7 +1490,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         """
         self.setTimeout(None)
         data = self.data.lstrip('\n')
-        log.msg('state_logged_in, DATA: %r' % data, debug=True)
+        log.msg('[%s] state_logged_in, DATA: %r' % (self.host, data))
         del self.waiting_for, self.data
 
         # Run init_commands
@@ -1504,7 +1512,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         TACACS by default. Use 'aaa authentication login privilege-mode'.
         Also, why no space after the Password: prompt here?
         """
-        log.msg("ENABLE: Sending command: enable\n", debug=True)
+        log.msg("[%s] ENABLE: Sending command: enable" % self.host)
         self.write('enable\n')
         self.waiting_for = [
             ('Password: ', self.state_enable_pw), # Foundry
@@ -1524,7 +1532,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         if pw is None:
             pw = ''
 
-        log.msg('Sending password %s' % pw, debug=True)
+        #log.msg('Sending password %s' % pw)
         self.write(pw + '\n')
         self.waiting_for = [('>', self.state_enable),
                             ('#', self.state_logged_in),
@@ -1538,7 +1546,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         else:
             from trigger.netdevices import NetDevices
             pw = NetDevices().find(self.host).enablePW
-        log.msg('Sending password %s' % pw, debug=True)
+        #log.msg('Sending password %s' % pw)
         self.write(pw + '\n')
         self.waiting_for = [('#', self.state_logged_in),
                             ('\n% ', self.state_percent_error),
@@ -1560,7 +1568,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
 
     def timeoutConnection(self):
         """Do this when we timeout logging in."""
-        log.msg('Timed out while logging into %s' % self.host)
+        log.msg('[%s] Timed out while logging in' % self.host)
         self.factory.err = exceptions.LoginTimeout('Timed out while logging in')
         self.loseConnection()
 
@@ -1582,7 +1590,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.command_interval = command_interval
         self.prompt =  re.compile(IOSLIKE_PROMPT_PAT)
         self.startup_commands = self.device.startup_commands
-        log.msg('My initialize commands: %r' % self.startup_commands, debug=True)
+        log.msg('[%s] My initialize commands: %r' % (self.device,
+                                                     self.startup_commands))
         self.initialized = False
 
     def connectionMade(self):
@@ -1590,14 +1599,14 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.setTimeout(self.timeout)
         self.results = self.factory.results = []
         self.data = ''
-        log.msg('connectionMade, data: %r' % self.data, debug=True)
+        log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
 
         # Don't call _send_next, since we expect to see a prompt, which
         # will kick off initialization.
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
-        log.msg('BYTES: %r' % bytes, debug=True)
+        log.msg('[%s] BYTES: %r' % (self.device, bytes))
         self.data += bytes
 
         # See if the prompt matches, and if it doesn't, see if it is waiting
@@ -1607,7 +1616,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         if not m:
             # If the prompt confirms set the index to the matched bytes,
             if is_awaiting_confirmation(self.data):
-                log.msg('Got confirmation prompt: %r' % prompt)
+                log.msg('[%s] Got confirmation prompt: %r' % (self.device,
+                                                              self.data))
                 prompt_idx = self.data.find(bytes)
             else:
                 return None
@@ -1620,21 +1630,21 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # since the telnet session is in WONT ECHO.  This is confirmed with
         # a packet trace, and running self.transport.dont(ECHO) from
         # connectionMade() returns an AlreadyDisabled error.  What's up?
-        log.msg('IoslikeSendExpect.dataReceived result BEFORE: %r' % result, debug=True)
+        log.msg('[%s] result BEFORE: %r' % (self.device, result))
         result = result[result.find('\n')+1:]
-        log.msg('IoslikeSendExpect.dataReceived result AFTER: %r' % result, debug=True)
+        log.msg('[%s] result AFTER: %r' % (self.device, result))
 
         if self.initialized:
             self.results.append(result)
 
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg('Command failed: %r on %s' % (result, self.device))
+            log.msg('[%s] Command failed: %r' % (self.device, result))
             self.factory.err = exceptions.IoslikeCommandFailure(result)
             self.loseConnection()
         else:
             if self.command_interval:
-                log.msg('Waiting %s seconds before sending next command' %
-                        self.command_interval)
+                log.msg('[%s] Waiting %s seconds before sending next command' %
+                        (self.device, self.command_interval))
             reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
@@ -1643,14 +1653,17 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.resetTimeout()
 
         if not self.initialized:
-            log.msg('Not initialized, sending startup commands', debug=True)
+            log.msg('[%s] Not initialized, sending startup commands' %
+                    self.device)
             if self.startup_commands:
                 next_init = self.startup_commands.pop(0)
-                log.msg('Sending initialize command: %r' % next_init)
+                log.msg('[%s] Sending initialize command: %r' % (self.device,
+                                                                 next_init))
                 self.write(next_init)
                 return None
             else:
-                log.msg('Successfully initialized for command execution')
+                log.msg('[%s] Successfully initialized for command execution' %
+                        self.device)
                 self.initialized = True
 
         if self.incremental:
@@ -1659,7 +1672,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         try:
             next_command = self.commanditer.next()
         except StopIteration:
-            log.msg('No more commands to send, disconnecting...', debug=True)
+            log.msg('[%s] No more commands to send, disconnecting...' %
+                    self.device)
             self.loseConnection()
             return None
 
@@ -1667,11 +1681,11 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self.results.append(None)
             self._send_next()
         else:
-            log.msg('Sending command %r to %s' % (next_command, self.device), debug=True)
+            log.msg('[%s] Sending command %r' % (self.device, next_command))
             self.write(next_command + '\n')
 
     def timeoutConnection(self):
         """Do this when we timeout."""
-        log.msg('Timed out while sending commands to %s' % self.device)
+        log.msg('[%s] Timed out while sending commands' % self.device)
         self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
         self.loseConnection()
