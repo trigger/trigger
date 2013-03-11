@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.0'
+__version__ = '2.1'
 
 # Imports
 import copy
@@ -271,7 +271,7 @@ class NetDevice(object):
         """
         RULES = (
             self.vendor == 'aruba',
-            self.vendor == 'brocade' and self.is_switch(), # Brocade ADX/VDX
+            self.is_brocade_vdx(),
         )
         return any(RULES)
 
@@ -281,24 +281,23 @@ class NetDevice(object):
         disable pagination.
         """
         def disable_paging_brocade():
-            """
-            Brocade MLX routers and VDX switches require different commands to
-            disable paging. Yay complexity!
-            """
-            if self.is_switch():
+            """Brocade commands differ by platform."""
+            if self.is_brocade_vdx():
                 return 'terminal length 0\n'
-            elif self.is_router():
+            else:
                 return 'skip-page-display\n'
-            return None
 
         # Commands used to disable paging.
+        default = 'terminal length 0\n'
         paging_map = {
-            'arista': 'terminal length 0\n',
+            'a10': default,
+            'arista': default,
             'aruba': 'no paging\n',
-            'cisco': 'terminal length 0\n',
-            'brocade': disable_paging_brocade(),
+            'cisco': default,
+            'brocade': disable_paging_brocade(), # See comments above
             'dell': 'terminal datadump\n',
             'foundry': 'skip-page-display\n',
+            #'juniper': 'set cli screen-length 0\n',
         }
 
         cmd = paging_map.get(self.vendor.name)
@@ -324,7 +323,7 @@ class NetDevice(object):
         """
         Return proper 'write memory' command for IOS-like devices.
         """
-        if self.vendor == 'brocade' and self.is_switch():
+        if self.is_brocade_vdx():
             return ['copy running-config startup-config', 'y']
         else:
             return ['write memory']
@@ -452,6 +451,25 @@ class NetDevice(object):
         Am I an IOS-like device (as determined by :settings:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
+
+    def is_brocade_vdx(self):
+        """
+        Am I a Brocade VDX switch?
+
+        This is used to account for the disparity between the Brocade FCX
+        switches (which behave like Foundry devices) and the Brocade VDX
+        switches (which behave differently from classic Foundry devices).
+        """
+        if hasattr(self, '_is_brocade_vdx'):
+            return self._is_brocade_vdx
+
+        if not (self.vendor == 'brocade' and self.is_switch()):
+            self._is_brocade_vdx = False
+            return False
+
+        if self.make is not None:
+            self._is_brocade_vdx = 'vdx' in self.make.lower()
+        return self._is_brocade_vdx
 
     def _ssh_enabled(self, disabled_mapping):
         """Check whether vendor/type is enabled against the given mapping."""
