@@ -264,6 +264,9 @@ class NetDevice(object):
         self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
                                                      settings.FALLBACK_TYPE)
 
+    def _set_prompt_pattern(self):
+        pass
+
     def _set_requires_async_pty(self):
         """
         Set whether a device requires an async pty (see:
@@ -283,26 +286,27 @@ class NetDevice(object):
         def disable_paging_brocade():
             """Brocade commands differ by platform."""
             if self.is_brocade_vdx():
-                return 'terminal length 0\n'
+                return ['terminal length 0\n']
             else:
-                return 'skip-page-display\n'
+                return ['skip-page-display\n']
 
         # Commands used to disable paging.
-        default = 'terminal length 0\n'
+        default = ['terminal length 0\n']
         paging_map = {
             'a10': default,
             'arista': default,
-            'aruba': 'no paging\n',
+            'aruba': ['no paging\n'],
             'cisco': default,
             'brocade': disable_paging_brocade(), # See comments above
-            'dell': 'terminal datadump\n',
-            'foundry': 'skip-page-display\n',
-            #'juniper': 'set cli screen-length 0\n',
+            'dell': ['terminal datadump\n'],
+            'foundry': ['skip-page-display\n'],
+            #'juniper': ['set cli screen-length 0\n'],
+            'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
         }
 
-        cmd = paging_map.get(self.vendor.name)
-        if cmd is not None:
-            return [cmd] # This must be a list
+        cmds = paging_map.get(self.vendor.name)
+        if cmds is not None:
+            return cmds
 
         return []
 
@@ -316,6 +320,8 @@ class NetDevice(object):
             return self._juniper_commit()
         elif self.is_netscaler():
             return ['save config']
+        elif self.vendor == 'paloalto':
+            return ['commit']
         else:
             return []
 
