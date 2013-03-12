@@ -39,23 +39,6 @@ from trigger.utils import network, cli
 
 # Constants
 CONTINUE_PROMPTS = ['continue?', 'proceed?', '(y/n):', '[y/n]:']
-DEFAULT_PROMPT_PAT = r'\S+#' # Will match most hardware
-ARUBA_PROMPT_PAT = r'\(\S+\)(?: \(\S+\))?\s?#'
-IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
-JUNIPER_PROMPT_PAT = r'\S+\@\S+(?:\>|#)\s'
-NETSCALER_PROMPT_PAT = '\sDone\n$' # ' Done \n' only
-PALOALTO_PROMPT_PAT = r'\S+(?:\>|#)\s?'
-SCREENOS_PROMPT_PAT = r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$'
-
-PROMPT_PATTERNS = {
-    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
-    'default': r'\S+#', # Will match most hardware
-    'ioslike': r'\S+(\(config(-[a-z:1-9]+)?\))?#',
-    'juniper': r'\S+\@\S+(?:\>|#)\s',
-    'netscaler': r'\sDone\n$',
-    'paloalto': r'\r\n\S+(?:\>|#)\s?',
-    'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
-}
 
 
 # Functions
@@ -389,7 +372,7 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
     if channel_class is None:
         channel_class = TriggerSSHGenericChannel
     if prompt_pattern is None:
-        prompt_pattern = DEFAULT_PROMPT_PAT
+        prompt_pattern = device.vendor.prompt_pattern
     if connection_class is None:
         connection_class = TriggerSSHConnection
 
@@ -435,7 +418,6 @@ def execute_junoscript(device, commands, creds=None, incremental=None,
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-
     assert device.vendor == 'juniper'
 
     channel_class = TriggerSSHJunoscriptChannel
@@ -511,7 +493,7 @@ def execute_async_pty_ssh(device, commands, creds=None, incremental=None,
     channel_class = TriggerSSHAsyncPtyChannel
     method = 'Async PTY'
     if prompt_pattern is None:
-        prompt_pattern = IOSLIKE_PROMPT_PAT
+        prompt_pattern = device.vendor.prompt_pattern
 
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
@@ -528,27 +510,16 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
     """
     assert device.is_ioslike()
 
-    channel_class = TriggerSSHGenericChannel
-    prompt_pattern = IOSLIKE_PROMPT_PAT
-    method = 'IOS-like'
-
     # Test if device requires shell + pty-req
     if device.requires_async_pty:
-        channel_class = TriggerSSHAsyncPtyChannel
-        method = 'Async PTY'
-
-    # Aruba requires its own prompt pattern
-    if device.vendor == 'aruba':
-        prompt_pattern = ARUBA_PROMPT_PAT
-
-    # Hackery to determine the right "IOS-like" SSH function
-    if device.vendor == 'arista':
         return execute_async_pty_ssh(device, commands, creds, incremental,
                                      with_errors, timeout, command_interval)
+    # Or fallback to generic
     else:
+        method = 'IOS-like'
         return execute_generic_ssh(device, commands, creds, incremental,
                                    with_errors, timeout, command_interval,
-                                   channel_class, prompt_pattern, method)
+                                   method=method)
 
 def execute_netscreen(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -568,11 +539,10 @@ def execute_netscreen(device, commands, creds=None, incremental=None,
         creds = tacacsrc.get_device_password(device.nodeName)
 
     channel_class = TriggerSSHGenericChannel
-    prompt_pattern = SCREENOS_PROMPT_PAT
     method = 'NetScreen'
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
-                               channel_class, prompt_pattern, method)
+                               channel_class, method=method)
 
 def execute_netscaler(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -586,11 +556,10 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
     assert device.is_netscaler()
 
     channel_class = TriggerSSHNetscalerChannel
-    prompt_pattern = NETSCALER_PROMPT_PAT
     method = 'NetScaler'
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
-                               channel_class, prompt_pattern, method)
+                               channel_class, method=method)
 
 
 # Classes
@@ -671,7 +640,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         if connection_class is None:
             connection_class = TriggerSSHConnection
         if prompt_pattern is None:
-            prompt_pattern = DEFAULT_PROMPT_PAT
+            prompt_pattern = settings.DEFAULT_PROMPT_PAT
 
         self.protocol = TriggerSSHTransport
         self.display_banner = None
@@ -1109,9 +1078,9 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         if self.initialized:
             self.results.append(result)
 
-        # By default we're checking for IOS-like errors because most vendors
-        # fall under this category.
-        if has_ioslike_error(result) or has_juniper_error(result) and not self.with_errors:
+        # By default we're checking for IOS-like or Juniper errors because most
+        # vendors # fall under this category.
+        if (has_ioslike_error(result) or has_juniper_error(result)) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))
             self.factory.err = exceptions.CommandFailure(result)
             self.loseConnection()
@@ -1624,7 +1593,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.with_errors = with_errors
         self.timeout = timeout
         self.command_interval = command_interval
-        self.prompt =  re.compile(IOSLIKE_PROMPT_PAT)
+        self.prompt =  re.compile(settings.IOSLIKE_PROMPT_PAT)
         self.startup_commands = self.device.startup_commands
         log.msg('[%s] My initialize commands: %r' % (self.device,
                                                      self.startup_commands))

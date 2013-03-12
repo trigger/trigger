@@ -53,7 +53,8 @@ SUPPORTED_VENDORS = (
     'dell',
     'foundry',
     'juniper',
-    'netscreen'
+    'netscreen',
+    'paloalto',
 )
 VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 
@@ -87,6 +88,7 @@ SUPPORTED_PLATFORMS = {
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
+    'paloalto': ['FIREWALL'],
 }
 
 # The tuple of support device types
@@ -105,6 +107,7 @@ DEFAULT_TYPES = {
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
     'netscreen': 'FIREWALL',
+    'paloalto': 'FIREWALL',
 }
 
 # When a vendor is not explicitly defined within `DEFAULT_TYPES`, fallback to
@@ -224,6 +227,27 @@ JUNIPER_FULL_COMMIT_FIELDS = {
     'deviceType': 'SWITCH',
     'make': 'EX4200',
 }
+
+#===============================
+# Prompt Patterns
+#===============================
+# Specially-defined, per-vendor prompt patterns. If a vendor isn't defined her,
+# try to use IOSLIKE_PROMPT_PAT or fallback to DEFAULT_PROMPT_PAT.
+PROMPT_PATTERNS = {
+    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
+    'citrix': r'\sDone\n$',
+    'juniper': r'\S+\@\S+(?:\>|#)\s$',
+    'paloalto': r'\r\n\S+(?:\>|#)\s?',
+    'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
+}
+
+# When a pattern is not explicitly defined for a vendor, this is what we'll try
+# next (since most vendors are in fact IOS-like)
+IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
+
+# Generic prompt to match most vendors. It assumes that you'll be greeted with
+# a "#" prompt.
+DEFAULT_PROMPT_PAT = r'\S+#'
 
 #===============================
 # Bounce Windows/Change Mgmt

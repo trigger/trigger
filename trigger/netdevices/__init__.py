@@ -264,16 +264,13 @@ class NetDevice(object):
         self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
                                                      settings.FALLBACK_TYPE)
 
-    def _set_prompt_pattern(self):
-        pass
-
     def _set_requires_async_pty(self):
         """
         Set whether a device requires an async pty (see:
             `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor == 'aruba',
+            self.vendor in ('a10', 'arista', 'aruba'),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -541,7 +538,6 @@ class NetDevice(object):
         print '\tLast Updated:     ', dev.lastUpdate
         print
 
-
 class Vendor(object):
     """
     Map a manufacturer name to Trigger's canonical name.
@@ -566,6 +562,7 @@ class Vendor(object):
         self.manufacturer = manufacturer
         self.name = self.determine_vendor(manufacturer)
         self.title = self.name.title()
+        self.prompt_pattern = self._get_prompt_pattern(self.name)
 
     def determine_vendor(self, manufacturer):
         """Try to turn the provided vendor name into the cname."""
@@ -580,11 +577,27 @@ class Vendor(object):
                     # Safe fallback to first word
                     vendor = mparts[0]
 
-            # This breaks compatibility with officially unsupported devices
-            #else:
-            #    raise exceptions.UnsupportedVendor('No mapping found for %r in `settings.VENDOR_MAP`' % manufacturer)
-
         return vendor
+
+    def _get_prompt_pattern(self, vendor, prompt_patterns=None):
+        """
+        Map the vendor name to the appropriate ``prompt_pattern`` defined in
+        :setting:`PROMPT_PATTERNS`.
+        """
+        if prompt_patterns is None:
+            prompt_patterns = settings.PROMPT_PATTERNS
+
+        # Try to get it by vendor
+        pat = prompt_patterns.get(vendor)
+        if pat is not None:
+            return pat
+
+        # Try to map it by IOS-like vendors...
+        if vendor in settings.IOSLIKE_VENDORS:
+            return settings.IOSLIKE_PROMPT_PAT
+
+        # Or fall back to the default
+        return settings.DEFAULT_PROMPT_PAT
 
     @property
     def normalized(self):
