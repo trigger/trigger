@@ -42,8 +42,20 @@ CONTINUE_PROMPTS = ['continue?', 'proceed?', '(y/n):', '[y/n]:']
 DEFAULT_PROMPT_PAT = r'\S+#' # Will match most hardware
 ARUBA_PROMPT_PAT = r'\(\S+\)(?: \(\S+\))?\s?#'
 IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
-SCREENOS_PROMPT_PAT = '(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$'
+JUNIPER_PROMPT_PAT = r'\S+\@\S+(?:\>|#)\s'
 NETSCALER_PROMPT_PAT = '\sDone\n$' # ' Done \n' only
+PALOALTO_PROMPT_PAT = r'\S+(?:\>|#)\s?'
+SCREENOS_PROMPT_PAT = r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$'
+
+PROMPT_PATTERNS = {
+    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
+    'default': r'\S+#', # Will match most hardware
+    'ioslike': r'\S+(\(config(-[a-z:1-9]+)?\))?#',
+    'juniper': r'\S+\@\S+(?:\>|#)\s',
+    'netscaler': r'\sDone\n$',
+    'paloalto': r'\r\n\S+(?:\>|#)\s?',
+    'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
+}
 
 
 # Functions
@@ -56,15 +68,24 @@ def has_junoscript_error(tag):
         return True
     return False
 
+def has_juniper_error(s):
+    """Test whether a string seems to contain an Juniper error."""
+    tests = (
+        'unknown command.' in s,
+        'syntax error, ' in s,
+        'invalid value.' in s,
+        'missing argument.' in s,
+    )
+    return any(tests)
+
 def has_ioslike_error(s):
     """Test whether a string seems to contain an IOS-like error."""
     tests = (
         s.startswith('%'),                 # Cisco, Arista
-        '\n%' in s,                        # Aruba, Foundry
+        '\n%' in s,                        # A10, Aruba, Foundry
         'syntax error: ' in s,             # Brocade VDX
         s.startswith('Invalid input -> '), # Brocade MLX
     )
-
     return any(tests)
 
 def has_netscaler_error(s):
@@ -478,14 +499,29 @@ def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
     reactor.connectTCP(device.nodeName, 23, factory)
     return d
 
+def execute_async_pty_ssh(device, commands, creds=None, incremental=None,
+                          with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
+                          command_interval=0, prompt_pattern=None):
+    """
+    Execute via SSH for a device that requires shell + pty-req.
+
+    Please see `~trigger.twister.execute` for a full description of the
+    arguments and how this works.
+    """
+    channel_class = TriggerSSHAsyncPtyChannel
+    method = 'Async PTY'
+    if prompt_pattern is None:
+        prompt_pattern = IOSLIKE_PROMPT_PAT
+
+    return execute_generic_ssh(device, commands, creds, incremental,
+                               with_errors, timeout, command_interval,
+                               channel_class, prompt_pattern, method)
+
 def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
                         with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                         command_interval=0):
     """
     Execute via SSH for IOS-like devices with some exceptions.
-
-    Currently confirmed for A10, Brocade MLX, and Cisco only. For all other
-    IOS-like vendors will use telnet for now. :(
 
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
@@ -507,8 +543,8 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
 
     # Hackery to determine the right "IOS-like" SSH function
     if device.vendor == 'arista':
-        return execute_exec_ssh(device, commands, creds, incremental,
-                                with_errors, timeout, command_interval)
+        return execute_async_pty_ssh(device, commands, creds, incremental,
+                                     with_errors, timeout, command_interval)
     else:
         return execute_generic_ssh(device, commands, creds, incremental,
                                    with_errors, timeout, command_interval,
@@ -1075,7 +1111,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
 
         # By default we're checking for IOS-like errors because most vendors
         # fall under this category.
-        if has_ioslike_error(result) and not self.with_errors:
+        if has_ioslike_error(result) or has_juniper_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))
             self.factory.err = exceptions.CommandFailure(result)
             self.loseConnection()
@@ -1357,7 +1393,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
             err = self.data
             if not self.with_errors:
                 log.msg('[%s] Command failed: %r' % (self.device, err))
-                self.factory.err = exceptions.NetscalerCommandFailure(err)
+                self.factory.err = exceptions.CommandFailure(err)
                 self.loseConnection()
                 return None
             else:
