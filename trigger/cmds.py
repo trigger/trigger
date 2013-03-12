@@ -16,7 +16,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.'
-__version__ = '2.1'
+__version__ = '2.2'
 
 import datetime
 import itertools
@@ -98,6 +98,10 @@ class Commando(object):
         they are not customized in a subclass, otherwise an exception is raised
         when a method is called that has not been explicitly defined.
 
+    :param with_errors:
+        (Optional) Return exceptions as results instead of raising them. The
+        default is to always return them.
+
     :param force_cli:
         (Optional) Juniper only. If set, sends commands using CLI instead of
         Junoscript.
@@ -126,7 +130,7 @@ class Commando(object):
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
-                 allow_fallback=True, force_cli=False):
+                 allow_fallback=True, with_errors=True, force_cli=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -139,6 +143,7 @@ class Commando(object):
         self.timeout = timeout if timeout != self.timeout else self.timeout
         self.nd = NetDevices(production_only=production_only)
         self.allow_fallback = allow_fallback
+        self.with_errors = with_errors
         self.force_cli = force_cli
         self.curr_conns = 0
         self.jobs = []
@@ -252,7 +257,8 @@ class Commando(object):
             commands = self.generate(device)
             async = device.execute(commands, creds=self.creds,
                                    incremental=self.incremental,
-                                   timeout=self.timeout, with_errors=True,
+                                   timeout=self.timeout,
+                                   with_errors=self.with_errors,
                                    force_cli=self.force_cli)
 
             # Add the parser callback for great justice!
