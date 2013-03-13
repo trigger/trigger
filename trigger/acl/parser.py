@@ -894,6 +894,7 @@ class Term(object):
         self.inactive = inactive
         self.isglobal = isglobal
         self.extra = extra
+        self.makediscard = False # set to True if 'make discard' is used
         if match is None:
             self.match = Matches()
         else:
@@ -997,7 +998,12 @@ class Term(object):
             out += [' '*8 + x for x in self.match.output_junos()]
             out.append('    }')
         out.append('    then {')
-        out.append('        %s;' % ' '.join(self.action))
+        acttext = '        %s;' % ' '.join(self.action)
+        # add a comment if 'make discard' is in use
+        if self.makediscard:
+            acttext += (" /* REALLY AN ACCEPT, MODIFIED BY"
+                        " 'make discard' ABOVE */")
+        out.append(acttext)
         out += [' '*8 + x for x in self.modifiers.output_junos()]
         out.append('    }')
         out.append('}')
