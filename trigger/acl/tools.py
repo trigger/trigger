@@ -119,7 +119,7 @@ def check_access(terms_to_check, new_term, quiet=True, format='junos',
         for comment in t.comments:
             if 'trigger: make discard' in comment:
                 t.setaction('discard') #.action[0] = 'discard'
-                t.extra = ' altered from accept for display purposes '
+                t.makediscard = True # set 'make discard' flag
 
         for k,v in t.match.iteritems():
 
@@ -203,6 +203,7 @@ def create_access(terms_to_check, new_term):
 
     return ret
 
+# note, following code is -not currently used-
 def insert_term_into_acl(new_term, aclobj, debug=False):
     """
     Return a new ACL object with the new_term added in the proper place based

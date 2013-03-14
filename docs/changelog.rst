@@ -17,6 +17,10 @@ Changelog
 + Enhanced logging within `~trigger.twister` to include the device name where
   applicable and useful (such as in SSH channel debugging).
 
++ Changed 'make discard' output to put an ugly comment directly after
+  the 'discard' action.  Internal feedback was that an additional
+  comment (as introduced in 1.2.1) was confusing.
+
 .. _v1.3.0:
 
 1.3.0
