@@ -1567,13 +1567,13 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     def state_raise_error(self):
         """Do this when we get a login failure."""
         self.waiting_for = []
-        log.msg('Failed logging into %s' % self.host)
+        log.msg('Failed logging into %s' % self.transport.connector.host)
         self.factory.err = exceptions.LoginFailure('%r' % self.data.rstrip())
         self.loseConnection()
 
     def timeoutConnection(self):
         """Do this when we timeout logging in."""
-        log.msg('[%s] Timed out while logging in' % self.host)
+        log.msg('[%s] Timed out while logging in' % self.transport.connector.host)
         self.factory.err = exceptions.LoginTimeout('Timed out while logging in')
         self.loseConnection()
 
