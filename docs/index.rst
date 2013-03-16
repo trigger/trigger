@@ -7,7 +7,7 @@ Trigger
 What is Trigger?
 ================
 
-Trigger is a robust network engineering toolkit written in Python that was
+Trigger is a robust network automation toolkit written in Python that was
 designed for interfacing with network devices and managing network
 configuration and security policy. It increases the speed and efficiency of
 managing large-scale networks while reducing the risk of human error.

@@ -1,14 +1,14 @@
 What is Trigger?
 ================
 
-Trigger is a robust network engineering toolkit written in Python that was
+Trigger is a robust network automation toolkit written in Python that was
 designed for interfacing with network devices and managing network
 configuration and security policy. It increases the speed and efficiency of
 managing large-scale networks while reducing the risk of human error.
 
 Started by the AOL Network Security team in 2006, Trigger was originally
 designed for security policy management on firewalls, routers, and switches. It
-has since been expanded to be a full-featured network engineering toolkit.
+has since been expanded to be a full-featured network automation toolkit.
 
 With the high number of network devices on the AOL network this application is
 invaluable to performance and reliability. We hope you'll find it useful on
