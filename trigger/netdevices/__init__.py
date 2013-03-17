@@ -138,8 +138,7 @@ def device_match(name, production_only=True):
 
             print "%d possible matches found for '%s':" % (len(matches), name)
 
-            matches.sort()
-            for num, shortname in enumerate(matches):
+            for num, shortname in enumerate(sorted(matches)):
                 print ' [%s] %s' % (str(num+1).rjust(2), shortname)
             print ' [ 0] Exit\n'
 
