@@ -34,7 +34,10 @@ nosetests.xml
 .pydevproject
 
 # Vim temp files
-.*.swp
+.*.sw?
+
+# Twisted stuff
+dropin.cache
 
 # Mac OS X index files
 .DS_Store

@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-# Copyright, 2005-2012 AOL Inc.
+# Copyright, 2005-2013 AOL Inc.
 
-try:
-    from setuptools import setup, find_packages, Command
-except ImportError:
-    raise SystemExit('We require setuptools. Sorry! Install it and try again: http://pypi.python.org/pypi/setuptools')
+from setuptools import setup, find_packages, Command
 import glob
 import os
 import sys
@@ -44,7 +41,7 @@ class TestCommand(Command):
     def run(self):
         # Set up environment to point to mockup files.
         test_path = os.path.join(os.getcwd(), 'tests', 'data')
-        os.environ['NETDEVICESXML_FILE'] = \
+        os.environ['NETDEVICES_SOURCE'] = \
             os.path.join(test_path, 'netdevices.xml')
         os.environ['AUTOACL_FILE'] = os.path.join(test_path, 'autoacl.py')
         os.environ['TACACSRC'] = os.path.join(test_path, 'tacacsrc')
@@ -71,7 +68,8 @@ setup(
     version=__version__,
     author='Jathan McCollum',
     author_email='jathanism@aol.com',
-    packages=find_packages(exclude='tests'),
+    packages=find_packages(exclude='tests') + ['twisted.plugins'],
+    namespace_packages=['twisted'],
     license='BSD',
     url='https://github.com/aol/trigger',
     description=desc,
@@ -149,3 +147,17 @@ setup(
         'clean': CleanCommand
     }
 )
+
+def _refresh_twisted_plugins():
+    """
+    Make Twisted regenerate the dropin.cache, if possible.  This is necessary
+    because in a site-wide install, dropin.cache cannot be rewritten by normal
+    users.
+    """
+    try:
+        from twisted.plugin import IPlugin, getPlugins
+    except ImportError:
+        pass
+    else:
+        list(getPlugins(IPlugin))
+_refresh_twisted_plugins()
