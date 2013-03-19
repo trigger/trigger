@@ -1,4 +1,13 @@
-# server_plugin.py - Twisted twistd server plugin 
+# -*- coding: utf-8 -*-
+
+"""
+# trigger_xmlrpc.py - Twisted twistd server plugin for Trigger
+"""
+
+__author__ = 'Jathan McCollum'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathan.mccollum@teamaol.com'
+__copyright__ = 'Copyright 2012-2013, AOL Inc.'
 
 from zope.interface import implements
 from twisted.application.internet import TCPServer, SSLServer
