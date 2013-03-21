@@ -152,7 +152,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         if isinstance(failure.value, Exception):
             msg = """%s: %s""" % (failure.type.__name__, failure.value.args[0])
             return xmlrpc.Fault(400, msg)
-        return super(CommandoXMLRPCServer, self)._ebRender(self, failure)
+        return super(TriggerXMLRPCServer, self)._ebRender(self, failure)
 
 # XXX (jathan): Note that this is out-of-sync w/ the twistd plugin and is
 # probably broken.
