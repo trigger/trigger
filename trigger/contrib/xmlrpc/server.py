@@ -107,7 +107,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
     def listProcedures(self):
         """Return a list of the registered procedures"""
-        return list(self._procedure_map)
+        return self._procedure_map.keys()
 
     def xmlrpc_add_handler(self, pickled_handler):
         """
