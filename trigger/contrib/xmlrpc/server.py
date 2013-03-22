@@ -19,6 +19,10 @@ from twisted.internet import defer
 from twisted.python import log
 from twisted.web import xmlrpc, server
 
+## Import Task Class
+## This will be replaced later with the plugin framework
+from trigger.contrib.config_device import ConfigDevice
+
 # Enable Deferred debuging if ``DEBUG`` is set.
 if os.getenv('DEBUG'):
     defer.setDebugging(True)
@@ -107,7 +111,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
     def listProcedures(self):
         """Return a list of the registered procedures"""
-        return list(self._procedure_map)
+        return self._procedure_map.keys()
 
     def xmlrpc_add_handler(self, pickled_handler):
         """
@@ -125,6 +129,20 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
+
+    ## Define xmlrpc handler.
+    ## This will soon be replaced with plugin framework
+    def xmlrpc_config_device(self, creds, devices, commands=None, files=None):
+        """Send configuration to files"""
+        log.msg('Loading arbitrary config on %r' % devices)
+        if commands == None:
+            commands = []
+        if files == None:
+            files = []
+        c = ConfigDevice(devices=devices, creds=creds, commands=commands, files=files)
+        d = c.run()
+        log.msg('Deferred: %r' % d)
+        return d
 
     def xmlrpc_execute_commands(self, creds, devices, commands, force_cli=False):
         """Execute ``commands`` on ``devices``"""
@@ -152,7 +170,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         if isinstance(failure.value, Exception):
             msg = """%s: %s""" % (failure.type.__name__, failure.value.args[0])
             return xmlrpc.Fault(400, msg)
-        return super(CommandoXMLRPCServer, self)._ebRender(self, failure)
+        return super(TriggerXMLRPCServer, self)._ebRender(self, failure)
 
 # XXX (jathan): Note that this is out-of-sync w/ the twistd plugin and is
 # probably broken.
