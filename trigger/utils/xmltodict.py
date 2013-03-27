@@ -252,18 +252,6 @@ def unparse(item, output=None, encoding='utf-8', **kwargs):
             pass
         return value
 
-## mikebianc: added strip_juniper_namespace to xmltodict module
-## so it's all contained.
-##   Eventually, we should move all of this to a better place
-def strip_juniper_namespace(path, key, value):
-    marr = re.match(r"(ns1:|ns0:)",key)
-    if marr:
-        ns = marr.group(0)
-        key = key.replace(ns,'')
-    #print key
-    return key,value
-
-
 if __name__ == '__main__': # pragma: no cover
     import sys
     import marshal

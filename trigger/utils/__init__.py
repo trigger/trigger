@@ -37,3 +37,12 @@ def crypt_md5(passwd):
             crypted = md5_crypt.encrypt(passwd)
 
     return crypted
+
+def strip_juniper_namespace(path, key, value):
+    marr = re.match(r"(ns1:|ns0:)",key)
+    if marr:
+        ns = marr.group(0)
+        key = key.replace(ns,'')
+    #print key
+    return key,value
+

@@ -7,10 +7,8 @@ import xml.etree.ElementTree as ET
 #from twisted.python import failure
 from xml.etree.cElementTree import ElementTree, Element, SubElement
 from trigger.conf import settings
-## xmltodict is required to parse the juniper XML output
-## but it can be installed anywhere.  Including it in this package
-## just to make sure it's there.
-from trigger.contrib import xmltodict
+## xmltodict is required to parse the juniper XML output. btw, XML must die.
+from trigger.utils import xmltodict, strip_juniper_namespace
 
 import logging
 log=logging.getLogger()
@@ -124,7 +122,7 @@ class ConfigDevice(CommandoApplication):
         for xml in data:
             jdata = xmltodict.parse(
                 ET.tostring(xml),
-                postprocessor=xmltodict.strip_juniper_namespace,
+                postprocessor=strip_juniper_namespace,
                 xml_attribs=False
             )
             ##
