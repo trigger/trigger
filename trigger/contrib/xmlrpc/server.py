@@ -12,15 +12,15 @@ See ``examples/xmlrpc_server`` in the Trigger source distribution for a simple
 usage example.
 """
 
-import cPickle as pickle
 import os
 import types
+import importlib
+
 from twisted.internet import defer
 from twisted.python import log
 from twisted.web import xmlrpc, server
 
-## Import Task Class
-## This will be replaced later with the plugin framework
+## Import classes for built-in tasks
 from trigger.contrib.config_device import ConfigDevice
 
 # Enable Deferred debuging if ``DEBUG`` is set.
@@ -113,19 +113,18 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         """Return a list of the registered procedures"""
         return self._procedure_map.keys()
 
-    def xmlrpc_add_handler(self, pickled_handler):
+    def xmlrpc_add_handler(self, mod_name, task_name, class_name):
         """
         Add a handler object from a remote call.
-
-        The handler must be a string representing a pickled object.
         """
-        log.msg("Trying to add handler: %r" % pickled_handler)
+        log.msg("Trying to add handler: %r" % class_name)
         try:
-            handler = pickle.loads(pickled_handler)
-        except pickle.UnpicklingError as err:
-            raise SyntaxError("Object must be serialized using pickle!")
+            module = importlib.import_module(mod_name,__name__)
+        except NameError, msg:# as e:
+            log.msg('WTF: NameError: %s' % msg)
         else:
-            self.addHandler(handler)
+            handler = getattr(module,'xmlrpc_'+task_name)
+            setattr(TriggerXMLRPCServer,'xmlrpc_'+task_name,handler)
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
