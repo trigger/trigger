@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 "Makes working with XML feel like you are working with JSON"
 
-import re
 from xml.parsers import expat
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
@@ -27,7 +26,7 @@ except NameError: # pragma no cover
     _unicode = str
 
 __author__ = 'Martin Blech'
-__version__ = '0.4.4'
+__version__ = '0.4.6'
 __license__ = 'MIT'
 
 class ParsingInterrupted(Exception): pass
@@ -122,7 +121,7 @@ class _DictSAXHandler(object):
             item[key] = data
         return item
 
-def parse(xml_input, *args, **kwargs):
+def parse(xml_input, encoding='utf-8', *args, **kwargs):
     """Parse the given XML input and convert it into a dictionary.
 
     `xml_input` can either be a `string` or a file-like object.
@@ -188,9 +187,11 @@ def parse(xml_input, *args, **kwargs):
     parser.StartElementHandler = handler.startElement
     parser.EndElementHandler = handler.endElement
     parser.CharacterDataHandler = handler.characters
-    if hasattr(xml_input, 'read'):
+    try:
         parser.ParseFile(xml_input)
-    else:
+    except (TypeError, AttributeError):
+        if isinstance(xml_input, _unicode):
+            xml_input = xml_input.encode(encoding)
         parser.Parse(xml_input, True)
     return handler.item
 

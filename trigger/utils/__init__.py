@@ -9,6 +9,8 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2008-2013, AOL Inc.'
 
+import re
+
 def crypt_md5(passwd):
     """
     Returns an md5-crypt hash of a clear-text password.

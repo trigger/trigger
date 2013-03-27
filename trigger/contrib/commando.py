@@ -30,6 +30,8 @@ from trigger import exceptions
 from twisted.internet import defer, task
 from twisted.python import log, failure
 
+import xml.etree.ElementTree as ET
+from xml.etree.cElementTree import Element
 
 # Exports
 __all__ = ('CommandoApplication',)
@@ -58,8 +60,9 @@ class CommandoApplication(Commando):
 
         if not self.devices:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
-        if not self.commands:
-            raise exceptions.ImproperlyConfigured('You must specify some `commands` to execute!')
+        # commenting out because sometimes the cmds come in the to_<vendor> methods
+        #if not self.commands:
+        #    raise exceptions.ImproperlyConfigured('You must specify some `commands` to execute!')
 
         # Make sure that the specified containers are not passed in as strings.
         container_types = ['commands', 'devices']
@@ -157,6 +160,9 @@ class CommandoApplication(Commando):
 
         cmd_list = []
         for cmd, res in itertools.izip_longest(commands, results):
+            if type(Element('')) == type(cmd):
+                ## XML must die a very horrible death
+                cmd = ET.tostring(cmd)
             cmdobj = dict(command=cmd, result=res)
             log.msg("Got command object: %r" % cmdobj)
             cmd_list.append(cmdobj)
@@ -200,8 +206,3 @@ class CommandoApplication(Commando):
             #return self.results
             return dict(result=self.results, errors=self.errors)
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)
-
-class ShowClock(CommandoApplication):
-    """Simple example to run ``show clock`` on Cisco devices."""
-    commands = ['show clock']
-    vendors = ['cisco']

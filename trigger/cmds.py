@@ -31,7 +31,7 @@ from trigger import exceptions
 
 
 # Exports
-__all__ = ('Commando', 'NetACLInfo', 'ShowClock')
+__all__ = ('Commando', 'NetACLInfo')
 
 
 # Default timeout in seconds for commands to return a result
@@ -866,55 +866,3 @@ def _dump_interfaces(idict):
         else:
             print 'might be shutdown'
         print
-
-class ShowClock(Commando):
-    """
-    A simple example that runs ``show clock`` and parses it to
-    ``datetime.datetime`` object.
-    """
-    commands = ['show clock']
-    vendors = ['cisco', 'brocade']
-
-    def _parse_datetime(self, datestr, fmt):
-        """
-        Given a date string and a format, try to parse and return
-        datetime.datetime object.
-        """
-        try:
-            return datetime.datetime.strptime(datestr, fmt)
-        except ValueError:
-            return datestr
-
-    def _store_datetime(self, results, device, fmt):
-        """
-        Parse and store a datetime
-        """
-        msg = 'Received %r from %s' % (results, device)
-        print msg
-        log.msg(msg)
-        mapped = self.map_results(self.commands, results)
-        for cmd, res in mapped.iteritems():
-            mapped[cmd] = self._parse_datetime(res, fmt)
-
-        self.store_results(device, mapped)
-
-    def from_cisco(self, results, device):
-        """Parse Cisco time"""
-        # => '16:18:21.763 GMT Thu Jun 28 2012\n'
-        fmt = '%H:%M:%S.%f %Z %a %b %d %Y\n'
-        self._store_datetime(results, device, fmt)
-
-    def from_brocade(self, results, device):
-        """
-        Parse Brocade time. Brocade switches and routers behave
-        differently...
-        """
-        if device.is_router():
-            # => '16:42:04 GMT+00 Thu Jun 28 2012\r\n'
-            fmt = '%H:%M:%S GMT+00 %a %b %d %Y\r\n'
-        elif device.is_switch():
-            # => 'rbridge-id 1: 2012-06-28 16:42:04 Etc/GMT+0\n'
-            results = [res.split(': ', 1)[-1] for res in results]
-            fmt = '%Y-%m-%d %H:%M:%S Etc/GMT+0\n'
-
-        self._store_datetime(results, device, fmt)
