@@ -13,13 +13,13 @@ from trigger.utils import xmltodict, strip_juniper_namespace
 import logging
 log=logging.getLogger()
 
-if not 'TFTP_DIR' in dir(settings):
-    settings.TFTP_DIR = ''
+if not 'TFTPROOT_DIR' in dir(settings):
+    settings.TFTPROOT_DIR = ''
 if not 'TFTP_HOST' in dir(settings):
     settings.TFTP_HOST = ''
 
 class ConfigDevice(CommandoApplication):
-    tftp_dir = settings.TFTP_DIR
+    tftp_dir = settings.TFTPROOT_DIR
     tftp_host = settings.TFTP_HOST
     tftp_ip = gethostbyname(tftp_host)
 

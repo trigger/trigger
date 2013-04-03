@@ -28,11 +28,20 @@ TACACSRC_PASSPHRASE = '' # NYI
 # general use within the .tacacsrc
 DEFAULT_REALM = 'aol'
 
+# List of plugins allowed to be importd by Commando
+# Plugins should be listed as strings depicting the
+# absolute paths.
+# e.g. ['trigger.contrib.config_device', 'trigger.contrib.show_clock', 'bacon.cool_plugin']
+# 
+# Currently config_device and execute_commands are automatically imported.
+COMMANDO_PLUGINS = []
+
 # Location of firewall policies
 FIREWALL_DIR = '/data/firewalls'
 
 # Location of tftproot.
 TFTPROOT_DIR = '/data/tftproot'
+TFTP_HOST = ''
 
 # Add internally owned networks here. All network blocks owned/operated and
 # considered part of your network should be included.
