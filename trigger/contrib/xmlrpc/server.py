@@ -121,10 +121,17 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         try:
             module = importlib.import_module(mod_name,__name__)
         except NameError, msg:# as e:
-            log.msg('WTF: NameError: %s' % msg)
+            log.msg('NameError: %s' % msg)
         else:
             handler = getattr(module,'xmlrpc_'+task_name)
-            setattr(TriggerXMLRPCServer,'xmlrpc_'+task_name,handler)
+            ## kwargs may not be passed to xmlrpc methods
+            ## Instead, we pass 2 position args: args and kwargs
+            ## to a shell method (dummy) that will explode them when sending to
+            ## the user defined method (handler).
+            def dummy(self,args,kwargs):
+                handler(*args,**kwargs)
+            ## Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_'+task_name
+            setattr(TriggerXMLRPCServer,'xmlrpc_'+task_name,dummy)
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
