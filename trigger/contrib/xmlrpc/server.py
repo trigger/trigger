@@ -152,20 +152,6 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
 
-    ## Define xmlrpc handler.
-    ## This will soon be replaced with plugin framework
-    def xmlrpc_config_device(self, creds, devices, commands=None, files=None):
-        """Send configuration to files"""
-        log.msg('Loading arbitrary config on %r' % devices)
-        if commands == None:
-            commands = []
-        if files == None:
-            files = []
-        c = ConfigDevice(devices=devices, creds=creds, commands=commands, files=files)
-        d = c.run()
-        log.msg('Deferred: %r' % d)
-        return d
-
     def xmlrpc_execute_commands(self, creds, devices, commands, force_cli=False):
         """Execute ``commands`` on ``devices``"""
         log.msg('Executing arbitrary commands on %r' % devices)
