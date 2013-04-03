@@ -14,7 +14,7 @@ from twisted.python import log
 task_name = 'show_clock'
 class_name = 'ShowClock'
 
-def xmlrpc_show_clock(self, creds, devices):
+def xmlrpc_show_clock(creds, devices):
     """Run 'show clock' on the specified list of `devices`"""
     log.msg('Creating ShowClock')
     sc = ShowClock(devices=devices, creds=creds)

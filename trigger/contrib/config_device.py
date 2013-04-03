@@ -10,13 +10,28 @@ from trigger.conf import settings
 ## xmltodict is required to parse the juniper XML output. btw, XML must die.
 from trigger.utils import xmltodict, strip_juniper_namespace
 
-import logging
-log=logging.getLogger()
+from twisted.python import log
+
+task_name = 'config_device'
+class_name = 'ConfigDevice'
 
 if not 'TFTPROOT_DIR' in dir(settings):
     settings.TFTPROOT_DIR = ''
 if not 'TFTP_HOST' in dir(settings):
     settings.TFTP_HOST = ''
+
+def xmlrpc_config_device(creds, devices, commands=None, files=None):
+    """Send configuration to files"""
+    log.msg('Loading arbitrary config on %r' % devices)
+    if commands == None:
+        commands = []
+    if files == None:
+        files = []
+    c = ConfigDevice(devices=devices, creds=creds, commands=commands, files=files)
+    d = c.run()
+    log.msg('Deferred: %r' % d)
+    return d
+
 
 class ConfigDevice(CommandoApplication):
     tftp_dir = settings.TFTPROOT_DIR
@@ -59,7 +74,7 @@ class ConfigDevice(CommandoApplication):
         action = self.action
         files = self.files
         if re.match(r"^BRMLXE",dev.make):
-            log.warn('Device Type (%s %s) not supported' % (dev.manufacturer,dev.make))
+            log.msg('Device Type (%s %s) not supported' % (dev.manufacturer,dev.make))
             return []
         for fn in files:
             copytftpcmd = "copy tftp running-config %s %s" % (tftp_ip,fn)
@@ -73,7 +88,7 @@ class ConfigDevice(CommandoApplication):
         cmds = []
         files = self.files
         if dev.make is not 'POWERCONNECT':
-            log.warn('Device Type (%s %s) not supported' % (dev.manufacturer,dev.make))
+            log.msg('Device Type (%s %s) not supported' % (dev.manufacturer,dev.make))
             return cmds
         for fn in files:
             copytftpcmd = "copy tftp://%s/%s running-config" % (tftp_ip,fn)
@@ -84,7 +99,7 @@ class ConfigDevice(CommandoApplication):
     def to_a10(self, dev, commands=None, extra=None):
         cmds = []
         files = self.files
-        log.warn('Device Type (%s) not supported' % dev.manufacturer)
+        log.msg('Device Type (%s) not supported' % dev.manufacturer)
         return cmds
 
     def to_juniper(self, dev, commands=None, extra=None):
@@ -96,14 +111,14 @@ class ConfigDevice(CommandoApplication):
         if action == 'overwrite':
             action = 'override'
         for fname in files:
-            log.debug("fname: %s" % fname)
+            #log.msg("fname: %s" % fname)
             filecontents = ''
             if not os.path.isfile(fname):
                 fname = tftp_dir + fname
             try:
                 filecontents = file(fname).read()
             except IOError as e:
-                log.warn("Unable to open file: %s" % fname)
+                log.msg("Unable to open file: %s" % fname)
             if filecontents == '':
                 continue
             lc = Element('load-configuration', action=action, format='text')

@@ -13,11 +13,7 @@ from twisted.python import log
 task_name = 'show_version'
 class_name = 'ShowVersion'
 
-class ShowVersion(CommandoApplication):
-    """Simple example to run ``show version`` on devices."""
-    commands = ['show version']
-
-def xmlrpc_show_version(self, creds, devices):
+def xmlrpc_show_version(creds, devices):
     """Run 'show version' on the specified list of `devices`"""
     log.msg('Creating ShowVersion')
     sc = ShowVersion(devices=devices, creds=creds)
@@ -25,3 +21,6 @@ def xmlrpc_show_version(self, creds, devices):
     d = sc.run()
     return d
 
+class ShowVersion(CommandoApplication):
+    """Simple example to run ``show version`` on devices."""
+    commands = ['show version']
