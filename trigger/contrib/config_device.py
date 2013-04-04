@@ -19,7 +19,7 @@ if not 'TFTPROOT_DIR' in dir(settings):
 if not 'TFTP_HOST' in dir(settings):
     settings.TFTP_HOST = ''
 
-def xmlrpc_config_device(self, args,kwargs):
+def xmlrpc_config_device(*args,**kwargs):
     c = ConfigDevice(*args,**kwargs)
     d = c.run()
     return d

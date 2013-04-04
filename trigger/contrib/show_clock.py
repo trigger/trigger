@@ -13,7 +13,7 @@ from twisted.python import log
 
 task_name = 'show_clock'
 
-def xmlrpc_show_clock(args,kwargs):
+def xmlrpc_show_clock(*args,**kwargs):
     """Run 'show clock' on the specified list of `devices`"""
     log.msg('Creating ShowClock')
     sc = ShowClock(*args,**kwargs)
