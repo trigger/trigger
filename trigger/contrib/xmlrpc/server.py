@@ -13,6 +13,7 @@ usage example.
 """
 
 import os
+import sys
 import types
 import importlib
 
@@ -121,11 +122,12 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         if mod_name in sys.modules:
             ## Check if module is already loaded
             if force:
-                log.msg("Trying to add handler: %r" % class_name)
+                log.msg("Forcing reload of handler: %r" % class_name)
                 ## Allow user to force reload of module
                 module = reload(sys.modules[mod_name])
             else:
                 ## If not forcing reload, don't bother with the rest
+                log.msg("%r already loaded" % class_name)
                 return
         else:
             log.msg("Trying to add handler: %r" % class_name)
@@ -145,18 +147,19 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             ## to a shell method (dummy) that will explode them when sending to
             ## the user defined method (handler).
             def dummy(self,args,kwargs):
-                handler(*args,**kwargs)
+                return handler(*args,**kwargs)
             ## Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_'+task_name
             setattr(TriggerXMLRPCServer,'xmlrpc_'+task_name,dummy)
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
 
-    def xmlrpc_execute_commands(self, creds, devices, commands, force_cli=False):
+    def xmlrpc_execute_commands(self, args,kwargs):#creds, devices, commands, force_cli=False):
         """Execute ``commands`` on ``devices``"""
-        log.msg('Executing arbitrary commands on %r' % devices)
-        c = CommandoApplication(devices=devices, creds=creds,
-                                commands=commands, force_cli=force_cli)
+        #log.msg('Executing arbitrary commands on %r' % devices)
+        c = CommandoApplication(*args,**kwargs)
+        #c = CommandoApplication(devices=devices, creds=creds,
+        #                        commands=commands, force_cli=force_cli)
         d = c.run()
         return d
 

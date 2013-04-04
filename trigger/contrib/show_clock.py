@@ -101,11 +101,10 @@ class ShowClock(CommandoApplication):
             else:
                 currtime = sysupinfo['current-time']['date-time']
             res = {'current-time':currtime}
-            self.data.append({'device':device,'data':res})
+            #self.data.append({'device':device,'data':res})
             results.append(res)
-        ## Need to structure this into a common json structure
-        ## {"current-time":""}
         self.store_results(device, results)
+        ## UGH
         ## Some devices start with '{"system-uptime-information":{} }'
         ## Some devices start with '{"multi-routing-engine-results": {"multi-routing-engine-item": {"system-uptime-information":{} }}}'
 
