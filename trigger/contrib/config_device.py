@@ -13,25 +13,16 @@ from trigger.utils import xmltodict, strip_juniper_namespace
 from twisted.python import log
 
 task_name = 'config_device'
-class_name = 'ConfigDevice'
 
 if not 'TFTPROOT_DIR' in dir(settings):
     settings.TFTPROOT_DIR = ''
 if not 'TFTP_HOST' in dir(settings):
     settings.TFTP_HOST = ''
 
-def xmlrpc_config_device(creds, devices, commands=None, files=None):
-    """Send configuration to files"""
-    log.msg('Loading arbitrary config on %r' % devices)
-    if commands == None:
-        commands = []
-    if files == None:
-        files = []
-    c = ConfigDevice(devices=devices, creds=creds, commands=commands, files=files)
+def xmlrpc_config_device(self, args,kwargs):
+    c = ConfigDevice(*args,**kwargs)
     d = c.run()
-    log.msg('Deferred: %r' % d)
     return d
-
 
 class ConfigDevice(CommandoApplication):
     tftp_dir = settings.TFTPROOT_DIR

@@ -114,7 +114,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         """Return a list of the registered procedures"""
         return self._procedure_map.keys()
 
-    def xmlrpc_add_handler(self, mod_name, task_name, class_name,force=False):
+    def xmlrpc_add_handler(self, mod_name, task_name, force=False):
         """
         Add a handler object from a remote call.
         """
@@ -122,15 +122,15 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         if mod_name in sys.modules:
             ## Check if module is already loaded
             if force:
-                log.msg("Forcing reload of handler: %r" % class_name)
+                log.msg("Forcing reload of handler: %r" % task_name)
                 ## Allow user to force reload of module
                 module = reload(sys.modules[mod_name])
             else:
                 ## If not forcing reload, don't bother with the rest
-                log.msg("%r already loaded" % class_name)
+                log.msg("%r already loaded" % mod_name)
                 return
         else:
-            log.msg("Trying to add handler: %r" % class_name)
+            log.msg("Trying to add handler: %r" % task_name)
             try:
                 module = importlib.import_module(mod_name,__name__)
             except NameError, msg:# as e:

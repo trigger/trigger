@@ -12,16 +12,13 @@ from trigger.utils import xmltodict, strip_juniper_namespace
 from twisted.python import log
 
 task_name = 'show_clock'
-class_name = 'ShowClock'
 
-def xmlrpc_show_clock(creds, devices):
+def xmlrpc_show_clock(args,kwargs):
     """Run 'show clock' on the specified list of `devices`"""
     log.msg('Creating ShowClock')
-    sc = ShowClock(devices=devices, creds=creds)
+    sc = ShowClock(*args,**kwargs)
     d = sc.run()
-    log.msg('Deferred: %r' % d)
     return d
-
 
 class ShowClock(CommandoApplication):
     def to_cisco(self, dev, commands=None, extra=None):

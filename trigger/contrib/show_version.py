@@ -11,13 +11,11 @@ from trigger.utils import xmltodict, strip_juniper_namespace
 from twisted.python import log
 
 task_name = 'show_version'
-class_name = 'ShowVersion'
 
-def xmlrpc_show_version(creds, devices):
+def xmlrpc_show_version(args,kwargs):
     """Run 'show version' on the specified list of `devices`"""
     log.msg('Creating ShowVersion')
-    sc = ShowVersion(devices=devices, creds=creds)
-    log.msg('Done creating ShowVersion')
+    sc = ShowVersion(*args,**kwargs)
     d = sc.run()
     return d
 
