@@ -34,7 +34,10 @@ DEFAULT_REALM = 'aol'
 # e.g. ['trigger.contrib.config_device', 'trigger.contrib.show_clock', 'bacon.cool_plugin']
 # 
 # Currently config_device and execute_commands are automatically imported.
-COMMANDO_PLUGINS = []
+COMMANDO_PLUGINS = [
+    'trigger.contrib.show_clock',
+    'trigger.contrib.show_version'
+]
 
 # Location of firewall policies
 FIREWALL_DIR = '/data/firewalls'
