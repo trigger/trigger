@@ -70,7 +70,7 @@ setup(
     author_email='jathanism@aol.com',
     packages=find_packages(exclude=['tests']) + ['twisted.plugins'],
     package_data={
-        'twisted', ['plugins/trigger_xmlrpc.py'],
+        'twisted': ['plugins/trigger_xmlrpc.py'],
     },
     license='BSD',
     url='https://github.com/aol/trigger',
