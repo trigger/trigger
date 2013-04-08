@@ -35,8 +35,8 @@ DEFAULT_REALM = 'aol'
 # 
 # Currently config_device and execute_commands are automatically imported.
 COMMANDO_PLUGINS = [
-    'trigger.contrib.show_clock',
-    'trigger.contrib.show_version'
+    'trigger.contrib.commando.plugins.show_clock',
+    'trigger.contrib.commando.plugins.show_version'
 ]
 
 # Location of firewall policies

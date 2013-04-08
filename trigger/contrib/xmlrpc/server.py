@@ -22,7 +22,7 @@ from twisted.python import log
 from twisted.web import xmlrpc, server
 
 ## Import classes for built-in tasks
-from trigger.contrib.config_device import ConfigDevice
+from trigger.contrib.commando.plugins.config_device import ConfigDevice
 
 # Enable Deferred debuging if ``DEBUG`` is set.
 if os.getenv('DEBUG'):
