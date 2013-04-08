@@ -68,8 +68,10 @@ setup(
     version=__version__,
     author='Jathan McCollum',
     author_email='jathanism@aol.com',
-    packages=find_packages(exclude='tests') + ['twisted.plugins'],
-    namespace_packages=['twisted'],
+    packages=find_packages(exclude=['tests']) + ['twisted.plugins'],
+    package_data={
+        'twisted', ['plugins/trigger_xmlrpc.py'],
+    },
     license='BSD',
     url='https://github.com/aol/trigger',
     description=desc,
@@ -90,7 +92,6 @@ setup(
         'tools/convert_tacacsrc.py',
         'tools/tacacsrc2gpg.py',
     ],
-    include_package_data=True,
     install_requires=requires,
     keywords = [
         'Configuration Management',
