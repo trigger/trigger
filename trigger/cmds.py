@@ -558,6 +558,10 @@ class NetACLInfo(Commando):
         [IP('66.185.128.160')]
     """
     def __init__(self, **args):
+        try:
+            import pyparsing as pp
+        except ImportError:
+            raise RuntimeError("You must install ``pyparsing==1.5.7`` to use NetACLInfo")
         self.config = {}
         super(NetACLInfo, self).__init__(**args)
 
@@ -583,10 +587,21 @@ class NetACLInfo(Commando):
         Similar to IOS, but:
 
            + Arista has no "show conf" so we have to do "show run"
-           + The regex used in the CLI for Arista is more "precise" so we have to change the pattern a little bit compared to the on in generate_ios_cmd
+           + The regex used in the CLI for Arista is more "precise" so we have
+             to change the pattern a little bit compared to the on in
+             generate_ios_cmd
 
         """
         return ['show running-config | include (^interface | ip address | ip acces-group | description |!)']
+
+    def to_force10(self, dev, commands=None, extra=None):
+        """
+        Similar to IOS, but:
+            + You only get the "grep" ("include" equivalent) when using "show
+              run".
+            + The regex must be quoted.
+        """
+        return ['show running-config | grep "^(interface | ip address | ip access-group | description|!)"']
 
     # Other IOS-like vendors are Cisco-enough
     to_brocade = to_cisco
@@ -606,6 +621,7 @@ class NetACLInfo(Commando):
     from_arista = from_cisco
     from_brocade = from_cisco
     from_foundry = from_cisco
+    from_force10 = from_cisco
 
     def to_juniper(self, dev, commands=None, extra=None):
         """Generates an etree.Element object suitable for use with

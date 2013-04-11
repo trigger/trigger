@@ -296,6 +296,7 @@ class NetDevice(object):
             'cisco': default,
             'brocade': disable_paging_brocade(), # See comments above
             'dell': ['terminal datadump\n'],
+            'force10': default,
             'foundry': ['skip-page-display\n'],
             #'juniper': ['set cli screen-length 0\n'],
             'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
