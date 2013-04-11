@@ -65,6 +65,7 @@ SUPPORTED_VENDORS = (
     'cisco',
     'citrix',
     'dell',
+    'force10',
     'foundry',
     'juniper',
     'netscreen',
@@ -86,6 +87,7 @@ VENDOR_MAP = {
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
     'DELL': 'dell',
+    'FORCE10': 'force10',
     'FOUNDRY': 'foundry',
     'JUNIPER': 'juniper',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
@@ -101,6 +103,7 @@ SUPPORTED_PLATFORMS = {
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
+    'force10': ['ROUTER', 'SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
@@ -108,7 +111,7 @@ SUPPORTED_PLATFORMS = {
 }
 
 # The tuple of support device types
-SUPPORTED_TYPES = ('FIREWALL', 'ROUTER', 'SWITCH')
+SUPPORTED_TYPES = ('FIREWALL', 'DWDM', 'LOAD BALANCER', 'ROUTER', 'SWITCH')
 
 # A mapping of of vendor names to the default device type for each in the
 # event that a device object is created and the deviceType attribute isn't set
@@ -121,6 +124,7 @@ DEFAULT_TYPES = {
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
     'dell': 'SWITCH',
+    'force10': 'ROUTER',
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
     'netscreen': 'FIREWALL',
@@ -169,6 +173,7 @@ IOSLIKE_VENDORS = (
     'brocade',
     'cisco',
     'dell',
+    'force10',
     'foundry',
 )
 
@@ -176,7 +181,7 @@ IOSLIKE_VENDORS = (
 GORC_FILE = '~/.gorc'
 
 # The only root commands that are allowed to be executed when defined within
-# ``~.gorc``. They will be filtered # out by `~trigger.gorc.filter_commands()`.
+# ``~.gorc``. They will be filtered out by `~trigger.gorc.filter_commands()`.
 GORC_ALLOWED_COMMANDS = (
     'cli',
     'exit',
@@ -246,7 +251,7 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 #===============================
 # Prompt Patterns
 #===============================
-# Specially-defined, per-vendor prompt patterns. If a vendor isn't defined her,
+# Specially-defined, per-vendor prompt patterns. If a vendor isn't defined here,
 # try to use IOSLIKE_PROMPT_PAT or fallback to DEFAULT_PROMPT_PAT.
 PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
@@ -348,6 +353,7 @@ AUTOLOAD_FILTER = AUTOLOAD_BLACKLIST
 # TODO (jathan): Provide examples so that this has more context/meaning. The
 # current implementation is kind of broken and doesn't scale for data centers
 # with a large of number of devices.
+#
 # Format:
 # { 'filter_name': threshold_count }
 AUTOLOAD_FILTER_THRESH = {}

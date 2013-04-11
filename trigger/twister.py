@@ -280,6 +280,7 @@ def _choose_execute(device, force_cli=False):
     else:
         def null(*args, **kwargs):
             """Does nothing."""
+            # TODO (jathan): Make this return a naekd Deferred instead.
             return None
         _execute = null
 
@@ -458,7 +459,10 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
                                       loginpw=loginpw, enablepw=enablepw)
 
     else:
-        msg = 'Both SSH and telnet either failed or are disabled.'
+        msg = '[%s] Both SSH and telnet either failed or are disabled.' % device
+        log.msg(msg)
+        if with_errors:
+            return defer.Deferred() # Return a naked deferred
         raise exceptions.ConnectionFailure(msg)
 
 def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
