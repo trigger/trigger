@@ -97,9 +97,12 @@ class ShowClock(CommandoApplication):
                 ## need to turn this into an error
             else:
                 currtime = sysupinfo['current-time']['date-time']
-            res = {'current-time':currtime}
-            #self.data.append({'device':device,'data':res})
-            results.append(res)
+            # => '2013-02-20 21:41:40 UTC'
+            fmt = '%Y-%m-%d %H:%M:%S %Z'
+            r = self._parse_datetime(currtime, fmt)
+            jdata = {'current-time':r}
+            #self.data.append({'device':device,'data':jdata})
+            results.append(jdata)
         self.store_results(device, results)
         ## UGH
         ## Some devices start with '{"system-uptime-information":{} }'
