@@ -4,10 +4,13 @@
 A collection of CLI tools and utilities used by Trigger.
 """
 
-__author__ = 'Jathan McCollum'
+__author__ = 'Jathan McCollum, Mike Biancaniello'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2008-2013, AOL Inc.'
+
+from collections import namedtuple
+import re
 
 def crypt_md5(passwd):
     """
@@ -37,3 +40,24 @@ def crypt_md5(passwd):
             crypted = md5_crypt.encrypt(passwd)
 
     return crypted
+
+JuniperElement = namedtuple('JuniperElement', 'key value')
+def strip_juniper_namespace(path, key, value):
+    """
+    Given a Juniper XML element, strip the namespace and return a 2-tuple.
+
+    This is designed to be used as a ``postprocessor`` with
+    `~trigger.utils.xmltodict.parse()`.
+
+    :param key:
+        The attribute name of the element.
+
+    :param value:
+        The value of the element.
+    """
+    marr = re.match(r"(ns1:|ns0:)", key)
+    if marr:
+        ns = marr.group(0)
+        key = key.replace(ns, '')
+
+    return JuniperElement(key, value)
