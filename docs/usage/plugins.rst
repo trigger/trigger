@@ -13,6 +13,7 @@ Using Plugins
 
 Installation
 ------------
+
 Plugins are installed like any other python package on the system.
 Be sure to note the absolute path where the plugin is installed.
 
@@ -21,18 +22,20 @@ Inclusion
 
 Permanent
 ~~~~~~~~~
+
 In your ''/etc/trigger/settings.py'' file, add the absolute path
 of the plugin to the COMMANDO_PLUGINS variable as a list::
 
     COMMANDO_PLUGINS = [
-        'trigger.contrib.config_device', 
-        'trigger.contrib.show_clock', 
+        'trigger.contrib.config_device',
+        'trigger.contrib.show_clock',
         'bacon.cool_plugin'
     ]
 
 Testing
 ~~~~~~~
-If you are testing, you can easily add your new package to the list by appending the 
+
+If you are testing, you can easily add your new package to the list by appending the
 new package to the COMMANDO_PLUGINS variable::
 
     from trigger.conf import settings
@@ -43,24 +46,27 @@ from within your test script.
 CLI
 ~~~
 
-Work in progress.  The idea is to ssh to the server (via manhole) into a python interactive shell.
-
+Work in progress.  The idea is to ssh to the server (via manhole) into a python
+interactive shell.
 
 Updating
 --------
-If you want to install a new version of a plugin, first, you much update the plugin package on all workers and servers.
 
-Restarting the trigger processes on all workers and servers will pick up 
+If you want to install a new version of a plugin, first, you much update the
+plugin package on all workers and servers.
+
+Restarting the trigger processes on all workers and servers will pick up
 the new version automatically.
 
-Alternatively, you can use the CLI method above with the optional 'force=True' argument to force Trigger 
+Alternatively, you can use the CLI method above with the optional 'force=True'
+argument to force Trigger
 to reload the module without restarting any processes.
-
 
 Creating
 ========
 
-A plugin to be used for Trigger/Commando is a standalone python module.  The loading of a plugin will create both a Celery task as well as an XMLRPC method.
+A plugin to be used for Trigger/Commando is a standalone python module.  The
+loading of a plugin will create both a Celery task as well as an XMLRPC method.
 
 The module is required at a minimum to define::
 
@@ -70,16 +76,15 @@ The module is required at a minimum to define::
 A super simple example::
 
     from trigger.contrib.commando import CommandoApplication
-    
+
     task_name = 'show_version'
     def xmlrpc_show_version(*args,**kwargs):
         sc = ShowVersion(*args,**kwargs)
         d = sc.run()
         return d
-    
+
     class ShowVersion(CommandoApplication):
         commands = ['show version']
-
 
 Useful Modules
 --------------
@@ -102,15 +107,16 @@ Useful Modules
 
 Examples
 --------
+
 Using xmltodict to process Juniper xml output::
-    
+
     class ShowUptime(CommandoApplication):
 
         def to_juniper(self, dev, commands=None, extra=None):
             cmd = Element('get-system-uptime-information')
             self.commands = [cmd]
             return self.commands
-    
+
         def from_juniper(self, data, device):
             for xml in data:
                 jdata = xmltodict.parse(
@@ -123,6 +129,3 @@ Using xmltodict to process Juniper xml output::
                 res = {'current-time':currtime}
                 results.append(res)
             self.store_results(device, results)
-
-
-
