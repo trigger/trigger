@@ -27,6 +27,10 @@ class ConfigDevice(CommandoApplication):
     tftp_ip = gethostbyname(tftp_host)
 
     def __init__(self, action='replace', files=None, commands=None, debug=False, **kwargs):
+        if commands is None:
+            commands = []
+        if files is None:
+            files = []
         self.data=[]
         self.commands = commands
         self.files = files
