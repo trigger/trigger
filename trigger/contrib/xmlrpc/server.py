@@ -147,7 +147,8 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             def dummy(self, args, kwargs):
                 return handler(*args, **kwargs)
 
-            # This just simply does not work.  I am not sure why, but it results in a 
+            # TODO (jathan): Make this work!!
+            # This just simply does not work.  I am not sure why, but it results in a
             # "<Fault 8001: 'procedure config_device not found'>" error!
             # # Bind the dummy shell method to TriggerXMLRPCServer. The function's
             # # name will be used to map it to the "dummy" handler object.
