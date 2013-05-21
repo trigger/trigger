@@ -130,7 +130,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         else:
             log.msg("Trying to add handler: %r" % task_name)
             try:
-                module = importlib.import_module(mod_name,__name__)
+                module = importlib.import_module(mod_name, __name__)
             except NameError as msg:
                 log.msg('NameError: %s' % msg)
             except:
@@ -144,13 +144,19 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             # XMLRPC methods will not accept kwargs. Instead, we pass 2 position
             # args: args and kwargs, to a shell method (dummy) that will explode
             # them when sending to the user defined method (handler).
-            def dummy(args, kwargs):
+            def dummy(self, args, kwargs):
                 return handler(*args, **kwargs)
 
-            # Bind the dummy shell method to TriggerXMLRPCServer. The function's
-            # name will be used to map it to the "dummy" handler object.
-            dummy.__name__ = task_name
-            self.addHandler(dummy)
+            # This just simply does not work.  I am not sure why, but it results in a 
+            # "<Fault 8001: 'procedure config_device not found'>" error!
+            # # Bind the dummy shell method to TriggerXMLRPCServer. The function's
+            # # name will be used to map it to the "dummy" handler object.
+            # dummy.__name__ = task_name
+            # self.addHandler(dummy)
+
+            # This does work.
+            # Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_' + task_name
+            setattr(TriggerXMLRPCServer, 'xmlrpc_' + task_name, dummy)
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
