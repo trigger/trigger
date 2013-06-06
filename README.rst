@@ -20,8 +20,7 @@ Key Features
 Trigger is designed to work at scale and can support hundreds or thousands of
 network devices with ease. Here are some of things that make Trigger tick:
 
-+ Support for SSH, Telnet, and Juniper's Junoscript XML API (NETCONF support
-  Coming Soon™).
++ Support for SSH, Telnet, and Juniper's Junoscript XML API.
 + Easily get an interactive shell or execute commands asynchronously.
 + Leverage advanced event-driven functionality to manage any number of
   jobs in parallel and handle output or errors as they return.
@@ -38,6 +37,10 @@ New in version 1.2:
 
 + Import your metadata from an existing RANCID installation to get
   up-and-running quickly!
+
+New in version 1.3:
+
++ Import your metadata from a CSV file and get up-and-running even quicker!
 
 Getting Started
 ===============

@@ -21,33 +21,58 @@ same name as the configuration options.
 Please see :doc:`configuration` for more information on how to do this. There
 are two configuration options that facilitate this:
 
-::setting:`NETDEVICES_FILE`:
-    The location of the file containing the metadata. Default:
-    `/etc/trigger/netdevices.xml`
-::setting:`NETDEVICES_FORMAT`:
-    The format of the metadata file. Default: `xml`
+::setting:`NETDEVICES_SOURCE`:
+    A URL or file path from which the metadata may be obtained. This defaults to
+    `/etc/trigger/netdevices.xml`, but can be any URL with variables.
 
-When you instantiate `~trigger.netdevices.NetDevices` the specified file is
-read and parsed using the specified format. The currently accepted formats are:
+::setting:`NETDEVICES_LOADERS`:
+    (Advanced) A tuple of data loader classes, specified as strings. This is an
+    advanced setting that you may use to create custom loaders if any of the
+    default loaders do not meet your needs. More on this later.
 
+A Brief Overview
+----------------
+
+When you instantiate `~trigger.netdevices.NetDevices` the location specified
+:setting:`NETDEVICES_SOURCE` is passed onto the :setting:`NETDEVICES_LOADERS`
+to try to parse and return device metadata.
+
+Trigger 1.3 changed the way that `~trigger.netdevices.NetDevices` are
+populated, greatly simplifying the whole thing. You no longer have to tell
+Trigger what the format of your metadata source is. It tries to determine it
+automatically based on whether one of the pre-defined loaders successfully
+returns data without throwing an error.
+
+Trigger currently comes with loaders that support the following formats:
+
++ CSV
 + JSON
 + RANCID
-+ Sqlite
++ SQLite
 + XML
 
-Except when using RANCID as a data source, the contents of your source data
-should be a dump of relevant metadata fields from your CMDB.
+Except when using CSV or RANCID as a data source, the contents of your source
+data should be a dump of relevant metadata fields from your CMDB. 
 
 If you don't have a CMDB, then you're going to have to populate this file
 manually. But you're a Python programmer, right? So you can come up with
 something spiffy!
+
+But first, let's start simple.
+
+Quick Start
+-----------
+
+To get started quickly, we recommend you start by creating a simple :ref:`CSV
+file <csv-format>`. This will be used to illustrate how easily you can get
+going with Trigger.
 
 Importing from RANCID
 ---------------------
 
 .. versionadded:: 1.2
 
-Experimental support for using a `RANCID <http://www.shrubbery.net/rancid/>`_
+Basic support for using a `RANCID <http://www.shrubbery.net/rancid/>`_
 repository to populate your metadata is now working. We say it's experimental
 because it is not yet complete. Currently all it does for you is populates the
 bare minimum set of fields required for basic functionality.
@@ -57,6 +82,31 @@ To learn more please visit the section on working with the :ref:`RANCID format
 
 Supported Formats
 =================
+
+.. _csv-format:
+
+CSV
+---
+
+.. versionadded:: 1.3
+
+This method is the most lightweight, but also the most limited. But it's a
+great starting point!
+
+The bare minimum config for CSV is a file populated comma-separated values,
+each on their own line with ``hostname,vendor``. For example::
+
+    test1-abc.net.aol.com,juniper
+    test2-abc.net.aol.com,cisco
+
+The most fields you may populate are the same as with the RANCID support.
+Please see the explanation of the fields populated by the :ref:`RANCID format
+<rancid-format>`. A "fully-populated" CSV file would look more like this::
+
+    test1-abc.net.aol.com,juniper,router
+    test2-abc.net.aol.com,juniper,router
+    fw1-xyz.net.aol.com,netscreen,firewall
+    lab1-switch.net.aol.com,foundry,switch
 
 .. _xml-format:
 
@@ -113,7 +163,8 @@ source code looks like:
         ...
     </NetDevices>
 
-Please see ``conf/netdevices.xml`` within the Trigger source distribution for a full example.
+Please see ``conf/netdevices.xml`` within the Trigger source distribution for a
+full example.
 
 .. _json-format:
 
@@ -170,8 +221,8 @@ source code looks like (pretty-printed for readabilty):
         ...
     ]
 
-To use JSON, create your :setting:`NETDEVICES_FILE` full of objects that look like the
-one above and set :setting:`NETDEVICES_FORMAT` to ``'json'``.
+To use JSON, create your :setting:`NETDEVICES_SOURCE` file full of objects that
+look like the one above.
 
 Please see ``conf/netdevices.json`` within the Trigger source distribution for
 a full example.
@@ -216,10 +267,9 @@ Multiple instance will instead walk the root directory and expect to find
 can be toggled by seting the value of :setting:`RANCID_RECURSE_SUBDIRS` to
 ``True`` to your ``settings.py``.
 
-To use RANCID as a data source, set the value of :setting:`NETDEVICES_FILE` in
+To use RANCID as a data source, set the value of :setting:`NETDEVICES_SOURCE` in
 ``settings.py`` to the absolute path of location of of the root directory where
-your RANCID data is stored and set the value :setting:`NETDEVICES_FORMAT` to
-``'rancid'``.
+your RANCID data is stored.
 
 .. note::
 
@@ -271,10 +321,10 @@ database file you can leverage in other ways outside of Trigger.
 .. literalinclude:: ../../conf/netdevices.sql
     :language: sql
 
-To use SQLite, create a database using the schema provided within Trigger source
-distribution at ``conf/netdevices.sql``. You will need to populate the
-database full of rows with the columns above and set :setting:`NETDEVICES_FORMAT` to
-``'sqlite'``.
+To use SQLite, create a database using the schema provided within Trigger
+source distribution at ``conf/netdevices.sql``. You will need to populate the
+database full of rows with the columns above and set
+:setting:`NETDEVICES_SOURCE` the absolute path of the database file.
 
 Getting Started
 ===============
@@ -282,10 +332,21 @@ Getting Started
 First things first, you must instantiate `~trigger.netdevices.NetDevices`.  It
 has three things it requires before you can properly do this:
 
-    1. The :setting:`NETDEVICES_FILE` file must be readable and must properly
-       parse using the format specified by :setting:`NETDEVICES_FORMAT` (see above);
-    2. An instance of Redis.
-    3. The path to ``autoacl.py`` must be valid, and must properly parse.
+.. note::
+    If you do not want to load ACL associations you may skip them by passing
+    ``with_acls=False`` to `~trigger.netdevices.NetDevices` and then you only need
+    to satisfy the first requirement. A this time it is not possible to
+    globally disable ACL support, so this will only work for the purpose of
+    this walkthrough or when you manually instantiate NetDevices objects. 
+
+1. The :setting:`NETDEVICES_SOURCE` file must be readable and must properly
+   parse using one of the default loaders formats supported in
+   :setting:`NETDEVICES_LOADERS` (see above);
+2. An instance of Redis (you may skip this by passing ``with_acls=False``
+   to the `~trigger.netdevices.NetDevices` constructor).
+3. The path to ``autoacl.py`` must be valid, and must properly parse (you
+   may skip this if you just want to ignore the warnings for now).
+
 
 How it works
 ------------
@@ -298,11 +359,13 @@ actual instance object itself an instance of the inner
 module object as ``NetDevices._Singleton``. This is done as a performance boost
 because many Trigger components require a NetDevices instance, and if we had to
 keep creating new ones, we'd be waiting each time one had to parse
-:setting:`NETDEVICES_FILE` all over again.
+:setting:`NETDEVICES_SOURCE` all over again.
 
-Upon startup, each device object/element/row found within :setting:`NETDEVICES_FILE` is
-used to create a `~trigger.netdevices.NetDevice` object. This object pulls in
-ACL associations from `~trigger.acl.db.AclsDB`.
+Upon startup, each device object/element/row found within
+:setting:`NETDEVICES_SOURCE` is used to create a
+`~trigger.netdevices.NetDevice` object. This object pulls in ACL associations
+from `~trigger.acl.db.AclsDB`.
+
 
 .. _Singleton: http://en.wikipedia.org/wiki/Singleton_pattern
 
@@ -426,7 +489,13 @@ There are some special methods to perform identity tests::
     >>> dev.is_router(), dev.is_switch(), dev.is_firewall()
     (True, False, False)
     
-You can view the ACLs assigned to the device::
+You can view the ACLs assigned to the device:
+
+.. note::
+    If you have passed ``with_acls=False``, none of these attributes will be
+    populated and will instead return an empty ``set()``).
+
+::
 
     >>> dev.explicit_acls
     set(['abc123'])

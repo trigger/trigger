@@ -278,7 +278,7 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
                 for comment in t.comments:
                     if 'trigger: make discard' in comment and \
                         new_term.action[0] == 'accept':
-                        new_aca.terms.append(new_term)
+                        new_acl.terms.append(new_term)
                         already_added = True
                         permitted = True
                 if t.action[0] in ('discard','reject') and \

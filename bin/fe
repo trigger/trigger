@@ -9,7 +9,7 @@ __author__ = 'Jathan McCollum, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2002-2013, AOL Inc.'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 
 import os
@@ -126,20 +126,9 @@ def edit(editfile):
     # should use a list version of popen
     return os.popen('rcsdiff -u -b -q ' + editfile).read()
 
-
-mtstatus = os.popen('mtsync status').read().strip()
-if mtstatus == 'slave':
-    print >>sys.stderr, 'files must be edited on the master host'
-    sys.exit(1)
-elif mtstatus != 'master':
-    print >>sys.stderr, 'mtsync returned unknown status: "%s"' % mtstatus
-    sys.exit(1)
-
-
 if len(sys.argv) < 2:
     print >>sys.stderr, 'usage: fe files...'
     sys.exit(2)
-
 
 for editfile in sys.argv[1:]:
 
