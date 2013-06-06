@@ -7,19 +7,87 @@ Changelog
 1.3.1
 =====
 
-+ :bug:`72` Bugfix in `~trigger.acl.parser.TIP` where an invalid network preifx
-  (e.g. '1.2.3.1/31' would throw an ``AttributeError`` when checking the
-  ``negated`` attribute and shadowing the original ``ValueError``.
-+ :feature:`54` Moved static definition of commands permitted to be executed
-  when specified in a users' ``~/.gorc`` file into a new configuration setting
-  :setting:`GORC_ALLOWED_COMMANDS`. The file location may now also be
-  customized using :setting:`GORC_FILE`.
-+ Enhanced logging within `~trigger.twister` to include the device name where
-  applicable and useful (such as in SSH channel debugging).
++ General changes
 
-+ Changed 'make discard' output to put an ugly comment directly after
-  the 'discard' action.  Internal feedback was that an additional
-  comment (as introduced in 1.2.1) was confusing.
+  - New contrib package for optional extensions to core Trigger
+    features, `~trigger.contrib.commando.CommandoApplication` being
+    the first.
+  - Remove legacy mtsync check from bin/fe.
+  - Conditionally import MySQLdb so we can still do testing without
+    it.
+
++ The following changes have been madw within `~trigger.acl.parser`,
+  which provides Trigger's support for parsing network access control
+  lists (ACLs) and firewall policies:
+
+  - :bug:`72` Bugfix in `~trigger.acl.parser.TIP` where an invalid
+    network preifx (e.g. '1.2.3.1/31' would throw an
+    ``AttributeError`` when checking the ``negated`` attribute and
+    shadowing the original ``ValueError``.
+
++ The following changes have been made within `~trigger.cmds`, which
+  provides an extensible, developer-friendly interface to writing
+  command exeuction adapters:
+
+  - Added ``with_errors`` argument to `~trigger.cmds.Commando`
+    constructor to toggle whether errors are raised as exceptions or
+    returned as strings.
+  - Allow timeout to be set as a class variable in
+    `~trigger.cmds.Commando` subclasses, preferrring timeout passed to
+    constructor in `~trigger.cmds.Commando` subclasses.
+
++  The following changes have been made within `~trigger.netdevices`:
+
+  - Refactor how we id Brocade switches for startup/commit (fix #75)
+
+    * It's assumed that all Brocade devices all act the same;
+    * Except in the case of the VDX, which is treated specially.
+
+  - Simplified how ``startup_commands`` are calculated
+  - Disable SQLite loader if sqlite3 isn't available for some reason.
+  - Prompt patterns are now bound to `~trigger.netdevices.Vendor`
+    objects object when `~trigger.netdevices.NetDevices` is populated.
+  - `~trigger.netdevices.Vendor` objects now have a ``prompt_pattern``
+    attribute.
+  - All prompt patterns are now defined in ``settings.py``:
+
+    * Vendor-specific: :setting:`PROMPT_PATTERNS`
+    * IOS-like: :setting:`IOSLIKE_PROMPT_PAT`
+    * Fallback: :setting:`DEFAULT_PROMPT_PAT`
+
++ The following changes have been made within `~trigger.twister`,
+  which provides Trigger's remote execution functionality:
+
+  - Added CLI support for Palo Alto Networks firewalls!
+  - SSH Async now enabled by default for Arista, Brocade.
+  - :feature:`54` Moved static definition of commands permitted to be
+    executed when specified in a users' ``~/.gorc`` file into a new
+    configuration setting :setting:`GORC_ALLOWED_COMMANDS`. The file
+    location may now also be customized using :setting:`GORC_FILE`.
+  - :bug:`68` Fix host lookup bug in `~trigger.twister.TriggerTelnet`
+    causing telnet channels to crash.
+  - :bug:`74` Fix error-detection for NetScaler devices.
+  - Enhanced logging within `~trigger.twister` to include the device
+    name where applicable and useful (such as in SSH channel
+    debugging).
+  - All ``execute_`` functions have been simplified to eliminate
+    hard-coding of vendor checking wherever possible.
+  - Beginnings of reworking of Generic vs. AsyncPTY SSH channels:
+
+    * Most vendors support async/pty with little problems.
+    * This will become the new default.
+    * New execute helper: `~trigger.twister.execute_async_pty_ssh`
+    * New error helper: `~trigger.twister.has_juniper_error`
+    * Arista now uses `~trigger.twister.execute_async_pty_ssh`
+    * A ``NetScalerCommandFailure`` will now just be a
+      `~trigger.exceptions.CommandFailure`
+
++ Documentation
+
+  - Updated README to callout CSV support.
+  - Updated README to reflect branching model.
+  - Updated supported vendors, and no longer promising NETCONF
+    support.
 
 .. _v1.3.0:
 
