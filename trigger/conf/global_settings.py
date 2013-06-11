@@ -179,6 +179,7 @@ GORC_FILE = '~/.gorc'
 # ``~.gorc``. They will be filtered # out by `~trigger.gorc.filter_commands()`.
 GORC_ALLOWED_COMMANDS = (
     'cli',
+    'enable',
     'exit',
     'get',
     'monitor',
