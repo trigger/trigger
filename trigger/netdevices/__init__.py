@@ -270,7 +270,7 @@ class NetDevice(object):
             `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in ('a10', 'arista', 'aruba'),
+            self.vendor in ('a10', 'arista', 'aruba', 'force10'),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -293,9 +293,10 @@ class NetDevice(object):
             'a10': default,
             'arista': default,
             'aruba': ['no paging\n'],
-            'cisco': default,
             'brocade': disable_paging_brocade(), # See comments above
+            'cisco': default,
             'dell': ['terminal datadump\n'],
+            'force10': default,
             'foundry': ['skip-page-display\n'],
             #'juniper': ['set cli screen-length 0\n'],
             'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],

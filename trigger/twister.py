@@ -280,6 +280,7 @@ def _choose_execute(device, force_cli=False):
     else:
         def null(*args, **kwargs):
             """Does nothing."""
+            # TODO (jathan): Make this return a naekd Deferred instead.
             return None
         _execute = null
 
@@ -458,7 +459,10 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
                                       loginpw=loginpw, enablepw=enablepw)
 
     else:
-        msg = 'Both SSH and telnet either failed or are disabled.'
+        msg = '[%s] Both SSH and telnet either failed or are disabled.' % device
+        log.msg(msg)
+        if with_errors:
+            return defer.Deferred() # Return a naked deferred
         raise exceptions.ConnectionFailure(msg)
 
 def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
@@ -1032,6 +1036,10 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         log.msg('[%s] My startup commands: %r' % (self.device,
                                                   self.startup_commands))
 
+        # For IOS-like devices that require 'enable'
+        self.enable_prompt = re.compile(settings.IOSLIKE_ENABLE_PAT)
+        self.enabled = False
+
     def channelOpen(self, data):
         """Do this when the channel opens."""
         self._setup_channelOpen()
@@ -1054,6 +1062,29 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     def _ebShellOpen(self, reason):
         log.msg('[%s] Channel request failed: %s' % (self.device, reason))
 
+    def requires_enable(self, data):
+        """
+        Check if a device requires enable.
+
+        :param data:
+            Prompt data to check.
+        """
+        if not self.device.is_ioslike():
+            log.msg('[%s] Not IOS-like, setting enabled flag')
+            self.enabled = True
+            return False
+        return self.enable_prompt.search(data)
+
+    def send_enable(self):
+        """Send 'enable' and enable password to device."""
+        log.msg('[%s] Enable required, sending enable commands' %
+                self.device)
+        self.write('enable\n')
+        # Zero out the buffer before sending the password
+        self.data = ''
+        self.write(self.device.enablePW + '\n')
+        self.enabled = True
+
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         # Append to the data buffer
@@ -1066,8 +1097,11 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
         if not m:
-            #log.msg('STATE: prompt match failure', debug=True)
+            #log.msg('STATE: prompt match failure')
+            if self.requires_enable(self.data):
+                self.send_enable()
             return None
+
         log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
 
         # Strip the prompt from the match result
