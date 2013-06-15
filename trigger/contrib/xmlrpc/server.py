@@ -12,20 +12,21 @@ See ``examples/xmlrpc_server`` in the Trigger source distribution for a simple
 usage example.
 """
 
-import cPickle as pickle
 import os
+import sys
 import types
+import importlib
+
+from trigger.contrib.commando import CommandoApplication
 from twisted.internet import defer
 from twisted.python import log
 from twisted.web import xmlrpc, server
+
 
 # Enable Deferred debuging if ``DEBUG`` is set.
 if os.getenv('DEBUG'):
     defer.setDebugging(True)
 
-# XXX (jathan): This needs to be converted into a plugin (even if a default
-# plugin)
-from trigger.contrib.commando import CommandoApplication
 
 class TriggerXMLRPCServer(xmlrpc.XMLRPC):
     """
@@ -94,9 +95,11 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         # If it's a function, bind it as its own internal name.
         if type(handler) in (types.BuiltinFunctionType, types.FunctionType):
             name = handler.__name__
+            if name.startswith('xmlrpc_'):
+                name = name[7:] # If it starts w/ 'xmlrpc_', slice it out!
             log.msg("Mapping function %s..." % name)
             self._procedure_map[name] = handler
-            return
+            return None
 
         # Otherwise, walk the methods on any class objects and bind them by
         # their attribute name.
@@ -109,28 +112,59 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         """Return a list of the registered procedures"""
         return self._procedure_map.keys()
 
-    def xmlrpc_add_handler(self, pickled_handler):
+    def xmlrpc_add_handler(self, mod_name, task_name, force=False):
         """
         Add a handler object from a remote call.
-
-        The handler must be a string representing a pickled object.
         """
-        log.msg("Trying to add handler: %r" % pickled_handler)
-        try:
-            handler = pickle.loads(pickled_handler)
-        except pickle.UnpicklingError as err:
-            raise SyntaxError("Object must be serialized using pickle!")
+        module = None
+        if mod_name in sys.modules:
+            # Check if module is already loaded
+            if force:
+                log.msg("Forcing reload of handler: %r" % task_name)
+                # Allow user to force reload of module
+                module = reload(sys.modules[mod_name])
+            else:
+                # If not forcing reload, don't bother with the rest
+                log.msg("%r already loaded" % mod_name)
+                return None
         else:
-            self.addHandler(handler)
+            log.msg("Trying to add handler: %r" % task_name)
+            try:
+                module = importlib.import_module(mod_name, __name__)
+            except NameError as msg:
+                log.msg('NameError: %s' % msg)
+            except:
+                pass
+
+        if not module:
+            log.msg("    Unable to load module: %s" % mod_name)
+            return None
+        else:
+            handler = getattr(module, 'xmlrpc_' + task_name)
+            # XMLRPC methods will not accept kwargs. Instead, we pass 2 position
+            # args: args and kwargs, to a shell method (dummy) that will explode
+            # them when sending to the user defined method (handler).
+            def dummy(self, args, kwargs):
+                return handler(*args, **kwargs)
+
+            # TODO (jathan): Make this work!!
+            # This just simply does not work.  I am not sure why, but it results in a
+            # "<Fault 8001: 'procedure config_device not found'>" error!
+            # # Bind the dummy shell method to TriggerXMLRPCServer. The function's
+            # # name will be used to map it to the "dummy" handler object.
+            # dummy.__name__ = task_name
+            # self.addHandler(dummy)
+
+            # This does work.
+            # Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_' + task_name
+            setattr(TriggerXMLRPCServer, 'xmlrpc_' + task_name, dummy)
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
 
-    def xmlrpc_execute_commands(self, creds, devices, commands, force_cli=False):
+    def xmlrpc_execute_commands(self, args, kwargs):
         """Execute ``commands`` on ``devices``"""
-        log.msg('Executing arbitrary commands on %r' % devices)
-        c = CommandoApplication(devices=devices, creds=creds,
-                                commands=commands, force_cli=force_cli)
+        c = CommandoApplication(*args, **kwargs)
         d = c.run()
         return d
 

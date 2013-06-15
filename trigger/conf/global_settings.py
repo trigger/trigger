@@ -28,11 +28,25 @@ TACACSRC_PASSPHRASE = '' # NYI
 # general use within the .tacacsrc
 DEFAULT_REALM = 'aol'
 
+# List of plugins allowed to be importd by Commando. Plugins should be listed as
+# strings depicting the absolute paths.
+#
+# e.g. ['trigger.contrib.config_device', 'trigger.contrib.show_clock', 'bacon.cool_plugin']
+#
+# Currently config_device and execute_commands are automatically imported.
+BUILTIN_PLUGINS = [
+    'trigger.contrib.commando.plugins.config_device',
+    'trigger.contrib.commando.plugins.show_clock',
+    'trigger.contrib.commando.plugins.show_version'
+]
+COMMANDO_PLUGINS = BUILTIN_PLUGINS
+
 # Location of firewall policies
 FIREWALL_DIR = '/data/firewalls'
 
 # Location of tftproot.
 TFTPROOT_DIR = '/data/tftproot'
+TFTP_HOST = ''
 
 # Add internally owned networks here. All network blocks owned/operated and
 # considered part of your network should be included.
@@ -170,6 +184,7 @@ GORC_FILE = '~/.gorc'
 # ``~.gorc``. They will be filtered out by `~trigger.gorc.filter_commands()`.
 GORC_ALLOWED_COMMANDS = (
     'cli',
+    'enable',
     'exit',
     'get',
     'monitor',

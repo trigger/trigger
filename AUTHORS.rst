@@ -15,3 +15,4 @@ lifetime:
 - `Michael Harding <https://github.com/mvh>`_
 - William White
 - `Allan Feid <https://github.com/crazed>`_
+- `Mike Biancaniello <https://github.com/chepazzo>`_
