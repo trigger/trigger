@@ -329,6 +329,8 @@ class NetDevice(object):
         """
         if self.is_brocade_vdx():
             return ['copy running-config startup-config', 'y']
+        elif 'nexus' in self.make.lower():
+            return ['copy running-config startup-config']
         else:
             return ['write memory']
 
