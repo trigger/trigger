@@ -274,7 +274,7 @@ def _choose_execute(device, force_cli=False):
         _execute = execute_netscreen
     elif device.vendor == 'juniper':
         if force_cli:
-            _execute = execute_generic_ssh
+            _execute = execute_async_pty_ssh
         else:
             _execute = execute_junoscript
     else:

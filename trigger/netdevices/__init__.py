@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.1'
+__version__ = '2.2'
 
 # Imports
 import copy
@@ -270,7 +270,7 @@ class NetDevice(object):
             `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in ('a10', 'arista', 'aruba', 'force10'),
+            self.vendor in ('a10', 'arista', 'aruba', 'cisco', 'force10'),
             self.is_brocade_vdx(),
         )
         return any(RULES)
