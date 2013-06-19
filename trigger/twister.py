@@ -278,11 +278,7 @@ def _choose_execute(device, force_cli=False):
         else:
             _execute = execute_junoscript
     else:
-        def null(*args, **kwargs):
-            """Does nothing."""
-            # TODO (jathan): Make this return a naekd Deferred instead.
-            return None
-        _execute = null
+        _execute = execute_async_pty_ssh
 
     return _execute
 
