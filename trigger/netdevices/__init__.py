@@ -298,7 +298,7 @@ class NetDevice(object):
             'dell': ['terminal datadump\n'],
             'force10': default,
             'foundry': ['skip-page-display\n'],
-            #'juniper': ['set cli screen-length 0\n'],
+            'juniper': ['set cli screen-length 0\n'],
             'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
         }
 
@@ -329,7 +329,7 @@ class NetDevice(object):
         """
         if self.is_brocade_vdx():
             return ['copy running-config startup-config', 'y']
-        elif 'nexus' in self.make.lower():
+        elif self.make and 'nexus' in self.make.lower():
             return ['copy running-config startup-config']
         else:
             return ['write memory']
