@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.1'
+__version__ = '2.2'
 
 # Imports
 import copy
@@ -270,7 +270,7 @@ class NetDevice(object):
             `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in ('a10', 'arista', 'aruba'),
+            self.vendor in ('a10', 'arista', 'aruba', 'cisco', 'force10'),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -293,11 +293,12 @@ class NetDevice(object):
             'a10': default,
             'arista': default,
             'aruba': ['no paging\n'],
-            'cisco': default,
             'brocade': disable_paging_brocade(), # See comments above
+            'cisco': default,
             'dell': ['terminal datadump\n'],
+            'force10': default,
             'foundry': ['skip-page-display\n'],
-            #'juniper': ['set cli screen-length 0\n'],
+            'juniper': ['set cli screen-length 0\n'],
             'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
         }
 
@@ -328,6 +329,8 @@ class NetDevice(object):
         """
         if self.is_brocade_vdx():
             return ['copy running-config startup-config', 'y']
+        elif self.make and 'nexus' in self.make.lower():
+            return ['copy running-config startup-config']
         else:
             return ['write memory']
 

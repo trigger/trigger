@@ -8,8 +8,8 @@ netdev - Command-line search interface for NetDevices.
 __author__ = 'Jathan McCollum, Eileen Tschetter'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2012, AOL Inc.'
-__version__ = '1.12'
+__copyright__ = 'Copyright 2003-2013, AOL Inc.'
+__version__ = '1.2'
 
 from optparse import OptionParser
 import sys
@@ -55,6 +55,8 @@ def parse_args(argv):
         help='For use with -s:  Match on make.')
     parser.add_option('-M', '--model', type='string', metavar='<MODEL>',
         help='For use with -s:  Match on model.')
+    parser.add_option('-c', '--coordinate', type='string', metavar='<COORDINATE>',
+        help='For use with -s:  Match on coordinate (rack number).')
     parser.add_option('-N', '--nonprod', action='store_false', default=True,
         help='Look for production and non-production devices.')
     #parser.add_option('-A', '--aclname', action='append', default=[],
@@ -150,7 +152,7 @@ def search_builder(opts):
 
     # site
     if opts.location: 
-        vars.append(" x.site == '%s'" % opts.location.upper())
+        vars.append(" '%s' in x.site" % opts.location.upper())
 
     # make
     if opts.make: 
@@ -159,6 +161,10 @@ def search_builder(opts):
     # model
     if opts.model: 
         vars.append(" '%s' in x.model" % opts.model.upper())
+
+    # coordinate/rack
+    if opts.coordinate:
+        vars.append(" '%s' in x.coordinate" % opts.coordinate.upper())
     #if opts.aclname: vars.append(" '%s' in x.model" % opts.model)
 
     #print vars
