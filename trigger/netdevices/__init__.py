@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.0'
+__version__ = '2.1'
 
 # Imports
 import copy
@@ -270,8 +270,8 @@ class NetDevice(object):
             `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor == 'aruba',
-            self.vendor == 'brocade' and self.is_switch(), # Brocade ADX/VDX
+            self.vendor in ('a10', 'arista', 'aruba'),
+            self.is_brocade_vdx(),
         )
         return any(RULES)
 
@@ -281,29 +281,29 @@ class NetDevice(object):
         disable pagination.
         """
         def disable_paging_brocade():
-            """
-            Brocade MLX routers and VDX switches require different commands to
-            disable paging. Yay complexity!
-            """
-            if self.is_switch():
-                return 'terminal length 0\n'
-            elif self.is_router():
-                return 'skip-page-display\n'
-            return None
+            """Brocade commands differ by platform."""
+            if self.is_brocade_vdx():
+                return ['terminal length 0\n']
+            else:
+                return ['skip-page-display\n']
 
         # Commands used to disable paging.
+        default = ['terminal length 0\n']
         paging_map = {
-            'arista': 'terminal length 0\n',
-            'aruba': 'no paging\n',
-            'cisco': 'terminal length 0\n',
-            'brocade': disable_paging_brocade(),
-            'dell': 'terminal datadump\n',
-            'foundry': 'skip-page-display\n',
+            'a10': default,
+            'arista': default,
+            'aruba': ['no paging\n'],
+            'cisco': default,
+            'brocade': disable_paging_brocade(), # See comments above
+            'dell': ['terminal datadump\n'],
+            'foundry': ['skip-page-display\n'],
+            #'juniper': ['set cli screen-length 0\n'],
+            'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
         }
 
-        cmd = paging_map.get(self.vendor.name)
-        if cmd is not None:
-            return [cmd] # This must be a list
+        cmds = paging_map.get(self.vendor.name)
+        if cmds is not None:
+            return cmds
 
         return []
 
@@ -317,6 +317,8 @@ class NetDevice(object):
             return self._juniper_commit()
         elif self.is_netscaler():
             return ['save config']
+        elif self.vendor == 'paloalto':
+            return ['commit']
         else:
             return []
 
@@ -324,7 +326,7 @@ class NetDevice(object):
         """
         Return proper 'write memory' command for IOS-like devices.
         """
-        if self.vendor == 'brocade' and self.is_switch():
+        if self.is_brocade_vdx():
             return ['copy running-config startup-config', 'y']
         else:
             return ['write memory']
@@ -453,6 +455,25 @@ class NetDevice(object):
         """
         return self.vendor in settings.IOSLIKE_VENDORS
 
+    def is_brocade_vdx(self):
+        """
+        Am I a Brocade VDX switch?
+
+        This is used to account for the disparity between the Brocade FCX
+        switches (which behave like Foundry devices) and the Brocade VDX
+        switches (which behave differently from classic Foundry devices).
+        """
+        if hasattr(self, '_is_brocade_vdx'):
+            return self._is_brocade_vdx
+
+        if not (self.vendor == 'brocade' and self.is_switch()):
+            self._is_brocade_vdx = False
+            return False
+
+        if self.make is not None:
+            self._is_brocade_vdx = 'vdx' in self.make.lower()
+        return self._is_brocade_vdx
+
     def _ssh_enabled(self, disabled_mapping):
         """Check whether vendor/type is enabled against the given mapping."""
         disabled_types = disabled_mapping.get(self.vendor.name, [])
@@ -517,7 +538,6 @@ class NetDevice(object):
         print '\tLast Updated:     ', dev.lastUpdate
         print
 
-
 class Vendor(object):
     """
     Map a manufacturer name to Trigger's canonical name.
@@ -542,6 +562,7 @@ class Vendor(object):
         self.manufacturer = manufacturer
         self.name = self.determine_vendor(manufacturer)
         self.title = self.name.title()
+        self.prompt_pattern = self._get_prompt_pattern(self.name)
 
     def determine_vendor(self, manufacturer):
         """Try to turn the provided vendor name into the cname."""
@@ -556,11 +577,27 @@ class Vendor(object):
                     # Safe fallback to first word
                     vendor = mparts[0]
 
-            # This breaks compatibility with officially unsupported devices
-            #else:
-            #    raise exceptions.UnsupportedVendor('No mapping found for %r in `settings.VENDOR_MAP`' % manufacturer)
-
         return vendor
+
+    def _get_prompt_pattern(self, vendor, prompt_patterns=None):
+        """
+        Map the vendor name to the appropriate ``prompt_pattern`` defined in
+        :setting:`PROMPT_PATTERNS`.
+        """
+        if prompt_patterns is None:
+            prompt_patterns = settings.PROMPT_PATTERNS
+
+        # Try to get it by vendor
+        pat = prompt_patterns.get(vendor)
+        if pat is not None:
+            return pat
+
+        # Try to map it by IOS-like vendors...
+        if vendor in settings.IOSLIKE_VENDORS:
+            return settings.IOSLIKE_PROMPT_PAT
+
+        # Or fall back to the default
+        return settings.DEFAULT_PROMPT_PAT
 
     @property
     def normalized(self):

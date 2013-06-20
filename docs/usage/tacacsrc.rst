@@ -123,7 +123,7 @@ your system.
 Enabling GPG
 ------------
 
-In ``settings.py`` set :setting:`USE_GPG_AUTH` to ``False``.
+In ``settings.py`` set :setting:`USE_GPG_AUTH` to ``True``.
 
 Generating your GPG key
 -----------------------

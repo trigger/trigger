@@ -32,8 +32,8 @@ Comment: First Last
 
 os.system('gpg --gen-key')
 
-if yesno('Would you like to convert your OLD tacacsrc configuration file to your new one?')
-        and os.path.isfile(homedir+'/.tacacsrc')
+if (yesno('Would you like to convert your OLD tacacsrc configuration file to your new one?')
+    and os.path.isfile(os.path.join(homedir, '.tacacsrc'))):
     convert_tacacsrc()
 else:
     print "Old tacacsrc not converted."

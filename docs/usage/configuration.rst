@@ -115,7 +115,7 @@ USE_GPG_AUTH
 
 Toggles whether or not we should use GPG authentication for storing TACACS
 credentials in the user's ``.tacacsrc`` file. Set to ``False`` to use the old
-.tackf encryptoin method, which sucks but requires almost no overhead.
+``.tackf`` encryption method, which sucks but requires almost no overhead.
 Should be ``False`` unless instructions/integration is ready for GPG. At this
 time the documentation for the GPG support is incomplete.
 
@@ -391,6 +391,30 @@ Cisco's IOS and can be treated accordingly for the sake of interaction.
 Default::
 
     ('a10', 'arista', 'brocade', 'cisco', 'dell', 'foundry')
+
+.. setting:: GORC_FILE
+
+GORC_FILE
+~~~~~~~~~
+
+The file path where a user's ``.gorc`` is expected to be found.
+
+Default::
+
+    '~/.gorc'
+
+.. setting:: GORC_ALLOWED_COMMANDS
+
+GORC_ALLOWED_COMMANDS
+~~~~~~~~~~~~~~~~~~~~~
+
+The only root commands that are allowed to be executed when defined within a
+users's ``~/.gorc`` file. Any root commands not  specified here will be
+filtered out by `~trigger.gorc.filter_commands()`.
+
+Default::
+
+    '~/.gorc'
 
 NetDevices settings
 -------------------
