@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.2'
+__version__ = '2.2.1'
 
 # Imports
 import copy
@@ -204,11 +204,6 @@ class NetDevice(object):
         if data is not None:
             self._populate_data(data)
 
-        # ACLs (defaults to empty sets)
-        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
-        if with_acls is not None:
-            self._populate_acls(aclsdb=with_acls)
-
         # Cleanup the attributes (strip whitespace, lowercase values, etc.)
         self._cleanup_attributes()
 
@@ -219,6 +214,11 @@ class NetDevice(object):
         # Use the vendor to populate the deviceType if it's not set already
         if self.deviceType is None:
             self._populate_deviceType()
+
+        # ACLs (defaults to empty sets)
+        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
+        if with_acls is not None:
+            self._populate_acls(aclsdb=with_acls)
 
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
