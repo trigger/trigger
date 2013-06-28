@@ -35,7 +35,6 @@ import os
 import sys
 import time
 from trigger.conf import settings
-from trigger.acl.db import AclsDB
 from trigger.utils import network
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
@@ -43,6 +42,11 @@ from twisted.python import log
 from UserDict import DictMixin
 import xml.etree.cElementTree as ET
 from . import loader
+try:
+    from trigger.acl.db import AclsDB
+except ImportError:
+    log.msg("Loading without ACL support")
+    settings.WITH_ACLS = False
 
 
 # Constants
@@ -203,6 +207,11 @@ class NetDevice(object):
         # If `data` has been passed, use it to update our attributes
         if data is not None:
             self._populate_data(data)
+
+        # ACLs (defaults to empty sets)
+        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
+        if with_acls:
+            self._populate_acls(aclsdb=with_acls)
 
         # Cleanup the attributes (strip whitespace, lowercase values, etc.)
         self._cleanup_attributes()
@@ -815,11 +824,13 @@ class NetDevices(DictMixin):
             """Returns a list of NetDevice objects with deviceType of FIREWALL"""
             return self.get_devices_by_type('FIREWALL')
 
-    def __init__(self, production_only=True, with_acls=True):
+    def __init__(self, production_only=True, with_acls=None):
         """
         :param production_only:
             Whether to require devices to have ``adminStatus=='PRODUCTION'``.
         """
+        if with_acls is None:
+            with_acls = settings.WITH_ACLS
         if NetDevices._Singleton is None:
             NetDevices._Singleton = NetDevices._actual(production_only=production_only,
                                                        with_acls=with_acls)
