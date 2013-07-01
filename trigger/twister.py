@@ -38,8 +38,15 @@ from trigger.utils import network, cli
 
 
 # Constants
-CONTINUE_PROMPTS = ['continue?', 'proceed?', '(y/n):', '[y/n]:']
-
+#Last one is very specific because I want to make sure bad things don't happen
+CONTINUE_PROMPTS = [
+    'continue?',
+    'proceed?',
+    '(y/n):',
+    '[y/n]:',
+    # Very specific to ensure bad things don't happen
+    'overwrite file [startup-config] ?[yes/press any key for no]....'
+]
 
 # Functions
 #==================
