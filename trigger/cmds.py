@@ -141,7 +141,7 @@ class Commando(object):
         self.max_conns = max_conns
         self.verbose = verbose
         self.timeout = timeout if timeout != self.timeout else self.timeout
-        self.nd = NetDevices(production_only=production_only,with_acls)
+        self.nd = NetDevices(production_only=production_only,with_acls=with_acls)
         self.allow_fallback = allow_fallback
         self.with_errors = with_errors
         self.force_cli = force_cli
