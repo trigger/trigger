@@ -130,7 +130,7 @@ class Commando(object):
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
-                 allow_fallback=True, with_errors=True, force_cli=False):
+                 allow_fallback=True, with_errors=True, force_cli=False,with_acls=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -141,7 +141,7 @@ class Commando(object):
         self.max_conns = max_conns
         self.verbose = verbose
         self.timeout = timeout if timeout != self.timeout else self.timeout
-        self.nd = NetDevices(production_only=production_only)
+        self.nd = NetDevices(production_only=production_only,with_acls=with_acls)
         self.allow_fallback = allow_fallback
         self.with_errors = with_errors
         self.force_cli = force_cli
