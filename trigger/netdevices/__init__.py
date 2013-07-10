@@ -336,7 +336,7 @@ class NetDevice(object):
         """
         Return proper 'write memory' command for IOS-like devices.
         """
-        if self.is_brocade_vdx():
+        if self.is_brocade_vdx() or self.vendor == 'dell':
             return ['copy running-config startup-config', 'y']
         elif self.make and 'nexus' in self.make.lower():
             return ['copy running-config startup-config']
