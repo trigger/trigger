@@ -1,0 +1,6 @@
+[gerrit]
+host=autopods-review.internal.salesforce.com
+port=29418
+project=trigger.git
+defaultbranch=develop
+defaultremote=origin
