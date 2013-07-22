@@ -18,9 +18,9 @@ invalid ACL and accept *every* valid ACL.
 [<Term: None>]
 """
 
-__author__ = 'Jathan McCollum, Michael Harding, Michael Shields'
+__author__ = 'Jathan McCollum, Michael Harding, Michael Shields, Mike Biancaniello'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathanism@aol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
 
 import IPy
@@ -245,19 +245,29 @@ ports = {
 }
 
 dscp_names = {
-    'ef': 46,
+    'be': 0,
+    'cs0': 0,
+    'cs1': 8,
     'af11': 10,
     'af12': 12,
     'af13': 14,
+    'cs2': 16,
     'af21': 18,
     'af22': 20,
     'af23': 22,
+    'cs3': 24,
     'af31': 26,
     'af32': 28,
     'af33': 30,
+    'cs4': 32,
     'af41': 34,
     'af42': 36,
-    'af43': 38 }
+    'af43': 38,
+    'cs5': 40,
+    'ef': 46,
+    'cs6': 48,
+    'cs7': 56
+}
 
 precedence_names = {
     'critical-ecp': 0xa0,        # JunOS
@@ -1335,9 +1345,9 @@ class Matches(MyDict):
     access checks.
     """
     def __setitem__(self, key, arg):
-        if key in ('ah-spi', 'destination-mac-address', 'dscp', 'ether-type',
+        if key in ('ah-spi', 'destination-mac-address', 'ether-type',
                    'esp-spi', 'forwarding-class', 'interface-group',
-                   'precedence', 'source-mac-address', 'vlan-ether-type',
+                   'source-mac-address', 'vlan-ether-type',
                    'fragment-flags', 'source-class', 'destination-class'):
             raise NotImplementedError('match on %s not implemented' % key)
 
@@ -1397,6 +1407,10 @@ class Matches(MyDict):
             check_range(arg, 0, 255)
         elif key in ('first-fragment', 'is-fragment'):
             arg = []
+        elif key == 'dscp':
+            pass
+        elif key == 'precedence':
+            pass
         else:
             raise exceptions.UnknownMatchType('unknown match type "%s"' % key)
 
