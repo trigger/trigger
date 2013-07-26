@@ -73,7 +73,7 @@ setup(
         'twisted': ['plugins/trigger_xmlrpc.py'],
     },
     license='BSD',
-    url='https://github.com/aol/trigger',
+    url='https://github.com/trigger/trigger',
     description=desc,
     long_description=long_desc,
     scripts=[

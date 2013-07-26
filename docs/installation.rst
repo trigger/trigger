@@ -204,7 +204,7 @@ Basic Configuration
 ===================
 
 For these steps you'll need to download the `Trigger tarball
-<https://github.com/aol/trigger/tarball/master>`_, expand it, and then navigate
+<https://github.com/trigger/trigger/tarball/master>`_, expand it, and then navigate
 to the root directory (the same directory in which you'll find ``setup.py``).
 
 Copy settings.py
