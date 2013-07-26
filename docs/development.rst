@@ -15,17 +15,17 @@ There are several ways to get involved with Trigger:
 * **Use Trigger and send us feedback!** This is the best and easiest to improve
   the project -- let us know how you currently use Trigger and how you want to
   use it. (Please search the `ticket tracker
-  <https://github.com/aol/trigger/issues>`_ first, though, when submitting
+  <https://github.com/trigger/trigger/issues>`_ first, though, when submitting
   feature ideas.)
 * **Report bugs.** If you use Trigger and think you've found a bug, check on
-  the `ticket tracker <https://github.com/aol/trigger/issues>`_ to see if
+  the `ticket tracker <https://github.com/trigger/trigger/issues>`_ to see if
   anyone's reported it yet, and if not -- file a bug! If you can, please try to
   make sure you can replicate the problem, and provide us with the info we need
   to reproduce it ourselves (what version of Trigger you're using, what
   platform you're on, and what exactly you were doing when the bug cropped up.)
 * **Submit patches or new features.** Make a `Github <https://github.com>`_
   account, `create a fork <http://help.github.com/fork-a-repo/>`_ of `the main
-  Trigger repository <https://github.com/aol/trigger>`_, and `submit a pull
+  Trigger repository <https://github.com/trigger/trigger>`_, and `submit a pull
   request <http://help.github.com/send-pull-requests/>`_.
 
 All contributors will receive proper attribution for their work. We want to

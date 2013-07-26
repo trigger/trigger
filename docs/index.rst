@@ -206,7 +206,7 @@ Please see the :doc:`changelog`.
 Road Map
 --------
 
-We are using `milestones <https://github.com/aol/trigger/issues/milestones>`_
+We are using `milestones <https://github.com/trigger/trigger/issues/milestones>`_
 to track Trigger's development path 30 to 90 days out. This is where we map
 outstanding issues to upcoming releases and is the best way to see what's
 coming!
@@ -263,7 +263,7 @@ at `pytrigger@aol.com <mailto:pytrigger@aol.com>`_.
 Bugs/ticket tracker
 -------------------
 
-To file new bugs or search existing ones, please use the GitHub issue tracker, located at `https://github.com/aol/trigger/issues <https://github.com/aol/trigger/issues>`_.
+To file new bugs or search existing ones, please use the GitHub issue tracker, located at `https://github.com/trigger/trigger/issues <https://github.com/trigger/trigger/issues>`_.
 
 .. _irc:
 
@@ -280,7 +280,7 @@ Wiki
 ----
 
 We will use GitHub's built-in wiki located at
-`https://github.com/aol/trigger/wiki <https://github.com/aol/trigger/wiki>`_.
+`https://github.com/trigger/trigger/wiki <https://github.com/trigger/trigger/wiki>`_.
 
 .. _openhatch:
 

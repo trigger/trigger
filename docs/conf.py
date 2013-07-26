@@ -28,7 +28,7 @@ def issues_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     """
     # Old-style 'just the issue link' behavior
     issue_no = utils.unescape(text)
-    ref = "https://github.com/aol/trigger/issues/" + issue_no
+    ref = "https://github.com/trigger/trigger/issues/" + issue_no
     link = nodes.reference(rawtext, '#' + issue_no, refuri=ref, **options)
     ret = [link]
     # Additional 'new-style changelog' stuff
