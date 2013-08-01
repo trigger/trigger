@@ -17,6 +17,7 @@ requires = [
     'Twisted',
     'pyasn1', # Twisted conch needs this, but doesn't say so
     'pycrypto',
+    'pyparsing==1.5.7',
     'pytz',
     'SimpleParse',
     'redis', # The python interface, not the daemon!
