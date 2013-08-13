@@ -83,6 +83,8 @@ def has_netscaler_error(s):
     tests = (
         s.startswith('ERROR: '),
         '\nERROR: ' in s,
+        s.startswith('Warning: '),
+        '\nWarning: ' in s,
     )
     return any(tests)
 
