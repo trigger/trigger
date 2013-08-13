@@ -1074,6 +1074,9 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         :param data:
             Prompt data to check.
         """
+        if self.enabled:
+            return False # Skip checks if already enabled
+
         if not self.device.is_ioslike():
             log.msg('[%s] Not IOS-like, setting enabled flag')
             self.enabled = True
@@ -1087,7 +1090,12 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         self.write('enable\n')
         # Zero out the buffer before sending the password
         self.data = ''
-        self.write(self.device.enablePW + '\n')
+
+        # Get enablepw from env. or device object
+        device = hasattr(self, 'device')
+        dev_pw = getattr(device, 'enablePW', None)
+        enablepw = os.getenv('TRIGGER_ENABLEPW') or dev_pw
+        self.write(enablepw + '\n')
         self.enabled = True
 
     def dataReceived(self, bytes):
@@ -1454,7 +1462,7 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
         self.protocol = TriggerTelnet
         self.action = action
         self.loginpw = loginpw
-        self.enablepw = enablepw
+        self.enablepw = os.getenv('TRIGGER_ENABLEPW', enablepw)
         self.action.factory = self
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
