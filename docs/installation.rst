@@ -163,12 +163,10 @@ quickly and easily.
 Other Dependencies
 ------------------
 
-This documentation is incomplete and is being improved.
+Know for now that if you want to use the integrated load queue, you may
+potentially require an additional database library.
 
-Know for now that if you want to use the integrated load queue, you must have
-the Python MySQL bindings.
-
-+ `MySQL-python <http://pypi.python.org/pypi/MySQL-python>`_ (MySQLdb)
+See :ref:`db-drivers` below for more information.
 
 Installing Trigger
 ==================
@@ -302,17 +300,72 @@ Please have a look at the usage documentation!
 Integrated Load Queue
 =====================
 
-Trigger currently (but hopefully not for too much longer) uses MySQL for the
-automated ACL load queue used by the ``load_acl`` and ``acl`` utilities. If you
-want to use these tools, you need to create a MySQL database and make sure you
-also have the `MySQLdb <http://pypi.python.org/pypi/MySQL-python>`_ module
-installed.
+Trigger currently uses a database for the automated ACL load queue used by the
+``load_acl`` and ``acl`` utilities.
 
-Find ``conf/acl_queue_schema.sql`` in the source distribution and import the
-`queue` and `acl_queue` tables into a database of your choice. It's probably
-best to create a unique database and database user for this purpose, but we'll
-leave that up to you.
+The supported databases are `MySQL <http://www.mysql.com/>`_, `PostgreSQL
+<http://www.postgresql.org/>`_, and `SQLite <http://sqlite.org>`_.
 
-Example import::
+SQLite is the easiest to get running because generally this module is part of
+the Python standard library, and the database can be a simple file on your
+system.
 
-    % mysql trigger -u trigger_user -p < ./conf/acl_queue_schema.sql
+It's probably best to create a unique database and database user for this
+purpose, but we'll leave that up to you.
+
+If you want to use this functionality, you will need to do the following:
+
++ Choose your database solution
++ Create a database on it to be used by the load queue
++ If you're not using SQLite, ensure you have the database driver installed
++ Specify your database settings in ``settings.py``
++ Run the ``init_task_db`` tool
++ Profit!
+
+.. _db-drivers:
+
+Database Drivers
+----------------
+
+.. note::
+    If you are using ``sqlite3`` you may ignore this section as the driver is
+    included in the Python standard library.
+
+Some of the database libraries are Python C extensions and so will expect
+``gcc`` and a number of development libraries to be available on your system.
+
+Generally you will need the development headers for Python and OpenSSL as well
+as the development libraries for the database you're using.
+
+PostgreSQL
+~~~~~~~~~~
+
+Your only choice is `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_. This is a
+Python C extension which requires compiliation.
+
+Here are some tips to install the library dependencies:
+
+Ubuntu
+    ``sudo apt-get install libpq-dev libssl-dev python-dev``
+
+CentOS/RedHat
+    ``sudo yum install postgresql-devel openssl-devel python-devel``
+
+MySQL
+~~~~~
+
+For MySQL you have two choices:
+
+1. `PyMySQL <https://pypi.python.org/pypi/PyMySQL>`_, a pure Python MySQL driver.
+2. `MySQL-python <https://pypi.python.org/pypi/MySQL-python>`_. This is a
+   Python C extension which requires compilation.
+
+If you're using MySQL-python, here are some tips to install the library
+dependencies:
+
+Ubuntu
+    ``sudo apt-get install libmysqlclient-dev libssl-dev python-dev``
+
+CentOS/RedHat
+    ``sudo yum install mysql-devel openssl-devel python-devel``
+

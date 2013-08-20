@@ -1,18 +1,21 @@
 # Dummy version of autoacl.py, for test cases.
 
-from sets import Set
+DC_ONCALL_ID = '17'
 
-ATDN_ONCALL = '80'
+def autoacl(dev, explicit_acls=None):
+    """return a bare set"""
+    acls = set()
 
-def autoacl(dev):
-    acls = Set()
-    if dev.manufacturer == 'JUNIPER':
-	# Make sure that explicit_acls is already populated.
-	assert '181j' in dev.explicit_acls
+    return acls
 
-	acls.add('115j')
-	if dev.onCallID == ATDN_ONCALL:
-	    acls.add('protectRE.atdn')
-	else:
-	    acls.add('protectRE')
+# TODO (jathan): Update the acls.db tests to pickup what we define here
+def _autoacl(dev, explicit_acls=None):
+    """A simple test case. NYI"""
+    if dev.vendor == 'juniper':
+        acls.add('115j')
+        if dev.onCallID == DC_ONCALL_ID:
+            acls.add('router-protect.core')
+        else:
+            acls.add('router-protect')
+
     return acls
