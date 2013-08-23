@@ -313,12 +313,12 @@ REDIS_DB = 0
 #===============================
 
 # These are self-explanatory, I hope.
-# TODO (jathan): Replace remaining db interaction w/ Redis.
-DATABASE_NAME = ''
-DATABASE_USER = ''
-DATABASE_PASSWORD = ''
-DATABASE_HOST = '127.0.0.1'
-DATABASE_PORT = 3306
+DATABASE_ENGINE = ''   # Choose 'postgresql', 'mysql', 'sqlite3'
+DATABASE_NAME = ''     # Or path to database file if using sqlite3
+DATABASE_USER = ''     # Not used with sqlite3
+DATABASE_PASSWORD = '' # Not used with sqlite3
+DATABASE_HOST = ''     # Set to empty string for localhost. Not used with sqlite3
+DATABASE_PORT = ''     # Set to empty string for default. Not used with sqlite3.
 
 #===============================
 # ACL Management

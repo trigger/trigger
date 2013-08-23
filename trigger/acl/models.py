@@ -3,10 +3,15 @@ from trigger.conf import settings
 import __peewee as pw
 
 engine = settings.DATABASE_ENGINE
+if not engine:
+    raise RuntimeError('You must specify a database engine in settings.DATABASE_ENGINE')
+
 if engine == 'sqlite3':
     database = pw.SqliteDatabase(database=settings.DATABASE_NAME,
                                  threadlocals=True)
 elif engine == 'mysql':
+    if not settings.DATABASE_PORT:
+        settings.DATABASE_PORT = 3306
     database = pw.MySQLDatabase(host=settings.DATABASE_HOST,
                                 database=settings.DATABASE_NAME,
                                 port=settings.DATABASE_PORT,
