@@ -1,5 +1,5 @@
 [gerrit]
-host=autopods-review.internal.salesforce.com
+host=autopods-review.soma.salesforce.com
 port=29418
 project=trigger.git
 defaultbranch=develop
