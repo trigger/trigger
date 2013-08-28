@@ -208,6 +208,11 @@ class NetDevice(object):
         if data is not None:
             self._populate_data(data)
 
+        # ACLs (defaults to empty sets)
+        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
+        if with_acls:
+            self._populate_acls(aclsdb=with_acls)
+
         # Cleanup the attributes (strip whitespace, lowercase values, etc.)
         self._cleanup_attributes()
 
