@@ -96,6 +96,7 @@ setup(
         'tools/gen_tacacsrc.py',
         'tools/convert_tacacsrc.py',
         'tools/tacacsrc2gpg.py',
+        'tools/init_task_db',
     ],
     install_requires=requires,
     keywords = [

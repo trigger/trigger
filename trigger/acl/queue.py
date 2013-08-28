@@ -28,10 +28,6 @@ from . import models
 
 # Globals
 QUEUE_NAMES = ('integrated', 'manual')
-MODEL_MAP = {
-    'integrated': models.IntegratedTask,
-    'manual': models.ManualTask
-}
 
 
 # Exports
@@ -71,7 +67,7 @@ class Queue(object):
         :param queue:
             Name of the queue whose object you want
         """
-        return MODEL_MAP.get(queue, None)
+        return models.MODEL_MAP.get(queue, None)
 
     def create_task(self, queue, *args, **kwargs):
         """

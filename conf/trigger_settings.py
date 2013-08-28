@@ -293,13 +293,14 @@ REDIS_DB = 0
 # Database Settings
 #===============================
 
-# These are self-explanatory, I hope.
-# TODO (jathan): Replace remaining db interaction w/ Redis.
-DATABASE_NAME = 'trigger'
-DATABASE_USER = 'trigger'
-DATABASE_PASSWORD = 'abc123'
-DATABASE_HOST = '127.0.0.1'
-DATABASE_PORT = 3306
+# These are self-explanatory, I hope. Use the ``init_task_db`` to initialize
+# your database after you've created it! :)
+DATABASE_ENGINE = 'mysql'   # Choose 'postgresql', 'mysql', 'sqlite3'
+DATABASE_NAME = ''          # Or path to database file if using sqlite3
+DATABASE_USER = ''          # Not used with sqlite3
+DATABASE_PASSWORD = ''      # Not used with sqlite3
+DATABASE_HOST = ''          # Set to '' for localhost. Not used with sqlite3
+DATABASE_PORT = ''          # Set to '' for default. Not used with sqlite3.
 
 #===============================
 # ACL Management

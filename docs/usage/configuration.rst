@@ -685,21 +685,37 @@ Default::
 
     0
 
+.. _db-settings:
+
 Database settings
 -----------------
 
-These will eventually be replaced with Redis or another task queue solution
-(such as Celery). For now, you'll need to populate this with information for
-your MySQL database.
+These will eventually be replaced with another task queue solution (such as
+Celery). For now, you'll need to populate this with information for your
+database.
 
-These are all self-explanatory, I hope.
+These are all self-explanatory, I hope. For more information on database
+drivers that you may need, please see :ref:`db-drivers`.
+
+.. setting:: DATABASE_ENGINE
+
+DATABASE_ENGINE
+~~~~~~~~~~~~~~~
+
+The database driver you intend to use for the task queue. This can be one of
+``postgresql``, ``mysql``, ``sqlite3``. For the purpose of backwards
+compatibility this defaults to ``mysql``.
+
+Default::
+
+    'mysql'
 
 .. setting:: DATABASE_NAME
 
 DATABASE_NAME
 ~~~~~~~~~~~~~
 
-The name of the database.
+The name of the database. If using ``sqlite3``, this is the path to the database file.
 
 Default::
 
@@ -710,7 +726,7 @@ Default::
 DATABASE_USER
 ~~~~~~~~~~~~~
 
-The username to use to connect to the database.
+The username to use to connect to the database. (Not used with ``sqlite3``)
 
 Default::
 
@@ -721,7 +737,7 @@ Default::
 DATABASE_PASSWORD
 ~~~~~~~~~~~~~~~~~
 
-The password for the user account used to connect to the database.
+The password for the user account used to connect to the database. (Not used with ``sqlite``)
 
 Default::
 
@@ -732,22 +748,24 @@ Default::
 DATABASE_HOST
 ~~~~~~~~~~~~~
 
-The host on which your MySQL databse resides.
+The host on which your database resides. Set to empty string for localhost.
+(Not used with ``sqlite3``)
 
 Default::
 
-    '127.0.0.1'
+    ''
 
 .. setting:: DATABASE_PORT
 
 DATABASE_PORT
 ~~~~~~~~~~~~~
 
-The destination port used by MySQL.
+The destination port used by the task queue. Set to empty string for default.
+(Not used with ``sqlite3``)
 
 Default::
 
-    3306
+    ''
 
 Access-list Management settings
 -------------------------------

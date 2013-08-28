@@ -65,7 +65,23 @@ class ManualTask(BaseModel):
     class Meta:
         db_table = 'queue'
 
+MODEL_MAP = {
+    'integrated': IntegratedTask,
+    'manual': ManualTask,
+}
+
 def create_tables():
+    """Connect to the database and create the tables for each model."""
     database.connect()
     IntegratedTask.create_table()
     ManualTask.create_table()
+
+def confirm_tables():
+    """Ensure the table exists for each model."""
+    print 'Checking tables...'
+    for q_name, model in MODEL_MAP.iteritems():
+        print q_name.ljust(10),
+        print model.table_exists()
+    else:
+        return True
+    return False
