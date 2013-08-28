@@ -357,8 +357,8 @@ MySQL
 For MySQL you have two choices:
 
 1. `PyMySQL <https://pypi.python.org/pypi/PyMySQL>`_, a pure Python MySQL driver.
-2. `MySQL-python <https://pypi.python.org/pypi/MySQL-python>`_. This is a Python.
-  C extension which requires compilation.
+2. `MySQL-python <https://pypi.python.org/pypi/MySQL-python>`_. This is a
+   Python C extension which requires compilation.
 
 If you're using MySQL-python, here are some tips to install the library
 dependencies:
