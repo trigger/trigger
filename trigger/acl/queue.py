@@ -35,12 +35,7 @@ MODEL_MAP = {
 
 
 # Exports
-__all__ = ('Queue', 'QueueError',)
-
-
-# Exceptions
-class QueueError(Exception):
-    """Raised when we encounter errors communicating with the Queue"""
+__all__ = ('Queue',)
 
 
 # Classes
@@ -123,7 +118,7 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise QueueError('You must specify an ACL to insert into the queue')
+            raise exceptions.QueueError('You must specify an ACL to insert into the queue')
         if not routers:
             routers = []
 
@@ -167,7 +162,7 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise QueueError('You must specify an ACL to delete from the queue')
+            raise exceptions.QueueError('You must specify an ACL to delete from the queue')
 
         escalation, acl = self._normalize(acl)
         m = self.get_model('integrated')
@@ -239,7 +234,7 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise QueueError('You must specify an ACL to remove from the queue')
+            raise exceptions.QueueError('You must specify an ACL to remove from the queue')
 
         m = self.get_model('integrated')
         loaded = 0
@@ -266,7 +261,7 @@ class Queue(object):
             (Optional) List of valid queue names
         """
         if queue not in q_names:
-            print 'Queue must be one of %s, not: %s' % (q_names, queue)
+            self.vprint('Queue must be one of %s, not: %s' % (q_names, queue))
             return False
 
         m = self.get_model(queue)
