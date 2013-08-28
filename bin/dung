@@ -1,0 +1,23 @@
+#!/opt/bcs/bin/python -W ignore::DeprecationWarning
+
+"""
+Device Updater (Next Generation)
+
+Uses SIMIAN framework to load configs on netdevices
+
+ding.py holds all of the scripting code including:
+- argument parsing
+- job queue
+- etc
+
+This allows duNG and doNG to maintain a common useability
+
+Please see docommand/ding.py for details
+
+"""
+
+import docommand
+from docommand.ding import main
+
+main(docommand.do.Config)
+
