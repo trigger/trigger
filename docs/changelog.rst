@@ -2,6 +2,17 @@
 Changelog
 =========
 
+.. _v1.4:
+
+1.4
+===
+
++ Task queue now supports MySQL, PostgreSQL, or SQLite. See the
+  :ref:`db-settings` for more information!
+
+  - There's a new :setting:`DATABASE_ENGINE` that allows you to specify.
+  - New tool to initialize your database w/ ease: ``init_task_db``
+
 .. _v1.3.1:
 
 1.3.1
