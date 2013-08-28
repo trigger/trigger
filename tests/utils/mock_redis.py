@@ -174,4 +174,7 @@ class Redis(MockRedis):
 
 def install():
     """Install into sys.modules as the Redis module"""
+    for mod in ('redis', 'utils.mock_redis'):
+        sys.modules.pop(mod, None)
+    __import__('utils.mock_redis')
     sys.modules['redis'] = sys.modules['utils.mock_redis']

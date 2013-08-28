@@ -5,10 +5,6 @@
 Test the functionality of `~trigger.acl.db` (aka ACLs.db)
 """
 
-# Override the place from which NetDevices pulls metadata
-import os
-os.environ['NETDEVICES_SOURCE'] = 'data/netdevices.xml'
-
 # Make sure we load the mock redis library
 from utils import mock_redis
 mock_redis.install()
@@ -20,8 +16,8 @@ from trigger import exceptions
 import unittest
 
 # Globals
-nd = NetDevices()
 adb = AclsDB()
+nd = NetDevices()
 DEVICE_NAME = 'test1-abc.net.aol.com'
 ACL_NAME = 'foo'
 
@@ -31,30 +27,37 @@ class TestAclsDB(unittest.TestCase):
         self.device = nd.find(DEVICE_NAME)
 
     def test_01_add_acl_success(self):
+        """Test associate ACL to device success"""
         exp = 'added acl %s to %s' % (self.acl, self.device)
         self.assertEqual(exp, adb.add_acl(self.device, self.acl))
 
     def test_02_add_acl_failure(self):
+        """Test associate ACL to device failure"""
         exp = exceptions.ACLSetError
         self.assertRaises(exp, adb.add_acl, self.device, self.acl)
 
     def test_03_remove_acl_success(self):
+        """Test remove ACL from device success"""
         exp = 'removed acl %s from %s' % (self.acl, self.device)
         self.assertEqual(exp, adb.remove_acl(self.device, self.acl))
 
     def test_04_remove_acl_failure(self):
+        """Test remove ACL from device failure"""
         exp = exceptions.ACLSetError
         self.assertRaises(exp, adb.remove_acl, self.device, self.acl)
 
     def test_05_get_acl_dict(self):
+        """Test get dict of associations"""
         exp = {'all': set(), 'explicit': set(), 'implicit': set()}
         self.assertDictEqual(exp, adb.get_acl_dict(self.device))
 
     def test_06_get_acl_set_success(self):
+        """Test get set of associations success"""
         exp = set()
         self.assertEqual(exp, adb.get_acl_set(self.device))
 
     def test_07_get_acl_set_failure(self):
+        """Test get set of associations failure"""
         exp = exceptions.InvalidACLSet
         acl_set = 'bogus'
         self.assertRaises(exp, adb.get_acl_set, self.device, acl_set)

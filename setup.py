@@ -45,15 +45,19 @@ class TestCommand(Command):
         os.environ['NETDEVICES_SOURCE'] = \
             os.path.join(test_path, 'netdevices.xml')
         os.environ['AUTOACL_FILE'] = os.path.join(test_path, 'autoacl.py')
+        os.environ['BOUNCE_FILE'] = os.path.join(test_path, 'bounce.py')
         os.environ['TACACSRC'] = os.path.join(test_path, 'tacacsrc')
         os.environ['TACACSRC_KEYFILE'] = os.path.join(test_path, 'tackf')
 
-        # Run each .py file found under tests/.
+        # Run each .py file found under tests.
         args = [unittest.__file__]
         for root, dirs, files in os.walk('tests'):
-            for file in files:
-                if file.endswith('.py'):
-                    args.append(os.path.join(root, file[:-3]))
+            for fn in files:
+                if fn.startswith('test') and fn.endswith('.py'):
+                    args.append(fn[:-3])
+
+        # Inject tests dir into beginning of sys.path before we run the tests
+        sys.path.insert(0, os.path.join(os.getcwd(), 'tests'))
         unittest.main(None, None, args)
 
 desc = 'Trigger is a framework and suite of tools for configuring network devices'
