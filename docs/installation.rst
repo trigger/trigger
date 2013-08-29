@@ -341,7 +341,7 @@ PostgreSQL
 ~~~~~~~~~~
 
 Your only choice is `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_. This is a
-Python C extension which requires compiliation.
+Python C extension which requires compilation.
 
 Here are some tips to install the library dependencies:
 
