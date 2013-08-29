@@ -823,6 +823,10 @@ class NetDevices(DictMixin):
         """
         :param production_only:
             Whether to require devices to have ``adminStatus=='PRODUCTION'``.
+
+        :param with_acls:
+            Whether to load ACL associations (requires Redis). Defaults to whatever
+            is specified in settings.WITH_ACLS
         """
         if with_acls is None:
             with_acls = settings.WITH_ACLS

@@ -419,6 +419,24 @@ Default::
 NetDevices settings
 -------------------
 
+.. setting:: WITH_ACLS
+
+WITH_ACLS
+~~~~~~~~~
+
+Globally toggle whether to load ACL associations from the Redis database. If
+you don't have Redis or aren't using Trigger to manage ACLs set this to
+``False``.
+
+.. note::
+   If you are doing work that does not require ACL information setting this to
+   ``False`` can speed things up. Several libraries that interact with devices
+   also have a ``with_acls`` argument to toggle this at runtime.
+
+Default::
+
+    True
+
 .. setting:: AUTOACL_FILE
 
 AUTOACL_FILE
