@@ -46,7 +46,7 @@ def _setup_aclsdb(device_name=DEVICE_NAME, acl=ACL_NAME):
     global nd
     dev = nd.find(device_name)
     if acl not in dev.acls:
-        adb.add_acl(dev, acl) 
+        adb.add_acl(dev, acl)
     NetDevices._Singleton = None
     nd = NetDevices()
 
@@ -60,7 +60,7 @@ class TestAclQueue(unittest.TestCase):
         self.device_name = DEVICE_NAME
         self.device_list = [self.device_name]
         self.user = USERNAME
-    
+
     #
     # Integrated queue tests
     #
@@ -115,7 +115,7 @@ class TestAclQueue(unittest.TestCase):
 
     def test_10_remove_integrated_failure(self):
         """Test remove (set as loaded) failure"""
-        self.assertRaises(exceptions.QueueError, self.q.remove, '', self.device_list)
+        self.assertRaises(exceptions.ACLQueueError, self.q.remove, '', self.device_list)
 
     #
     # Manual queue tests

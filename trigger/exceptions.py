@@ -121,7 +121,7 @@ class InvalidACLSet(ACLSetError):
     """Raised when an invalid ACL set is specified."""
 
 # ACL/task queue errors
-class QueueError(Exception):
+class ACLQueueError(TriggerError):
     """Raised when we encounter errors communicating with the Queue"""
 
 #####################

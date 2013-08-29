@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+"""
+Database models for the task queue.
+"""
+
 import datetime
 from trigger.conf import settings
 import __peewee as pw
@@ -6,6 +12,8 @@ engine = settings.DATABASE_ENGINE
 if not engine:
     raise RuntimeError('You must specify a database engine in settings.DATABASE_ENGINE')
 
+# We're hard-coding support for the BIG THREE database solutions for now,
+# because that's what the ``peewee`` library we are using as the ORM supports.
 if engine == 'sqlite3':
     database = pw.SqliteDatabase(database=settings.DATABASE_NAME,
                                  threadlocals=True)
@@ -29,6 +37,9 @@ else:
     raise RuntimeError('Unsupported database engine: %s' % engine)
 
 class BaseModel(pw.Model):
+    """
+    Base model that inherits the database object determined above.
+    """
     class Meta:
         database = database
 
@@ -79,8 +90,9 @@ def create_tables():
 def confirm_tables():
     """Ensure the table exists for each model."""
     print 'Checking tables...'
+    width = max(len(q_name) for q_name in MODEL_MAP)
     for q_name, model in MODEL_MAP.iteritems():
-        print q_name.ljust(10),
+        print q_name.ljust(width),
         print model.table_exists()
     else:
         return True

@@ -6,19 +6,15 @@ import mock_redis
 import os
 import sys
 
-redis = mock_redis
-
-def mock_redis_client(host=None, port=None, db=None):
-    """Create a mock redis client"""
-    return redis.Redis(host=host, port=port, db=db)
-
 if __name__ == '__main__':
     os.environ['NETDEVICES_SOURCE'] = 'data/netdevices.xml'
 
+    mock_redis.install()
+    import redis
     from trigger.netdevices import NetDevices
     from trigger.acl.db import AclsDB
 
-    r = mock_redis_client(host=None, port=None, db=None)
+    r = redis.Redis()
     a = AclsDB()
     nd = NetDevices()
 
