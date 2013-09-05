@@ -40,6 +40,11 @@ class TestCommand(Command):
     def finalize_options(self):
         pass
     def run(self):
+        # Change to project root to run tests
+        project_root = os.path.dirname(__file__)
+        if project_root:
+            os.chdir(project_root)
+
         # Set up environment to point to mockup files.
         test_path = os.path.join(os.getcwd(), 'tests', 'data')
         os.environ['NETDEVICES_SOURCE'] = \
