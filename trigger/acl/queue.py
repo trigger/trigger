@@ -13,9 +13,8 @@ Database interface for automated ACL queue. Used primarily by ``load_acl`` and
 
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2010-2013'
-__version__ = '2.0'
+__email__ = 'jmccollum@salesforce.com'
+__version__ = '2.0.1'
 
 
 import datetime
@@ -24,6 +23,7 @@ import sys
 from trigger import exceptions
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
+from trigger.utils import get_user
 from . import models
 
 # Globals
@@ -48,7 +48,7 @@ class Queue(object):
     def __init__(self, verbose=True):
         self.nd = NetDevices()
         self.verbose = verbose
-        self.login = os.getlogin()
+        self.login = get_user()
 
     def vprint(self, msg):
         """

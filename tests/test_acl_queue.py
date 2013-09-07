@@ -26,13 +26,14 @@ from trigger.acl import queue
 from trigger.acl.models import create_tables
 from trigger.acl.db import AclsDB
 from trigger.netdevices import NetDevices
+from trigger.utils import get_user
 from trigger import exceptions
 import unittest
 
 # Globals
 DEVICE_NAME = 'test1-abc.net.aol.com'
 ACL_NAME = 'foo'
-USERNAME = os.getlogin()
+USERNAME = get_user()
 
 # Setup
 create_tables()
