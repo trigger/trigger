@@ -13,6 +13,7 @@ __copyright__ = 'Copyright 2006-2012, AOL Inc.'
 import datetime
 from fcntl import ioctl
 import os
+import pwd
 from pytz import timezone
 import struct
 import sys
@@ -24,7 +25,7 @@ import tty
 # Exports
 __all__ = ('yesno', 'get_terminal_width', 'get_terminal_size', 'Whirlygig',
            'NullDevice', 'print_severed_head', 'min_sec', 'pretty_time',
-           'proceed')
+           'proceed', 'get_user')
 
 
 # Functions
@@ -104,6 +105,10 @@ def get_terminal_size():
     """Find and return stdouts terminal size as (height, width)"""
     rows, cols = os.popen('stty size', 'r').read().split()
     return rows, cols
+
+def get_user():
+    """Return the name of the current user."""
+    return pwd.getpwuid(os.getuid())[0]
 
 def print_severed_head():
     """
