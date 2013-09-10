@@ -211,3 +211,9 @@ class LoaderFailed(NetDeviceError):
 #####################
 class NotificationFailure(TriggerError):
     """Raised when a notification fails and has not been silenced."""
+
+#####################
+# Bounce/Changemgmt Exceptions
+#####################
+class InvalidBounceWindow(TriggerError):
+    """Raised when a BounceWindow object is kind of not good."""

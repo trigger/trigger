@@ -21,9 +21,6 @@ import os
 import sys
 from twisted.python import log
 from trigger.netdevices import device_match
-## Put this here until the default changes to not load ACLs from redis.
-from trigger.conf import settings
-settings.WITH_ACLS = False
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings

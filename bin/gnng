@@ -29,9 +29,6 @@ import sys
 from twisted.python import log
 from trigger.cmds import NetACLInfo
 from trigger.netdevices import NetDevices
-## Put this here until the default changes to not load ACLs from redis.
-from trigger.conf import settings
-settings.WITH_ACLS = False
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
