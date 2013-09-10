@@ -6,6 +6,13 @@ import mock_redis
 import os
 import sys
 
+__all__ = ['mock_redis']
+
+# misc
+from . import misc
+from misc import *
+__all__.extend(misc.__all__)
+
 if __name__ == '__main__':
     os.environ['NETDEVICES_SOURCE'] = 'data/netdevices.xml'
 
