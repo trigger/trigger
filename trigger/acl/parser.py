@@ -34,10 +34,34 @@ from trigger import exceptions
 
 
 # Exports
-__all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
-           'literals', 'do_protocol_lookup', 'ports', 'Policer',
-           'PolicerGroup', 'make_nondefault_processor', 'ACLParser', 'strip_comments',
-           'ACLProcessor', 'default_processor', 'S')
+__all__ = (
+    # Constants,
+    'ports',
+    # Functions
+    'check_range',
+    'default_processor',
+    'do_port_lookup',
+    'do_protocol_lookup',
+    'literals',
+    'make_nondefault_processor',
+    'parse',
+    'strip_comments',
+    'S',
+    # Classes
+    'ACL',
+    'ACLParser',
+    'ACLProcessor',
+    'Comment',
+    'Matches',
+    'Policer',
+    'PolicerGroup',
+    'Protocol',
+    'RangeList',
+    'Remark',
+    'Term',
+    'TermList',
+    'TIP',
+)
 
 
 # Proceed at your own risk. It's kind of a mess from here on out!
@@ -434,6 +458,12 @@ class RangeList(object):
             l[0] + 1
         except (TypeError, AttributeError):
             return l
+        '''
+            try:
+                l[0][0] + 1
+            except (TypeError, AttributeError):
+                return l
+        '''
 
         # This last step uses a loop instead of pure functionalism because
         # it will be common to step through it tens of thousands of times,
@@ -459,7 +489,7 @@ class RangeList(object):
         if not l:
             return l
         try:
-            return xrange(l[0][0], l[0][1]+1) + self._expand(l[1:])
+            return range(l[0][0], l[0][1]+1) + self._expand(l[1:])
         except AttributeError:        # not incrementable
             return l
         except (TypeError, IndexError):

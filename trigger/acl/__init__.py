@@ -18,13 +18,14 @@ __version__ = (0, 1)
 
 import os
 from trigger.conf import settings
-from trigger.acl.parser import *
 
-__all__ = ['acl_exists', 'parse', 'ACL']
-#__all__.extend(list(parser.__all__)) # Include parser.__all__ (duh!)
+__all__ = ['parser', 'acl_exists']
 
+# Parser
+from . import parser
+from parser import *
+__all__.extend(parser.__all__)
 
 # Functions
 def acl_exists(name):
     return os.access(settings.FIREWALL_DIR + '/acl.' + name, os.R_OK)
-
