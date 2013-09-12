@@ -6,7 +6,7 @@ Database models for the task queue.
 
 import datetime
 from trigger.conf import settings
-import __peewee as pw
+from ..packages import peewee as pw
 
 engine = settings.DATABASE_ENGINE
 if not engine:

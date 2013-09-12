@@ -1,3 +1,9 @@
+"""
+peewee - a small, expressive ORM
+Source: https://raw.github.com/coleifer/peewee/2.1.4/peewee.py
+License: BSD
+Integrated into Trigger 2013-09-12
+"""
 #     (\
 #     (  \  /(o)\     caw!
 #     (   \/  ()/ /)
@@ -26,12 +32,14 @@ __all__ = [
     'BooleanField',
     'CharField',
     'Clause',
+    'CompositeKey',
     'DateField',
     'DateTimeField',
     'DecimalField',
     'DoesNotExist',
     'DoubleField',
     'DQ',
+    'Entity',
     'Field',
     'FloatField',
     'fn',
@@ -318,6 +326,17 @@ class Clause(Node):
     def clone_base(self):
         return Clause(*self.nodes)
 
+class Entity(Node):
+    def __init__(self, *path):
+        super(Entity, self).__init__()
+        self.path = path
+
+    def clone_base(self):
+        return Entity(*self.path)
+
+    def __getattr__(self, attr):
+        return Entity(*self.path + (attr,))
+
 Join = namedtuple('Join', ('model_class', 'join_type', 'on'))
 
 class FieldDescriptor(object):
@@ -338,6 +357,7 @@ class Field(Node):
     _order = 0
     db_field = 'unknown'
     template = '%(column_type)s'
+    template_extra = ''
 
     def __init__(self, null=False, index=False, unique=False,
                  verbose_name=None, help_text=None, db_column=None,
@@ -702,6 +722,25 @@ class ForeignKeyField(IntegerField):
         return self.rel_model._meta.primary_key.db_value(value)
 
 
+class CompositeKey(object):
+    sequence = None
+
+    def __init__(self, *fields):
+        self.fields = fields
+
+    def add_to_class(self, model_class, name):
+        self.name = name
+        setattr(model_class, name, self)
+
+    def __get__(self, instance, instance_type=None):
+        if instance is not None:
+            return [getattr(instance, field) for field in self.fields]
+        return self
+
+    def __set__(self, instance, value):
+        pass
+
+
 class QueryCompiler(object):
     field_map = {
         'bigint': 'BIGINT',
@@ -817,6 +856,9 @@ class QueryCompiler(object):
         elif isinstance(node, Model):
             sql = self.interpolation
             params = [node.get_id()]
+        elif isinstance(node, Entity):
+            sql = '.'.join(map(self.quote, node.path))
+            params = []
         elif isclass(node) and issubclass(node, Model):
             sql = self.quote(node._meta.db_table)
             params = []
@@ -1033,11 +1075,12 @@ class QueryCompiler(object):
             parts.append('NOT NULL')
         if field.primary_key:
             parts.append('PRIMARY KEY')
+        if field.template_extra:
+            parts.append(field.template_extra)
         if isinstance(field, ForeignKeyField):
             ref_mc = (
                 self.quote(field.rel_model._meta.db_table),
-                self.quote(field.rel_model._meta.primary_key.db_column),
-            )
+                self.quote(field.rel_model._meta.primary_key.db_column))
             parts.append('REFERENCES %s (%s)' % ref_mc)
             parts.append('%(cascade)s%(extra)s')
         elif field.sequence:
@@ -1050,8 +1093,12 @@ class QueryCompiler(object):
             parts.append('IF NOT EXISTS')
         meta = model_class._meta
         parts.append(self.quote(meta.db_table))
-        columns = ', '.join(self.field_sql(f) for f in meta.get_fields())
-        parts.append('(%s)' % columns)
+        columns = map(self.field_sql, meta.get_fields())
+        if isinstance(meta.primary_key, CompositeKey):
+            pk_cols = map(self.quote, (
+                meta.fields[f].db_column for f in meta.primary_key.fields))
+            columns.append('PRIMARY KEY (%s)' % ', '.join(pk_cols))
+        parts.append('(%s)' % ', '.join(columns))
         return parts
 
     def create_table(self, model_class, safe=False):
@@ -1813,6 +1860,9 @@ class Database(object):
     def rows_affected(self, cursor):
         return cursor.rowcount
 
+    def sql_error_handler(self, exception, sql, params, require_commit):
+        raise exception
+
     def compiler(self):
         return self.compiler_class(
             self.quote_char, self.interpolation, self.field_overrides,
@@ -1821,7 +1871,11 @@ class Database(object):
     def execute_sql(self, sql, params=None, require_commit=True):
         logger.debug((sql, params))
         cursor = self.get_cursor()
-        res = cursor.execute(sql, params or ())
+        try:
+            res = cursor.execute(sql, params or ())
+        except Exception as exc:
+            logger.error('Error executing query %s (%s)' % (sql, params))
+            return self.sql_error_handler(exc, sql, params, require_commit)
         if require_commit and self.get_autocommit():
             self.commit()
         return cursor
@@ -1913,6 +1967,8 @@ class SqliteDatabase(Database):
         OP_LIKE: 'GLOB',
         OP_ILIKE: 'LIKE',
     }
+    if sqlite3:
+        ConnectionError = sqlite3.OperationalError
 
     def _connect(self, database, **kwargs):
         if not sqlite3:
@@ -2004,7 +2060,7 @@ class PostgresqlDatabase(Database):
 class MySQLDatabase(Database):
     commit_select = True
     field_overrides = {
-        'boolean': 'BOOL',
+        'bool': 'BOOL',
         'decimal': 'NUMERIC',
         'double': 'DOUBLE PRECISION',
         'float': 'FLOAT',
@@ -2130,7 +2186,7 @@ default_database = SqliteDatabase('peewee.db')
 
 class ModelOptions(object):
     def __init__(self, cls, database=None, db_table=None, indexes=None,
-                 order_by=None, primary_key=None):
+                 order_by=None, primary_key=None, **kwargs):
         self.model_class = cls
         self.name = cls.__name__.lower()
         self.fields = {}
@@ -2139,13 +2195,17 @@ class ModelOptions(object):
 
         self.database = database or default_database
         self.db_table = db_table
-        self.indexes = indexes or []
+        self.indexes = list(indexes or [])
         self.order_by = order_by
         self.primary_key = primary_key
 
         self.auto_increment = None
         self.rel = {}
         self.reverse_rel = {}
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self._additional_keys = set(kwargs.keys())
 
     def prepared(self):
         for field in self.fields.values():
@@ -2195,7 +2255,7 @@ class ModelOptions(object):
 
 
 class BaseModel(type):
-    inheritable_options = ['database', 'indexes', 'order_by', 'primary_key']
+    inheritable = set(['database', 'indexes', 'order_by', 'primary_key'])
 
     def __new__(cls, name, bases, attrs):
         if not bases:
@@ -2208,7 +2268,8 @@ class BaseModel(type):
                 if not k.startswith('_'):
                     meta_options[k] = v
 
-        orig_primary_key = None
+        model_pk = getattr(meta, 'primary_key', None)
+        parent_pk = None
 
         # inherit any field descriptors by deep copying the underlying field
         # into the attrs of the new model, additionally see if the bases define
@@ -2218,45 +2279,46 @@ class BaseModel(type):
                 continue
 
             base_meta = getattr(b, '_meta')
+            if parent_pk is None:
+                parent_pk = deepcopy(base_meta.primary_key)
+            all_inheritable = cls.inheritable | base_meta._additional_keys
             for (k, v) in base_meta.__dict__.items():
-                if k in cls.inheritable_options and k not in meta_options:
+                if k in all_inheritable and k not in meta_options:
                     meta_options[k] = v
 
             for (k, v) in b.__dict__.items():
                 if isinstance(v, FieldDescriptor) and k not in attrs:
                     if not v.field.primary_key:
                         attrs[k] = deepcopy(v.field)
-                    elif not orig_primary_key:
-                        orig_primary_key = deepcopy(v.field)
 
         # initialize the new class and set the magic attributes
         cls = super(BaseModel, cls).__new__(cls, name, bases, attrs)
         cls._meta = ModelOptions(cls, **meta_options)
         cls._data = None
-
-        primary_key = None
+        cls._meta.indexes = list(cls._meta.indexes)
 
         # replace fields with field descriptors, calling the add_to_class hook
         for name, attr in list(cls.__dict__.items()):
-            cls._meta.indexes = list(cls._meta.indexes)
             if isinstance(attr, Field):
                 attr.add_to_class(cls, name)
-                if attr.primary_key:
-                    primary_key = attr
+                if attr.primary_key and model_pk:
+                    raise ValueError('primary key is overdetermined.')
+                elif attr.primary_key:
+                    model_pk = attr
 
-        if primary_key is None:
-            if orig_primary_key:
-                primary_key = orig_primary_key
-                name = primary_key.name
+        if model_pk is None:
+            if parent_pk:
+                model_pk, name = parent_pk, parent_pk.name
             else:
-                primary_key = PrimaryKeyField(primary_key=True)
-                name = 'id'
-            primary_key.add_to_class(cls, name)
+                model_pk, name = PrimaryKeyField(primary_key=True), 'id'
+            model_pk.add_to_class(cls, name)
+        elif isinstance(model_pk, CompositeKey):
+            model_pk.add_to_class(cls, '_composite_key')
 
-        cls._meta.primary_key = primary_key
+        cls._meta.primary_key = model_pk
         cls._meta.auto_increment = (
-            isinstance(primary_key, PrimaryKeyField) or
-            bool(primary_key.sequence))
+            isinstance(model_pk, PrimaryKeyField) or
+            bool(model_pk.sequence))
         if not cls._meta.db_table:
             cls._meta.db_table = re.sub('[^\w]+', '_', cls.__name__.lower())
 
@@ -2377,6 +2439,9 @@ class Model(with_metaclass(BaseModel)):
     def set_id(self, id):
         setattr(self, self._meta.primary_key.name, id)
 
+    def pk_expr(self):
+        return self._meta.primary_key == self.get_id()
+
     def prepared(self):
         pass
 
@@ -2394,20 +2459,16 @@ class Model(with_metaclass(BaseModel)):
             field_dict = self._prune_fields(field_dict, only)
         if self.get_id() is not None and not force_insert:
             field_dict.pop(pk.name, None)
-            update = self.update(
-                **field_dict
-            ).where(pk == self.get_id())
-            update.execute()
+            self.update(**field_dict).where(self.pk_expr()).execute()
         else:
-            if self._meta.auto_increment:
-                field_dict.pop(pk.name, None)
-            insert = self.insert(**field_dict)
-            new_pk = insert.execute()
-            if self._meta.auto_increment:
-                self.set_id(new_pk)
+            pk = self.get_id()
+            ret_pk = self.insert(**field_dict).execute()
+            if ret_pk is not None:
+                pk = ret_pk
+            self.set_id(pk)
 
     def dependencies(self, search_nullable=False):
-        query = self.select().where(self._meta.primary_key == self.get_id())
+        query = self.select().where(self.pk_expr())
         stack = [(type(self), query)]
         seen = set()
 
@@ -2432,8 +2493,7 @@ class Model(with_metaclass(BaseModel)):
                     model.update(**{fk.name: None}).where(query).execute()
                 else:
                     model.delete().where(query).execute()
-        return self.delete().where(
-            self._meta.primary_key == self.get_id()).execute()
+        return self.delete().where(self.pk_expr()).execute()
 
     def __eq__(self, other):
         return (
@@ -2452,7 +2512,7 @@ def prefetch_add_subquery(sq, subqueries):
             subquery = subquery.select()
         subquery_model = subquery.model_class
         fkf = None
-        for j in range(i, -1, -1):
+        for j in reversed(range(i + 1)):
             last_query = fixed_queries[j][0]
             fkf = subquery_model._meta.rel_for_model(last_query.model_class)
             if fkf:
