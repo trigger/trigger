@@ -76,15 +76,15 @@ class TestNetDevicesWithAcls(unittest.TestCase):
     def test_search(self):
         """Test the search() method."""
         expected = [self.device]
-        self.assertItemsEqual(expected, self.nd.search(self.nodename))
-        self.assertItemsEqual(expected, self.nd.search('17', field='onCallID'))
-        self.assertItemsEqual(expected, self.nd.search('juniper', field='vendor'))
+        self.assertEqual(expected, self.nd.search(self.nodename))
+        self.assertEqual(expected, self.nd.search('17', field='onCallID'))
+        self.assertEqual(expected, self.nd.search('juniper', field='vendor'))
 
     def test_match(self):
         """Test the match() method."""
         expected = [self.device]
-        self.assertItemsEqual(expected, self.nd.match(nodename=self.nodename))
-        self.assertItemsEqual(expected, self.nd.match(vendor='juniper'))
+        self.assertEqual(expected, self.nd.match(nodename=self.nodename))
+        self.assertEqual(expected, self.nd.match(vendor='juniper'))
         self.assertNotEqual(expected, self.nd.match(vendor='cisco'))
 
     def tearDown(self):
@@ -128,7 +128,7 @@ class TestNetDeviceObject(unittest.TestCase):
     def test_bounce(self):
         """Test .bounce property"""
         expected = changemgmt.BounceWindow
-        self.assertIsInstance(self.device.bounce, expected)
+        self.assertTrue(isinstance(self.device.bounce, expected))
 
     def test_shortName(self):
         """Test .shortName property"""
