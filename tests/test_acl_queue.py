@@ -41,10 +41,9 @@ adb = AclsDB()
 nd = NetDevices()
 # These must happen after we populate the dummy AclsDB
 
-def _setup_aclsdb(device_name=DEVICE_NAME, acl=ACL_NAME):
+def _setup_aclsdb(nd, device_name=DEVICE_NAME, acl=ACL_NAME):
     """Add an explicit ACL to the dummy AclsDB"""
     #print 'Setting up ACLsdb: %s => %s' % (acl, device_name)
-    global nd
     dev = nd.find(device_name)
     if acl not in dev.acls:
         adb.add_acl(dev, acl)
@@ -53,11 +52,12 @@ def _setup_aclsdb(device_name=DEVICE_NAME, acl=ACL_NAME):
 
 class TestAclQueue(unittest.TestCase):
     def setUp(self):
-        _setup_aclsdb()
+        self.nd = NetDevices()
+        _setup_aclsdb(self.nd)
         self.q = queue.Queue(verbose=False)
         self.acl = ACL_NAME
         self.acl_list = [self.acl]
-        self.device = nd.find(DEVICE_NAME)
+        self.device = self.nd.find(DEVICE_NAME)
         self.device_name = DEVICE_NAME
         self.device_list = [self.device_name]
         self.user = USERNAME
@@ -157,6 +157,9 @@ class TestAclQueue(unittest.TestCase):
     def test_ZZ_cleanup_db(self):
         """Cleanup the temp database file"""
         self.assertIsNone(os.remove(db_file))
+
+    def tearDown(self):
+        NetDevices._Singleton = None
 
 if __name__ == '__main__':
     unittest.main()
