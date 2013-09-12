@@ -51,7 +51,7 @@ class TestAclsDB(unittest.TestCase):
         """Test get dict of associations"""
         exp = {'all': self.implicit_acls, 'explicit': set(),
                'implicit': self.implicit_acls}
-        self.assertDictEqual(exp, adb.get_acl_dict(self.device))
+        self.assertEqual(exp, adb.get_acl_dict(self.device))
 
     def test_06_get_acl_set_success(self):
         """Test get set of associations success"""
