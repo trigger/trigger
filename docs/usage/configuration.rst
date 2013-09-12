@@ -123,6 +123,20 @@ Default::
 
    False
 
+.. setting:: TACACSRC
+
+TACACSRC
+~~~~~~~~
+
+Sets the location of the ``.tacacsrc`` file.
+
+You may override this by setting the ``TACACSRC`` environment variable to the
+path of the file.
+
+Default::
+
+    '$HOME/.tacacsrc'
+
 .. setting:: TACACSRC_KEYFILE
 
 TACACSRC_KEYFILE
@@ -131,6 +145,9 @@ TACACSRC_KEYFILE
 Only used if GPG auth is disabled. This is the location of the file that
 contains the passphrase used for the two-way hashing of the user credentials
 within the ``.tacacsrc`` file.
+
+You may override this by setting the ``TACACSRC_KEYFILE`` environment variable
+to path of the file.
 
 Default::
 

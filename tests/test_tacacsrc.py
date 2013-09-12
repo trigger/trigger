@@ -4,13 +4,14 @@
 __author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __copyright__ = 'Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com'
-__version__ = '2.0'
+__version__ = '2.0.1'
 
 
 from StringIO import StringIO
 import os
 import unittest
 import tempfile
+from trigger.conf import settings
 from trigger.tacacsrc import Tacacsrc, Credentials
 
 
@@ -20,7 +21,6 @@ RIGHT_TACACSRC = {
     'aol_uname_': 'jschmoe',
     'aol_pwd_': 'abc123',
 }
-TACACSRC = os.getenv('TACACSRC')
 
 
 def miniparser(data, tcrc):
@@ -34,9 +34,9 @@ def miniparser(data, tcrc):
     return ret
 
 class Testing_Tacacsrc(Tacacsrc):
-    def _get_keyfile_nonce(self):
+    def _get_key_nonce_old(self):
         '''Dependency injection'''
-        return 'shields'
+        return 'jschmoe\n'
 
 class TacacsrcTest(unittest.TestCase):
     def testRead(self):
@@ -61,7 +61,7 @@ class TacacsrcTest(unittest.TestCase):
 
         # And then compare it against the manually parsed value using
         # miniparser()
-        with open(TACACSRC, 'r') as fd:
+        with open(settings.TACACSRC, 'r') as fd:
             lines = fd.readlines()
             self.assertEqual(output, miniparser(lines, t))
         os.remove(file_name)

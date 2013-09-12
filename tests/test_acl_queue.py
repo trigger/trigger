@@ -14,7 +14,6 @@ from trigger.conf import settings
 
 # Override the DB file we're going to use.
 _, db_file = tempfile.mkstemp('.db')
-settings.DATABASE_ENGINE = 'sqlite3'
 settings.DATABASE_NAME = db_file
 
 # Make sure we load the mock redis library
