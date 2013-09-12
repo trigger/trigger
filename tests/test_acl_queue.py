@@ -67,7 +67,7 @@ class TestAclQueue(unittest.TestCase):
 
     def test_01_insert_integrated_success(self):
         """Test insert success into integrated queue"""
-        self.assertIsNone(self.q.insert(self.acl, self.device_list))
+        self.assertTrue(self.q.insert(self.acl, self.device_list) is None)
 
     def test_02_insert_integrated_failure_device(self):
         """Test insert invalid device"""
@@ -82,13 +82,13 @@ class TestAclQueue(unittest.TestCase):
         """Test listing integrated queue"""
         self.q.insert(self.acl, self.device_list)
         expected = [(u'test1-abc.net.aol.com', u'foo')]
-        self.assertItemsEqual(expected, self.q.list())
+        self.assertEqual(sorted(expected), sorted(self.q.list()))
 
     def test_05_complete_integrated(self):
         """Test mark task complete"""
         self.q.complete(self.device_name, self.acl_list)
         expected = []
-        self.assertItemsEqual(expected, self.q.list())
+        self.assertEqual(sorted(expected), sorted(self.q.list()))
 
     def test_06_delete_integrated_with_devices(self):
         """Test delete ACL from queue providing devices"""
@@ -105,13 +105,7 @@ class TestAclQueue(unittest.TestCase):
         self.q.insert(self.acl, self.device_list)
         self.q.remove(self.acl, self.device_list)
         expected = []
-        self.assertItemsEqual(expected, self.q.list())
-
-    def test_09_remove_integrated_success(self):
-        """Test remove (set as loaded) ACL from integrated queue"""
-        self.q.insert(self.acl, self.device_list)
-        self.q.remove(self.acl, self.device_list)
-        expected = []
+        self.assertEqual(sorted(expected), sorted(self.q.list()))
 
     def test_10_remove_integrated_failure(self):
         """Test remove (set as loaded) failure"""
@@ -123,7 +117,7 @@ class TestAclQueue(unittest.TestCase):
 
     def test_11_insert_manual_success(self):
         """Test insert success into manual queue"""
-        self.assertIsNone(self.q.insert('manual task', None))
+        self.assertTrue(self.q.insert('manual task', None) is None)
 
     def test_12_list_manual_success(self):
         """Test list success of manual queue"""
@@ -131,13 +125,13 @@ class TestAclQueue(unittest.TestCase):
         expected = ('manual task', self.user)
         result = self.q.list('manual')
         actual = result[0][:2] # First tuple, items 0-1
-        self.assertAlmostEqual(expected, actual)
+        self.assertEqual(sorted(expected), sorted(actual))
 
     def test_13_delete_manual_success(self):
         """Test delete from manual queue"""
         self.q.delete('manual task')
         expected = []
-        self.assertItemsEqual(expected, self.q.list('manual'))
+        self.assertEqual(sorted(expected), sorted(self.q.list('manual')))
 
     #
     # Generic tests
@@ -155,7 +149,7 @@ class TestAclQueue(unittest.TestCase):
 
     def test_ZZ_cleanup_db(self):
         """Cleanup the temp database file"""
-        self.assertIsNone(os.remove(db_file))
+        self.assertTrue(os.remove(db_file) is None)
 
     def tearDown(self):
         NetDevices._Singleton = None
