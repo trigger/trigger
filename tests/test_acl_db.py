@@ -17,14 +17,14 @@ import unittest
 
 # Globals
 adb = AclsDB()
-nd = NetDevices()
 DEVICE_NAME = 'test1-abc.net.aol.com'
 ACL_NAME = 'foo'
 
 class TestAclsDB(unittest.TestCase):
     def setUp(self):
+        self.nd = NetDevices()
         self.acl = ACL_NAME
-        self.device = nd.find(DEVICE_NAME)
+        self.device = self.nd.find(DEVICE_NAME)
         self.implicit_acls = set(['115j', 'router-protect.core'])
 
     def test_01_add_acl_success(self):
@@ -63,6 +63,9 @@ class TestAclsDB(unittest.TestCase):
         exp = exceptions.InvalidACLSet
         acl_set = 'bogus'
         self.assertRaises(exp, adb.get_acl_set, self.device, acl_set)
+
+    def tearDown(self):
+        NetDevices._Singleton = None
 
 if __name__ == '__main__':
     unittest.main()
