@@ -14,10 +14,11 @@ example of one might create a subclass. Better documentation is in the works!
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2013, AOL Inc.'
-__version__ = '2.2'
+__email__ = 'jmccollum@salesforce.com'
+__copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '2.3'
 
+import collections
 import datetime
 import itertools
 import os
@@ -105,10 +106,6 @@ class Commando(object):
     :param force_cli:
         (Optional) Juniper only. If set, sends commands using CLI instead of
         Junoscript.
-
-    :param with_acls:
-        Whether to load ACL associations (requires Redis). Defaults to whatever
-        is specified in settings.WITH_ACLS
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -134,8 +131,7 @@ class Commando(object):
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
-                 allow_fallback=True, with_errors=True, force_cli=False,
-                 with_acls=False):
+                 allow_fallback=True, with_errors=True, force_cli=False,with_acls=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -146,7 +142,7 @@ class Commando(object):
         self.max_conns = max_conns
         self.verbose = verbose
         self.timeout = timeout if timeout != self.timeout else self.timeout
-        self.nd = NetDevices(production_only=production_only, with_acls=with_acls)
+        self.nd = NetDevices(production_only=production_only,with_acls=with_acls)
         self.allow_fallback = allow_fallback
         self.with_errors = with_errors
         self.force_cli = force_cli
@@ -561,6 +557,13 @@ class NetACLInfo(Commando):
         >>> lo0['acl_in']; lo0['addr']
         ['abc123']
         [IP('66.185.128.160')]
+
+    This accepts all arguments from the `~trigger.cmds.Commando` parent class,
+    as well as this one extra:
+
+    :param skip_disabled:
+        Whether to include interface names without any information. (Default:
+        ``True``)
     """
     def __init__(self, **args):
         try:
@@ -568,6 +571,7 @@ class NetACLInfo(Commando):
         except ImportError:
             raise RuntimeError("You must install ``pyparsing==1.5.7`` to use NetACLInfo")
         self.config = {}
+        self.skip_disabled = args.pop('skip_disabled', True)
         super(NetACLInfo, self).__init__(**args)
 
     def IPsubnet(self, addr):
@@ -618,7 +622,7 @@ class NetACLInfo(Commando):
         alld = data[0]
 
         log.msg('Parsing interface data (%d bytes)' % len(alld))
-        self.config[device] = _parse_ios_interfaces(alld)
+        self.config[device] = _parse_ios_interfaces(alld, skip_disabled=self.skip_disabled)
 
         return True
 
@@ -711,17 +715,22 @@ class NetACLInfo(Commando):
         self.config[device] = dta
         return True
 
-def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
+def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disabled=True):
     """
-    Walks through a IOS interface config and returns a dict of parts. Intended
-    for use by trigger.cmds.NetACLInfo.ios_parse() but was written to be portable.
+    Walks through a IOS interface config and returns a dict of parts.
 
-    @auto_cleaup: Set to False if you don't want to pass results through
-    cleanup_results(). Enabled by default.
-    output
+    Intended for use by `~trigger.cmds.NetACLInfo.ios_parse()` but was written
+    to be portable.
 
-    @acls_as_list: Set to False if you want acl names as strings instead of
-    list members. (e.g. "ABC123" vs. ['ABC123'])
+    :param acls_as_list:
+        Whether you want acl names as strings instead of list members, e.g.
+
+    :param auto_cleanup:
+        Whether you want to pass results through cleanup_results(). Default: ``True``)
+        "ABC123" vs. ['ABC123']. (Default: ``True``)
+
+    :param skip_disabled:
+        Whether to skip disabled interfaces. (Default: ``True``)
     """
     import pyparsing as pp
 
@@ -830,9 +839,11 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
     except: # (ParseException, ParseFatalException, RecursiveGrammarException):
         results = {}
 
-    return _cleanup_interface_results(results) if auto_cleanup else results
+    if auto_cleanup:
+        return _cleanup_interface_results(results, skip_disabled=skip_disabled)
+    return results
 
-def _cleanup_interface_results(results):
+def _cleanup_interface_results(results, skip_disabled=True):
     """
     Takes ParseResults dictionary-like object and returns an actual dict of
     populated interface details.  The following is performed:
@@ -840,21 +851,31 @@ def _cleanup_interface_results(results):
         * Ensures all expected fields are populated
         * Down/un-addressed interfaces are skipped
         * Bare IP/CIDR addresses are converted to IPy.IP objects
+
+    :param results:
+        Interface results to parse
+
+    :param skip_disabled:
+        Whether to skip disabled interfaces. (Default: ``True``)
     """
     interfaces = sorted(results.keys())
     newdict = {}
     for interface in interfaces:
         iface_info = results[interface]
 
-        # Skip down interfaces
-        if 'addr' not in iface_info:
+        # Maybe skip down interfaces
+        if 'addr' not in iface_info and skip_disabled:
             continue
+
+        # Ensure we have a dict to work with.
+        if not iface_info:
+            iface_info = collections.defaultdict(list)
 
         newdict[interface] = {}
         new_int = newdict[interface]
 
-        new_int['addr'] = _make_ipy(iface_info['addr'])
-        new_int['subnets'] = _make_cidrs(iface_info.get('subnets', []) or iface_info['addr'])
+        new_int['addr'] = _make_ipy(iface_info.get('addr', []))
+        new_int['subnets'] = _make_cidrs(iface_info.get('subnets', iface_info.get('addr', [])))
         new_int['acl_in'] = list(iface_info.get('acl_in', []))
         new_int['acl_out'] = list(iface_info.get('acl_out', []))
         new_int['description'] = list(iface_info.get('description', []))
