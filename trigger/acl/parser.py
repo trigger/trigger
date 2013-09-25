@@ -18,10 +18,10 @@ invalid ACL and accept *every* valid ACL.
 [<Term: None>]
 """
 
-__author__ = 'Jathan McCollum, Michael Harding, Michael Shields, Mike Biancaniello'
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathanism@aol.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
 
 import IPy
 from simpleparse import objectgenerator
