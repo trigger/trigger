@@ -35,8 +35,8 @@ network devices with ease. Here are some of things that make Trigger tick:
 
 New in version 1.2:
 
-+ Import your metadata from an existing RANCID installation to get
-  up-and-running quickly!
++ Import your metadata from an existing `RANCID
+  <http://shrubbery.net/rancid/>`_ installation to get up-and-running quickly!
 
 New in version 1.3:
 
@@ -45,18 +45,32 @@ New in version 1.3:
 Getting Started
 ===============
 
-The best way to get started is to read the documentation hosted by `Read the Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org <http://trigger.readthedocs.org>`_. There you will find everything you need to get going including usage examples, installation and configuration instructions, and more!
+The best way to get started is to read the documentation hosted by `Read the
+Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org
+<http://trigger.readthedocs.org>`_. There you will find everything you need to
+get going including usage examples, installation and configuration
+instructions, and more!
 
 Before you begin
 ----------------
 
-+ The ``develop`` branch is the default branch, and while generally stable is
-  not considered production-ready. Use at your own risk!
-+ The ``master`` branch is the stable branch, and will reflect the latest
-  production-ready changes. It is recommended that this is the branch you use
-  if you are installing Trigger for the first time.
-+ Each point release of Trigger is maintained as a tag branch. If you require a
-  specific Trigger version, refer to these.
++ The `develop <https://github.com/trigger/trigger/tree/develop>`_ branch is
+  the default branch that will be active when you clone this repository. While
+  it is generally stable this branch is not considered production-ready. Use at
+  your own risk!
++ The `master <https://github.com/trigger/trigger/tree/master>`_ branch is
+  the stable branch, and will reflect the latest production-ready changes. It
+  is recommended that this is the branch you use if you are installing Trigger
+  for the first time.
++ Each point release of Trigger is maintained as a `tag branch
+  <https://github.com/trigger/trigger/tags>`_. If you require a
+  specific Trigger version, please refer to these.
 
+Get in touch!
+-------------
 
+If you run into any snags, have questions, feedback, or just want to talk shop:
+`contact us <http://trigger.readthedocs.org/en/latest/#getting-help>`_!
 
+**Pro tip**: Find us on IRC at ``#trigger`` on Freenode
+(`irc://irc.freenode.net/trigger <irc://irc.freenode.net/trigger>`_).

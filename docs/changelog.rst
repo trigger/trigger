@@ -121,13 +121,6 @@ trigger.cmds
 trigger.netdevices
 ------------------
 
-+ `~trigger.netdevices.NetDevices` loaders are now pluggable, with
-  built-in support for JSON, SQLite, XML, CSV, and RANCID!
-+ Network device metadata may now be loaded from any URI-based file
-  path (especially URLs).
-+ `~trigger.netdevices.NetDevice` objects now have the commands that
-  are best to execute to disable paging or commit changes determined
-  dynmically to ease utility for Trigger developers.
 + Prompt patterns are now bound to `~trigger.netdevices.Vendor`
   objects.
 
