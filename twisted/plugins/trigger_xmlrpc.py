@@ -61,7 +61,7 @@ class TriggerXMLRPCServiceMaker(object):
         xmlrpc.addIntrospection(rpc)
         site_factory = server.Site(rpc)
 
-        # Try to setup SSL 
+        # Try to setup SSL
         if ssl is not None:
             ctx = ssl.DefaultOpenSSLContextFactory(options['ssl-keyfile'],
                                                    options['ssl-certfile'])

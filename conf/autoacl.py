@@ -54,21 +54,21 @@ def autoacl(dev, explicit_acls=None):
     # Explicitly pass a set of explicit_acls so that we can use it as a
     # dependency for assigning implicit_acls. Defaults to an empty set.
     if explicit_acls is None:
-        log.msg('[%s]: explicit_acls unset')
+        log.msg('[%s]: explicit_acls unset' % dev)
         explicit_acls = set()
 
     # Skip anything not owned by valid groups
     if dev.owningTeam not in OWNERS:
-        log.msg('[%s]: invalid owningTeam')
+        log.msg('[%s]: invalid owningTeam' % dev)
         return set()
 
     # Skip firewall devices
     if dev.deviceType == 'FIREWALL':
-        log.msg('[%s]: firewall device')
+        log.msg('[%s]: firewall device' % dev)
         return set()
 
     # Prep acl set
-    log.msg('[%s]: autoacls initialized')
+    log.msg('[%s]: autoacls initialized' % dev)
     acls = set()
 
     # 
@@ -83,23 +83,23 @@ def autoacl(dev, explicit_acls=None):
     # Other GSR acls
     #
     if dev.vendor == 'cisco':
-        log.msg("[%s]: adding ACLs ('117')")
+        log.msg("[%s]: adding ACLs ('117')" % dev)
         acls.add('117')
         if dev.make == '12000 SERIES' and dev.nodeName.startswith('pop') or dev.nodeName.startswith('bb'):
-            log.msg("[%s]: adding ACLs ('backbone-acl')")
+            log.msg("[%s]: adding ACLs ('backbone-acl')" % dev)
             acls.add('backbone-acl')
         elif dev.make == '12000 SERIES':
-            log.msg("[%s]: adding ACLs ('gsr-acl')")
+            log.msg("[%s]: adding ACLs ('gsr-acl')" % dev)
             acls.add('gsr-acl')
     #
     # Juniper acls
     #
     if dev.vendor == 'juniper':
         if dev.deviceType == 'SWITCH':
-            log.msg("[%s]: adding ACLs ('juniper-switch-protect')")
+            log.msg("[%s]: adding ACLs ('juniper-switch-protect')" % dev)
             acls.add('juniper-switch-protect')
         else:
-            log.msg("[%s]: adding ACLs ('juniper-router-protect')")
+            log.msg("[%s]: adding ACLs ('juniper-router-protect')" % dev)
             acls.add('juniper-router-protect')
             acls.add('juniper-router.policer')
 
@@ -111,10 +111,10 @@ def autoacl(dev, explicit_acls=None):
     if '10.special' in explicit_acls:
         pass
     elif dev.deviceType == 'ROUTER':
-        log.msg("[%s]: adding ACLs ('10')")
+        log.msg("[%s]: adding ACLs ('10')" % dev)
         acls.add('10')
     elif dev.deviceType == 'SWITCH':
-        log.msg("[%s]: adding ACLs ('10.sw')")
+        log.msg("[%s]: adding ACLs ('10.sw')" % dev)
         acls.add('10.sw')
 
     return acls
