@@ -184,8 +184,10 @@ class BounceWindow(object):
 
     def __repr__(self):
         return "%s(green=%r, yellow=%r, red=%r, default=%r)" % (self.__class__.__name__,
-                                                                self._green, self._yellow,
-                                                                self._red, self.default)
+                                                                self._green,
+                                                                self._yellow,
+                                                                self._red,
+                                                                self.default)
 
     def status(self, when=None):
         """

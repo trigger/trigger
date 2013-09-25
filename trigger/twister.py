@@ -38,13 +38,15 @@ from trigger.utils import network, cli
 
 
 # Constants
-#Last one is very specific because I want to make sure bad things don't happen
+# Prompts sent by devices that indicate the device is awaiting user
+# confirmation. The last one is very specific because we want to make sure bad
+# things don't happen.
 CONTINUE_PROMPTS = [
     'continue?',
     'proceed?',
     '(y/n):',
     '[y/n]:',
-    # Very specific to ensure bad things don't happen
+    # Very specific to ensure bad things don't happen!
     'overwrite file [startup-config] ?[yes/press any key for no]....'
 ]
 

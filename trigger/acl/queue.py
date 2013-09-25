@@ -26,6 +26,7 @@ from trigger.netdevices import NetDevices
 from trigger.utils import get_user
 from . import models
 
+
 # Globals
 QUEUE_NAMES = ('integrated', 'manual')
 

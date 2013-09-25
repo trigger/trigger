@@ -7,9 +7,6 @@ data for rapid integration to existing or newly-created tools.
 
 The `~trigger.cmds.Commando` class is designed to be extended but can still be
 used as-is to execute commands and return the results as-is.
-
-Please see the source code for `~trigger.cmds.ShowClock` class for a basic
-example of one might create a subclass. Better documentation is in the works!
 """
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
