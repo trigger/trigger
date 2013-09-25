@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+"""
+Initialize database tables for the task queue
+"""
+
+__author__ = 'Jathan McCollum'
+__email__ = 'jathan@gmail.com'
+__version__ = '0.1'
+
+
+from trigger.acl.models import create_tables, confirm_tables
+from trigger.conf import settings
+from trigger.utils.cli import proceed
+
+def print_settings(settings):
+    """Print the database settings"""
+    attrs = [a for a in dir(settings) if a.startswith('DATABASE_')]
+    max_w = max(len(a) for a in attrs)
+    for a in sorted(attrs):
+        print '%s: %s' % (a.rjust(max_w), getattr(settings, a))
+
+def main():
+    print 'We are going to initialize the database with the following settings:'
+    print_settings(settings)
+
+    if proceed():
+        print 'Creating tables...'
+        create_tables()
+    else:
+        raise SystemExit('BYE')
+
+    if confirm_tables():
+        print '\nGood to go!'
+    else:
+        print '\nSomething went wrong. Check the settings and try again!'
+
+if __name__ == '__main__':
+    main()

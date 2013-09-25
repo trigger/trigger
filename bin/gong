@@ -22,6 +22,10 @@ import sys
 from twisted.python import log
 from trigger.netdevices import device_match
 
+# Put this here until the default changes to not load ACLs from redis.
+from trigger.conf import settings
+settings.WITH_ACLS = False
+
 def parse_args(argv):
     parser = OptionParser(usage='%prog [options] [device]', description='''\
 Automatically log into network devices using cached TACACS credentials.

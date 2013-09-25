@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dummy version of netdevices.xml, with two real entries modelded from the real file -->
+<NetDevices>
+   <device nodeName="test1-abc.net.aol.com">
+      <adminStatus>PRODUCTION</adminStatus>
+      <assetID>0000012345</assetID>
+      <authMethod>tacacs</authMethod>
+      <barcode>0101010101</barcode>
+      <budgetCode>1234578</budgetCode>
+      <budgetName>Data Center</budgetName>
+      <coordinate>16ZZ</coordinate>
+      <deviceType>ROUTER</deviceType>
+      <enablePW>boguspassword</enablePW>
+      <lastUpdate>2010-07-19 19:56:32.0</lastUpdate>
+      <layer2>1</layer2>
+      <layer3>1</layer3>
+      <layer4>1</layer4>
+      <lifecycleStatus>INSTALLED</lifecycleStatus>
+      <loginPW></loginPW>
+      <make>M40 INTERNET BACKBONE ROUTER</make>
+      <manufacturer>JUNIPER</manufacturer>
+      <model>M40-B-AC</model>
+      <nodeName>test1-abc.net.aol.com</nodeName>
+      <onCallEmail>nobody@aol.net</onCallEmail>
+      <onCallID>17</onCallID>
+      <onCallName>Data Center</onCallName>
+      <owningTeam>Data Center</owningTeam>
+      <OOBTerminalServerConnector>C</OOBTerminalServerConnector>
+      <OOBTerminalServerFQDN>ts1.oob.aol.com</OOBTerminalServerFQDN>
+      <OOBTerminalServerNodeName>ts1</OOBTerminalServerNodeName>
+      <OOBTerminalServerPort>5</OOBTerminalServerPort>
+      <OOBTerminalServerTCPPort>5005</OOBTerminalServerTCPPort>
+      <operationStatus>MONITORED</operationStatus>
+      <owner>12345678 - Network Engineering</owner>
+      <projectName>Test Lab</projectName>
+      <room>CR10</room>
+      <serialNumber>987654321</serialNumber>
+      <site>LAB</site>
+   </device>
+   <device nodeName="test2-abc.net.aol.com">
+      <adminStatus>NON-PRODUCTION</adminStatus>
+      <assetID>0000012346</assetID>
+      <authMethod>tacacs</authMethod>
+      <barcode>0101010102</barcode>
+      <budgetCode>1234578</budgetCode>
+      <budgetName>Data Center</budgetName>
+      <coordinate>16ZZ</coordinate>
+      <deviceType>ROUTER</deviceType>
+      <enablePW>boguspassword</enablePW>
+      <lastUpdate>2010-07-19 19:56:32.0</lastUpdate>
+      <layer2>1</layer2>
+      <layer3>1</layer3>
+      <layer4>1</layer4>
+      <lifecycleStatus>INSTALLED</lifecycleStatus>
+      <loginPW></loginPW>
+      <make>M40 INTERNET BACKBONE ROUTER</make>
+      <manufacturer>JUNIPER</manufacturer>
+      <model>M40-B-AC</model>
+      <nodeName>test2-abc.net.aol.com</nodeName>
+      <onCallEmail>nobody@aol.net</onCallEmail>
+      <onCallID>17</onCallID>
+      <onCallName>Data Center</onCallName>
+      <owningTeam>Data Center</owningTeam>
+      <OOBTerminalServerConnector>C</OOBTerminalServerConnector>
+      <OOBTerminalServerFQDN>ts1.oob.aol.com</OOBTerminalServerFQDN>
+      <OOBTerminalServerNodeName>ts1</OOBTerminalServerNodeName>
+      <OOBTerminalServerPort>6</OOBTerminalServerPort>
+      <OOBTerminalServerTCPPort>5006</OOBTerminalServerTCPPort>
+      <operationStatus>MONITORED</operationStatus>
+      <owner>12345678 - Network Engineering</owner>
+      <projectName>Test Lab</projectName>
+      <room>CR10</room>
+      <serialNumber>987654322</serialNumber>
+      <site>LAB</site>
+   </device>
+   <device nodeName="fw1-xyz.net.aol.com">
+      <adminStatus>PRODUCTION</adminStatus>
+      <assetID>q34829482304823</assetID>
+      <authMethod>netscreen</authMethod>
+      <barcode>290340233</barcode>
+      <budgetCode>77748230423</budgetCode>
+      <budgetName>Bacon Patrol</budgetName>
+      <connectProtocol>ssh1</connectProtocol>
+      <coordinate>XX99</coordinate>
+      <deviceType>FIREWALL</deviceType>
+      <lastUpdate>2010-12-06  2:53:07.0</lastUpdate>
+      <lifecycleStatus>INSTALLED</lifecycleStatus>
+      <make>NETSCREEN-100 SERIES</make>
+      <manufacturer>NETSCREEN TECHNOLOGIES</manufacturer>
+      <model>NS-100A</model>
+      <nodeName>fw1-xyz.net.aol.com</nodeName>
+      <onCallEmail>nobody@aol.net</onCallEmail>
+      <onCallID>293042</onCallID>
+      <onCallName>Network Security</onCallName>
+      <OOBTerminalServerConnector></OOBTerminalServerConnector>
+      <OOBTerminalServerFQDN></OOBTerminalServerFQDN>
+      <OOBTerminalServerNodeName></OOBTerminalServerNodeName>
+      <OOBTerminalServerPort></OOBTerminalServerPort>
+      <OOBTerminalServerTCPPort></OOBTerminalServerTCPPort>
+      <operationStatus>MONITORED</operationStatus>
+      <owner>59050339 - Network Security</owner>
+      <owningTeam>Network Security</owningTeam>
+      <projectID>55887</projectID>
+      <projectName>Hack the Planet</projectName>
+      <room>CR99</room>
+      <serialNumber>383877722</serialNumber>
+      <site>LAB</site>
+   </device>
+   <device nodeName="lab1-switch.net.aol.com">
+      <adminStatus>PRODUCTION</adminStatus>
+      <assetID>3922022</assetID>
+      <authMethod>tacacs</authMethod>
+      <barcode>7778888801</barcode>
+      <budgetCode>2092392</budgetCode>
+      <budgetName>Test Lab</budgetName>
+      <coordinate>BD37</coordinate>
+      <deviceType>SWITCH</deviceType>
+      <enablePW>boguspassword</enablePW>
+      <lastUpdate>2010-12-06  2:51:07.0</lastUpdate>
+      <layer2>1</layer2>
+      <layer3>0</layer3>
+      <layer4>1</layer4>
+      <lifecycleStatus>INSTALLED</lifecycleStatus>
+      <loginPW></loginPW>
+      <make>FCSLB24</make>
+      <manufacturer>FOUNDRY</manufacturer>
+      <model>FCSLB24</model>
+      <nodeName>lab1-switch.net.aol.com</nodeName>
+      <onCallEmail>nobody@aol.net</onCallEmail>
+      <onCallID>993822</onCallID>
+      <onCallName>Data Center</onCallName>
+      <OOBTerminalServerConnector>D</OOBTerminalServerConnector>
+      <OOBTerminalServerFQDN>ts2.oob.aol.com</OOBTerminalServerFQDN>
+      <OOBTerminalServerNodeName>ts2</OOBTerminalServerNodeName>
+      <OOBTerminalServerPort>9</OOBTerminalServerPort>
+      <OOBTerminalServerTCPPort>6009</OOBTerminalServerTCPPort>
+      <operationStatus>MONITORED</operationStatus>
+      <owner>7738329 - Test Lab</owner>
+      <owningTeam>Data Center</owningTeam>
+      <projectID>093833</projectID>
+      <projectName>Test Lab</projectName>
+      <room>XX99</room>
+      <serialNumber>F22923833</serialNumber>
+      <site>LAB</site>
+   </device>
+</NetDevices>

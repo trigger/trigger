@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-# Copyright, 2005-2012 AOL Inc.
+# Copyright, 2005-2013 AOL Inc.
 
-try:
-    from setuptools import setup, find_packages, Command
-except ImportError:
-    raise SystemExit('We require setuptools. Sorry! Install it and try again: http://pypi.python.org/pypi/setuptools')
+from setuptools import setup, find_packages, Command
 import glob
 import os
 import sys
@@ -20,6 +17,7 @@ requires = [
     'Twisted',
     'pyasn1', # Twisted conch needs this, but doesn't say so
     'pycrypto',
+    'pyparsing==1.5.7',
     'pytz',
     'SimpleParse',
     'redis', # The python interface, not the daemon!
@@ -42,20 +40,30 @@ class TestCommand(Command):
     def finalize_options(self):
         pass
     def run(self):
+        # Change to project root to run tests
+        project_root = os.path.dirname(__file__)
+        if project_root:
+            os.chdir(project_root)
+
         # Set up environment to point to mockup files.
         test_path = os.path.join(os.getcwd(), 'tests', 'data')
-        os.environ['NETDEVICESXML_FILE'] = \
+        os.environ['TRIGGER_SETTINGS'] = os.path.join(test_path, 'settings.py')
+        os.environ['NETDEVICES_SOURCE'] = \
             os.path.join(test_path, 'netdevices.xml')
         os.environ['AUTOACL_FILE'] = os.path.join(test_path, 'autoacl.py')
+        os.environ['BOUNCE_FILE'] = os.path.join(test_path, 'bounce.py')
         os.environ['TACACSRC'] = os.path.join(test_path, 'tacacsrc')
         os.environ['TACACSRC_KEYFILE'] = os.path.join(test_path, 'tackf')
 
-        # Run each .py file found under tests/.
+        # Run each .py file found under tests.
         args = [unittest.__file__]
         for root, dirs, files in os.walk('tests'):
-            for file in files:
-                if file.endswith('.py'):
-                    args.append(os.path.join(root, file[:-3]))
+            for fn in files:
+                if fn.startswith('test') and fn.endswith('.py'):
+                    args.append(fn[:-3])
+
+        # Inject tests dir into beginning of sys.path before we run the tests
+        sys.path.insert(0, os.path.join(os.getcwd(), 'tests'))
         unittest.main(None, None, args)
 
 desc = 'Trigger is a framework and suite of tools for configuring network devices'
@@ -71,9 +79,12 @@ setup(
     version=__version__,
     author='Jathan McCollum',
     author_email='jathanism@aol.com',
-    packages=find_packages(exclude='tests'),
+    packages=find_packages(exclude=['tests']) + ['twisted.plugins'],
+    package_data={
+        'twisted': ['plugins/trigger_xmlrpc.py'],
+    },
     license='BSD',
-    url='https://github.com/aol/trigger',
+    url='https://github.com/trigger/trigger',
     description=desc,
     long_description=long_desc,
     scripts=[
@@ -91,8 +102,8 @@ setup(
         'tools/gen_tacacsrc.py',
         'tools/convert_tacacsrc.py',
         'tools/tacacsrc2gpg.py',
+        'tools/init_task_db',
     ],
-    include_package_data=True,
     install_requires=requires,
     keywords = [
         'Configuration Management',
@@ -149,3 +160,17 @@ setup(
         'clean': CleanCommand
     }
 )
+
+def _refresh_twisted_plugins():
+    """
+    Make Twisted regenerate the dropin.cache, if possible.  This is necessary
+    because in a site-wide install, dropin.cache cannot be rewritten by normal
+    users.
+    """
+    try:
+        from twisted.plugin import IPlugin, getPlugins
+    except ImportError:
+        pass
+    else:
+        list(getPlugins(IPlugin))
+_refresh_twisted_plugins()

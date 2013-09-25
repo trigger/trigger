@@ -18,10 +18,10 @@ invalid ACL and accept *every* valid ACL.
 [<Term: None>]
 """
 
-__author__ = 'Jathan McCollum, Michael Harding, Michael Shields'
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
 
 import IPy
 from simpleparse import objectgenerator
@@ -34,10 +34,34 @@ from trigger import exceptions
 
 
 # Exports
-__all__ = ('parse', 'Comment', 'Term', 'Protocol', 'ACL', 'check_range', 'do_port_lookup',
-           'literals', 'do_protocol_lookup', 'ports', 'Policer',
-           'PolicerGroup', 'make_nondefault_processor', 'ACLParser', 'strip_comments',
-           'ACLProcessor', 'default_processor', 'S')
+__all__ = (
+    # Constants,
+    'ports',
+    # Functions
+    'check_range',
+    'default_processor',
+    'do_port_lookup',
+    'do_protocol_lookup',
+    'literals',
+    'make_nondefault_processor',
+    'parse',
+    'strip_comments',
+    'S',
+    # Classes
+    'ACL',
+    'ACLParser',
+    'ACLProcessor',
+    'Comment',
+    'Matches',
+    'Policer',
+    'PolicerGroup',
+    'Protocol',
+    'RangeList',
+    'Remark',
+    'Term',
+    'TermList',
+    'TIP',
+)
 
 
 # Proceed at your own risk. It's kind of a mess from here on out!
@@ -245,19 +269,29 @@ ports = {
 }
 
 dscp_names = {
-    'ef': 46,
+    'be': 0,
+    'cs0': 0,
+    'cs1': 8,
     'af11': 10,
     'af12': 12,
     'af13': 14,
+    'cs2': 16,
     'af21': 18,
     'af22': 20,
     'af23': 22,
+    'cs3': 24,
     'af31': 26,
     'af32': 28,
     'af33': 30,
+    'cs4': 32,
     'af41': 34,
     'af42': 36,
-    'af43': 38 }
+    'af43': 38,
+    'cs5': 40,
+    'ef': 46,
+    'cs6': 48,
+    'cs7': 56
+}
 
 precedence_names = {
     'critical-ecp': 0xa0,        # JunOS
@@ -424,6 +458,12 @@ class RangeList(object):
             l[0] + 1
         except (TypeError, AttributeError):
             return l
+        '''
+            try:
+                l[0][0] + 1
+            except (TypeError, AttributeError):
+                return l
+        '''
 
         # This last step uses a loop instead of pure functionalism because
         # it will be common to step through it tens of thousands of times,
@@ -449,7 +489,7 @@ class RangeList(object):
         if not l:
             return l
         try:
-            return xrange(l[0][0], l[0][1]+1) + self._expand(l[1:])
+            return range(l[0][0], l[0][1]+1) + self._expand(l[1:])
         except AttributeError:        # not incrementable
             return l
         except (TypeError, IndexError):
@@ -894,6 +934,7 @@ class Term(object):
         self.inactive = inactive
         self.isglobal = isglobal
         self.extra = extra
+        self.makediscard = False # set to True if 'make discard' is used
         if match is None:
             self.match = Matches()
         else:
@@ -997,7 +1038,12 @@ class Term(object):
             out += [' '*8 + x for x in self.match.output_junos()]
             out.append('    }')
         out.append('    then {')
-        out.append('        %s;' % ' '.join(self.action))
+        acttext = '        %s;' % ' '.join(self.action)
+        # add a comment if 'make discard' is in use
+        if self.makediscard:
+            acttext += (" /* REALLY AN ACCEPT, MODIFIED BY"
+                        " 'make discard' ABOVE */")
+        out.append(acttext)
         out += [' '*8 + x for x in self.modifiers.output_junos()]
         out.append('    }')
         out.append('}')
@@ -1329,9 +1375,9 @@ class Matches(MyDict):
     access checks.
     """
     def __setitem__(self, key, arg):
-        if key in ('ah-spi', 'destination-mac-address', 'dscp', 'ether-type',
+        if key in ('ah-spi', 'destination-mac-address', 'ether-type',
                    'esp-spi', 'forwarding-class', 'interface-group',
-                   'precedence', 'source-mac-address', 'vlan-ether-type',
+                   'source-mac-address', 'vlan-ether-type',
                    'fragment-flags', 'source-class', 'destination-class'):
             raise NotImplementedError('match on %s not implemented' % key)
 
@@ -1391,6 +1437,10 @@ class Matches(MyDict):
             check_range(arg, 0, 255)
         elif key in ('first-fragment', 'is-fragment'):
             arg = []
+        elif key == 'dscp':
+            pass
+        elif key == 'precedence':
+            pass
         else:
             raise exceptions.UnknownMatchType('unknown match type "%s"' % key)
 

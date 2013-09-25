@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.1'
+__version__ = '2.2.1'
 
 # Imports
 import copy
@@ -35,7 +35,6 @@ import os
 import sys
 import time
 from trigger.conf import settings
-from trigger.acl.db import AclsDB
 from trigger.utils import network
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
@@ -43,6 +42,11 @@ from twisted.python import log
 from UserDict import DictMixin
 import xml.etree.cElementTree as ET
 from . import loader
+try:
+    from trigger.acl.db import AclsDB
+except ImportError:
+    log.msg("ACLs database could not be loaded; Loading without ACL support")
+    settings.WITH_ACLS = False
 
 
 # Constants
@@ -79,7 +83,12 @@ def _populate(netdevices, data_source, production_only, with_acls):
     device_data = _munge_source_data(data_source=data_source)
 
     # Populate AclsDB if `with_acls` is set
-    aclsdb = AclsDB() if with_acls else None
+    if with_acls:
+        log.msg("NetDevices ACL associations: ENABLED")
+        aclsdb = AclsDB()
+    else:
+        log.msg("NetDevices ACL associations: DISABLED")
+        aclsdb = None
 
     # Populate `netdevices` dictionary with `NetDevice` objects!
     for obj in device_data:
@@ -204,11 +213,6 @@ class NetDevice(object):
         if data is not None:
             self._populate_data(data)
 
-        # ACLs (defaults to empty sets)
-        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
-        if with_acls is not None:
-            self._populate_acls(aclsdb=with_acls)
-
         # Cleanup the attributes (strip whitespace, lowercase values, etc.)
         self._cleanup_attributes()
 
@@ -219,6 +223,12 @@ class NetDevice(object):
         # Use the vendor to populate the deviceType if it's not set already
         if self.deviceType is None:
             self._populate_deviceType()
+
+        # ACLs (defaults to empty sets)
+        self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
+        if with_acls:
+            log.msg('[%s] Populating ACLs' % self.nodeName)
+            self._populate_acls(aclsdb=with_acls)
 
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
@@ -270,7 +280,7 @@ class NetDevice(object):
             `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in ('a10', 'arista', 'aruba'),
+            self.vendor in ('a10', 'arista', 'aruba', 'cisco', 'force10'),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -293,11 +303,12 @@ class NetDevice(object):
             'a10': default,
             'arista': default,
             'aruba': ['no paging\n'],
-            'cisco': default,
             'brocade': disable_paging_brocade(), # See comments above
+            'cisco': default,
             'dell': ['terminal datadump\n'],
+            'force10': default,
             'foundry': ['skip-page-display\n'],
-            #'juniper': ['set cli screen-length 0\n'],
+            'juniper': ['set cli screen-length 0\n'],
             'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
         }
 
@@ -326,8 +337,10 @@ class NetDevice(object):
         """
         Return proper 'write memory' command for IOS-like devices.
         """
-        if self.is_brocade_vdx():
+        if self.is_brocade_vdx() or self.vendor == 'dell':
             return ['copy running-config startup-config', 'y']
+        elif self.make and 'nexus' in self.make.lower():
+            return ['copy running-config startup-config']
         else:
             return ['write memory']
 
@@ -812,11 +825,17 @@ class NetDevices(DictMixin):
             """Returns a list of NetDevice objects with deviceType of FIREWALL"""
             return self.get_devices_by_type('FIREWALL')
 
-    def __init__(self, production_only=True, with_acls=True):
+    def __init__(self, production_only=True, with_acls=None):
         """
         :param production_only:
             Whether to require devices to have ``adminStatus=='PRODUCTION'``.
+
+        :param with_acls:
+            Whether to load ACL associations (requires Redis). Defaults to whatever
+            is specified in settings.WITH_ACLS
         """
+        if with_acls is None:
+            with_acls = settings.WITH_ACLS
         if NetDevices._Singleton is None:
             NetDevices._Singleton = NetDevices._actual(production_only=production_only,
                                                        with_acls=with_acls)

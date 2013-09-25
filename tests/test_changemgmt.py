@@ -1,21 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# tests/changemgmt.py
+"""
+Tests for bounce windows and the stuff that goes with them.
+"""
 
-__author__ = 'Michael Shields'
+__author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__copyright__ = 'Copyright 2005-2011 AOL Inc.'
-__version__ = '1.1'
+__email__ = 'jmccollum@salesforce.com'
+__copyright__ = 'Copyright 2013 Salesforce.com'
+__version__ = '2.0'
 
-import unittest
+
+# Make sure we load the mock redis library
+from utils import mock_redis
+mock_redis.install()
+
 from datetime import datetime
 from pytz import timezone, UTC
-from trigger.changemgmt import site_bounce, BounceStatus
+from trigger.changemgmt import BounceStatus, BounceWindow
 from trigger.netdevices import NetDevices
+import unittest
 
 
-ET = timezone('US/Eastern')
+# Globals
+EST = timezone('US/Eastern')
+PST = timezone('US/Pacific')
 
 
 class CheckBounceStatus(unittest.TestCase):
@@ -38,43 +48,42 @@ class CheckBounceStatus(unittest.TestCase):
 
 class CheckBounceWindow(unittest.TestCase):
     def setUp(self):
-        self.dtc = site_bounce('DTC')
-        self.dtc_atdn = site_bounce('DTC', oncallid='80')
-        self.ntc = site_bounce('NTC')
+        self.est = BounceWindow(green='5-7', yellow='8-11')
+        self.pst = BounceWindow(green='2-4', yellow='5-7')
 
     def testStatus(self):
         """Test lookup of bounce window status."""
         # 00:00 UTC, 19:00 EST
         when = datetime(2006, 1, 3, tzinfo=UTC)
-        self.assertEquals(self.dtc.status(when), 'red')
-        # 00:00 EST, 05:00 UTC
-        when = datetime(2006, 1, 3, tzinfo=ET)
-        self.assertEquals(self.dtc_atdn.status(when), 'yellow')
+        self.assertEquals(self.est.status(when), 'red')
+        # 06:00 PST, 14:00 UTC
+        then = datetime(2013, 6, 3, tzinfo=PST)
+        self.assertEquals(self.pst.status(then), 'green')
 
     def testNextOk(self):
         """Test bounce window next_ok() method."""
-        when = datetime(2006, 1, 3, 22, 15, tzinfo=UTC)
-        next_ok = self.ntc.next_ok('yellow', when)
+        when = datetime(2013, 1, 3, 22, 15, tzinfo=UTC)
+        next_ok = self.pst.next_ok('yellow', when)
         # Did we get the right answer?  (2 am PST the next morning)
         self.assertEquals(next_ok.tzinfo, UTC)
-        self.assertEquals(next_ok.astimezone(ET).hour, 5)
-        self.assertEquals(next_ok, datetime(2006, 1, 4, 10, 0, tzinfo=UTC))
-        self.assertEquals(self.ntc.status(next_ok), 'green')
+        self.assertEquals(next_ok.astimezone(EST).hour, 2)
+        self.assertEquals(next_ok, datetime(2013, 1, 4, 7, 0, tzinfo=UTC))
+        self.assertEquals(self.pst.status(next_ok), 'green')
         # next_ok() should return current time if already ok.
-        self.assertEquals(self.ntc.next_ok('yellow', next_ok), next_ok)
-        when = datetime(2006, 1, 3, 22, 15, tzinfo=UTC)
-        self.assertEquals(self.ntc.next_ok('red', when), when)
+        self.assertEquals(self.pst.next_ok('yellow', next_ok), next_ok)
+        then = datetime(2013, 1, 3, 22, 15, tzinfo=UTC)
+        self.assertEquals(self.pst.next_ok('red', then), then)
 
 class CheckWeekend(unittest.TestCase):
     def testWeekend(self):
         """Test weekend moratorium."""
         when = datetime(2006, 1, 6, 20, tzinfo=UTC)
-        next_ok = site_bounce('DTC').next_ok('green', when)
+        next_ok = BounceWindow(green='5-7', yellow='8-11').next_ok('green', when)
         self.assertEquals(next_ok, datetime(2006, 1, 9, 10, tzinfo=UTC))
 
 class CheckNetDevices(unittest.TestCase):
     def setUp(self):
-        self.router = NetDevices()['iwg1-r3.router.aol.com']
+        self.router = NetDevices()['test1-abc.net.aol.com']
         self.when = datetime(2006, 7, 24, 20, tzinfo=UTC)
 
     def testNetDevicesBounce(self):

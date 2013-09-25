@@ -123,6 +123,20 @@ Default::
 
    False
 
+.. setting:: TACACSRC
+
+TACACSRC
+~~~~~~~~
+
+Sets the location of the ``.tacacsrc`` file.
+
+You may override this by setting the ``TACACSRC`` environment variable to the
+path of the file.
+
+Default::
+
+    '$HOME/.tacacsrc'
+
 .. setting:: TACACSRC_KEYFILE
 
 TACACSRC_KEYFILE
@@ -131,6 +145,9 @@ TACACSRC_KEYFILE
 Only used if GPG auth is disabled. This is the location of the file that
 contains the passphrase used for the two-way hashing of the user credentials
 within the ``.tacacsrc`` file.
+
+You may override this by setting the ``TACACSRC_KEYFILE`` environment variable
+to path of the file.
 
 Default::
 
@@ -419,6 +436,24 @@ Default::
 NetDevices settings
 -------------------
 
+.. setting:: WITH_ACLS
+
+WITH_ACLS
+~~~~~~~~~
+
+Globally toggle whether to load ACL associations from the Redis database. If
+you don't have Redis or aren't using Trigger to manage ACLs set this to
+``False``.
+
+.. note::
+   If you are doing work that does not require ACL information setting this to
+   ``False`` can speed things up. Several libraries that interact with devices
+   also have a ``with_acls`` argument to toggle this at runtime.
+
+Default::
+
+    True
+
 .. setting:: AUTOACL_FILE
 
 AUTOACL_FILE
@@ -685,21 +720,37 @@ Default::
 
     0
 
+.. _db-settings:
+
 Database settings
 -----------------
 
-These will eventually be replaced with Redis or another task queue solution
-(such as Celery). For now, you'll need to populate this with information for
-your MySQL database.
+These will eventually be replaced with another task queue solution (such as
+Celery). For now, you'll need to populate this with information for your
+database.
 
-These are all self-explanatory, I hope.
+These are all self-explanatory, I hope. For more information on database
+drivers that you may need, please see :ref:`db-drivers`.
+
+.. setting:: DATABASE_ENGINE
+
+DATABASE_ENGINE
+~~~~~~~~~~~~~~~
+
+The database driver you intend to use for the task queue. This can be one of
+``postgresql``, ``mysql``, ``sqlite3``. For the purpose of backwards
+compatibility this defaults to ``mysql``.
+
+Default::
+
+    'mysql'
 
 .. setting:: DATABASE_NAME
 
 DATABASE_NAME
 ~~~~~~~~~~~~~
 
-The name of the database.
+The name of the database. If using ``sqlite3``, this is the path to the database file.
 
 Default::
 
@@ -710,7 +761,7 @@ Default::
 DATABASE_USER
 ~~~~~~~~~~~~~
 
-The username to use to connect to the database.
+The username to use to connect to the database. (Not used with ``sqlite3``)
 
 Default::
 
@@ -721,7 +772,7 @@ Default::
 DATABASE_PASSWORD
 ~~~~~~~~~~~~~~~~~
 
-The password for the user account used to connect to the database.
+The password for the user account used to connect to the database. (Not used with ``sqlite``)
 
 Default::
 
@@ -732,22 +783,24 @@ Default::
 DATABASE_HOST
 ~~~~~~~~~~~~~
 
-The host on which your MySQL databse resides.
+The host on which your database resides. Set to empty string for localhost.
+(Not used with ``sqlite3``)
 
 Default::
 
-    '127.0.0.1'
+    ''
 
 .. setting:: DATABASE_PORT
 
 DATABASE_PORT
 ~~~~~~~~~~~~~
 
-The destination port used by MySQL.
+The destination port used by the task queue. Set to empty string for default.
+(Not used with ``sqlite3``)
 
 Default::
 
-    3306
+    ''
 
 Access-list Management settings
 -------------------------------

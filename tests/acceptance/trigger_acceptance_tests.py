@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
-tests/netdevices.py - This uses the mockups of netdevices.xml, acls.db, and
-autoacls.py in tests/data.
+tests/trigger_acceptance_test.py - Acceptance test suite that verifies trigger functionality
+in very brief
 """
 
-__author__ = 'Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__copyright__ = 'Copyright 2005-2011 AOL Inc.'
-__version__ = '1.1'
+from trigger.netdevices import NetDevices
+netdevices = NetDevices(with_acls=False)
+nd=NetDevices(with_acls=False)
+print nd.values()
+
+__author__ = 'Murat Ezbiderli'
+__maintainer__ = 'Salesforce'
+__copyright__ = 'Copyright 2012-2013 Salesforce Inc.'
+__version__ = '2.1'
 
 import os
 import unittest
@@ -19,23 +23,16 @@ from trigger.netdevices import NetDevices
 class NetDevicesTest(unittest.TestCase):
 
     def setUp(self):
-        self.nd = NetDevices()
+        self.nd = NetDevices(with_acls=False)
+	print self.nd.values()
         self.nodename = self.nd.keys()[0]
         self.nodeobj = self.nd.values()[0]
 
     def testBasics(self):
         """Basic test of NetDevices functionality."""
-        self.assertEqual(len(self.nd), 1)
+        self.assertEqual(len(self.nd), 3)
         self.assertEqual(self.nodeobj.nodeName, self.nodename)
         self.assertEqual(self.nodeobj.manufacturer, 'JUNIPER')
-
-    def testAclsdb(self):
-        """Test acls.db handling."""
-        self.assert_('181j' in self.nodeobj.acls)
-
-    def testAutoacls(self):
-        """Test autoacls.py handling."""
-        self.assert_('115j' in self.nodeobj.acls)
 
     def testFind(self):
         """Test the find() method."""

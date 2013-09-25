@@ -38,8 +38,17 @@ from trigger.utils import network, cli
 
 
 # Constants
-CONTINUE_PROMPTS = ['continue?', 'proceed?', '(y/n):', '[y/n]:']
-
+# Prompts sent by devices that indicate the device is awaiting user
+# confirmation. The last one is very specific because we want to make sure bad
+# things don't happen.
+CONTINUE_PROMPTS = [
+    'continue?',
+    'proceed?',
+    '(y/n):',
+    '[y/n]:',
+    # Very specific to ensure bad things don't happen!
+    'overwrite file [startup-config] ?[yes/press any key for no]....'
+]
 
 # Functions
 #==================
@@ -76,6 +85,8 @@ def has_netscaler_error(s):
     tests = (
         s.startswith('ERROR: '),
         '\nERROR: ' in s,
+        s.startswith('Warning: '),
+        '\nWarning: ' in s,
     )
     return any(tests)
 
@@ -274,14 +285,11 @@ def _choose_execute(device, force_cli=False):
         _execute = execute_netscreen
     elif device.vendor == 'juniper':
         if force_cli:
-            _execute = execute_exec_ssh
+            _execute = execute_async_pty_ssh
         else:
             _execute = execute_junoscript
     else:
-        def null(*args, **kwargs):
-            """Does nothing."""
-            return None
-        _execute = null
+        _execute = execute_async_pty_ssh
 
     return _execute
 
@@ -458,7 +466,10 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
                                       loginpw=loginpw, enablepw=enablepw)
 
     else:
-        msg = 'Both SSH and telnet either failed or are disabled.'
+        msg = '[%s] Both SSH and telnet either failed or are disabled.' % device
+        log.msg(msg)
+        if with_errors:
+            return defer.Deferred() # Return a naked deferred
         raise exceptions.ConnectionFailure(msg)
 
 def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
@@ -1032,6 +1043,10 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         log.msg('[%s] My startup commands: %r' % (self.device,
                                                   self.startup_commands))
 
+        # For IOS-like devices that require 'enable'
+        self.enable_prompt = re.compile(settings.IOSLIKE_ENABLE_PAT)
+        self.enabled = False
+
     def channelOpen(self, data):
         """Do this when the channel opens."""
         self._setup_channelOpen()
@@ -1054,6 +1069,37 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     def _ebShellOpen(self, reason):
         log.msg('[%s] Channel request failed: %s' % (self.device, reason))
 
+    def requires_enable(self, data):
+        """
+        Check if a device requires enable.
+
+        :param data:
+            Prompt data to check.
+        """
+        if self.enabled:
+            return False # Skip checks if already enabled
+
+        if not self.device.is_ioslike():
+            log.msg('[%s] Not IOS-like, setting enabled flag')
+            self.enabled = True
+            return False
+        return self.enable_prompt.search(data)
+
+    def send_enable(self):
+        """Send 'enable' and enable password to device."""
+        log.msg('[%s] Enable required, sending enable commands' %
+                self.device)
+        self.write('enable\n')
+        # Zero out the buffer before sending the password
+        self.data = ''
+
+        # Get enablepw from env. or device object
+        device = hasattr(self, 'device')
+        dev_pw = getattr(device, 'enablePW', None)
+        enablepw = os.getenv('TRIGGER_ENABLEPW') or dev_pw
+        self.write(enablepw + '\n')
+        self.enabled = True
+
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         # Append to the data buffer
@@ -1066,8 +1112,11 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
         if not m:
-            #log.msg('STATE: prompt match failure', debug=True)
+            #log.msg('STATE: prompt match failure')
+            if self.requires_enable(self.data):
+                self.send_enable()
             return None
+
         log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
 
         # Strip the prompt from the match result
@@ -1415,7 +1464,7 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
         self.protocol = TriggerTelnet
         self.action = action
         self.loginpw = loginpw
-        self.enablepw = enablepw
+        self.enablepw = os.getenv('TRIGGER_ENABLEPW', enablepw)
         self.action.factory = self
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
@@ -1567,13 +1616,13 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     def state_raise_error(self):
         """Do this when we get a login failure."""
         self.waiting_for = []
-        log.msg('Failed logging into %s' % self.host)
+        log.msg('Failed logging into %s' % self.transport.connector.host)
         self.factory.err = exceptions.LoginFailure('%r' % self.data.rstrip())
         self.loseConnection()
 
     def timeoutConnection(self):
         """Do this when we timeout logging in."""
-        log.msg('[%s] Timed out while logging in' % self.host)
+        log.msg('[%s] Timed out while logging in' % self.transport.connector.host)
         self.factory.err = exceptions.LoginTimeout('Timed out while logging in')
         self.loseConnection()
 

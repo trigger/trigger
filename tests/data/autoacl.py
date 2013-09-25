@@ -1,18 +1,21 @@
 # Dummy version of autoacl.py, for test cases.
 
-from sets import Set
+from twisted.python import log
 
-ATDN_ONCALL = '80'
+DC_ONCALL_ID = '17'
 
-def autoacl(dev):
-    acls = Set()
-    if dev.manufacturer == 'JUNIPER':
-	# Make sure that explicit_acls is already populated.
-	assert '181j' in dev.explicit_acls
+def autoacl(dev, explicit_acls=None):
+    """A simple test case. NYI"""
+    acls = set()
+    log.msg('[%s]: Adding auto ACLs' % dev)
+    if dev.vendor == 'juniper':
+        log.msg('[%s]: Adding 115j' % dev)
+        acls.add('115j')
+        if dev.onCallID == DC_ONCALL_ID:
+            acls.add('router-protect.core')
+            log.msg('[%s]: Adding router-protect.core' % dev)
+        else:
+            acls.add('router-protect')
+            log.msg('[%s]: Adding router-protect' % dev)
 
-	acls.add('115j')
-	if dev.onCallID == ATDN_ONCALL:
-	    acls.add('protectRE.atdn')
-	else:
-	    acls.add('protectRE')
     return acls

@@ -7,17 +7,15 @@ data for rapid integration to existing or newly-created tools.
 
 The `~trigger.cmds.Commando` class is designed to be extended but can still be
 used as-is to execute commands and return the results as-is.
-
-Please see the source code for `~trigger.cmds.ShowClock` class for a basic
-example of one might create a subclass. Better documentation is in the works!
 """
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2013, AOL Inc.'
-__version__ = '2.2'
+__email__ = 'jmccollum@salesforce.com'
+__copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '2.3'
 
+import collections
 import datetime
 import itertools
 import os
@@ -31,7 +29,7 @@ from trigger import exceptions
 
 
 # Exports
-__all__ = ('Commando', 'NetACLInfo', 'ShowClock')
+__all__ = ('Commando', 'NetACLInfo')
 
 
 # Default timeout in seconds for commands to return a result
@@ -105,6 +103,10 @@ class Commando(object):
     :param force_cli:
         (Optional) Juniper only. If set, sends commands using CLI instead of
         Junoscript.
+
+    :param with_acls:
+         Whether to load ACL associations (requires Redis). Defaults to whatever
+         is specified in settings.WITH_ACLS
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -130,7 +132,8 @@ class Commando(object):
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
-                 allow_fallback=True, with_errors=True, force_cli=False):
+                 allow_fallback=True, with_errors=True, force_cli=False,
+                 with_acls=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -141,7 +144,7 @@ class Commando(object):
         self.max_conns = max_conns
         self.verbose = verbose
         self.timeout = timeout if timeout != self.timeout else self.timeout
-        self.nd = NetDevices(production_only=production_only)
+        self.nd = NetDevices(production_only=production_only, with_acls=with_acls)
         self.allow_fallback = allow_fallback
         self.with_errors = with_errors
         self.force_cli = force_cli
@@ -556,9 +559,21 @@ class NetACLInfo(Commando):
         >>> lo0['acl_in']; lo0['addr']
         ['abc123']
         [IP('66.185.128.160')]
+
+    This accepts all arguments from the `~trigger.cmds.Commando` parent class,
+    as well as this one extra:
+
+    :param skip_disabled:
+        Whether to include interface names without any information. (Default:
+        ``True``)
     """
     def __init__(self, **args):
+        try:
+            import pyparsing as pp
+        except ImportError:
+            raise RuntimeError("You must install ``pyparsing==1.5.7`` to use NetACLInfo")
         self.config = {}
+        self.skip_disabled = args.pop('skip_disabled', True)
         super(NetACLInfo, self).__init__(**args)
 
     def IPsubnet(self, addr):
@@ -583,10 +598,21 @@ class NetACLInfo(Commando):
         Similar to IOS, but:
 
            + Arista has no "show conf" so we have to do "show run"
-           + The regex used in the CLI for Arista is more "precise" so we have to change the pattern a little bit compared to the on in generate_ios_cmd
+           + The regex used in the CLI for Arista is more "precise" so we have
+             to change the pattern a little bit compared to the on in
+             generate_ios_cmd
 
         """
         return ['show running-config | include (^interface | ip address | ip acces-group | description |!)']
+
+    def to_force10(self, dev, commands=None, extra=None):
+        """
+        Similar to IOS, but:
+            + You only get the "grep" ("include" equivalent) when using "show
+              run".
+            + The regex must be quoted.
+        """
+        return ['show running-config | grep "^(interface | ip address | ip access-group | description|!)"']
 
     # Other IOS-like vendors are Cisco-enough
     to_brocade = to_cisco
@@ -598,7 +624,7 @@ class NetACLInfo(Commando):
         alld = data[0]
 
         log.msg('Parsing interface data (%d bytes)' % len(alld))
-        self.config[device] = _parse_ios_interfaces(alld)
+        self.config[device] = _parse_ios_interfaces(alld, skip_disabled=self.skip_disabled)
 
         return True
 
@@ -606,6 +632,7 @@ class NetACLInfo(Commando):
     from_arista = from_cisco
     from_brocade = from_cisco
     from_foundry = from_cisco
+    from_force10 = from_cisco
 
     def to_juniper(self, dev, commands=None, extra=None):
         """Generates an etree.Element object suitable for use with
@@ -690,17 +717,22 @@ class NetACLInfo(Commando):
         self.config[device] = dta
         return True
 
-def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
+def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disabled=True):
     """
-    Walks through a IOS interface config and returns a dict of parts. Intended
-    for use by trigger.cmds.NetACLInfo.ios_parse() but was written to be portable.
+    Walks through a IOS interface config and returns a dict of parts.
 
-    @auto_cleaup: Set to False if you don't want to pass results through
-    cleanup_results(). Enabled by default.
-    output
+    Intended for use by `~trigger.cmds.NetACLInfo.ios_parse()` but was written
+    to be portable.
 
-    @acls_as_list: Set to False if you want acl names as strings instead of
-    list members. (e.g. "ABC123" vs. ['ABC123'])
+    :param acls_as_list:
+        Whether you want acl names as strings instead of list members, e.g.
+
+    :param auto_cleanup:
+        Whether you want to pass results through cleanup_results(). Default: ``True``)
+        "ABC123" vs. ['ABC123']. (Default: ``True``)
+
+    :param skip_disabled:
+        Whether to skip disabled interfaces. (Default: ``True``)
     """
     import pyparsing as pp
 
@@ -809,9 +841,11 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True):
     except: # (ParseException, ParseFatalException, RecursiveGrammarException):
         results = {}
 
-    return _cleanup_interface_results(results) if auto_cleanup else results
+    if auto_cleanup:
+        return _cleanup_interface_results(results, skip_disabled=skip_disabled)
+    return results
 
-def _cleanup_interface_results(results):
+def _cleanup_interface_results(results, skip_disabled=True):
     """
     Takes ParseResults dictionary-like object and returns an actual dict of
     populated interface details.  The following is performed:
@@ -819,21 +853,31 @@ def _cleanup_interface_results(results):
         * Ensures all expected fields are populated
         * Down/un-addressed interfaces are skipped
         * Bare IP/CIDR addresses are converted to IPy.IP objects
+
+    :param results:
+        Interface results to parse
+
+    :param skip_disabled:
+        Whether to skip disabled interfaces. (Default: ``True``)
     """
     interfaces = sorted(results.keys())
     newdict = {}
     for interface in interfaces:
         iface_info = results[interface]
 
-        # Skip down interfaces
-        if 'addr' not in iface_info:
+        # Maybe skip down interfaces
+        if 'addr' not in iface_info and skip_disabled:
             continue
+
+        # Ensure we have a dict to work with.
+        if not iface_info:
+            iface_info = collections.defaultdict(list)
 
         newdict[interface] = {}
         new_int = newdict[interface]
 
-        new_int['addr'] = _make_ipy(iface_info['addr'])
-        new_int['subnets'] = _make_cidrs(iface_info.get('subnets', []) or iface_info['addr'])
+        new_int['addr'] = _make_ipy(iface_info.get('addr', []))
+        new_int['subnets'] = _make_cidrs(iface_info.get('subnets', iface_info.get('addr', [])))
         new_int['acl_in'] = list(iface_info.get('acl_in', []))
         new_int['acl_out'] = list(iface_info.get('acl_out', []))
         new_int['description'] = list(iface_info.get('description', []))
@@ -866,55 +910,3 @@ def _dump_interfaces(idict):
         else:
             print 'might be shutdown'
         print
-
-class ShowClock(Commando):
-    """
-    A simple example that runs ``show clock`` and parses it to
-    ``datetime.datetime`` object.
-    """
-    commands = ['show clock']
-    vendors = ['cisco', 'brocade']
-
-    def _parse_datetime(self, datestr, fmt):
-        """
-        Given a date string and a format, try to parse and return
-        datetime.datetime object.
-        """
-        try:
-            return datetime.datetime.strptime(datestr, fmt)
-        except ValueError:
-            return datestr
-
-    def _store_datetime(self, results, device, fmt):
-        """
-        Parse and store a datetime
-        """
-        msg = 'Received %r from %s' % (results, device)
-        print msg
-        log.msg(msg)
-        mapped = self.map_results(self.commands, results)
-        for cmd, res in mapped.iteritems():
-            mapped[cmd] = self._parse_datetime(res, fmt)
-
-        self.store_results(device, mapped)
-
-    def from_cisco(self, results, device):
-        """Parse Cisco time"""
-        # => '16:18:21.763 GMT Thu Jun 28 2012\n'
-        fmt = '%H:%M:%S.%f %Z %a %b %d %Y\n'
-        self._store_datetime(results, device, fmt)
-
-    def from_brocade(self, results, device):
-        """
-        Parse Brocade time. Brocade switches and routers behave
-        differently...
-        """
-        if device.is_router():
-            # => '16:42:04 GMT+00 Thu Jun 28 2012\r\n'
-            fmt = '%H:%M:%S GMT+00 %a %b %d %Y\r\n'
-        elif device.is_switch():
-            # => 'rbridge-id 1: 2012-06-28 16:42:04 Etc/GMT+0\n'
-            results = [res.split(': ', 1)[-1] for res in results]
-            fmt = '%Y-%m-%d %H:%M:%S Etc/GMT+0\n'
-
-        self._store_datetime(results, device, fmt)

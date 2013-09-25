@@ -30,9 +30,11 @@ from collections import defaultdict
 import redis
 import sys
 
+from twisted.python import log
 from trigger.acl.autoacl import autoacl
 from trigger import exceptions
 from trigger.conf import settings
+
 
 ACLSDB_BACKUP = './acls.csv'
 DEBUG = False
@@ -64,6 +66,7 @@ class AclsDB(object):
     """
     def __init__(self):
         self.redis = r
+        log.msg('ACLs database client initialized')
 
     def add_acl(self, device, acl):
         """

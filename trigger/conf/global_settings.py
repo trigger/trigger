@@ -21,6 +21,8 @@ USE_GPG_AUTH = False
 # This is used for old auth method. It sucks and needs to die.
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
 # the default and only method.
+USER_HOME = os.getenv('HOME')
+TACACSRC = os.getenv('TACACSRC', os.path.join(USER_HOME, '.tacacsrc'))
 TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
 TACACSRC_PASSPHRASE = '' # NYI
 
@@ -28,11 +30,25 @@ TACACSRC_PASSPHRASE = '' # NYI
 # general use within the .tacacsrc
 DEFAULT_REALM = 'aol'
 
+# List of plugins allowed to be importd by Commando. Plugins should be listed as
+# strings depicting the absolute paths.
+#
+# e.g. ['trigger.contrib.config_device', 'trigger.contrib.show_clock', 'bacon.cool_plugin']
+#
+# Currently config_device and execute_commands are automatically imported.
+BUILTIN_PLUGINS = [
+    'trigger.contrib.commando.plugins.config_device',
+    'trigger.contrib.commando.plugins.show_clock',
+    'trigger.contrib.commando.plugins.show_version'
+]
+COMMANDO_PLUGINS = BUILTIN_PLUGINS
+
 # Location of firewall policies
 FIREWALL_DIR = '/data/firewalls'
 
 # Location of tftproot.
 TFTPROOT_DIR = '/data/tftproot'
+TFTP_HOST = ''
 
 # Add internally owned networks here. All network blocks owned/operated and
 # considered part of your network should be included.
@@ -51,6 +67,7 @@ SUPPORTED_VENDORS = (
     'cisco',
     'citrix',
     'dell',
+    'force10',
     'foundry',
     'juniper',
     'netscreen',
@@ -72,6 +89,7 @@ VENDOR_MAP = {
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
     'DELL': 'dell',
+    'FORCE10': 'force10',
     'FOUNDRY': 'foundry',
     'JUNIPER': 'juniper',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
@@ -87,6 +105,7 @@ SUPPORTED_PLATFORMS = {
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
+    'force10': ['ROUTER', 'SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
@@ -94,7 +113,7 @@ SUPPORTED_PLATFORMS = {
 }
 
 # The tuple of support device types
-SUPPORTED_TYPES = ('FIREWALL', 'ROUTER', 'SWITCH')
+SUPPORTED_TYPES = ('FIREWALL', 'DWDM', 'LOAD BALANCER', 'ROUTER', 'SWITCH')
 
 # A mapping of of vendor names to the default device type for each in the
 # event that a device object is created and the deviceType attribute isn't set
@@ -107,6 +126,7 @@ DEFAULT_TYPES = {
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
     'dell': 'SWITCH',
+    'force10': 'ROUTER',
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
     'netscreen': 'FIREWALL',
@@ -155,6 +175,7 @@ IOSLIKE_VENDORS = (
     'brocade',
     'cisco',
     'dell',
+    'force10',
     'foundry',
 )
 
@@ -162,9 +183,10 @@ IOSLIKE_VENDORS = (
 GORC_FILE = '~/.gorc'
 
 # The only root commands that are allowed to be executed when defined within
-# ``~.gorc``. They will be filtered # out by `~trigger.gorc.filter_commands()`.
+# ``~.gorc``. They will be filtered out by `~trigger.gorc.filter_commands()`.
 GORC_ALLOWED_COMMANDS = (
     'cli',
+    'enable',
     'exit',
     'get',
     'monitor',
@@ -183,6 +205,10 @@ GORC_ALLOWED_COMMANDS = (
 #===============================
 # NetDevices
 #===============================
+
+# Change this to False to skip the loading of ACLs globally
+# (not recommended)
+WITH_ACLS = True
 
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
@@ -232,7 +258,7 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 #===============================
 # Prompt Patterns
 #===============================
-# Specially-defined, per-vendor prompt patterns. If a vendor isn't defined her,
+# Specially-defined, per-vendor prompt patterns. If a vendor isn't defined here,
 # try to use IOSLIKE_PROMPT_PAT or fallback to DEFAULT_PROMPT_PAT.
 PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
@@ -245,6 +271,7 @@ PROMPT_PATTERNS = {
 # When a pattern is not explicitly defined for a vendor, this is what we'll try
 # next (since most vendors are in fact IOS-like)
 IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
+IOSLIKE_ENABLE_PAT = IOSLIKE_PROMPT_PAT[:-1] + '>'
 
 # Generic prompt to match most vendors. It assumes that you'll be greeted with
 # a "#" prompt.
@@ -287,13 +314,14 @@ REDIS_DB = 0
 # Database Settings
 #===============================
 
-# These are self-explanatory, I hope.
-# TODO (jathan): Replace remaining db interaction w/ Redis.
-DATABASE_NAME = ''
-DATABASE_USER = ''
-DATABASE_PASSWORD = ''
-DATABASE_HOST = '127.0.0.1'
-DATABASE_PORT = 3306
+# These are self-explanatory, I hope. Use the ``init_task_db`` to initialize
+# your database after you've created it! :)
+DATABASE_ENGINE = 'mysql'   # Choose 'postgresql', 'mysql', 'sqlite3'
+DATABASE_NAME = ''          # Or path to database file if using sqlite3
+DATABASE_USER = ''          # Not used with sqlite3
+DATABASE_PASSWORD = ''      # Not used with sqlite3
+DATABASE_HOST = ''          # Set to '' for localhost. Not used with sqlite3
+DATABASE_PORT = ''          # Set to '' for default. Not used with sqlite3.
 
 #===============================
 # ACL Management
@@ -334,6 +362,7 @@ AUTOLOAD_FILTER = AUTOLOAD_BLACKLIST
 # TODO (jathan): Provide examples so that this has more context/meaning. The
 # current implementation is kind of broken and doesn't scale for data centers
 # with a large of number of devices.
+#
 # Format:
 # { 'filter_name': threshold_count }
 AUTOLOAD_FILTER_THRESH = {}

@@ -22,6 +22,8 @@ USE_GPG_AUTH = False
 # This is used for old auth method. It sucks and needs to die.
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
 # the default and only method.
+USER_HOME = os.getenv('HOME')
+TACACSRC = os.getenv('TACACSRC', os.path.join(USER_HOME, '.tacacsrc'))
 TACACSRC_KEYFILE = os.path.join(PREFIX, '.tackf')
 TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
 
@@ -51,6 +53,7 @@ SUPPORTED_VENDORS = (
     'cisco',
     'citrix',
     'dell',
+    'force10',
     'foundry',
     'juniper',
     'netscreen',
@@ -63,7 +66,7 @@ VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 # Trigger.
 #
 # If your internal definition differs from the UPPERCASED ones specified below
-# (which they probably do, customize them here.
+# (which they probably do), customize them here.
 VENDOR_MAP = {
     'A10 NETWORKS': 'a10',
     'ARISTA NETWORKS': 'arista',
@@ -71,6 +74,7 @@ VENDOR_MAP = {
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
     'DELL': 'dell',
+    'FORCE10': 'force10',
     'FOUNDRY': 'foundry',
     'JUNIPER': 'juniper',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
@@ -85,6 +89,7 @@ SUPPORTED_PLATFORMS = {
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
+    'force10': ['ROUTER', 'SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
@@ -92,7 +97,7 @@ SUPPORTED_PLATFORMS = {
 }
 
 # The tuple of support device types
-SUPPORTED_TYPES = ('FIREWALL', 'ROUTER', 'SWITCH')
+SUPPORTED_TYPES = ('FIREWALL', 'DWDM', 'LOAD BALANCER', 'ROUTER', 'SWITCH')
 
 # A mapping of of vendor names to the default device type for each in the
 # event that a device object is created and the deviceType attribute isn't set
@@ -104,6 +109,7 @@ DEFAULT_TYPES = {
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
     'dell': 'SWITCH',
+    'force10': 'ROUTER',
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
     'netscreen': 'FIREWALL',
@@ -122,7 +128,7 @@ FALLBACK_TYPE = 'ROUTER'
 # response is not received within this window, the connection is terminated.
 DEFAULT_TIMEOUT = 5 * 60
 
-# Default timeout in seconds for initial telnet connections. 
+# Default timeout in seconds for initial telnet connections.
 TELNET_TIMEOUT  = 60
 
 # Whether or not to allow telnet fallback
@@ -151,6 +157,7 @@ IOSLIKE_VENDORS = (
     'brocade',
     'cisco',
     'dell',
+    'force10',
     'foundry',
 )
 
@@ -161,6 +168,7 @@ GORC_FILE = '~/.gorc'
 # ``~.gorc``. They will be filtered # out by `~trigger.gorc.filter_commands()`.
 GORC_ALLOWED_COMMANDS = (
     'cli',
+    'enable',
     'exit',
     'get',
     'monitor',
@@ -219,8 +227,8 @@ VALID_OWNERS = (
     'Enterprise Networking',
 )
 
-# Fields and values defined here will dictate which Juniper devices receive a#
-# ``commit-configuration full`` when populating ``NetDevice.commit_commands`.#
+# Fields and values defined here will dictate which Juniper devices receive a
+# ``commit-configuration full`` when populating ``NetDevice.commit_commands`.
 # The fields and values must match the objects exactly or it will fallback to
 # ``commit-configuration``.
 JUNIPER_FULL_COMMIT_FIELDS = {
@@ -244,6 +252,7 @@ PROMPT_PATTERNS = {
 # When a pattern is not explicitly defined for a vendor, this is what we'll try
 # next (since most vendors are in fact IOS-like)
 IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
+IOSLIKE_ENABLE_PAT = IOSLIKE_PROMPT_PAT[:-1] + '>'
 
 # Generic prompt to match most vendors. It assumes that you'll be greeted with
 # a "#" prompt.
@@ -286,13 +295,14 @@ REDIS_DB = 0
 # Database Settings
 #===============================
 
-# These are self-explanatory, I hope.
-# TODO (jathan): Replace remaining db interaction w/ Redis.
-DATABASE_NAME = 'trigger'
-DATABASE_USER = 'trigger'
-DATABASE_PASSWORD = 'abc123'
-DATABASE_HOST = '127.0.0.1'
-DATABASE_PORT = 3306
+# These are self-explanatory, I hope. Use the ``init_task_db`` to initialize
+# your database after you've created it! :)
+DATABASE_ENGINE = 'mysql'   # Choose 'postgresql', 'mysql', 'sqlite3'
+DATABASE_NAME = ''          # Or path to database file if using sqlite3
+DATABASE_USER = ''          # Not used with sqlite3
+DATABASE_PASSWORD = ''      # Not used with sqlite3
+DATABASE_HOST = ''          # Set to '' for localhost. Not used with sqlite3
+DATABASE_PORT = ''          # Set to '' for default. Not used with sqlite3.
 
 #===============================
 # ACL Management
@@ -302,7 +312,7 @@ DATABASE_PORT = 3306
 # want this to be mutable so it can be modified at runtime.
 # TODO (jathan): Move this into Redis and maintain with 'acl' command?
 IGNORED_ACLS = [
-    'netflow', 
+    'netflow',
     'massive-edge-filter',
     'antispoofing',
 ]
@@ -311,8 +321,8 @@ IGNORED_ACLS = [
 # NOTE: These should be the names of the files as they exist in FIREWALL_DIR.
 # Trigger expects ACLs to be prefixed with 'acl.'.  These are examples and
 # should be replaced.
-NONMOD_ACLS  = [ 
-    'acl.netflow', 
+NONMOD_ACLS  = [
+    'acl.netflow',
     'acl.antispoofing',
     'acl.border-protect',
     'acl.route-engine-protect',
@@ -337,7 +347,7 @@ VIPS = {
 # Any FILTER name (not filename) in this list will be skipped during automatic loads.
 AUTOLOAD_BLACKLIST = [
     'route-engine-protect',
-    'netflow', 
+    'netflow',
     'antispoofing',
     'static-policy',
     'border-protect',
@@ -384,8 +394,8 @@ BULK_MAX_HITS_DEFAULT = 1
 # failing that None.  The function should return a dictionary that looks like
 # this:
 #
-# {'username': 'joegineer', 
-#  'name': 'Joe Engineer', 
+# {'username': 'joegineer',
+#  'name': 'Joe Engineer',
 #  'email': 'joe.engineer@example.notreal'}
 def get_current_oncall():
     """fetch current on-call info"""
@@ -406,7 +416,7 @@ GET_CURRENT_ONCALL = lambda x=None: x
 # CM Ticket Creation
 #===============================
 # This should be a function that creates a CM ticket and returns the ticket
-# number, or None. 
+# number, or None.
 # TODO (jathan): Improve this interface so that it is more intuitive.
 def create_cm_ticket(acls, oncall, service='load_acl'):
     """Create a CM ticket and return the ticket number or None"""
@@ -416,7 +426,7 @@ def create_cm_ticket(acls, oncall, service='load_acl'):
     for dev, aclset in acls.items():
         a = sorted(aclset)
         devlist += "%-32s %s\n" % (dev, ' '.join(a))
-        
+
     oncall['devlist'] = devlist
     oncall['service'] = service
 

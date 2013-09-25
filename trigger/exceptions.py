@@ -120,6 +120,10 @@ class ACLSetError(ACLError):
 class InvalidACLSet(ACLSetError):
     """Raised when an invalid ACL set is specified."""
 
+# ACL/task queue errors
+class ACLQueueError(TriggerError):
+    """Raised when we encounter errors communicating with the Queue"""
+
 #####################
 # NetScreen Exceptions
 #####################
@@ -207,3 +211,9 @@ class LoaderFailed(NetDeviceError):
 #####################
 class NotificationFailure(TriggerError):
     """Raised when a notification fails and has not been silenced."""
+
+#####################
+# Bounce/Changemgmt Exceptions
+#####################
+class InvalidBounceWindow(TriggerError):
+    """Raised when a BounceWindow object is kind of not good."""

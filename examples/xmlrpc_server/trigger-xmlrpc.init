@@ -1,0 +1,57 @@
+#!/bin/bash --norc
+#
+# Init file for Trigger XMLRPC server daemon
+#
+# chkconfig: 2345 99 80
+# description: Trigger XMLRPC server daemon
+#
+# processname: twistd
+# pidfile: /var/run/trigger_xmlrpc.pid
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+# path thingy?
+. /include/path/path_tools.bash
+
+RETVAL=0
+prog='Trigger XMLRPC'
+
+# Things to improve readability
+TWISTD=`which twistd`
+PIDFILE='/var/run/trigger_xmlrpc.pid'
+
+logger "$prog: Start script executed"
+
+reload()
+{
+    echo -n $"Reloading $prog: "
+    if [ -n "`pidfileofproc $SSHD`" ] ; then
+        killproc $SSHD -HUP
+    else
+        failure $"Reloading $prog"
+    fi
+        RETVAL=$?
+    echo
+}
+
+case "$1" in
+  start)
+    logger "$prog: Starting"
+    echo "Starting $prog..."
+    #$TWISTD -l trigger_xmlrpc.log --pidfile $PIDFILE trigger-xmlrpc
+    twistd -l trigger_xmlrpc.log --pidfile /var/run/trigger_xmlrpc.pid trigger-xmlrpc
+    ;;
+  stop)
+    logger "$prog Stopping"
+    echo "Stopping $prog..."
+    kill `cat $PIDFILE`
+    ;;
+  *)
+    logger "$prog: Invalid usage"
+    echo "Usage: $0 {start|stop}"
+    RETVAL=1
+    ;;
+esac
+
+exit $RETVAL
