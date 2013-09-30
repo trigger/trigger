@@ -5,7 +5,7 @@ The following people have contributed to Trigger at some point during its
 lifetime: 
 
 - `Jathan McCollum <https://github.com/jathanism>`_
-- `Eileen Watson <https://github.com/ewatson>`_
+- `Eileen Watson <https://github.com/watsonator>`_
 - `Mark Ellzey Thomas <https://github.com/ellzey>`_
 - Michael Shields
 - Jeff Sullivan (for the best error message ever)
