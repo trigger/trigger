@@ -1,15 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
-__author__ = 'Michael Shields'
+__author__ = 'Jathan McCollum, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__copyright__ = 'Copyright 2005-2011 AOL Inc.'
-__version__ = '1.29'
+__copyright__ = 'Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com'
+__version__ = '2.0'
 
 from StringIO import StringIO
 import unittest
-from trigger import acl
+from trigger import acl, exceptions
 
 EXAMPLES_FILE = 'tests/data/junos-examples.txt'
 
@@ -26,10 +25,10 @@ ios_matches = ('tcp 192.0.2.0 0.0.0.255 any gt 65530',                # 1
 
 
 class CheckRangeList(unittest.TestCase):
-
+    """Test functionality of RangeList object"""
     def testDegenerateRange(self):
         """Make sure that the range x-x is the same as x."""
-        r = acl.RangeList([(1024,1024)])
+        r = acl.RangeList([(1024, 1024)])
         self.assertEqual(r, [1024])
 
     def testDuplicateProtocol(self):
@@ -41,18 +40,18 @@ class CheckRangeList(unittest.TestCase):
 
     def testAdjacentRanges(self):
         """See if adjacent ranges are coalesced into one."""
-        r = acl.RangeList([(100,199), (200,299)])
-        self.assertEqual(r, [(100,299)])
+        r = acl.RangeList([(100, 199), (200, 299)])
+        self.assertEqual(r, [(100, 299)])
 
     def testOverlappingRanges(self):
         """See if overlapping ranges are coalesced into one."""
-        r = acl.RangeList([(100,250), (200,299)])
-        self.assertEqual(r, [(100,299)])
+        r = acl.RangeList([(100, 250), (200, 299)])
+        self.assertEqual(r, [(100, 299)])
 
     def testOverlappingRangeAndInteger(self):
         """See if a single value that's also part of a range is elided."""
-        r = acl.RangeList([(100,199), 150])
-        self.assertEqual(r, [(100,199)])
+        r = acl.RangeList([(100, 199), 150])
+        self.assertEqual(r, [(100, 199)])
 
     def testMultipleConstants(self):
         """See if several discrete values are collapsed correctly."""
@@ -67,19 +66,19 @@ class CheckRangeList(unittest.TestCase):
     def testRangeListContains(self):
         """Check RangeList behavior as a container type."""
         r = acl.RangeList([1, (3, 6)])
-        self.assert_(1 in r)
-        self.assert_(5 in r)
-        self.assert_(0 not in r)
-        r = acl.RangeList([acl.IP('10/8'), acl.IP('172.16/12')])
-        self.assert_(acl.IP('10.1.1.1') in r)
-        self.assert_(acl.IP('192.168.1.1') not in r)
-
+        self.assertTrue(1 in r)
+        self.assertTrue(5 in r)
+        self.assertTrue(0 not in r)
+        r = acl.RangeList([acl.TIP('10/8'), acl.TIP('172.16/12')])
+        self.assertTrue(acl.TIP('10.1.1.1') in r)
+        self.assertTrue(acl.TIP('192.168.1.1') not in r)
 
 class CheckACLNames(unittest.TestCase):
-
+    """Test ACL naming validation"""
     def testOkNames(self):
         """Test names that are valid in at least one vendor's ACLs"""
-        for name in ('101', '131mj', 'STR-MDC-ATM', 'with space', '3.14', None):
+        names = ('101', '131mj', 'STR-MDC-ATM', 'with space', '3.14', None)
+        for name in names:
             a = acl.ACL(name=name)
 
     def testBadNames(self):
@@ -87,14 +86,13 @@ class CheckACLNames(unittest.TestCase):
         for name in ('', 'x'*25):
             try:
                 a = acl.ACL(name=name)
-            except acl.ACLNameError:
+            except exceptions.ACLNameError:
                 pass
             else:
                 self.fail('expected ACLNameError on "' + name + '"')
 
-
 class CheckACLTerms(unittest.TestCase):
-
+    """Test insertion of Term objects into an ACL object"""
     def testEmptyAnonymousTerms(self):
         """Test inserting multiple anonymous empty terms"""
         a = acl.ACL()
@@ -112,9 +110,8 @@ class CheckACLTerms(unittest.TestCase):
             self.assertEqual(a.terms[i].name, name)
         self.assertEqual(len(a.terms), 5)
 
-
 class CheckTerms(unittest.TestCase):
-
+    """Test validity and functionality of Term objects"""
     def testOkNames(self):
         """Test valid JunOS term names"""
         for name in ('101', 'T1337', 'sr12345', '3.1415926'):
@@ -125,10 +122,10 @@ class CheckTerms(unittest.TestCase):
         for name in ('', 'x'*300):
             try:
                 t = acl.Term(name=name)
-            except acl.BadTermNameError:
+            except exceptions.BadTermName:
                 pass
             else:
-                self.fail('expected BadTermNameError on "' + name + '"')
+                self.fail('expected BadTermNameon "' + name + '"')
 
     def testOkActions(self):
         """Test valid filter actions"""
@@ -155,7 +152,7 @@ class CheckTerms(unittest.TestCase):
                        ('routing-instance', 'x'*300), 'sample'):
             try:
                 t = acl.Term(action=action)
-            except acl.ActionError:
+            except exceptions.ActionError:
                 pass
             else:
                 self.fail('expected ActionError on "%s"' % str(action))
@@ -182,7 +179,7 @@ class CheckTerms(unittest.TestCase):
                        ('loss-priority', '17'), ('sample', 'abc')):
             try:
                 t = acl.Term(action=action)
-            except acl.ActionError:
+            except exceptions.ActionError:
                 pass
             else:
                 self.fail('expected ActionError on "%s"' % str(action))
@@ -213,7 +210,7 @@ class CheckTerms(unittest.TestCase):
         # Valid match type with invalid arg.
         try:
             t.match['fragment-offset'] = [65536]
-        except acl.MatchArgRangeError:
+        except exceptions.BadMatchArgRange:
             pass
         else:
             self.fail('expected MatchError')
@@ -227,21 +224,20 @@ class CheckTerms(unittest.TestCase):
         # Valid match type with null arg.
         try:
             t.match['protocol'] = None
-        except acl.MatchError:
+        except exceptions.MatchError:
             pass
         else:
             self.fail('expected MatchError')
         # Invalid match type.
         try:
             t.match['boogaloo'] = 1337
-        except acl.MatchError:
+        except exceptions.MatchError:
             pass
         else:
             self.fail('expected MatchError')
 
-
 class CheckProtocolClass(unittest.TestCase):
-
+    """Test functionality of Protocol object"""
     def testKnownProto(self):
         """Test magic stringification of a known numeric protocol."""
         p = acl.Protocol(6)
@@ -265,7 +261,7 @@ class CheckProtocolClass(unittest.TestCase):
 
 
 class CheckOutput(unittest.TestCase):
-
+    """Test .output() methods for various ACL vendors"""
     def setUp(self):
         super(CheckOutput, self).setUp()
         self.a = acl.ACL()
@@ -356,22 +352,21 @@ ipv4 access-list BLAHBLAH
 
     def testMissingTermName(self):
         """Test conversion of anonymous terms to JunOS format"""
-        self.assertRaises(acl.MissingTermNameError, acl.Term().output_junos)
+        self.assertRaises(exceptions.MissingTermName, acl.Term().output_junos)
 
     def testMissingACLName(self):
         """Test conversion of anonymous ACLs to JunOS format"""
-        self.assertRaises(acl.MissingACLNameError, acl.ACL().output_junos)
+        self.assertRaises(exceptions.MissingACLName, acl.ACL().output_junos)
 
     def testBadACLNames(self):
         """Test conversion of ACLs with vendor-invalid names"""
         a = acl.ACL()
         for bad_name in ('blah', '500', '1', '131dj'):
             a.name = bad_name
-            self.assertRaises(acl.BadACLNameError, a.output_ios)
-
+            self.assertRaises(exceptions.BadACLName, a.output_ios)
 
 class CheckIOSParseAndOutput(unittest.TestCase):
-
+    """Test parsing of IOS ACLs"""
     def testIOSACL(self):
         """Test parsing of IOS numbered ACLs."""
         text = '\n'.join(['access-list 100 permit ' + x for x in ios_matches])
@@ -390,13 +385,6 @@ class CheckIOSParseAndOutput(unittest.TestCase):
         a = acl.parse(x)
         self.assertEqual(a.output_ios_named(), x.split('\n'))
         self.assertEqual(a.format, 'ios_named')
-
-#    def testIOSXRACL(self):
-#        """Test parsing of IOS XR ACLs."""
-#        x = 'ipv4 access-list foo'
-#        for i in range(len(ios_matches)):
-#            x += '\n %d permit %s' % (i+1, ios_matches[i])
-#        self.assertEqual(acl.parse(x).output_iosxr(), x.split('\n'))
 
     def testIOSNamedACLRemarks(self):
         """Test parsing of 'remark' lines in IOS named ACLs."""
@@ -424,7 +412,7 @@ ip access-list extended foo
     def testIOSBadACL(self):
         """Test handling of a bad ACL."""
         text = 'access-list 145 permit tcp any any;\naccess-list 145 deny ip any any'
-        self.assertRaises(acl.ParseError, lambda: acl.parse(text))
+        self.assertRaises(exceptions.ParseError, lambda: acl.parse(text))
 
     def testIOSNonCanonical(self):
         """Test parsing of IOS match terms in non-output formats."""
@@ -441,9 +429,8 @@ ip access-list extended foo
         # maximum recursion depth.
         acl.parse('!'*200 + '\naccess-list 100 deny ip any any')
 
-
 class CheckJunOSExamples(unittest.TestCase):
-
+    """Test parsing of Junos ACLs"""
     def testJunOSExamples(self):
         """Test examples from JunOS documentation."""
         examples = file(EXAMPLES_FILE).read().expandtabs().split('\n\n')
@@ -459,9 +446,8 @@ class CheckJunOSExamples(unittest.TestCase):
             z = acl.parse('\n'.join(y)).output_junos()
             self.assertEqual(y, z)
 
-
 class CheckMiscJunOS(unittest.TestCase):
-
+    """Test misc. Junos-related ACL features"""
     def testFirewallReplace(self):
         """Test JunOS ACL with "firewall { replace:" around it."""
         acl.parse('''
@@ -521,7 +507,7 @@ filter 100 {
 }'''
         y = acl.parse(x)
         self.assertEqual(y.output_junos(), x.split('\n'))
-        self.assertRaises(acl.VendorSupportLackingError, y.output_ios)
+        self.assertRaises(exceptions.VendorSupportLacking, y.output_ios)
 
     def testShorthandIPv4(self):
         """Test incomplete IP blocks like "10/8" (vs. "10.0.0.0/8")."""
@@ -564,7 +550,7 @@ filter 100 {
         /* /* /* */
     }
 }'''
-        self.assertRaises(acl.ParserSyntaxError, lambda: acl.parse(x))
+        self.assertRaises(exceptions.ParserSyntaxError, lambda: acl.parse(x))
         ###y = ['access-list 100 permit tcp any any eq 80']
         ###a = acl.parse(x)
         ###a.comments = a.terms[0].comments = []
@@ -644,12 +630,8 @@ replace:
         a = acl.parse(x)
         self.assertEqual(a.output(replace=True), x.split('\n'))
     
-    
-
-
-
 class CheckMiscIOS(unittest.TestCase):
-
+    """Test misc. IOS-related ACL features"""
     def testICMPIOSNames(self):
         """Test stringification of ICMP types and codes into IOS format."""
         x = 'access-list 100 permit icmp 172.16.0.0 0.15.255.255 any 8'
@@ -670,12 +652,11 @@ class CheckMiscIOS(unittest.TestCase):
        """Test suppression of counters in IOS (since they are implicit)."""
        t = acl.Term()
        t.modifiers['count'] = 'xyz'
-       t.output_ios()  # should not raise VendorSupportLackingError
-
+       t.output_ios()  # should not raise VendorSupportLacking
 
 class CheckParseFile(unittest.TestCase):
-
-    def testParaseFile(self):
+    """Test ACL parsing from a file"""
+    def testParseFile(self):
         """Make sure we can apply trigger.acl.parse() to file objects."""
         a = acl.parse(StringIO('access-list 100 deny ip any any'))
         self.assertEqual(a.name, '100')

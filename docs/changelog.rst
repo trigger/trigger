@@ -7,11 +7,154 @@ Changelog
 1.4
 ===
 
-+ Task queue now supports MySQL, PostgreSQL, or SQLite. See the
-  :ref:`db-settings` for more information!
+Trigger has a new home at `https://github.com/trigger/trigger
+<https://github.com/trigger/trigger>`_!
+
+New Features
+------------
+
++ Support for new vendors and platforms!!
+
+  - Aruba wireless controllers
+  - Cisco Nexus switches running NX-OS
+  - Force10 routers and switches
+
++ Trigger now has a `~trigger.contrib` package for optional extensions
+  to core Trigger features.
+
+  - A pluggable XMLRPC `~trigger.contrib.xmlrpc.server` that can be
+    used as a long-running event loop.
+  - Plugins for use w/ the XMLRPC server
+
++ Task `~trigger.acl.queue` now supports MySQL, PostgreSQL, or SQLite.
+  See the :ref:`db-settings` for more information!
 
   - There's a new :setting:`DATABASE_ENGINE` that allows you to specify.
   - New tool to initialize your database w/ ease: ``init_task_db``
+
++ All legacy unit tests have been fixed and Trigger is now fully
+  integrated with `Travis CI <http://traviw-ci.org>`_. All new
+  functionality will be fully tested, and the existing unit testing
+  suite will be continually improved.
++ You may now globally disable ACL support by toggling
+  :setting:`WITH_ACLS` in ``settings.py``.
+
+  - All `~trigger.twister.execute()` methods and `~trigger.cmds.Commando`
+    objects now support a ``with_acls`` argument to toggle this at runtime.
+  - We also turned off ACLs for scripts that will never use them.
+
++ All `~trigger.twister.execute()` methods and `~trigger.cmds.Commando` objects
+  now support a ``force_cli`` argument to force commands to be sent as CLI
+  commands and return human-readable output instead of structured output.
+  Currently this is only relevant for Juniper devices, which return XML by
+  default.
+
++ :feature:`54` Commands allowed in ``.gorc`` can now be customized in
+  ``settings.py`` (See :setting:`GORC_ALLOWED_COMMANDS` for more
+  information)
++ Vastly expanded debug logging to include device hostname whenever
+  possible. (You're welcome!)
+
+Bug fixes
+---------
+
++ Fix AttributeError when trying to connect interactively causing
+  logins to fail.
++ :bug:`74` - Bugfix in error-detection for NetScaler devices
++ Bugfix in host lookup bug in `~trigger.twister.TriggerTelnet`
+  causing telnet channels to crash.
++ Fix typo that was causing Cisco ACL parsing to generate an unhandled
+  exception.
++ Fix typos in ``tools/tacacsrc2gpg.py`` that were causing it to
+  crash.
++ :bug:`119` - Get custom importlib from trigger.utils vs. native (for
+  supporting Python < 2.6).
++ Replace all calls to ``os.getlogin()`` causing "Invalid argument"
+  during unit tests where the value ``$USER`` is not set.
++ Various bugfixes and improvements to the handling of async SSH
+  execution.
++ :bug:`33` Console paging is now disabled by default for SSH
+  Channels.
++ :bug:`49` Bugfix in ACL `~trigger.acl.parser` to omit src/dst ports if
+  range is 0-65535.
++ Bugfix in ACL parser showing useless error when address fails to parse
++ Bugfix in `~trigger.acl.RangeList` objects causing numeric
+  collapsing/expanding to fail
++ Bugfix in `~trigger.cmds.Commando` causing results from multiple Commando
+  instances to collide with each other because they were inheriting an empty
+  dictionary from the class object.
+
+CLI Tools
+---------
+
++ ``bin/gnng`` - Added flags to include un-numbered (-u) or disabled (-d)
+  interfaces.
+
+trigger.acl
+-----------
+
++ Minimal changes to support writing Dell ACLs
++ Parser modifications to support negation of address objects in Junos
+  ACLs. (Note that this relies on marking up ACLs with 'trigger: make
+  discard' in term comments. This is undocmented functionality,
+  currently used internally within AOL, and this code will only be
+  used for Junos output.)
++ :feature:`47` Add parsing of ranges for ``fragment-offset`` in Juniper ACLs
+
+trigger.changemgmt
+------------------
+
++ Refactored `~trigger.changemgt.BounceWindow` definition syntax to be
+  truly usable by humans.
+
+trigger.cmds
+------------
+
++ `~trigger.cmds.NetACLInfo` and ``bin/gnng`` can now include disabled
+  or un-addressed interfaces in their results.
++ Added ``pyparsing`` as a hard requirement until further notice so that
+  `~trigger.cmds.NetACLInfo` and ``bin/gnng`` will behave as expected
+  without confusing developers and users alike.
++ You may now pass login credentials to `~trigger.cmds.Commando` using the
+  ``creds`` argument.
+
+trigger.netdevices
+------------------
+
++ Prompt patterns are now bound to `~trigger.netdevices.Vendor`
+  objects.
+
+trigger.tacacsrc
+----------------
+
++ Added a utility function `~trigger.tacacsrc.validate_credentials()` to ...
+  validate credentials ... and return a `~trigger.tacacsrc.Credentials` object.
+
+trigger.twister
+---------------
+
++ The new default operating mode for SSH channels is to use shell +
+  pty emulation.
++ :feature:`56` You may now optionally run "commit full" on Juniper
+  devices. (See :setting:`JUNIPER_FULL_COMMIT_FIELDS` for more
+  information)
++ Added support for sending an enable password to IOS-like devices
+  when an enable prompt is detected.
+
+  - This can either be provided in your netdevices metadata by
+    populating the ``enablePW`` attribute, or by setting the
+    environment variable ``TRIGGER_ENABLEPW`` to the value of the
+    enable password.
+
++ Added error-detection for Brocade MLX routers.
++ `~trigger.tacacsrc.Tacacrc()` is now only called once when creds aren't
+  provided upon creation of new clients.
+
+trigger.utils
+-------------
+
++ New utility module `~trigger.utils.xmltodict` for convert XML into
+  dictionaries, primarily so such objects can be serialized into JSON.
 
 .. _v1.3.1:
 

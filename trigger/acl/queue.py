@@ -13,9 +13,8 @@ Database interface for automated ACL queue. Used primarily by ``load_acl`` and
 
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2010-2013'
-__version__ = '2.0'
+__email__ = 'jmccollum@salesforce.com'
+__version__ = '2.0.1'
 
 
 import datetime
@@ -24,7 +23,9 @@ import sys
 from trigger import exceptions
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
+from trigger.utils import get_user
 from . import models
+
 
 # Globals
 QUEUE_NAMES = ('integrated', 'manual')
@@ -48,7 +49,7 @@ class Queue(object):
     def __init__(self, verbose=True):
         self.nd = NetDevices()
         self.verbose = verbose
-        self.login = os.getlogin()
+        self.login = get_user()
 
     def vprint(self, msg):
         """
@@ -114,7 +115,7 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise exceptions.QueueError('You must specify an ACL to insert into the queue')
+            raise exceptions.ACLQueueError('You must specify an ACL to insert into the queue')
         if not routers:
             routers = []
 
@@ -145,20 +146,20 @@ class Queue(object):
         """
         Delete an ACL from the firewall database queue.
 
-        Attempts to delete from integrated queue. If ACL test fails, then
-        item is deleted from manual queue.
+        Attempts to delete from integrated queue. If ACL test fails
+        or if routers are not specified, the item is deleted from manual queue.
 
         :param acl:
             ACL name
 
         :param routers:
-            List of device names
+            List of device names. If this is ommitted, the manual queue is used.
 
         :param escalation:
             Whether this is an escalated task
         """
         if not acl:
-            raise exceptions.QueueError('You must specify an ACL to delete from the queue')
+            raise exceptions.ACLQueueError('You must specify an ACL to delete from the queue')
 
         escalation, acl = self._normalize(acl)
         m = self.get_model('integrated')
@@ -230,7 +231,7 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise exceptions.QueueError('You must specify an ACL to remove from the queue')
+            raise exceptions.ACLQueueError('You must specify an ACL to remove from the queue')
 
         m = self.get_model('integrated')
         loaded = 0
@@ -238,7 +239,7 @@ class Queue(object):
             loaded = '-infinity' # See: http://bit.ly/15f0J3z
         for router in routers:
             m.update(loaded=loaded).where(m.acl == acl, m.router == router,
-                                     m.loaded >> None).execute()
+                                          m.loaded >> None).execute()
 
         self.vprint('Marked the following devices as removed for ACL %s: ' % acl)
         self.vprint(', '.join(routers))

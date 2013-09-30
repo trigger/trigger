@@ -13,6 +13,7 @@ __copyright__ = 'Copyright 2006-2012, AOL Inc.'
 from datetime import datetime, timedelta
 from pytz import timezone, UTC
 from trigger.conf import settings
+from trigger import exceptions
 
 
 # Constants
@@ -55,7 +56,6 @@ class BounceStatus(object):
     """
     def __init__(self, status_name):
         self.status_name = status_name
-        #self.value = BOUNCE_VALUE_MAP[status_name]
         self.value = BOUNCE_VALUES.index(status_name)
 
     def __repr__(self):
@@ -70,7 +70,6 @@ class BounceStatus(object):
         except AttributeError:
             # Other object is not a BounceStatus; maybe it's a string.
             return self.value.__cmp__(BounceStatus(other).value)
-
 
 class BounceWindow(object):
     """
@@ -170,18 +169,25 @@ class BounceWindow(object):
         # Allow for providing status_by_hour, but don't rely on it
         if status_by_hour is None:
             status_by_hour = self.hour_map.values()
-        assert len(status_by_hour) == 24
+
+        if not len(status_by_hour) == 24:
+            msg = 'There must be exactly 24 hours defined for this BounceWindow.'
+            raise exceptions.InvalidBounceWindow(msg)
 
         # Make sure each status occurs at least once, or next_ok()
         # might never return.
         for status in BOUNCE_VALUE_MAP:
-            assert status in status_by_hour
+            if status not in status_by_hour:
+                msg = '%s risk-level must be defined!' % status
+                raise exceptions.InvalidBounceWindow(msg)
         self._status_by_hour = status_by_hour
 
     def __repr__(self):
         return "%s(green=%r, yellow=%r, red=%r, default=%r)" % (self.__class__.__name__,
-                                                                self._green, self._yellow,
-                                                                self._red, self.default)
+                                                                self._green,
+                                                                self._yellow,
+                                                                self._red,
+                                                                self.default)
 
     def status(self, when=None):
         """

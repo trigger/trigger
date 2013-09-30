@@ -1,7 +1,7 @@
 #!/bin/bash
-# Setup environment variables to point to a sandbox 
+# Setup environment variables to point to a sandbox
 
-export NETDEVICES_SOURCE="$HOME/sandbox/netdevices.json"
-export TRIGGER_SETTINGS="$HOME/sandbox/trigger_settings.py"
-export AUTOACL_FILE="$HOME/sandbox/autoacl.py"
-export BOUNCE_FILE="$HOME/sandbox/bounce.py"
+TEST_ROOT=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
+TEST_DATA=$TEST_ROOT/data
+
+export TRIGGER_SETTINGS="${TEST_DATA}/settings.py"

@@ -11,6 +11,7 @@ __copyright__ = 'Copyright 2008-2013, AOL Inc.'
 
 from collections import namedtuple
 import re
+from .cli import get_user
 
 def crypt_md5(passwd):
     """

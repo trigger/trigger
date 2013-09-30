@@ -82,10 +82,15 @@ vendors:
 + Cisco Systems
 
   + All router and switch platforms running IOS
+  + All switch platforms running NX-OS
 
 + Dell
 
   + PowerConnect switches
+
++ Force10
+
+  + All router and switch platforms running FTOS
 
 + Foundry/Brocade
 
@@ -270,7 +275,9 @@ To file new bugs or search existing ones, please use the GitHub issue tracker, l
 IRC
 ---
 
-Find us on IRC at ``#trigger`` on Freenode (``irc://irc.freenode.net``).
+Find us on IRC at ``#trigger`` on Freenode (`irc://irc.freenode.net/trigger
+<irc://irc.freenode.net/trigger>`_).
+
 Trigger is a Pacific coast operation, so your best chance of getting a
 real-time response is during the weekdays, Pacific time.
 

@@ -21,6 +21,8 @@ USE_GPG_AUTH = False
 # This is used for old auth method. It sucks and needs to die.
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
 # the default and only method.
+USER_HOME = os.getenv('HOME')
+TACACSRC = os.getenv('TACACSRC', os.path.join(USER_HOME, '.tacacsrc'))
 TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
 TACACSRC_PASSPHRASE = '' # NYI
 

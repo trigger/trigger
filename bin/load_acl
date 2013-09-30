@@ -444,7 +444,7 @@ def ioslike_cmds(acls, dev, nonce):
         # two sets of identical strings
         'arista': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
         'cisco': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
-        'dell': 'copy tftp://%s/acl.%s.%s running-config\n', 
+        'dell': 'copy tftp://%s/acl.%s.%s running-config\n',
         'brocade': 'copy tftp run %s acl.%s.%s\n',
         'foundry': 'copy tftp run %s acl.%s.%s\n',
     }

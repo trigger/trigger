@@ -9,8 +9,8 @@ provide a reasonable API on top of that.  The name and format of the
 
 __author__ = 'Jathan McCollum, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
+__email__ = 'jmccollum@salesforce.com'
+__copyright__ = 'Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com'
 
 from base64 import decodestring, encodestring
 from collections import namedtuple
@@ -29,7 +29,6 @@ __all__ = ('get_device_password', 'prompt_credentials', 'convert_tacacsrc',
            'update_credentials', 'validate_credentials', 'Credentials', 'Tacacsrc')
 
 # Credential object stored in Tacacsrc.creds
-#Credentials = namedtuple('Credentials', 'username password')
 Credentials = namedtuple('Credentials', 'username password realm')
 
 # Exceptions
@@ -224,7 +223,8 @@ class Tacacsrc(object):
     `*_old` functions should be removed after everyone is moved to the new
     system.
     """
-    def __init__(self, tacacsrc_file=None, use_gpg=settings.USE_GPG_AUTH, generate_new=False):
+    def __init__(self, tacacsrc_file=None, use_gpg=settings.USE_GPG_AUTH,
+                 generate_new=False):
         """
         Open .tacacsrc (tacacsrc_file or $TACACSRC or ~/.tacacsrc), or create
         a new file if one cannot be found on disk.
@@ -254,7 +254,7 @@ class Tacacsrc(object):
 
         # Set the .tacacsrc file location
         if self.file_name is None:
-            self.file_name = os.getenv('TACACSRC', os.path.join(self.user_home, '.tacacsrc'))
+            self.file_name = settings.TACACSRC
 
             # GPG uses '.tacacsrc.gpg'
             if self.use_gpg:

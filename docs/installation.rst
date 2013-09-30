@@ -100,8 +100,14 @@ The `Python redis <http://pypi.python.org/pypi/redis>`_ client is required
 to interact with Redis.
 
 Trigger currently assumes that you're running Redis on localhost and on the
-default port (6379). If you would like to change this, update :setting:`REDIS_HOST` in
-`settings.py` to reflect the IP address or hostname of your Redis instance.
+default port (``6379``). If you would like to change this, update
+:setting:`REDIS_HOST` in ``settings.py`` to reflect the IP address or hostname
+of your Redis instance.
+
+.. note::
+    You may globally disable the use of Redis for loading ACL associations by
+    setting :setting:`WITH_ACLS` to ``False``. Several libraries that interact
+    with devices also have a ``with_acls`` argument to toggle this at runtime.
 
 Used by:
 
@@ -341,7 +347,7 @@ PostgreSQL
 ~~~~~~~~~~
 
 Your only choice is `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_. This is a
-Python C extension which requires compiliation.
+Python C extension which requires compilation.
 
 Here are some tips to install the library dependencies:
 

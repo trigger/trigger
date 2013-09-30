@@ -15,9 +15,9 @@ usage example.
 import os
 import sys
 import types
-import importlib
 
 from trigger.contrib.commando import CommandoApplication
+from trigger.utils import importlib
 from twisted.internet import defer
 from twisted.python import log
 from twisted.web import xmlrpc, server

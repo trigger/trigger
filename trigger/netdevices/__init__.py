@@ -45,7 +45,7 @@ from . import loader
 try:
     from trigger.acl.db import AclsDB
 except ImportError:
-    log.msg("Loading without ACL support")
+    log.msg("ACLs database could not be loaded; Loading without ACL support")
     settings.WITH_ACLS = False
 
 
@@ -83,7 +83,12 @@ def _populate(netdevices, data_source, production_only, with_acls):
     device_data = _munge_source_data(data_source=data_source)
 
     # Populate AclsDB if `with_acls` is set
-    aclsdb = AclsDB() if with_acls else None
+    if with_acls:
+        log.msg("NetDevices ACL associations: ENABLED")
+        aclsdb = AclsDB()
+    else:
+        log.msg("NetDevices ACL associations: DISABLED")
+        aclsdb = None
 
     # Populate `netdevices` dictionary with `NetDevice` objects!
     for obj in device_data:
@@ -222,6 +227,7 @@ class NetDevice(object):
         # ACLs (defaults to empty sets)
         self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
         if with_acls:
+            log.msg('[%s] Populating ACLs' % self.nodeName)
             self._populate_acls(aclsdb=with_acls)
 
         # Bind the correct execute/connect methods based on deviceType
@@ -823,6 +829,10 @@ class NetDevices(DictMixin):
         """
         :param production_only:
             Whether to require devices to have ``adminStatus=='PRODUCTION'``.
+
+        :param with_acls:
+            Whether to load ACL associations (requires Redis). Defaults to whatever
+            is specified in settings.WITH_ACLS
         """
         if with_acls is None:
             with_acls = settings.WITH_ACLS
