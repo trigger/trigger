@@ -77,6 +77,7 @@ def has_ioslike_error(s):
         '\n%' in s,                        # A10, Aruba, Foundry
         'syntax error: ' in s,             # Brocade VDX
         s.startswith('Invalid input -> '), # Brocade MLX
+        s.endswith('Syntax Error'),        # MRV
     )
     return any(tests)
 
@@ -1080,7 +1081,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             return False # Skip checks if already enabled
 
         if not self.device.is_ioslike():
-            log.msg('[%s] Not IOS-like, setting enabled flag')
+            log.msg('[%s] Not IOS-like, setting enabled flag' % self.device)
             self.enabled = True
             return False
         return self.enable_prompt.search(data)
