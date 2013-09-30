@@ -24,7 +24,8 @@ USE_GPG_AUTH = False
 # the default and only method.
 USER_HOME = os.getenv('HOME')
 TACACSRC = os.getenv('TACACSRC', os.path.join(USER_HOME, '.tacacsrc'))
-TACACSRC_KEYFILE = os.path.join(PREFIX, '.tackf')
+TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
+
 TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
 
 # Default login realm to store user credentials (username, password) for
@@ -56,6 +57,7 @@ SUPPORTED_VENDORS = (
     'force10',
     'foundry',
     'juniper',
+    'mrv',
     'netscreen',
     'paloalto',
 )
@@ -77,6 +79,7 @@ VENDOR_MAP = {
     'FORCE10': 'force10',
     'FOUNDRY': 'foundry',
     'JUNIPER': 'juniper',
+    'MRV': 'mrv',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
 }
 
@@ -92,12 +95,14 @@ SUPPORTED_PLATFORMS = {
     'force10': ['ROUTER', 'SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
+    'mrv': ['CONSOLE SERVER', 'SWITCH'],
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
     'paloalto': ['FIREWALL'],
 }
 
 # The tuple of support device types
-SUPPORTED_TYPES = ('FIREWALL', 'DWDM', 'LOAD BALANCER', 'ROUTER', 'SWITCH')
+SUPPORTED_TYPES = ('CONSOLE SERVER', 'FIREWALL', 'DWDM', 'LOAD BALANCER',
+                   'ROUTER', 'SWITCH')
 
 # A mapping of of vendor names to the default device type for each in the
 # event that a device object is created and the deviceType attribute isn't set
@@ -112,6 +117,7 @@ DEFAULT_TYPES = {
     'force10': 'ROUTER',
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
+    'mrv': 'CONSOLE SERVER',
     'netscreen': 'FIREWALL',
     'paloalto': 'FIREWALL',
 }
@@ -245,8 +251,9 @@ PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
     'citrix': r'\sDone\n$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',
-    'paloalto': r'\r\n\S+(?:\>|#)\s?',
+    'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
+    'paloalto': r'\r\n\S+(?:\>|#)\s?',
 }
 
 # When a pattern is not explicitly defined for a vendor, this is what we'll try
