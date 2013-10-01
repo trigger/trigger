@@ -21,7 +21,6 @@ import termios
 import time
 import tty
 
-
 # Exports
 __all__ = ('yesno', 'get_terminal_width', 'get_terminal_size', 'Whirlygig',
            'NullDevice', 'print_severed_head', 'min_sec', 'pretty_time',
@@ -114,7 +113,7 @@ def print_severed_head():
     """
     Prints a demon holding a severed head. Best used when things go wrong, like
     production-impacting network outages caused by fat-fingered ACL changes.
-    
+
     Thanks to Jeff Sullivan for this best error message ever.
     """
     print r"""
@@ -166,7 +165,8 @@ def pretty_time(t):
     >>> print pretty_time(t)
     tomorrow 02:13 PDT
     """
-    localzone = timezone(os.environ.get('TZ', 'US/Eastern'))
+    from trigger.conf import settings
+    localzone = timezone(os.environ.get('TZ', settings.BOUNCE_DEFAULT_TZ))
     t = t.astimezone(localzone)
     midnight = datetime.datetime.combine(datetime.datetime.now(), datetime.time(tzinfo=localzone))
     midnight += datetime.timedelta(1)
@@ -186,7 +186,7 @@ def min_sec(secs):
     :param secs:
         Timestamp (in seconds)
 
-    >>> import time 
+    >>> import time
     >>> start = time.time()  # Wait a few seconds
     >>> finish = time.time()
     >>> min_sec(finish - start)
