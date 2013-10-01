@@ -67,6 +67,7 @@ SUPPORTED_VENDORS = (
     'cisco',
     'citrix',
     'dell',
+    'f5',
     'force10',
     'foundry',
     'juniper',
@@ -90,6 +91,7 @@ VENDOR_MAP = {
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
     'DELL': 'dell',
+    'F5 NETWORKS': 'f5',
     'FORCE10': 'force10',
     'FOUNDRY': 'foundry',
     'JUNIPER': 'juniper',
@@ -107,6 +109,7 @@ SUPPORTED_PLATFORMS = {
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
+    'f5': ['LOAD BALANCING', 'SWITCH'],
     'force10': ['ROUTER', 'SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
@@ -116,7 +119,8 @@ SUPPORTED_PLATFORMS = {
 }
 
 # The tuple of support device types
-SUPPORTED_TYPES = ('CONSOLE SERVER', 'FIREWALL', 'DWDM', 'LOAD BALANCER', 'ROUTER', 'SWITCH')
+SUPPORTED_TYPES = ('CONSOLE SERVER', 'FIREWALL', 'DWDM', 'LOAD BALANCING',
+                   'ROUTER', 'SWITCH')
 
 # A mapping of of vendor names to the default device type for each in the
 # event that a device object is created and the deviceType attribute isn't set
@@ -267,6 +271,7 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
     'citrix': r'\sDone\n$',
+    'f5': r'(?:\S+\@)?\S+(?:\(.*\))\(tmos\)#\s{1,2}\r?$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
