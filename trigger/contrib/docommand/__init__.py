@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
+trigger.contrib.docommand
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This package provides facilities for running commands on devices using the CLI.
 """
 

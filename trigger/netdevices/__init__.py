@@ -470,7 +470,7 @@ class NetDevice(object):
 
     def is_ioslike(self):
         """
-        Am I an IOS-like device (as determined by :settings:`IOSLIKE_VENDORS`)?
+        Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
 
