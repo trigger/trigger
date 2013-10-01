@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """
-DO (Next Generation)
-
 Uses Trigger libraries to run commands on network devices.
 
 Please see `~trigger.contrib.docommand.CommandRunner` for details.
