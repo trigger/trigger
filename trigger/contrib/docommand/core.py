@@ -8,20 +8,20 @@ Uses Trigger framework to run commands or load configs on netdevices
 
 This is the base module called by front-end scripts.
 
-main() is never actually called from within here, and takes a single argument:
-  the docommand.do class that needs to be instanced.
+main() is never actually called from within here, and takes a single argument
+the docommand class that needs to be instanced.
 
-This base method exists so that tools using the module can maintain a consistent 
-useability wrt arguments and output
+This base function exists so that tools using the module can maintain a consistent 
+usability for arguments and output.
 
-Scripts using this module are passed cmdline arguments specifying the device(s) and 
+Scripts using this module are passed CLI arguments specifying the device(s) and 
 command(s)/configuration line(s) desired to run/load.
 
-The list of devices and configuration lines may be specified either directly on the 
-commandline (comma-separated values) or by specifying files containing these lists.
-Any files containing configs *must* be located in a tftp directory.
-Configs specified on commandline will either be written to a tftp directory in a tmp file (future)
-or run directly on the devices (current)
+The list of devices and configuration lines may be specified either directly on
+the commandline (comma-separated values) or by specifying files containing these
+lists. Any files containing configs *must* be located in a tftp directory.
+Configs specified on commandline will either be written to a tftp directory in a
+tmp file (future) or run directly on the devices (current)
 
 Please see --help for details on how to construct your arguments
 
@@ -34,33 +34,55 @@ contents would be the config you want loaded to that specific device.
 (not yet supported)
 --match arg to allow matching on netdevices.xml fields to compile list of devices
 **not waiting on anything, just not implemented in v1**
-
 """
-import sys
-import re
-import os
-import sys
-from optparse import OptionParser
-import docommand.do
 
+__author__ = 'Jathan McCollum, Mike Biancianello'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathan@gmail.com'
+__copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '3.0'
+
+
+# Imports
+from optparse import OptionParser
+import os
+import re
+import sys
+
+
+# Globals
 PROD_ONLY = False
 DEBUG = False
 VERBOSE = False
 PUSH = False
 TIMEOUT = 30
 
-def main(action_class=None):
-    """void = main(CommandoClass action_class)"""
-    if action_class is None:
-        print "You should not have called this directly"
-        print "You need to specify Do or Config as an action class"
-        sys.exit()
 
-    opts, args = parse_args(sys.argv)
+# Exports
+__all__ = ('do_work', 'get_commands_from_opts', 'get_devices_from_opts',
+           'get_devices_from_path', 'get_jobs', 'get_list_from_file', 'main',
+           'parse_args', 'print_results', 'print_work', 'set_globals_from_opts',
+           'stage_tftp', 'verify_opts')
+
+
+# Functions
+def main(action_class=None):
+    """
+    void = main(CommandoClass action_class)
+    """
+    if action_class is None:
+        sys.exit("You must specify a docommand action class.")
+
+    if os.getenv('DEBUG'):
+        from twisted.python import log
+        log.startLogging(sys.stdout, setStdout=False)
+
+    # Description comes from a class attribute on the action_class
+    opts, args = parse_args(sys.argv, description=action_class.description)
     work = get_jobs(opts)
     results = do_work(work, action_class)
-    printResults(results)
-    print "enjoy."
+    print_results(results)
+    print '\nDone.'
 
 def get_jobs(opts):
     """
@@ -81,7 +103,7 @@ def get_jobs(opts):
       would allow feeding entire list into a single run()
     """
     if DEBUG:
-        print '-->get_jobs('+str(opts)+')'
+        print '-->get_jobs(%r)' % opts
     work = []
     if opts.device_path:
         # If using device-path, then each device gets a customized list of
@@ -89,7 +111,7 @@ def get_jobs(opts):
         # each device.
         path = opts.device_path
         if VERBOSE:
-            print 'getting devicelist from path :'+(path)
+            print 'getting devicelist from path: %s' % path
 
         # Normalize path variable
         if not re.search('/$', path):
@@ -97,12 +119,12 @@ def get_jobs(opts):
         devs = get_devices_from_path(path)
 
         if VERBOSE:
-            print '\tfound '+str(len(devs))+' devices'
+            print '\tfound %s devices' % len(devs)
 
         for dev in devs:
             cmds = []
             files = [path + dev]
-            job = {'d': [dev],'c': cmds,'f': files}
+            job = {'d': [dev], 'c': cmds, 'f': files}
             work.append(job)
     else:
         # If not using device-path, then devs and cmds are referenced on the
@@ -129,7 +151,7 @@ def get_devices_from_path(path):
     + verify that the devnames exist in netdevices.xml
     """
     if DEBUG:
-        print "-->get_devices_from_path("+path+")"
+        print '-->get_devices_from_path(%r)' % path
 
     devs = os.listdir(path)
     return devs
@@ -142,9 +164,9 @@ def get_list_from_file(path):
     function is used for loading both configs/cmds as well as devices.
     """
     if DEBUG:
-        print "-->get_list_from_file("+path+")"
+        print '-->get_list_from_file(%r)' % path
     ret = []
-    with open(path,'r') as fr:
+    with open(path, 'r') as fr:
         ret = fr.readlines()
     ret = [x.strip() for x in ret]
     return ret
@@ -157,9 +179,9 @@ def get_devices_from_opts(opts):
     devices or an actual list. Return the list!
     """
     if DEBUG:
-        print "-->get_devices_from_opts("+str(opts)+")"
+        print '-->get_devices_from_opts(%r)' % opts
     ret = []
-    if len(opts.device_file)>0:
+    if len(opts.device_file) > 0:
         ret = []
         for df in opts.device_file:
             devlist = get_list_from_file(df)
@@ -168,9 +190,9 @@ def get_devices_from_opts(opts):
     else:
         ret = opts.devices 
     if VERBOSE:
-        print "loaded "+str(len(ret))+" devices"
+        print 'loaded %s devices' % len(ret)
     if DEBUG:
-        print "ret:"+str(ret)
+        print 'ret: %s' % ret
     return ret
 
 def get_commands_from_opts(opts):
@@ -181,9 +203,9 @@ def get_commands_from_opts(opts):
     commands/config or an actual list. Return the list!
     """
     if DEBUG:
-        print "-->get_commands_from_opts("+str(opts)+")"
+        print '-->get_commands_from_opts(%r)' % opts
     ret = []
-    if len(opts.config_file)>0:
+    if len(opts.config_file) > 0:
         ret = []
         for cf in opts.config_file:
             cmdlist = get_list_from_file(cf)
@@ -192,9 +214,10 @@ def get_commands_from_opts(opts):
     else:
         ret = opts.config
     if VERBOSE:
-        print "loaded "+str(len(ret))+" commands"
+        print 'loaded %s commands' % len(ret)
     return ret
 
+# https://gist.github.com/jathanism/4543974 for a possible solution.
 def do_work(work=None, action_class=None):
     """list results = do_work(list work)"""
     '''
@@ -204,17 +227,17 @@ def do_work(work=None, action_class=None):
     if work is None:
         work = []
     if DEBUG:
-        print "-->do_work("+str(work)+")"
+        print '-->do_work(%r)' % work
     #work = [{'d':[],'c':[],'f':[]}]
     ret = []
     if VERBOSE:
         print_work(work)
     for job in work:
-        for key in ('c', 'd', 'f') in:
         f = job['f']
         d = job['d']
         c = job['c']
         # **These next 2 lines do all the real work for this tool**
+        # TODO: This will ultimately fail with a ReactorNotRestartable because calling each action class separately. We need to account for this. See
         n = action_class(devices=d, files=f, commands=c, verbose=VERBOSE,
                         debug=DEBUG, timeout=TIMEOUT, production_only=PROD_ONLY)
         if PUSH:
@@ -222,7 +245,7 @@ def do_work(work=None, action_class=None):
                 print "running Commando"
             n.run()
         else:
-            print "** dryrun mode.  Skipping Command run***"
+            print "*** Dry-run mode; Skipping command execution***"
         for devname in n.data:
             data = n.data[devname]
             res = {'devname': devname, 'data': data}
@@ -238,12 +261,11 @@ def print_work(work=None):
     """
     if work is None:
         work = []
-
     if DEBUG:
-        print "-->do_work(%r)" % work
+        print "-->print_work(%r)" % work
 
-    for i,job in enumerate(work):
-        print "\n***JOB " + str(i + 1) + "***"
+    for i, job in enumerate(work):
+        print "\n***JOB %s ***" % (i + 1)
         f = job['f']
         d = job['d']
         c = job['c']
@@ -265,12 +287,12 @@ def print_work(work=None):
 
     return True
 
-def printResults(results=None):
-    """binary success = printResults(list results)"""
+def print_results(results=None):
+    """binary success = print_results(list results)"""
     if results is None:
         results = []
     if DEBUG:
-        print "-->printResults(%r)" % results
+        print "-->print_results(%r)" % results
     for res in results:
         devname = res['devname']
         data = res['data']
@@ -282,14 +304,13 @@ def printResults(results=None):
             cmd = d['cmd']
             out = d['out']
             device = d['dev']
-            print device.shortName + "# " + str(cmd)
-            print out
+            print '%s# %s\n%s' % (device.shortName, cmd, out),
     return True
 
 def stage_tftp(acls, nonce):
     """
     Need to edit this for cmds, not just acls, but 
-    the baisc idea is stolen from /opt/bcs/bin/load_acl
+    the basic idea is borrowed from ``bin/load_acl``.
     """
     for device in devices:
         source = settings.FIREWALL_DIR + '/acl.%s' % acl
@@ -304,120 +325,137 @@ def stage_tftp(acls, nonce):
                 return None
     return True
 
-def parse_args(argv):
+def parse_args(argv, description=None):
+    if description is None:
+        description = 'insert description here.'
+
     def comma_cb(option, opt_str, value, parser):
         '''OptionParser callback to handle comma-separated arguments.'''
-        values = value.split(',')
+        values = value.split(',') # Split on commas
+        values = [v.strip() for v in values] # Strip trailing space from values
         try:
             getattr(parser.values, option.dest).extend(values)
         except AttributeError:
             setattr(parser.values, option.dest, values)
-    parser = OptionParser(usage='%prog [options]', description='''\
-insert description here.''')
+
+    parser = OptionParser(usage='%prog [options]', description=description,
+                          version=__version__)
     # Options to collect lists of devices and commands
-    parser.add_option('-d', '--devices', type='string', action='callback', callback=comma_cb, default=[],
+    parser.add_option('-d', '--devices', type='string', action='callback',
+                      callback=comma_cb, default=[],
                       help='Comma-separated list of devices.')
-    parser.add_option('-c', '--config', type='string', action='callback', callback=comma_cb, default=[],
+    parser.add_option('-c', '--config', type='string', action='callback',
+                      callback=comma_cb, default=[],
                       help='Comma-separated list of config statements.  '
                            'If your commands have spaces, either enclose the command in " or escape the '
                            'spaces with \\')
-    parser.add_option('-D', '--device-file', type='string', action='callback', callback=comma_cb, default=[],
+    parser.add_option('-D', '--device-file', type='string', action='callback',
+                      callback=comma_cb, default=[],
                       help='Specify file with list of devices.')
-    parser.add_option('-C', '--config-file', type='string', action='callback', callback=comma_cb, default=[],
+    parser.add_option('-C', '--config-file', type='string', action='callback',
+                      callback=comma_cb, default=[],
                       help='Specify file with list of config statements.  '
-                           'The file MUST be in a tftp directory (/home/tftp/<subdir>).  '
-                           'The fully-qualified path MUST be specified in the argument.  '
-                           'Do NOT include "conf t" or "wr mem" in your file.  '
+                           'The file MUST be in a tftp directory (/home/tftp/<subdir>). '
+                           'The fully-qualified path MUST be specified in the argument. '
+                           'Do NOT include "conf t" or "wr mem" in your file. '
                            '** If both -c and -C options specified, then -c will execute first, followed by -C')
     parser.add_option('-p', '--device-path', type='string', default=None,
-                      help='***NOT YET IMPLEMENTED***  '
-                           'Specify dir with a file named for each device.  '
-                           'Contents of each file must be list of commands.  '
-                           'that you want to run for the device that shares its name with the file.  '
+                      help='Specify dir with a file named for each device. '
+                           'Contents of each file must be list of commands. '
+                           'that you want to run for the device that shares its name with the file. '
                            '** May NOT be used with -d,-c,-D,-C **')
     parser.add_option('-q', '--quiet', action='store_true',
                       help='suppress all standard output; errors/warnings still display.')
+    '''
     parser.add_option('--exclude', '--except', type='string',
-                      action='callback', callback=comma_cb, dest='exclude', default=[],
+                      action='callback', callback=comma_cb, dest='exclude',
+                      default=[],
                       help='***NOT YET IMPLEMENTED***  '
                            'skip over devices; shell-type patterns '
                            '(e.g., "edge?-[md]*") can be used for devices; for '
                            'multiple excludes, use commas or give this option '
                            'more than once.')
+    '''
     parser.add_option('-j', '--jobs', type='int', default=5,
                       help='maximum simultaneous connections (default 5).')
     parser.add_option('-t', '--timeout', type='int', default=TIMEOUT,
                       help="""Time in seconds to wait for each command to
                       complete (default %s).""" % TIMEOUT)
-    # booleans below
+    # Booleans below
     parser.add_option('-v','--verbose', action='store_true', default=False,
                       help='verbose output.')
     parser.add_option('-V','--debug', action='store_true', default=False,
                       help='debug output.')
-    #parser.add_option('--severed-head', action='store_true', default=False,
-    #                  help='display severed head.')
     parser.add_option('--push', action='store_true', default=False,
                       help='actually do stuff.  Default is False.')
-    #parser.add_option('--no-cm', action='store_true',
-    #                  help='do not open up a CM ticket for this load.')
-    # Done arg list
+
     opts, args = parser.parse_args(argv)
-    osucc, oerr = verifyopts(opts)
-    setGlobalsFromOpts(opts)
-    if not osucc:
-        print oerr
-        parser.print_help()
+
+    # Validate option logic
+    ok, err = verify_opts(opts)
+    if not ok:
+        print '\n', err
         sys.exit(1)
     if opts.quiet:
         sys.stdout = NullDevice()
+
+    # Mutate some global sentinel values based on opts
+    set_globals_from_opts(opts)
+
     return opts, args
 
-def verifyopts(opts):
-    '''
-    returns True if all is good
-    returns False,errormsg if not
-    '''
-    succ = True
+def verify_opts(opts):
+    """
+    Validate opts and return whether they are ok.
+
+    returns True if all is good, otherwise (False, errormsg)
+    """
+    ok = True
     err = ''
-    isd = (len(opts.devices)>0)
-    isc = (len(opts.config)>0)
-    isdf = (len(opts.device_file)>0)
-    iscf = (len(opts.config_file)>0)
-    isp = (opts.device_path != None)
+    isd = len(opts.devices) > 0
+    isc = len(opts.config) > 0
+    isdf = len(opts.device_file) > 0
+    iscf = len(opts.config_file) > 0
+    isp = opts.device_path is not None
     if isp:
         if not os.path.isdir(opts.device_path):
-            return False,'ERROR: '+path+' is not a valid path\n'
+            return False, 'ERROR: %r is not a valid path\n' % path
         else:
-            return True,''
+            return True, ''
     elif isdf or iscf or isd or isc:
-        '''
-        return False, "ERROR: Sorry, but only --device-path is supported at this time\n"
-        '''
+        #return False, "ERROR: Sorry, but only --device-path is supported at this time\n"
+        pass
+
+    # Validate opts.device_file
     if isdf:
         for df in opts.device_file:
             if not os.path.exists(df):
-                succ = False
-                err = err + "ERROR: file: "+df+" does not exist\n"
+                ok = False
+                err += 'ERROR: Device file %r does not exist\n' % df
+
+    # Validate opts.config_file
     if iscf:
         for cf in opts.config_file:
             if not os.path.exists(cf):
-                succ = False
-                err = err + "ERROR: file: "+cf+" does not exist\n"
-    if not isd and not isdf:
-        succ = False
-        err = err + "ERROR: You need to specify a device or two\n"
-    if not isc and not iscf:
-        succ = False
-        err = err + "ERROR: You need to specify a command or two\n"
-    '''
-        One option here would be to take opts.config, write to file,
-        and convert that to opts.config_file
-        That way, the rest of the script only has to care about one type
-        of input.
-    '''
-    return succ,err
+                ok = False
+                err += 'ERROR: Config file %r does not exist\n' % cf
 
-def setGlobalsFromOpts(opts):
+    # If opts.devices is set, opts.device_file must also be set
+    if not isd and not isdf:
+        ok = False
+        err += 'ERROR: You must specify at least one device\n'
+    # If opts.config is set, opts.config_file must also be set
+    if not isc and not iscf:
+        ok = False
+        err += 'ERROR: You must specify at least one command\n'
+
+    # TODO: One option here would be to take opts.config, write to file, and
+    # convert that to opts.config_file. That way, the rest of the script only
+    # has to care about one type of input.
+    return ok, err
+
+# TODO: There's gotta be a better way.
+def set_globals_from_opts(opts):
     global DEBUG
     global VERBOSE
     global PUSH
