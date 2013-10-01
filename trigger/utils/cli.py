@@ -21,6 +21,7 @@ import termios
 import time
 import tty
 
+from trigger.conf import settings
 
 # Exports
 __all__ = ('yesno', 'get_terminal_width', 'get_terminal_size', 'Whirlygig',
@@ -166,7 +167,7 @@ def pretty_time(t):
     >>> print pretty_time(t)
     tomorrow 02:13 PDT
     """
-    localzone = timezone(os.environ.get('TZ', 'US/Eastern'))
+    localzone = timezone(os.environ.get('TZ', settings.BOUNCE_DEFAULT_TZ)) 
     t = t.astimezone(localzone)
     midnight = datetime.datetime.combine(datetime.datetime.now(), datetime.time(tzinfo=localzone))
     midnight += datetime.timedelta(1)
