@@ -2,10 +2,10 @@
 import os.path
 import re
 from socket import getfqdn, gethostbyname
+from twisted.python import log
 from trigger.contrib.commando import CommandoApplication
 from trigger.conf import settings
 from trigger.utils import xmltodict, strip_juniper_namespace
-from twisted.python import log
 import xml.etree.ElementTree as ET
 from xml.etree.cElementTree import ElementTree, Element, SubElement
 

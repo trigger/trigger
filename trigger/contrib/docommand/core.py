@@ -160,7 +160,7 @@ def get_list_from_file(path):
     """
     list text = get_list_from_file(str path)
 
-    Specified file (path) will contain a list of \n-delimited items. This
+    Specified file (path) will contain a list of newline-separated items. This
     function is used for loading both configs/cmds as well as devices.
     """
     if DEBUG:
