@@ -306,6 +306,7 @@ class NetDevice(object):
             'brocade': disable_paging_brocade(), # See comments above
             'cisco': default,
             'dell': ['terminal datadump\n'],
+            'f5': ['modify cli preference pager disabled\n'],
             'force10': default,
             'foundry': ['skip-page-display\n'],
             'juniper': ['set cli screen-length 0\n'],
@@ -333,6 +334,8 @@ class NetDevice(object):
             return ['commit']
         elif self.vendor == 'mrv':
             return ['save configuration flash']
+        elif self.vendor == 'f5':
+            return ['save sys config']
         else:
             return []
 
