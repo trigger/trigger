@@ -75,7 +75,7 @@ def has_ioslike_error(s):
     tests = (
         s.startswith('%'),                 # Cisco, Arista
         '\n%' in s,                        # A10, Aruba, Foundry
-        'syntax error: ' in s,             # Brocade VDX
+        'syntax error: ' in s.lower(),     # Brocade VDX, F5 BIGIP
         s.startswith('Invalid input -> '), # Brocade MLX
         s.endswith('Syntax Error'),        # MRV
     )
