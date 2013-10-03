@@ -21,6 +21,7 @@ RIGHT_TACACSRC = {
     'aol_uname_': 'jschmoe',
     'aol_pwd_': 'abc123',
 }
+RIGHT_PERMS = '0600'
 
 
 def miniparser(data, tcrc):
@@ -45,6 +46,11 @@ class TacacsrcTest(unittest.TestCase):
         self.assertEqual(t.version, '2.0')
         self.assertEqual(t.creds['aol'], RIGHT_CREDS)
 
+    def _get_perms(self, filename):
+        """Get octal permissions for a filename"""
+        # We only want the lower 4 bits (negative index)
+        return oct(os.stat(filename).st_mode)[-4:]
+
     def testWrite(self):
         """Test writing .tacacsrc."""
         _, file_name = tempfile.mkstemp('_tacacsrc')
@@ -65,6 +71,17 @@ class TacacsrcTest(unittest.TestCase):
             lines = fd.readlines()
             self.assertEqual(output, miniparser(lines, t))
         os.remove(file_name)
+
+    def test_perms(self):
+        """Test that permissions are being enforced."""
+        t = Testing_Tacacsrc()
+        fname = t.file_name
+        # First make sure perms are set
+        old_perms = self._get_perms(fname)
+        self.assertEqual(old_perms, RIGHT_PERMS)
+        os.chmod(fname, 0666) # Make it world-writable
+        new_perms = self._get_perms(fname)
+        self.assertNotEqual(new_perms, RIGHT_PERMS)
 
 if __name__ == "__main__":
     unittest.main()
