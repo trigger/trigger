@@ -21,8 +21,8 @@ from time import strftime, localtime
 import os
 import pwd
 import sys
-from trigger.conf import settings
 from twisted.python import log
+from trigger.conf import settings
 
 # Exports
 __all__ = ('get_device_password', 'prompt_credentials', 'convert_tacacsrc',
@@ -395,6 +395,7 @@ class Tacacsrc(object):
 
     def _read_file_old(self):
         """Read old style file and return the raw data."""
+        self._update_perms()
         with open(self.file_name, 'r') as f:
             return f.readlines()
 
