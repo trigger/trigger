@@ -726,12 +726,10 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """
         super(TriggerSSHTransport, self).connectionLost(reason)
         log.msg('Transport connection lost: %s' % reason.value)
-        log.msg('connectionLost: %s' % dir(reason))
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
         log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc))
-        log.msg('sendDisconnect: %s' % dir(reason))
 
         # Only throw an error if this wasn't user-initiated (reason: 10)
         if reason == transport.DISCONNECT_CONNECTION_LOST:
