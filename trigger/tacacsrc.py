@@ -371,7 +371,7 @@ class Tacacsrc(object):
         creds[realm] = prompt_credentials(realm, user)
         log.msg('setting self.creds_updated flag', debug=True)
         self.creds_updated = True
-        new_user = creds[realm]['username']
+        new_user = creds[realm].username
         print '\nCredentials updated for user: %r, device/realm: %r.' % \
               (new_user, realm)
 
