@@ -726,25 +726,26 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """
         super(TriggerSSHTransport, self).connectionLost(reason)
         log.msg('Transport connection lost: %s' % reason.value)
-        log.msg('%s' % dir(reason))
-
-        # Only throw an error if this wasn't user-initiated (reason: 10)
-        if getattr(self, 'disc_reason', None) == transport.DISCONNECT_CONNECTION_LOST:
-            pass
-        elif reason.type == error.ConnectionLost:
-            # Emulate the most common OpenSSH reason for this to happen
-            msg = 'ssh_exchange_identification: Connection closed by remote host'
-            #msg = 'Connection closed by remote host or in an unclean way'
-            self.factory.err = exceptions.SSHConnectionLost(
-                transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT, msg
-            )
+        log.msg('connectionLost: %s' % dir(reason))
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
-        log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc), debug=True)
-        if reason != transport.DISCONNECT_CONNECTION_LOST:
+        log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc))
+        log.msg('sendDisconnect: %s' % dir(reason))
+
+        # Only throw an error if this wasn't user-initiated (reason: 10)
+        if reason == transport.DISCONNECT_CONNECTION_LOST:
+            pass
+        # Protocol errors should result in login failures
+        elif reason == transport.DISCONNECT_PROTOCOL_ERROR:
+            self.factory.err = exceptions.LoginFailure(desc)
+        # Fallback to connection lost
+        else:
+            # Emulate the most common OpenSSH reason for this to happen
+            if reason == transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT:
+                desc = 'ssh_exchange_identification: Connection closed by remote host'
             self.factory.err = exceptions.SSHConnectionLost(reason, desc)
-        self.disc_reason = reason # This is checked in connectionLost()
+
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
 
 class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
