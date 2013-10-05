@@ -23,8 +23,8 @@ set(['juniper-router.policer', 'juniper-router-protect'])
 
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2010-2012, AOL Inc.'
+__email__ = 'jathan@gmail.com'
+__copyright__ = 'Copyright 2010-2012, AOL Inc.; 2013 Salesforce.com'
 
 from collections import defaultdict
 import redis
@@ -76,7 +76,10 @@ class AclsDB(object):
         >>> a.add_acl(dev, 'acb123')
         'added acl abc123 to test1-mtc.net.aol.com'
         """
-        rc = self.redis.sadd('acls:explicit:%s' % device.nodeName, acl)
+        try:
+            rc = self.redis.sadd('acls:explicit:%s' % device.nodeName, acl)
+        except redis.exceptions.ResponseError as err:
+            return str(err)
         if rc != 1:
             raise exceptions.ACLSetError('%s already has acl %s' % (device.nodeName, acl))
         self.redis.save()
@@ -90,7 +93,10 @@ class AclsDB(object):
         >>> a.remove_acl(dev, 'acb123')
         'removed acl abc123 from test1-mtc.net.aol.com'
         """
-        rc = self.redis.srem('acls:explicit:%s' % device.nodeName, acl)
+        try:
+            rc = self.redis.srem('acls:explicit:%s' % device.nodeName, acl)
+        except redis.exceptions.ResponseError as err:
+            return str(err)
         if rc != 1:
             raise exceptions.ACLSetError('%s does not have acl %s' % (device.nodeName, acl))
         self.redis.save()
