@@ -50,6 +50,7 @@ INTERNAL_NETWORKS = [
 SUPPORTED_VENDORS = (
     'a10',
     'arista',
+    'aruba',
     'brocade',
     'cisco',
     'citrix',
@@ -73,6 +74,7 @@ VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 VENDOR_MAP = {
     'A10 NETWORKS': 'a10',
     'ARISTA NETWORKS': 'arista',
+    'ARUBA NETWORKS': 'aruba',
     'BROCADE': 'brocade',
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
@@ -90,6 +92,7 @@ VENDOR_MAP = {
 SUPPORTED_PLATFORMS = {
     'a10': ['SWITCH'],
     'arista': ['SWITCH'],                         # Your "Cloud" network vendor
+    'aruba': ['SWITCH'],                          # Wireless Controllers
     'brocade': ['ROUTER', 'SWITCH'],
     'cisco': ['ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
@@ -113,6 +116,7 @@ SUPPORTED_TYPES = ('CONSOLE SERVER', 'FIREWALL', 'DWDM', 'LOAD BALANCING',
 DEFAULT_TYPES = {
     'a10': 'SWITCH',
     'arista': 'SWITCH',
+    'aruba': 'SWITCH',
     'brocade': 'SWITCH',
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
@@ -164,6 +168,7 @@ SSH_ASYNC_DISABLED = {
 IOSLIKE_VENDORS = (
     'a10',
     'arista',
+    'aruba',
     'brocade',
     'cisco',
     'dell',

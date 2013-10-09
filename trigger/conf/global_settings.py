@@ -133,6 +133,7 @@ DEFAULT_TYPES = {
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
     'dell': 'SWITCH',
+    'f5': 'LOAD BALANCING',
     'force10': 'ROUTER',
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
