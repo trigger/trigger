@@ -25,13 +25,13 @@ __version__ = '0.2'
 import itertools
 import cPickle as pickle
 import os
+from twisted.python import log, failure
 from trigger.cmds import Commando
 from trigger import exceptions
 from twisted.internet import defer, task
-from twisted.python import log, failure
-
 import xml.etree.ElementTree as ET
 from xml.etree.cElementTree import Element
+
 
 # Exports
 __all__ = ('CommandoApplication',)

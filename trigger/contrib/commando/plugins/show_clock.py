@@ -1,8 +1,8 @@
 
 import datetime
+from twisted.python import log
 from trigger.utils import xmltodict, strip_juniper_namespace
 from trigger.contrib.commando import CommandoApplication
-from twisted.python import log
 import xml.etree.ElementTree as ET
 from xml.etree.cElementTree import ElementTree, Element, SubElement
 

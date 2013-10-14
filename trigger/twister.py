@@ -75,8 +75,9 @@ def has_ioslike_error(s):
     tests = (
         s.startswith('%'),                 # Cisco, Arista
         '\n%' in s,                        # A10, Aruba, Foundry
-        'syntax error: ' in s,             # Brocade VDX
+        'syntax error: ' in s.lower(),     # Brocade VDX, F5 BIGIP
         s.startswith('Invalid input -> '), # Brocade MLX
+        s.endswith('Syntax Error'),        # MRV
     )
     return any(tests)
 
@@ -725,25 +726,24 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """
         super(TriggerSSHTransport, self).connectionLost(reason)
         log.msg('Transport connection lost: %s' % reason.value)
-        log.msg('%s' % dir(reason))
-
-        # Only throw an error if this wasn't user-initiated (reason: 10)
-        if getattr(self, 'disc_reason', None) == transport.DISCONNECT_CONNECTION_LOST:
-            pass
-        elif reason.type == error.ConnectionLost:
-            # Emulate the most common OpenSSH reason for this to happen
-            msg = 'ssh_exchange_identification: Connection closed by remote host'
-            #msg = 'Connection closed by remote host or in an unclean way'
-            self.factory.err = exceptions.SSHConnectionLost(
-                transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT, msg
-            )
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
-        log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc), debug=True)
-        if reason != transport.DISCONNECT_CONNECTION_LOST:
+        log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc))
+
+        # Only throw an error if this wasn't user-initiated (reason: 10)
+        if reason == transport.DISCONNECT_CONNECTION_LOST:
+            pass
+        # Protocol errors should result in login failures
+        elif reason == transport.DISCONNECT_PROTOCOL_ERROR:
+            self.factory.err = exceptions.LoginFailure(desc)
+        # Fallback to connection lost
+        else:
+            # Emulate the most common OpenSSH reason for this to happen
+            if reason == transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT:
+                desc = 'ssh_exchange_identification: Connection closed by remote host'
             self.factory.err = exceptions.SSHConnectionLost(reason, desc)
-        self.disc_reason = reason # This is checked in connectionLost()
+
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
 
 class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
@@ -1080,7 +1080,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             return False # Skip checks if already enabled
 
         if not self.device.is_ioslike():
-            log.msg('[%s] Not IOS-like, setting enabled flag')
+            log.msg('[%s] Not IOS-like, setting enabled flag' % self.device)
             self.enabled = True
             return False
         return self.enable_prompt.search(data)

@@ -59,7 +59,7 @@ vendors:
 
 + A10 Networks
 
-  + All AX series application delivery controllers and server load balancers
+  + All AX-series application delivery controllers and server load-balancers
 
 + Arista Networks
 
@@ -77,15 +77,24 @@ vendors:
 
 + Citrix Systems
 
-  + NetScaler application delivery controllers and server load balancers
+  + NetScaler application delivery controllers and server load-balancers
 
 + Cisco Systems
 
   + All router and switch platforms running IOS
+  + All switch platforms running NX-OS
 
 + Dell
 
   + PowerConnect switches
+
++ F5 Networks
+
+  - All BIG-IP application delivery controllers and server load-balancers
+
++ Force10
+
+  + All router and switch platforms running FTOS
 
 + Foundry/Brocade
 
@@ -95,6 +104,10 @@ vendors:
 
   + All router and switch platforms running Junos
   + NetScreen firewalls running ScreenOS (Junos not yet supported)
+
++ MRV Communications
+
+  - All LX-series console servers
 
 It's worth noting that other vendors may actually work with the current
 libraries, but they have not been tested. The mapping of supported platforms is
@@ -270,7 +283,9 @@ To file new bugs or search existing ones, please use the GitHub issue tracker, l
 IRC
 ---
 
-Find us on IRC at ``#trigger`` on Freenode (``irc://irc.freenode.net``).
+Find us on IRC at ``#trigger`` on Freenode (`irc://irc.freenode.net/trigger
+<irc://irc.freenode.net/trigger>`_).
+
 Trigger is a Pacific coast operation, so your best chance of getting a
 real-time response is during the weekdays, Pacific time.
 

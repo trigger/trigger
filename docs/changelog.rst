@@ -2,6 +2,40 @@
 Changelog
 =========
 
+.. _v1.4.1:
+
+1.4.1
+=====
+
+New Features
+------------
+
++ Support for new vendors and platforms!!
+  
+  - F5 BIG-IP application delivery controllers and server load-balancers 
+  - MRV LX-series console servers
+
++ New tool ``bin/run_cmds`` to run commands from the CLI!
+
+Documentation Enhancements
+--------------------------
+
++ API documentation fixes for trigger.contrib and some logging
+  fixes
+
+Bug Fixes
+---------
+
++ :bug:`97` Bugfix that was causing NameError crash in
+  ``bin/optimizer``.
++ :bug:`124` Bugfix in `~trigger.utils.cli.pretty_time` where
+  global timezone was hard-coded.
++ :bug:`127` Bugfix to handle SSH protocol errors as if they are
+  login failures instead of exiting with a cryptic error.
++ Bugfix in Tacacsrc when updating credentials for a user.
++ Tacacsrc will now truly enforce file permissions on the
+  .tacacsrc when reading or writing the file
+
 .. _v1.4:
 
 1.4
@@ -121,13 +155,6 @@ trigger.cmds
 trigger.netdevices
 ------------------
 
-+ `~trigger.netdevices.NetDevices` loaders are now pluggable, with
-  built-in support for JSON, SQLite, XML, CSV, and RANCID!
-+ Network device metadata may now be loaded from any URI-based file
-  path (especially URLs).
-+ `~trigger.netdevices.NetDevice` objects now have the commands that
-  are best to execute to disable paging or commit changes determined
-  dynmically to ease utility for Trigger developers.
 + Prompt patterns are now bound to `~trigger.netdevices.Vendor`
   objects.
 

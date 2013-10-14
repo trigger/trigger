@@ -302,13 +302,15 @@ class NetDevice(object):
         paging_map = {
             'a10': default,
             'arista': default,
-            'aruba': ['no paging\n'],
+            'aruba': ['no paging\n'], # v6.2.x this is not necessary
             'brocade': disable_paging_brocade(), # See comments above
             'cisco': default,
             'dell': ['terminal datadump\n'],
+            'f5': ['modify cli preference pager disabled\n'],
             'force10': default,
             'foundry': ['skip-page-display\n'],
             'juniper': ['set cli screen-length 0\n'],
+            'mrv': ['no pause\n'],
             'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
         }
 
@@ -330,6 +332,10 @@ class NetDevice(object):
             return ['save config']
         elif self.vendor == 'paloalto':
             return ['commit']
+        elif self.vendor == 'mrv':
+            return ['save configuration flash']
+        elif self.vendor == 'f5':
+            return ['save sys config']
         else:
             return []
 
@@ -464,7 +470,7 @@ class NetDevice(object):
 
     def is_ioslike(self):
         """
-        Am I an IOS-like device (as determined by :settings:`IOSLIKE_VENDORS`)?
+        Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
 

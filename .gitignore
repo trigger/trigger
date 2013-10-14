@@ -44,3 +44,6 @@ dropin.cache
 
 # Docutils (docs) build dir
 _build
+
+# Gerrit
+.gitreview

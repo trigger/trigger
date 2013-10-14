@@ -99,6 +99,7 @@ setup(
         'bin/netdev',
         'bin/optimizer',
         'bin/find_access',
+        'bin/run_cmds',
         'tools/gen_tacacsrc.py',
         'tools/convert_tacacsrc.py',
         'tools/tacacsrc2gpg.py',

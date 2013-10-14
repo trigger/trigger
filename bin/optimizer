@@ -498,7 +498,7 @@ def optimize(opts, terms, focused):
 
     chunks = terms_chunker(terms)
 
-    for type in types:
+    for type in mtypes:
         if stop_all:
             return terms
 
