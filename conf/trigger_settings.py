@@ -25,7 +25,6 @@ USE_GPG_AUTH = False
 USER_HOME = os.getenv('HOME')
 TACACSRC = os.getenv('TACACSRC', os.path.join(USER_HOME, '.tacacsrc'))
 TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
-
 TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
 
 # Default login realm to store user credentials (username, password) for
@@ -257,7 +256,8 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 # Specially-defined, per-vendor prompt patterns. If a vendor isn't defined her,
 # try to use IOSLIKE_PROMPT_PAT or fallback to DEFAULT_PROMPT_PAT.
 PROMPT_PATTERNS = {
-    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#',
+    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#', # ArubaOS 6.1
+    #'aruba': r'\S+(?: \(\S+\))?\s?#\s', # ArubaOS 6.2
     'citrix': r'\sDone\n$',
     'f5': r'(?:\S+\@)?\S+(?:\(.*\))\(tmos\)#\s{1,2}\r?$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',

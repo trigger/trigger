@@ -59,7 +59,7 @@ vendors:
 
 + A10 Networks
 
-  + All AX series application delivery controllers and server load balancers
+  + All AX-series application delivery controllers and server load-balancers
 
 + Arista Networks
 
@@ -77,7 +77,7 @@ vendors:
 
 + Citrix Systems
 
-  + NetScaler application delivery controllers and server load balancers
+  + NetScaler application delivery controllers and server load-balancers
 
 + Cisco Systems
 
@@ -87,6 +87,10 @@ vendors:
 + Dell
 
   + PowerConnect switches
+
++ F5 Networks
+
+  - All BIG-IP application delivery controllers and server load-balancers
 
 + Force10
 
@@ -100,6 +104,10 @@ vendors:
 
   + All router and switch platforms running Junos
   + NetScreen firewalls running ScreenOS (Junos not yet supported)
+
++ MRV Communications
+
+  - All LX-series console servers
 
 It's worth noting that other vendors may actually work with the current
 libraries, but they have not been tested. The mapping of supported platforms is
