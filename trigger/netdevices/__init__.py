@@ -302,7 +302,7 @@ class NetDevice(object):
         paging_map = {
             'a10': default,
             'arista': default,
-            'aruba': ['no paging\n'],
+            'aruba': ['no paging\n'], # v6.2.x this is not necessary
             'brocade': disable_paging_brocade(), # See comments above
             'cisco': default,
             'dell': ['terminal datadump\n'],

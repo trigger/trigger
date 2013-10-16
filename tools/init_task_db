@@ -5,7 +5,7 @@ Initialize database tables for the task queue
 """
 
 __author__ = 'Jathan McCollum'
-__email__ = 'jmccollum@salesforce.com'
+__email__ = 'jathan@gmail.com'
 __version__ = '0.1'
 
 
