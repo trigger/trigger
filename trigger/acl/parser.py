@@ -2074,9 +2074,11 @@ rules.update({
                                     lambda x: {'inactive': len(x) > 0}),
     S('junos_from'):            ('"from", jws?, ' + braced_list('junos_match'),
                                     lambda x: {'match': Matches(dict_sum(x))}),
-    S('junos_then'):            ('"then", jws?, ' +
+    S('junos_then'):            ('junos_basic_then / junos_braced_then', dict_sum),
+    S('junos_braced_then'):     ('"then", jws?, ' +
                                     braced_list('junos_action/junos_modifier, jsemi'),
                                     dict_sum),
+    S('junos_basic_then'):      ('"then", jws?, junos_action, jsemi', dict_sum),
     S('junos_policer'):         ('"policer", jws, junos_term_name, jws?, ' +
                                     braced_list('junos_exceeding / junos_policer_then'),
                                     lambda x: Policer(x[0]['name'], x[1:])),
