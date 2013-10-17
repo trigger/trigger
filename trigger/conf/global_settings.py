@@ -338,6 +338,10 @@ DATABASE_PORT = ''          # Set to '' for default. Not used with sqlite3.
 #===============================
 # ACL Management
 #===============================
+# Whether to allow multi-line comments to be used in Juniper firewall filters.
+# Defaults to False.
+ALLOW_JUNIPER_MULTILINE_COMMENTS = False
+
 # FILTER names of ACLs that should be skipped or ignored by tools
 # NOTE: These should be the names of the filters as they appear on devices. We
 # want this to be mutable so it can be modified at runtime.
