@@ -31,6 +31,7 @@ from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
 from simpleparse.parser import Parser
 import socket
 from trigger import exceptions
+from trigger.conf import settings
 
 
 # Exports
@@ -675,10 +676,16 @@ class Comment(object):
         """Output the Comment to IOS traditional format."""
         if not self.data:
             return '!'
-        elif self.data.startswith('!'):
-            return '!' + self.data
+
+        data = self.data
+        if data.startswith('!'):
+            prefix = '!'
+            data = prefix + data
         else:
-            return '! ' + self.data
+            prefix = '! '
+        lines = data.splitlines()
+
+        return '\n'.join(prefix + line for line in lines)
 
     def output_ios_named(self):
         """Output the Comment to IOS named format."""
@@ -1867,7 +1874,6 @@ rules.update({
     'ios_ext_line':          ('ios_action_match / ios_ext_name_line / '
                              'ios_ext_no_line / ios_remark_line / '
                              'ios_rebind_acl_line / ios_rebind_receive_acl_line'),
-                             #'ios_ext_no_line / ios_remark_line'),
     S('ios_ext_name_line'): ('"ip", ts, "access-list", ts, '
                              '"extended", ts, word',
                              lambda x: {'name': x[0], 'format': 'ios_named'}),
@@ -1877,7 +1883,6 @@ rules.update({
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
     S('ios_rebind_acl_line'): ('"ip", ts, "rebind-acl", ts, word',
                               lambda x: {'name': x[0], 'format': 'ios_brocade'}),
-                              #lambda x: {'name': x[0], 'format': 'ios'}),
 
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
     S('ios_rebind_receive_acl_line'): ('"ip", ts, "rebind-receive-acl", ts, word',
@@ -1904,43 +1909,50 @@ class QuotedString(str):
     def __str__(self):
         return '"' + self + '"'
 
+def juniper_multiline_comments():
+    """
+    Return appropriate multi-line comment grammar for Juniper ACLs.
+
+    This depends on ``settings.ALLOW_JUNIPER_MULTLIINE_COMMENTS``.
+    """
+    single = '-("*/" / "\n")*' # single-line comments only
+    multi = '-"*/"*' # syntactically correct multi-line support
+    if settings.ALLOW_JUNIPER_MULTILINE_COMMENTS:
+        return multi
+    return single
 
 rules.update({
     'jword':                    'double_quoted / word',
     'double_quoted':            ('"\\"", -[\\"]+, "\\""',
-                             lambda x: QuotedString(x[1:-1])),
-    ###'>jws<':                    '(ws / jcomment)+',
-    ###S('jcomment'):            ('"/*", ws?, jcomment_body, ws?, "*/"',
-    ###                             lambda x: Comment(x[0])),
-    ###'jcomment_body':            '-(ws?, "*/")*',
-    ###'<jsemi>':                    'jws?, ";"',
+                                 lambda x: QuotedString(x[1:-1])),
+
+    #'>jws<':                    '(ws / jcomment)+',
+    #S('jcomment'):              ('"/*", ws?, jcomment_body, ws?, "*/"',
+    #                            lambda x: Comment(x[0])),
+    #'jcomment_body':            '-(ws?, "*/")*',
+
     '>jws<':                    '(ws / jcomment)+',
+    S('jcomment'):              ('jslashbang_comment',
+                                 lambda x: Comment(x[0])),
+    '<comment_start>':          '"/*"',
+    '<comment_stop>':           '"*/"',
+    '>jslashbang_comment<':     'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
 
-    S('jcomment'):            ('jslashbang_comment',
-                             lambda x: Comment(x[0])),
-    '<comment_start>':            '"/*"',
-    '<comment_stop>':            '"*/"',
-    '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
+    'jcomment_body':            juniper_multiline_comments(),
 
-    ## custom force single-line comments only:
-    #'jcomment_body':            '-("*/" / "\n")*',
-
-    ## syntactically correct multi-line support:
-    'jcomment_body':            '-"*/"*',
-
-    ## errors on missing ';', ignores multiple ;; and normalizes to one.
-    '<jsemi>':                    'jws?, [;]+!%s' % errs['semicolon'],
+    # Errors on missing ';', ignores multiple ;; and normalizes to one.
+    '<jsemi>':                  'jws?, [;]+!%s' % errs['semicolon'],
 
     'fragment_flag':            literals(fragment_flag_names),
-    'ip_option':            "digits / " + literals(ip_option_names),
-    'tcp_flag':                    literals(tcp_flag_names),
+    'ip_option':                "digits / " + literals(ip_option_names),
+    'tcp_flag':                 literals(tcp_flag_names),
 })
 
 junos_match_types = []
 
 def braced_list(arg):
     '''Returned braced output.  Will alert if comment is malformed.'''
-    ###return '("{", jws?, (%s, jws?)*, "}")' % arg
+    #return '("{", jws?, (%s, jws?)*, "}")' % arg
     return '("{", jws?, (%s, jws?)*, "}"!%s)' % (arg, errs['comm_start'])
 
 def keyword_match(keyword, arg=None):
