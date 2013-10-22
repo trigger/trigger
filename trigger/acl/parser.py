@@ -1923,10 +1923,10 @@ rules.update({
     '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
 
     ## custom force single-line comments only:
-    'jcomment_body':            '-("*/" / "\n")*',
+    #'jcomment_body':            '-("*/" / "\n")*',
 
     ## syntactically correct multi-line support:
-    #'jcomment_body':            '-"*/"*',
+    'jcomment_body':            '-"*/"*',
 
     ## errors on missing ';', ignores multiple ;; and normalizes to one.
     '<jsemi>':                    'jws?, [;]+!%s' % errs['semicolon'],
@@ -2053,16 +2053,16 @@ def handle_junos_term(d):
 # the next load of a similar config (e.g., another ACL).  I had a workaround
 # for this but it made the parser substantially slower.
 rules.update({
-    S('junos_raw_acl'):         ('"filter", jws, jword, jws?, ' + \
+    S('junos_raw_acl'):         ('jws?, "filter", jws, jword, jws?, ' + \
                                     braced_list('junos_term / junos_policer'),
                                     handle_junos_acl),
-    'junos_replace_acl':        ('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
-    S('junos_replace_family_acl'): ('"firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
+    'junos_replace_acl':        ('jws?, "firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
+    S('junos_replace_family_acl'): ('jws?, "firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
                                  handle_junos_family_acl),
     S('junos_replace_policers'):('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_policer, jws?)*, "}"',
                                     handle_junos_policers),
     'junos_filter_family':      ('"family", ws, junos_family_type'),
-    'junos_family_type':        ('"inet" / "inet6"'),
+    'junos_family_type':        ('"inet" / "inet6" / "ethernet-switching"'),
     'opaque_braced_group':      ('"{", jws?, (jword / "[" / "]" / ";" / '
                                     'opaque_braced_group / jws)*, "}"',
                                     lambda x: x),
