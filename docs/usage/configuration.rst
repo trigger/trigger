@@ -858,6 +858,19 @@ All of the following esttings are currently only used by ``load_acl``. If and
 when the ``load_acl`` functionality gets moved into the library API, this may
 change.
 
+.. setting:: ALLOW_JUNIPER_MULTILINE_COMMENTS
+
+ALLOW_JUNIPER_MULTILINE_COMMENTS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whether to allow multi-line comments to be used in Juniper firewall filters.
+The default behavior is to result in a syntax error when a multi-line comment
+is detected when parsing a firewall filter using the `~trigger.acl` library.
+
+Default::
+
+    False
+
 .. setting:: AUTOLOAD_FILTER
 
 AUTOLOAD_FILTER
