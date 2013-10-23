@@ -81,8 +81,6 @@ elif ((len(args) == 0 and opts.mode not in valid_modes) or
     p_error()
     sys.exit(1)
 
-# Strip "acl." from acl names
-args = [x.startswith('acl.') and x[4:] or x for x in args]
 queue = Queue()
 
 # Do the work.
@@ -90,7 +88,8 @@ if opts.mode == 'liststaged':
     tfdir = settings.TFTPROOT_DIR
     print 'Access-lists currently staged in %s (listed by date):\n' % tfdir
     os.chdir(tfdir)
-    os.system('ls -ltr acl.*')
+    #assumes tftp server is on the same host
+    os.system('ls -ltr *')
 
 elif opts.mode == 'list':
     acl_data = defaultdict(list)

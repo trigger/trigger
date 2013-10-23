@@ -270,7 +270,8 @@ def get_work(opts, args):
     :param args:
         A list of CLI arguments
     """
-    aclargs = set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
+    #removing acl. assumption from files
+    aclargs = args[1:] #set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
 
     work = {}
     bulk_acls = get_bulk_acls()
@@ -412,7 +413,8 @@ def junoscript_cmds(acls, dev):
     for i, acl in enumerate(acls):
         lc = Element('load-configuration', action='replace', format='text')
         body = SubElement(lc, 'configuration-text')
-        body.text = file(settings.FIREWALL_DIR + '/acl.' + acl).read()
+        body.text = file(settings.FIREWALL_DIR + '/' + acl).read()
+        #body.text = file(settings.FIREWALL_DIR + '/acl.' + acl).read()
         xml.append(lc)
         status.append('loading ACL ' + acl)
 
@@ -442,11 +444,16 @@ def ioslike_cmds(acls, dev, nonce):
     """
     template_base = {
         # two sets of identical strings
-        'arista': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
-        'cisco': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
-        'dell': 'copy tftp://%s/acl.%s.%s running-config\n',
-        'brocade': 'copy tftp run %s acl.%s.%s\n',
-        'foundry': 'copy tftp run %s acl.%s.%s\n',
+        #'arista': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
+        #'cisco': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
+        #'dell': 'copy tftp://%s/acl.%s.%s running-config\n',
+        #'brocade': 'copy tftp run %s acl.%s.%s\n',
+        #'foundry': 'copy tftp run %s acl.%s.%s\n',
+        'arista': 'copy tftp://%s/%s.%s system:/running-config\n',
+        'cisco': 'copy tftp://%s/%s.%s system:/running-config\n',
+        'dell': 'copy tftp://%s/%s.%s running-config\n',
+        'brocade': 'copy tftp run %s %s.%s\n',
+        'foundry': 'copy tftp run %s %s.%s\n',
     }
 
     template = template_base[dev.vendor.name]
@@ -486,8 +493,10 @@ def stage_tftp(acls, nonce, sanitize_acl=False):
         A Boolean of whether to sanitize on ACL on stage
     """
     for acl in acls:
-        source = settings.FIREWALL_DIR + '/acl.%s' % acl
-        dest = settings.TFTPROOT_DIR + '/acl.%s.%s' % (acl, nonce)
+        source = settings.FIREWALL_DIR + '/%s' % acl
+        dest = settings.TFTPROOT_DIR + '/%s.%s' % (acl, nonce)
+        #source = settings.FIREWALL_DIR + '/acl.%s' % acl
+        #dest = settings.TFTPROOT_DIR + '/acl.%s.%s' % (acl, nonce)
         try:
             os.stat(dest)
         except OSError:

@@ -105,7 +105,7 @@ def edit(editfile):
     else:
         os.spawnlp(os.P_WAIT, editor, editfile)
 
-    if os.path.basename(editfile).startswith('acl.'):
+    if os.path.basename(editfile): #.startswith('acl.'):
         print 'Normalizing ACL...'
         a = None
         try:
