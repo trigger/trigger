@@ -578,18 +578,39 @@ class TIP(IPy.IP):
         # Insert logic to handle 'except' preserve negated flag if it exists
         # already
         negated = getattr(data, 'negated', False)
+
+        # Handle 'inactive:' address objects by setting inactive flag
+        inactive = getattr(data, 'inactive', False)
+
         # Is data a string?
         if isinstance(data, (str, unicode)):
             d = data.split()
-            if len(d) == 2 and d[-1] == 'except':
-                negated = True
-                data = d[0]
+            # This means we got something like "1.2.3.4 except" or "inactive:
+            # 1.2.3.4'
+            if len(d) == 2:
+                # Check if last word is 'except', set negated=True
+                if d[-1] == 'except':
+                    negated = True
+                    data = d[0]
+                # Check if first word is 'inactive:', set inactive=True
+                elif d[0] == 'inactive:':
+                    inactive = True
+                    data = d[1]
+            elif len(d) == 3:
+                if d[-1] == 'except':
+                    negated = True
+                if d[0] == 'inactive:':
+                    inactive = True
+                if inactive and negated:
+                    data = d[1]
+
         self.negated = negated # Set 'negated' variable
+        self.inactive = inactive # Set 'inactive' variable
         IPy.IP.__init__(self, data, **kwargs)
 
-        # Make it print prefixes for /32, /128 if we're negated (and therefore
-        # assuming we're being used in a Juniper ACL.
-        if self.negated:
+        # Make it print prefixes for /32, /128 if we're negated or inactive (and
+        # therefore assuming we're being used in a Juniper ACL.)
+        if self.negated or self.inactive:
             self.NoPrefixForSingleIp = False
 
     def __cmp__(self, other):
@@ -622,6 +643,11 @@ class TIP(IPy.IP):
             rs = rs.split("'")
             rs[1] += ' except'
             rs = "'".join(rs) # Restore original repr
+        if self.inactive:
+            # Insert 'inactive: ' into the repr. (Yes, it's also a hack!)
+            rs = rs.split("'")
+            rs[1] = 'inactive: ' + rs[1]
+            rs = "'".join(rs) # Restore original repr
         return rs
 
     def __str__(self):
@@ -630,6 +656,8 @@ class TIP(IPy.IP):
         rs = IPy.IP.__str__(self)
         if self.negated:
             rs += ' except'
+        if self.inactive:
+            rs = 'inactive: ' + rs
         return rs
 
     def __contains__(self, item):
@@ -1708,7 +1736,7 @@ rules = {
 
     'ipv4':       ('digits, (".", digits)*', TIP),
     'ipaddr':     ('ipchars', TIP),
-    'cidr':       ('(ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
+    'cidr':       ('("inactive:", ws+)?, (ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
     'macaddr':    'hex, (":", hex)+',
     'protocol':   (literals(Protocol.name2num) + ' / digits',
                    do_protocol_lookup),
