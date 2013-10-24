@@ -762,10 +762,12 @@ class ACL(object):
     An abstract access-list object intended to be created by the :func:`parse`
     function.
     """
-    def __init__(self, name=None, terms=None, format=None, family=None):
+    def __init__(self, name=None, terms=None, format=None, family=None,
+                 interface_specific=False):
         check_name(name, exceptions.ACLNameError, max_len=24)
         self.name = name
         self.family = family
+        self.interface_specific = interface_specific
         self.format = format
         self.policers = []
         if terms:
@@ -817,6 +819,10 @@ class ACL(object):
         if self.policers:
             for policer in self.policers:
                 out += ['    ' + x for x in policer.output()]
+
+        # Add interface-specific
+        if self.interface_specific:
+            out += ['    ' + 'interface-specific;']
 
         # Add the terms
         for t in self.terms:
@@ -2047,13 +2053,15 @@ def handle_junos_acl(x):
     """
     a = ACL(name=x[0], format='junos')
     for elt in x[1:]:
-        if isinstance(elt, Term):
+        # Handle dictionary args we throw at the constructor
+        if isinstance(elt, dict):
+            a.__dict__.update(elt)
+        elif isinstance(elt, Term):
             a.terms.append(elt)
         elif isinstance(elt, Policer):
-            #a.policers[elt.name] = elt
             a.policers.append(elt)
         else:
-            raise RuntimeError('bad object: %s' % repr(elt))
+            raise RuntimeError('Bad Object: %s' % repr(elt))
     return a
 
 def handle_junos_family_acl(x):
@@ -2094,8 +2102,10 @@ def handle_junos_term(d):
 # for this but it made the parser substantially slower.
 rules.update({
     S('junos_raw_acl'):         ('jws?, "filter", jws, jword, jws?, ' + \
-                                    braced_list('junos_term / junos_policer'),
-                                    handle_junos_acl),
+                                 braced_list('junos_iface_specific / junos_term / junos_policer'),
+                                 handle_junos_acl),
+    'junos_iface_specific':     ('("interface-specific", jsemi)',
+                                 lambda x: {'interface_specific': len(x) > 0}),
     'junos_replace_acl':        ('jws?, "firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
     S('junos_replace_family_acl'): ('jws?, "firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
                                  handle_junos_family_acl),
