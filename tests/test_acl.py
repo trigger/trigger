@@ -509,6 +509,13 @@ filter 100 {
         self.assertEqual(y.output_junos(), x.split('\n'))
         self.assertRaises(exceptions.VendorSupportLacking, y.output_ios)
 
+    def testInterfaceSpecific(self):
+        """Test support of Juniper 'interface-specific statement"""
+        x = '''filter x { interface-specific; term y { then accept; } }'''
+        y = acl.parse(x)
+        self.assertTrue(y.interface_specific)
+        self.assertEqual(y.output_junos()[1], '    interface-specific;')
+
     def testShorthandIPv4(self):
         """Test incomplete IP blocks like "10/8" (vs. "10.0.0.0/8")."""
         x = '''filter x { term y { from { address { 10/8; } } } }'''
