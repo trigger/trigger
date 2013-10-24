@@ -661,5 +661,48 @@ class CheckParseFile(unittest.TestCase):
         a = acl.parse(StringIO('access-list 100 deny ip any any'))
         self.assertEqual(a.name, '100')
 
+class CheckTriggerIP(unittest.TestCase):
+    """Test functionality of Trigger IP (TIP) objects."""
+    def setUp(self):
+        self.test_net = acl.TIP('1.2.3.0/24')
+
+    def testRegular(self):
+        """Test a normal IP object"""
+        test = '1.2.3.4'
+        obj = acl.TIP(test)
+        self.assertEqual(str(obj), test)
+        self.assertEqual(obj.negated, False)
+        self.assertEqual(obj.inactive, False)
+        self.assertTrue(obj in self.test_net)
+
+    def testNegated(self):
+        """Test a negated IP object"""
+        test = '1.2.3.4/32 except'
+        obj = acl.TIP(test)
+        self.assertEqual(str(obj), test)
+        self.assertEqual(obj.negated, True)
+        self.assertEqual(obj.inactive, False)
+        self.assertFalse(obj in self.test_net)
+
+    def testInactive(self):
+        """Test an inactive IP object"""
+        test = 'inactive: 1.2.3.4/32'
+        obj = acl.TIP(test)
+        self.assertEqual(str(obj), test)
+        self.assertEqual(obj.negated, False)
+        self.assertEqual(obj.inactive, True)
+        # Until we fix inactive testing, this is legit
+        self.assertTrue(obj in self.test_net)
+
+    def testInactive(self):
+        """Test an inactive IP object"""
+        test = 'inactive: 1.2.3.4/32 except'
+        obj = acl.TIP(test)
+        self.assertEqual(str(obj), test)
+        self.assertEqual(obj.negated, True)
+        self.assertEqual(obj.inactive, True)
+        # Inactive and negated is always negated
+        self.assertFalse(obj in self.test_net)
+
 if __name__ == "__main__":
     unittest.main()
