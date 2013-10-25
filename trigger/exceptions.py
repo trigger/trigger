@@ -124,6 +124,10 @@ class InvalidACLSet(ACLSetError):
 class ACLQueueError(TriggerError):
     """Raised when we encounter errors communicating with the Queue"""
 
+# ACL workflow errors
+class ACLStagingFailed(ACLError):
+    """Raised when we encounter errors staging a file for loading"""
+
 #####################
 # NetScreen Exceptions
 #####################
