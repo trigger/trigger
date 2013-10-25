@@ -2,6 +2,33 @@
 Changelog
 =========
 
+.. _v1.4.2:
+
+1.4.2
+=====
+
+New Features
+------------
+
++ ACL staging and finding tftp server moved to global settings
+
+  - Allows for more site specific configuration
+
++ Load_acl support for new vendors
+
+  - Force10
+
++ Basic ACL parsing check provided in check_syntax
+
+
+Bug Fixes
+---------
+
++ Helpful netdev output when no devices found from search
++ :bug: `100` Bug fix to add acl parser support for then accept;
++ :bug: `132` Bugfix to handle inactive IP addresses in acl parser
++ :bug: `133` Bugfix to added interface-specific support for Juniper filters
+
 .. _v1.4.1:
 
 1.4.1
@@ -11,7 +38,7 @@ New Features
 ------------
 
 + Support for new vendors and platforms!!
-  
+
   - F5 BIG-IP application delivery controllers and server load-balancers 
   - MRV LX-series console servers
 

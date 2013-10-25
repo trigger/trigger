@@ -25,7 +25,7 @@ def parse_args(argv):
         version='%prog ' + __version__
     )
 
-    parser.add_option('-a', '--acls', action='store_true', 
+    parser.add_option('-a', '--acls', action='store_true',
         help='Search will return acls instead of devices.')
     parser.add_option('-l', '--list', type='string', metavar='<DEVICE>',
         help='List all information for individual DEVICE')
@@ -64,6 +64,9 @@ def parse_args(argv):
 
     opts, args = parser.parse_args(argv)
 
+    global opts_dict
+    opts_dict = vars(opts)
+
     if opts.list and opts.search:
         parser.error('-l and -s cannot be used together')
 
@@ -74,7 +77,7 @@ def parse_args(argv):
             sys.exit(1)
         dev.dump()
 
-    if not opts.list and not opts.search: 
+    if not opts.list and not opts.search:
         parser.print_help()
         parser.error('must choose either -l or -s (but not both!)')
         sys.exit(1)
@@ -100,7 +103,7 @@ def parse_args(argv):
 def search_builder(opts):
     """Builds a list comprehension from the options passed at command-line and
     then evaluates it to return a list of matching device names."""
-    nd = NetDevices(production_only=opts.nonprod) 
+    nd = NetDevices(production_only=opts.nonprod)
 
     query = "[x for x in nd.all()"
 
@@ -110,7 +113,7 @@ def search_builder(opts):
 
     # For all search arguments, when an explicit match would not be confusing
     # or return inconsistent results, the argument is being upper-cased
-    # and a membership (in) test is being performed.  
+    # and a membership (in) test is being performed. 
     #
     # For explicit matches, use an equality (==) test instead.
 
@@ -204,8 +207,14 @@ def search_builder(opts):
             print acl
     # Print devices
     else:
-        for dev in devlist: print dev
-
+        if devlist:
+            for dev in devlist: print dev
+        else:
+            squery = []
+            for key, value in opts_dict.iteritems():
+                if key not in ('search', 'nonprod') and value:
+                    squery.append( key + "=" + value )
+            print "No matches for the query %s." % " and ".join(squery)
 
 if __name__ == '__main__':
     global opts
