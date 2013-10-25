@@ -402,6 +402,93 @@ BULK_MAX_HITS = {}
 # If an ACL is bulk but not in BULK_MAX_HITS, use this number as max_hits
 BULK_MAX_HITS_DEFAULT = 1
 
+
+#===============================
+# Stage ACL changes
+#===============================
+# This variable should be a function that returns the contents of the ACL
+# files that are being pushed and the tftp location for all of them
+#
+# input
+# list of file names, optional log file and boolean for sanitizing
+#
+# return
+# ([<list of string where each string is the entire contents of an acl file to push>],
+#   [<list of the path to files on the tftp server to push>])
+#
+def _stage_acls(acls, log=None, sanitize_acl=False):
+    """stage the new ACL files for load_acl"""
+
+    import os
+    from trigger.acl import parse as acl_parse
+
+    acl_contents = []
+    tftp_paths = []
+
+    fails = []
+
+    for acl in acls:
+        nonce = os.urandom(8).encode('hex')
+        source = FIREWALL_DIR + '/%s' % acl
+        dest = TFTPROOT_DIR + '/%s.%s' % (acl, nonce)
+
+        try:
+            os.stat(dest)
+        except OSError:
+            try:
+                shutil.copyfile(source, dest)
+            except:
+                fails.append("Unable to stage TFTP File %s" % str(acls))
+                continue
+            else:
+                os.chmod(dest, 0644)
+
+        file_contents = file(FIREWALL_DIR + '/' + acl).read()
+        acl_contents.append(file_contents)
+
+        tftp_paths.append("%s.%s" % (acl, nonce))
+
+        #strip comments if brocade
+        if (sanitize_acl):
+            msg = 'Sanitizing ACL {0} as {1}'.format(source, dest)
+            log.msg(msg)
+            with open(source, 'r') as src_acl:
+                acl = acl_parse(src_acl)
+            acl.strip_comments()
+            output = '\n'.join(acl.output(replace=True)) + '\n'
+            with open(dest, 'w') as dst_acl:
+                dst_acl.write(output)
+
+    return acl_contents, tftp_paths, fails
+
+STAGE_ACLS = _stage_acls
+
+
+#===============================
+# Get the TFTP source
+#===============================
+def _get_tftp_source(dev=None, no_vip=True): #False): #True):
+    """
+    Determine the right TFTP source-address to use (public vs. private)
+    based on ``settings.VIPS``, and return that address.
+
+    :param dev:
+        A `~trigger.netdevices.NetDevice` object
+    """
+    import socket
+    host = socket.gethostbyname(socket.getfqdn())
+    if no_vip:
+        return host
+    elif host not in VIPS:
+        return host
+    ## hack to make broken routers work (This shouldn't be necessary.)
+    for broken in 'ols', 'rib', 'foldr':
+        if dev.nodeName.startswith(broken):
+            return host
+    return VIPS[host]
+
+GET_TFTP_SOURCE = _get_tftp_source
+
 #===============================
 # OnCall Engineer Display
 #===============================
