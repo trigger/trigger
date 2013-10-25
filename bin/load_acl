@@ -15,8 +15,8 @@ automatically load eligible devices from the queue and email results.
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2012, AOL Inc.'
-__version__ = '1.8'
+__copyright__ = 'Copyright 2003-2012, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.9'
 
 # Dist imports
 from collections import defaultdict
@@ -38,6 +38,7 @@ from twisted.python import log
 from xml.etree.cElementTree import Element, SubElement
 
 # Trigger imports
+from trigger import exceptions
 from trigger.acl import parse as acl_parse
 from trigger.acl.queue import Queue
 from trigger.acl.tools import process_bulk_loads, get_bulk_acls
@@ -482,9 +483,7 @@ def clear_load_queue(dev, acls):
     """Logical wrapper around queue.complete(dev, acls)"""
     if debug_fakeout():
         return
-    if queue:
-        queue.complete(dev, acls)
-
+    queue.complete(dev, acls)
 
 def activate(work, active, failures, jobs, redraw):
     """
@@ -522,7 +521,7 @@ def activate(work, active, failures, jobs, redraw):
         cmds = []
         acl_contents = []
         tftp_paths = []
-        fails = False
+        fails = None
 
         # Closures galore! Careful; you need to explicitly save current
         # values (using the default argument trick) 'dev', 'acls', and
@@ -537,26 +536,25 @@ def activate(work, active, failures, jobs, redraw):
             clear_load_queue(dev, acls)
 
         def eb(reason, dev=dev):
+            log.msg("GOT ERRBACK", reason)
             failures[dev] = reason
 
         def move_on(x, dev=dev):
             del active[dev]
-            #activate(work, active, failures, jobs, queue, redraw)
             activate(work, active, failures, jobs, redraw)
 
         def stage_acls_cb(unused, *args, **kwargs):
             # Wrapper for stage_acls; result is unused
             active[dev] = 'staging acls'
-
-            log.msg(*args)
-            log.msg(**kwargs)
             return stage_acls(*args, **kwargs)
 
         def check_failure(result, dev=dev):
+            log.msg("load_acl:check_failure result", result)
             (acl_contents, tftp_paths, fails) = result
 
             if fails is not None:
-                raise Exception(fails)
+                log.msg("STAGING FAILED:", fails)
+                raise exceptions.ACLStagingFailed(fails)
 
             active[dev] = 'connecting'
             if dev.vendor == 'juniper':
@@ -566,15 +564,14 @@ def activate(work, active, failures, jobs, redraw):
 
             return (cmds, status)
 
-
-        #stage the acls
+        # Stage the acls
         handled_first = defer.Deferred()
         handled_first.addCallback(stage_acls_cb, acls, log, sanitize_acl)
         handled_first.addBoth(check_failure)
         handled_first.addErrback(eb)
         handled_first.addErrback(move_on)
 
-        #start staging
+        # Start staging
         reactor.callWhenRunning(handled_first.callback, None)
 
         def chain(result):
@@ -589,11 +586,10 @@ def activate(work, active, failures, jobs, redraw):
             handled_second.addErrback(eb)
             handled_second.addBoth(move_on)
 
-        #try to actually push the changes after staging completes successfully
-        handled_first.addCallback(chain) #handled_second)
+        # Try to actually push the changes after staging completes successfully
+        handled_first.addCallback(chain)
 
         redraw()
-
 
 def run(stdscr, work, jobs, failures):
     """
