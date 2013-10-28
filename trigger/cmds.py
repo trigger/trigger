@@ -107,6 +107,10 @@ class Commando(object):
     :param with_acls:
          Whether to load ACL associations (requires Redis). Defaults to whatever
          is specified in settings.WITH_ACLS
+
+    :param leave_reactor_running:
+        Whether to leave the twisted reactor once we finish processing our
+        commands. Defaults to false.
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -133,7 +137,7 @@ class Commando(object):
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
                  allow_fallback=True, with_errors=True, force_cli=False,
-                 with_acls=False):
+                 with_acls=False, leave_reactor_running=False):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -150,6 +154,7 @@ class Commando(object):
         self.force_cli = force_cli
         self.curr_conns = 0
         self.jobs = []
+        self.leave_reactor_running = leave_reactor_running
 
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
@@ -281,7 +286,8 @@ class Commando(object):
         # Do this once we've exhausted the job queue
         else:
             if not self.curr_conns and self.reactor_running:
-                self._stop()
+                if not self.leave_reactor_running:
+                    self._stop()
             elif not self.jobs and not self.reactor_running:
                 log.msg('No work left.')
                 if self.verbose:
