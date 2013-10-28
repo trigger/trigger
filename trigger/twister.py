@@ -8,7 +8,7 @@ I/O framework. The Trigger Twister is just like the Mersenne Twister, except not
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
 
 import fcntl
 import os
@@ -467,11 +467,10 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
                                       loginpw=loginpw, enablepw=enablepw)
 
     else:
-        msg = '[%s] Both SSH and telnet either failed or are disabled.' % device
-        log.msg(msg)
-        if with_errors:
-            return defer.Deferred() # Return a naked deferred
-        raise exceptions.ConnectionFailure(msg)
+        msg = 'Both SSH and telnet either failed or are disabled.'
+        log.msg('[%s]' % device, msg)
+        e = exceptions.ConnectionFailure(msg)
+        return defer.fail(e)
 
 def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
                            with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
