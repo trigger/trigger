@@ -7,6 +7,16 @@ Changelog
 1.4.2
 =====
 
+Warnings
+--------
+
++ With this update, load_acl and acl no longer assume ACL and filter files begin with 'acl.'.  There are two options for updating your deployment to work with this code:
+
+  1. Move files in settings.FIREWALL_DIR to files without the prepended 'acl.'.
+  2. Update autoacls.py and explicit ACL associations to include the prepended 'acl.'  prepend_acl_dot was included in tools/ to help update explicit ACL associations.
+
++ Please note that either change above may have an impact on any non-trigger code.
+
 New Features
 ------------
 

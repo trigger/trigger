@@ -104,6 +104,7 @@ setup(
         'tools/convert_tacacsrc.py',
         'tools/tacacsrc2gpg.py',
         'tools/init_task_db',
+        'tools/prepend_acl_dot',
     ],
     install_requires=requires,
     keywords = [
