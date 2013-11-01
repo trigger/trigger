@@ -9,35 +9,46 @@ acl - ACL database interface
 About
 =====
 
-**acl** is used to interface with the ACL database and queue. It is a simple
-command to manage or determine access-list associations, and allows you to
-inject or remove an ACL from the load queue.
+**acl** is used to interface with the access-control list (ACL) database and
+task queue. This is a simple command to manage explicit ACL associations within
+the ACL database (acls.db), to search for both implicit and explicit ACL
+associations, and to manage the ACL task queue.
 
 Usage
 =====
 
 Here is the usage output::
 
-    % acl
-    Usage: acl [options]
+    Usage:
+        acl [--exact | --device-name-only] (<acl_name> | <device>)
+        acl (--add | --remove) <acl_name> [<device> [<device> ...]]
+        acl (--clear | --inject) [--quiet] [<acl_name> [<acl_name> ...]]
+        acl (--list | --listmanual)
+        acl --staged
+
+    Interface with the access-control list (ACL) database and task queue.  This is
+    a simple command to manage explicit ACL associations within the ACL database
+    (acls.db), to search for both implicit and explicit ACL associations, and to
+    manage the ACL task queue.
 
     Options:
-    -h, --help            show this help message and exit
-    -s, --staged          list currently staged ACLs
-    -l, --list            list ACLs currently in integrated (automated) queue
-    -m, --listmanual      list entries currently in manual queue
-    -i, --inject          inject into load queue
-    -c, --clear           clear from load queue
-    -x, --exact           match entire name, not just start
-    -d, --device-name-only
-                          don't match on ACL
-    -a ADD, --add=ADD     add an acl to explicit ACL database, example: "acl -a
-                          abc123 test1-abc test2-abc"
-    -r REMOVE, --remove=REMOVE
-                          remove an acl from explicit ACL database, example:
-                          "acl -r abc123 -r xyz246 test1-abc"
-    -q, --quiet           be quiet! (For use with scripts/cron)
-
+      --version             show program's version number and exit
+      -h, --help            show this help message and exit
+      -s, --staged          list currently staged ACLs
+      -l, --list            list ACLs currently in integrated (automated) queue
+      -m, --listmanual      list entries currently in manual queue
+      -i, --inject          inject into load queue
+      -c, --clear           clear from load queue
+      -x, --exact           match entire name, not just start
+      -d, --device-name-only
+                            don't match on ACL
+      -a <acl_name>, --add=<acl_name>
+                            add an acl to explicit ACL database, example: 'acl -a
+                            acl-name device1 device2'
+      -r <acl_name>, --remove=<acl_name>
+                            remove an acl from explicit ACL database, example:
+                            'acl -r acl1-name -r acl2-name device'
+      -q, --quiet           be quiet! (For use with scripts/cron)
 
 Examples
 ========

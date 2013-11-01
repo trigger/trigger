@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 
 """
-acl - Interface with the ACL database and queue.
+Interface with the access-control list (ACL) database and task queue.
 
-A simple command to determine access-list associations, also allows you to add or remove an ACL
-from the load queue.
+This is a simple command to manage explicit ACL associations within the ACL
+database (acls.db), to search for both implicit and explicit ACL associations,
+and to manage the ACL task queue.
 """
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
-__version__ = '1.6'
+__copyright__ = 'Copyright 2003-2011, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.6.1'
 
 from textwrap import wrap
 from collections import defaultdict
@@ -32,8 +33,16 @@ term_width = get_terminal_width() # How wide is your term!
 valid_modes = ['list', 'listmanual', 'liststaged'] # Valid listing modes
 changers = False # Sentinel for add/remove flags
 
+usage = """
+    %prog [--exact | --device-name-only] (<acl_name> | <device>)
+    %prog (--add | --remove) <acl_name> [<device> [<device> ...]]
+    %prog (--clear | --inject) [--quiet] [<acl_name> [<acl_name> ...]]
+    %prog (--list | --listmanual)
+    %prog --staged"""
+
 # Parse arguments.
-optp = optparse.OptionParser()
+optp = optparse.OptionParser(description=__doc__.strip(), version=__version__,
+                             usage=usage)
 optp.add_option('-s', '--staged', help='list currently staged ACLs',
                 action='store_const', const='liststaged', dest='mode')
 optp.add_option('-l', '--list', help='list ACLs currently in integrated (automated) queue',
@@ -49,8 +58,10 @@ optp.add_option('-x', '--exact', help='match entire name, not just start',
 optp.add_option('-d', '--device-name-only', help="don't match on ACL",
                 action='store_true', dest='dev_only')
 optp.add_option('-a', '--add', type='string', action='append',
+                metavar='<acl_name>',
                 help="add an acl to explicit ACL database, example: 'acl -a acl-name device1 device2'")
 optp.add_option('-r', '--remove', type='string', action='append',
+                metavar='<acl_name>',
                 help="remove an acl from explicit ACL database, example: 'acl -r acl1-name -r acl2-name device'")
 optp.add_option('-q', '--quiet', help="be quiet! (For use with scripts/cron)",
                 action='store_true')
