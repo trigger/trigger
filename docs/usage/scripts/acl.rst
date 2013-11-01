@@ -31,13 +31,12 @@ Here is the usage output::
     -x, --exact           match entire name, not just start
     -d, --device-name-only
                           don't match on ACL
-    -a ADD, --add=ADD     add an acl to explicit ACL database, example: "acl -a
-                          abc123 test1-abc test2-abc"
+    -a ADD, --add=ADD     add an acl to explicit ACL database, example: 'acl -a
+                          acl-name device1 device2'
     -r REMOVE, --remove=REMOVE
                           remove an acl from explicit ACL database, example:
-                          "acl -r abc123 -r xyz246 test1-abc"
+                          'acl -r acl1-name -r acl2-name device'
     -q, --quiet           be quiet! (For use with scripts/cron)
-
 
 Examples
 ========

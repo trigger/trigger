@@ -11,8 +11,8 @@ from the load queue.
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.'
-__version__ = '1.6'
+__copyright__ = 'Copyright 2003-2011, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.6.1'
 
 from textwrap import wrap
 from collections import defaultdict
@@ -49,9 +49,9 @@ optp.add_option('-x', '--exact', help='match entire name, not just start',
 optp.add_option('-d', '--device-name-only', help="don't match on ACL",
                 action='store_true', dest='dev_only')
 optp.add_option('-a', '--add', type='string', action='append',
-                help="add an acl to explicit ACL database, example: 'acl -a abc123 test1-abc test2-abc'")
+                help="add an acl to explicit ACL database, example: 'acl -a acl-name device1 device2'")
 optp.add_option('-r', '--remove', type='string', action='append',
-                help="remove an acl from explicit ACL database, example: 'acl -r abc123 -r xyz246 test1-abc'")
+                help="remove an acl from explicit ACL database, example: 'acl -r acl1-name -r acl2-name device'")
 optp.add_option('-q', '--quiet', help="be quiet! (For use with scripts/cron)",
                 action='store_true')
 (opts, args) = optp.parse_args()
@@ -94,13 +94,18 @@ if opts.mode == 'liststaged':
 elif opts.mode == 'list':
     acl_data = defaultdict(list)
     [acl_data[acl].append(router) for router, acl in queue.list()]
-    [pretty_print_acls(dev, acl_data[dev]) for dev in sorted(acl_data)]
+    if acl_data:
+        [pretty_print_acls(dev, acl_data[dev]) for dev in sorted(acl_data)]
+    else:
+        print "Nothing in the integrated queue."
 
 elif opts.mode == 'listmanual':
     for item, user, ts, done in queue.list(queue='manual'):
         print item
         print '\tadded by %s on %s' % (user, ts)
         print
+    if not queue.list(queue='manual'):
+        print "Nothing in the manual queue."
 
 elif opts.mode == 'inject':
     for arg in args:
