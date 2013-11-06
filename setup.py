@@ -92,6 +92,7 @@ setup(
         'bin/acl_script',
         'bin/aclconv',
         'bin/check_access',
+        'bin/check_syntax',
         'bin/fe',
         'bin/gong',
         'bin/gnng',
