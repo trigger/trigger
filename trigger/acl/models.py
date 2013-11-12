@@ -43,6 +43,12 @@ class BaseModel(pw.Model):
     class Meta:
         database = database
 
+class CharField(pw.CharField):
+    """Overload default CharField to always return strings vs. UTF-8"""
+    def coerce(self, value):
+        return str(value or '')
+pw.CharField = CharField
+
 class IntegratedTask(BaseModel):
     """
     Tasks for "integrated" queue used by `~trigger.acl.queue.Queue`.
