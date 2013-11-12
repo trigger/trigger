@@ -103,10 +103,10 @@ The most fields you may populate are the same as with the RANCID support.
 Please see the explanation of the fields populated by the :ref:`RANCID format
 <rancid-format>`. A "fully-populated" CSV file would look more like this::
 
-    test1-abc.net.aol.com,juniper,router
-    test2-abc.net.aol.com,juniper,router
-    fw1-xyz.net.aol.com,netscreen,firewall
-    lab1-switch.net.aol.com,foundry,switch
+    test1-abc.net.aol.com,juniper,up,router
+    test2-abc.net.aol.com,juniper,up,router
+    fw1-xyz.net.aol.com,netscreen,up,firewall
+    lab1-switch.net.aol.com,foundry,up,switch
 
 .. _xml-format:
 

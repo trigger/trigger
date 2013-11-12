@@ -29,8 +29,8 @@ Or using multiple RANCID instances within a single root::
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2012-2012, AOL Inc.'
-__version__ = '0.1'
+__copyright__ = 'Copyright 2012-2012, AOL Inc.; 2013 Salesforce.com'
+__version__ = '0.1.1'
 
 import collections
 import copy
@@ -94,6 +94,8 @@ def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None,
         (Optional) Field delimiter
     """
     device_data = _parse_delimited_file(rancid_root, filename, delimiter)
+    if not device_data:
+        return None # Always return None if there are no results
 
     # Make sure fields is not null and is some kind of iterable
     if not fields:

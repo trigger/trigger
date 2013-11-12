@@ -257,6 +257,9 @@ class NetDevice(object):
         if self.nodeName is not None:
             self.nodeName = self.nodeName.lower()
 
+        if self.deviceType is not None:
+            self.deviceType = self.deviceType.upper()
+
         # Cleanup whitespace from owning team
         if self.owningTeam is not None:
             self.owningTeam = self.owningTeam.strip()

@@ -84,6 +84,7 @@ VENDOR_MAP = {
     'JUNIPER': 'juniper',
     'MRV': 'mrv',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
+    'PALO ALTO NETWORKS': 'paloalto',
 }
 
 # A dictionary keyed by manufacturer name containing a list of the device types
