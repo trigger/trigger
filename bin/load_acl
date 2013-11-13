@@ -367,8 +367,10 @@ def get_work(opts, args):
         else:
             for dev in bouncy_devs:
                 dev_acls = ', '.join(work[dev])
-                print 'Skipping %s on %s (until %s)' % (dev_acls, dev, pretty_time(next_ok[dev]))
-                log.msg('Skipping %s on %s (until %s)' % (dev_acls, dev, pretty_time(next_ok[dev])))
+                print 'Skipping %s on %s (window starts at %s)' % \
+                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev]))
+                log.msg('Skipping %s on %s (window starts at %s)' % \
+                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev])))
                 del work[dev]
             print '\nUse --bouncy to forcefully load on these devices anyway.'
         print
