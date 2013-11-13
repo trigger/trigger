@@ -47,6 +47,7 @@ from trigger.netdevices import NetDevices
 from trigger.twister import execute_junoscript, execute_ioslike
 from trigger.utils.cli import print_severed_head, NullDevice, pretty_time, min_sec
 from trigger.utils.notifications import send_notification, send_email
+from trigger.tacacsrc import Tacacsrc
 
 # Globals
 # Pull in these functions from settings
@@ -574,7 +575,7 @@ def activate(work, active, failures, jobs, redraw):
         reactor.callWhenRunning(handled_first.callback, None)
 
         def chain(result, dev, acls):
-            global status
+            #global status
             (cmds, status) = result
 
             # Lambda function to call update_board() with proper args
@@ -642,13 +643,16 @@ def main():
     if opts.no_db:
         queue = None
 
+    if (not opts.auto) or (not opts.quiet):
+        print 'Logging to', tmpfile
+
     # Where the magic happens
     work = get_work(opts, args)
 
     if not work:
         if not opts.auto:
             print 'Nothing to load.'
-            log.msg('Nothing to load.')
+        log.msg('Nothing to load.')
         sys.exit(0)
 
     print 'You are about to perform the following loads:'
@@ -678,8 +682,18 @@ def main():
             log.msg('LOAD CANCELLED')
             sys.exit(1)
         print ''
+        # Don't let the credential prompts get hidden behind curses
+        populate_tacacrc = Tacacsrc()
+    else:
+        log.msg('Auto option thrown, checking if credential file exists')
+        tacacsrc_file = settings.TACACSRC
+        if not os.path.exists(tacacsrc_file):
+            log.msg('No %s file exists and auto option enabled.' % tacacsrc_file)
+            sys.exit(1)
+        log.msg('Credential file %s exists, moving on' % tacacsrc_file)
+        #Tacacsrc()
 
-    print 'Logging to', tmpfile
+    #print 'Logging to', tmpfile
 
     cm_ticketnum = 0
     if not opts.no_cm and not debug_fakeout():
