@@ -8,7 +8,7 @@ pieces of code like user prompts, that don't fit in other utils modules.
 __author__ = 'Jathan McCollum'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
+__copyright__ = 'Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com'
 
 import datetime
 from fcntl import ioctl
@@ -242,7 +242,14 @@ def update_password_and_reconnect(hostname):
         tacacsrc.update_credentials(hostname)
         if yesno('\nReconnect to %s?' % hostname, default=True):
             # Replaces the current process w/ same pid
-            os.execl(sys.executable, sys.executable, *sys.argv)
+            args = [sys.argv[0]]
+            for arg in ('-o', '--oob'):
+                if arg in sys.argv:
+                    idx = sys.argv.index(arg)
+                    args.append(sys.argv[idx])
+                    break
+            args.append(hostname)
+            os.execl(sys.executable, sys.executable, *args)
 
 # Classes
 class NullDevice(object):
