@@ -273,7 +273,7 @@ PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#', # ArubaOS 6.1
     #'aruba': r'\S+(?: \(\S+\))?\s?#\s', # ArubaOS 6.2
     'citrix': r'\sDone\n$',
-    'f5': r'(?:\S+\@)?\S+(?:\(.*\))\(tmos\)#\s{1,2}\r?$',
+    'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
