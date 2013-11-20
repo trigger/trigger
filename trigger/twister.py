@@ -102,6 +102,48 @@ def is_awaiting_confirmation(prompt):
     matchlist = CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
 
+def requires_enable(proto_obj, data):
+    """
+    Check if a device requires enable.
+
+    :param proto_obj:
+        A Protocol object such as an SSHChannel
+
+    :param data:
+        The channel data to check for an enable prompt
+    """
+    if not proto_obj.device.is_ioslike():
+        log.msg('[%s] Not IOS-like, setting enabled flag' % proto_obj.device)
+        proto_obj.enabled = True
+        return None
+    match = proto_obj.enable_prompt.search(data)
+    if match is not None:
+        log.msg('[%s] Enable prompt detected: %r' % (proto_obj.device,
+                                                     match.group()))
+    return match
+
+def send_enable(proto_obj):
+    """
+    Send 'enable' and enable password to device.
+
+    :param proto_obj:
+        A Protocol object such as an SSHChannel
+    """
+    log.msg('[%s] Enable required, sending enable commands' % proto_obj.device)
+
+    # Get enable password from env. or device object
+    device_pw = getattr(proto_obj.device, 'enablePW', None)
+    enable_pw = os.getenv('TRIGGER_ENABLEPW') or device_pw
+    if enable_pw is not None:
+        log.msg('[%s] Enable password detected, sending...' % proto_obj.device)
+        proto_obj.data = '' # Zero out the buffer before sending the password
+        proto_obj.write('enable\r\n')
+        proto_obj.write(enable_pw + '\r\n')
+        proto_obj.enabled = True
+    else:
+        log.msg('[%s] Enable password not found, not enabling.' %
+                proto_obj.device)
+
 def stop_reactor():
     """Stop the reactor if it's already running."""
     from twisted.internet import reactor
@@ -164,7 +206,7 @@ def pty_connect(device, action, creds=None, display_banner=None,
                 creds = tacacsrc.get_device_password(device.nodeName)
 
         factory = TriggerSSHPtyClientFactory(d, action, creds, display_banner,
-                                             init_commands)
+                                             init_commands, device=device)
         log.msg('Trying SSH to %s' % device, debug=True)
         port = 22
 
@@ -625,7 +667,7 @@ class TriggerClientFactory(protocol.ClientFactory, object):
             log.msg('Not initialized, sending init commands', debug=True)
             for next_init in self.init_commands:
                 log.msg('Sending: %r' % next_init, debug=True)
-                protocol.write(next_init + '\n')
+                protocol.write(next_init + '\r\n')
             else:
                 self.initialized = True
 
@@ -681,10 +723,11 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
     Use it to interact with the user and pass along commands.
     """
     def __init__(self, deferred, action, creds=None, display_banner=None,
-                 init_commands=None):
+                 init_commands=None, device=None):
         self.protocol = TriggerSSHTransport
         self.action = action
         self.action.factory = self
+        self.device = device
         self.display_banner = display_banner
         self.channel_class = TriggerSSHPtyChannel
         self.connection_class = TriggerSSHConnection
@@ -946,7 +989,9 @@ class Interactor(protocol.Protocol):
     """
     def __init__(self, log_to=None):
         self._log_to = log_to
-        #protocol.Protocol.__init__(self)
+        self.enable_prompt = re.compile(settings.IOSLIKE_ENABLE_PAT)
+        self.enabled = False
+        self.initialized = False
 
     def _log(self, data):
         if self._log_to is not None:
@@ -957,10 +1002,19 @@ class Interactor(protocol.Protocol):
         c = protocol.Protocol()
         c.dataReceived = self.write
         self.stdio = stdio.StandardIO(c)
+        self.device = self.factory.device # Attach the device object
 
     def dataReceived(self, data):
         """And write data to the terminal."""
-        log.msg('Interactor.dataReceived: %r' % data, debug=True)
+        # Check whether we need to send an enable password.
+        if not self.enabled and requires_enable(self, data):
+            send_enable(self)
+
+        # Setup and run the initial commands
+        if data and not self.initialized:
+            self.factory._init_commands(protocol=self)
+            self.initialized = True
+
         self._log(data)
         self.stdio.write(data)
 
@@ -978,12 +1032,9 @@ class TriggerSSHPtyChannel(channel.SSHChannel):
         self.conn.sendRequest(self, 'shell', '')
         signal.signal(signal.SIGWINCH, self._window_resized)
 
-        # Setup and run the initial commands
-        self.factory = self.conn.transport.factory
-        self.factory._init_commands(protocol=self) # We are the protocol
-
         # Pass control to the action.
-        action = self.conn.transport.factory.action
+        self.factory = self.conn.transport.factory
+        action = self.factory.action
         action.write = self.write
         self.dataReceived = action.dataReceived
         self.extReceived = action.dataReceived
@@ -1016,6 +1067,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     TriggerSSHGenericChannel as-is!
     """
     name = 'session'
+    delimiter = '\r\n'
 
     def _setup_channelOpen(self):
         """
@@ -1068,37 +1120,6 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     def _ebShellOpen(self, reason):
         log.msg('[%s] Channel request failed: %s' % (self.device, reason))
 
-    def requires_enable(self, data):
-        """
-        Check if a device requires enable.
-
-        :param data:
-            Prompt data to check.
-        """
-        if self.enabled:
-            return False # Skip checks if already enabled
-
-        if not self.device.is_ioslike():
-            log.msg('[%s] Not IOS-like, setting enabled flag' % self.device)
-            self.enabled = True
-            return False
-        return self.enable_prompt.search(data)
-
-    def send_enable(self):
-        """Send 'enable' and enable password to device."""
-        log.msg('[%s] Enable required, sending enable commands' %
-                self.device)
-        self.write('enable\n')
-        # Zero out the buffer before sending the password
-        self.data = ''
-
-        # Get enablepw from env. or device object
-        device = hasattr(self, 'device')
-        dev_pw = getattr(device, 'enablePW', None)
-        enablepw = os.getenv('TRIGGER_ENABLEPW') or dev_pw
-        self.write(enablepw + '\n')
-        self.enabled = True
-
     def dataReceived(self, bytes):
         """Do this when we receive data."""
         # Append to the data buffer
@@ -1111,9 +1132,9 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
         if not m:
-            #log.msg('STATE: prompt match failure')
-            if self.requires_enable(self.data):
-                self.send_enable()
+            # Do we need to send an enable password?
+            if not self.enabled and requires_enable(self, self.data):
+                send_enable(self)
             return None
 
         log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
@@ -1154,7 +1175,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 next_init = self.startup_commands.pop(0)
                 log.msg('[%s] Sending initialize command: %r' % (self.device,
                                                                  next_init))
-                self.write(next_init)
+                self.write(next_init.strip() + self.delimiter)
                 return None
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
@@ -1178,7 +1199,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         else:
             log.msg('[%s] Sending SSH command %r' % (self.device,
                                                      next_command))
-            self.write(next_command + '\n')
+            self.write(next_command + self.delimiter)
 
     def loseConnection(self):
         """

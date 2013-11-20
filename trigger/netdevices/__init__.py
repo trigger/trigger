@@ -296,25 +296,25 @@ class NetDevice(object):
         def disable_paging_brocade():
             """Brocade commands differ by platform."""
             if self.is_brocade_vdx():
-                return ['terminal length 0\n']
+                return ['terminal length 0']
             else:
-                return ['skip-page-display\n']
+                return ['skip-page-display']
 
         # Commands used to disable paging.
-        default = ['terminal length 0\n']
+        default = ['terminal length 0']
         paging_map = {
             'a10': default,
             'arista': default,
-            'aruba': ['no paging\n'], # v6.2.x this is not necessary
+            'aruba': ['no paging'], # v6.2.x this is not necessary
             'brocade': disable_paging_brocade(), # See comments above
             'cisco': default,
-            'dell': ['terminal datadump\n'],
-            'f5': ['modify cli preference pager disabled\n'],
+            'dell': ['terminal datadump'],
+            'f5': ['modify cli preference pager disabled'],
             'force10': default,
-            'foundry': ['skip-page-display\n'],
-            'juniper': ['set cli screen-length 0\n'],
-            'mrv': ['no pause\n'],
-            'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
+            'foundry': ['skip-page-display'],
+            'juniper': ['set cli screen-length 0'],
+            'mrv': ['no pause'],
+            'paloalto': ['set cli scripting-mode on', 'set cli pager off'],
         }
 
         cmds = paging_map.get(self.vendor.name)
