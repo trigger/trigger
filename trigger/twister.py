@@ -137,8 +137,8 @@ def send_enable(proto_obj):
     if enable_pw is not None:
         log.msg('[%s] Enable password detected, sending...' % proto_obj.device)
         proto_obj.data = '' # Zero out the buffer before sending the password
-        proto_obj.write('enable\r\n')
-        proto_obj.write(enable_pw + '\r\n')
+        proto_obj.write('enable' + proto_obj.device.delimiter)
+        proto_obj.write(enable_pw + proto_obj.device.delimiter)
         proto_obj.enabled = True
     else:
         log.msg('[%s] Enable password not found, not enabling.' %
@@ -593,9 +593,11 @@ def execute_netscreen(device, commands, creds=None, incremental=None,
 
     channel_class = TriggerSSHGenericChannel
     method = 'NetScreen'
+    prompt_pattern = settings.PROMPT_PATTERNS['netscreen'] # This sucks
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
-                               channel_class, method=method)
+                               channel_class, method=method,
+                               prompt_pattern=prompt_pattern)
 
 def execute_netscaler(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -1067,7 +1069,6 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     TriggerSSHGenericChannel as-is!
     """
     name = 'session'
-    delimiter = '\r\n'
 
     def _setup_channelOpen(self):
         """
@@ -1175,7 +1176,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 next_init = self.startup_commands.pop(0)
                 log.msg('[%s] Sending initialize command: %r' % (self.device,
                                                                  next_init))
-                self.write(next_init.strip() + self.delimiter)
+                self.write(next_init.strip() + self.device.delimiter)
                 return None
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
@@ -1199,7 +1200,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         else:
             log.msg('[%s] Sending SSH command %r' % (self.device,
                                                      next_command))
-            self.write(next_command + self.delimiter)
+            self.write(next_command + self.device.delimiter)
 
     def loseConnection(self):
         """

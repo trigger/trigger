@@ -13,7 +13,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jmccollum@salesforce.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '2.3'
+__version__ = '2.3.1'
 
 import collections
 import datetime
@@ -308,8 +308,13 @@ class Commando(object):
 
         desired_attr = None
 
+        # Select the desired vendor name.
+        desired_vendor = device.vendor
+        if device.is_netscreen(): # Workaround until we implement device drivers
+            desired_vendor = 'netscreen'
+
         for vendor, types in self.platforms.iteritems():
-            meth_attr = METHOD_MAP[method] % device.vendor
+            meth_attr = METHOD_MAP[method] % desired_vendor
             if device.deviceType in types:
                 if hasattr(self, meth_attr):
                     desired_attr = meth_attr
