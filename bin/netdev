@@ -191,7 +191,14 @@ def search_builder(opts):
     query += "]"
     #print query
 
-    devlist = eval(query)
+    try:
+        devlist = eval(query)
+    except TypeError:
+        from trigger.conf import settings 
+        print "A required field in %s is missing or invalid.  Please fix the data and try again." \
+                % settings.NETDEVICES_SOURCE
+        sys.exit(1)
+    
     devlist.sort()
 
     # Print acls
