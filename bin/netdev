@@ -113,7 +113,7 @@ def search_builder(opts):
 
     # For all search arguments, when an explicit match would not be confusing
     # or return inconsistent results, the argument is being upper-cased
-    # and a membership (in) test is being performed. 
+    # and a membership (in) test is being performed.
     #
     # For explicit matches, use an equality (==) test instead.
 
@@ -122,27 +122,27 @@ def search_builder(opts):
         vars.append(" '%s' in x.nodeName.lower()" % opts.nodename.lower())
 
     # deviceType
-    if opts.type: 
+    if opts.type:
         vars.append(" '%s' in x.deviceType" % opts.type.upper())
 
     # onCallName (oncall team)
-    if opts.oncall_team: 
+    if opts.oncall_team:
         vars.append (" '%s' in x.onCallName.lower()" % opts.oncall_team.lower())
 
     # owningTeam (owning_team)
-    if opts.owning_team: 
+    if opts.owning_team:
         vars.append (" '%s' in x.owningTeam.lower()" % opts.owning_team.lower())
 
     # owner (owning org)
-    if opts.owning_org: 
+    if opts.owning_org:
         vars.append(" '%s' in x.owner" % opts.owning_org.upper())
 
     # budgetCode (budget code)
-    if opts.budget_code: 
+    if opts.budget_code:
         vars.append(" '%s' in x.budgetCode" % opts.budget_code)
 
     # budgetName (budget name)
-    if opts.budget_name: 
+    if opts.budget_name:
         vars.append(" '%s' in x.budgetName.lower()" % opts.budget_name.lower())
 
     # vendor
@@ -150,19 +150,19 @@ def search_builder(opts):
         vars.append(" '%s' in x.vendor" % opts.vendor.lower())
 
     # manufacturer
-    if opts.manufacturer: 
+    if opts.manufacturer:
         vars.append(" '%s' in x.manufacturer" % opts.manufacturer.upper())
 
     # site
-    if opts.location: 
+    if opts.location:
         vars.append(" '%s' in x.site" % opts.location.upper())
 
     # make
-    if opts.make: 
+    if opts.make:
         vars.append(" '%s' in x.make" % opts.make.upper())
 
     # model
-    if opts.model: 
+    if opts.model:
         vars.append(" '%s' in x.model" % opts.model.upper())
 
     # coordinate/rack
@@ -174,9 +174,9 @@ def search_builder(opts):
     #print 'vlen =', len(vars)
 
     # Build a list comprehension based on the vars list.
-    # so: 
+    # so:
     #    [" 'SWITCH' in x.deviceType", 'juniper' in x.vendor"]
-    # becomes: 
+    # becomes:
     #   [x for x in nd.all() if 'SWITCH' in x.deviceType and 'juniper' in
     #   x.vendor]
     query += " if"
@@ -186,12 +186,19 @@ def search_builder(opts):
         query += vars[i]
         if counter != vlen: query += " and"
         counter +=1
-        
+
     # Finalize query
     query += "]"
     #print query
 
-    devlist = eval(query)
+    try:
+        devlist = eval(query)
+    except TypeError:
+        from trigger.conf import settings
+        print "A required field in %s is missing or invalid.  Please fix the data and try again." \
+                % settings.NETDEVICES_SOURCE
+        sys.exit(1)
+
     devlist.sort()
 
     # Print acls
