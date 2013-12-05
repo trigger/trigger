@@ -39,6 +39,13 @@ def ping(host, count=1, timeout=5):
     >>> network.ping('192.168.199.253')
     False
     """
+
+    # Make the command silent even for bad input
+    import re
+    valid_host_re = re.compile("^[a-z0-9\-\.]+$")
+    if not valid_host_re.findall(host):
+        return False
+    
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
     status, results = commands.getstatusoutput(ping_command)
 
