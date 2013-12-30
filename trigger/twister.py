@@ -211,13 +211,16 @@ def pty_connect(device, action, creds=None, display_banner=None,
         port = 22
 
     # or Telnet?
-    else:
+    elif settings.TELNET_ENABLED:
         log.msg('[%s] SSH connection test FAILED, falling back to telnet' %
                 device)
         factory = TriggerTelnetClientFactory(d, action, creds,
                                              init_commands=init_commands)
         log.msg('Trying telnet to %s' % device, debug=True)
         port = 23
+    else:
+        log.msg('[%s] SSH connection test FAILED, telnet fallback disabled' % device)
+        return None
 
     reactor.connectTCP(device.nodeName, port, factory)
     # TODO (jathan): There has to be another way than calling Tacacsrc
