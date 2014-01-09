@@ -215,7 +215,7 @@ def pty_connect(device, action, creds=None, display_banner=None,
         log.msg('[%s] SSH connection test FAILED, falling back to telnet' %
                 device)
         factory = TriggerTelnetClientFactory(d, action, creds,
-                                             init_commands=init_commands)
+                                             init_commands=init_commands, device=device)
         log.msg('Trying telnet to %s' % device, debug=True)
         port = 23
 
@@ -1481,11 +1481,12 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
     Factory for a telnet connection.
     """
     def __init__(self, deferred, action, creds=None, loginpw=None,
-                 enablepw=None, init_commands=None):
+                 enablepw=None, init_commands=None, device=None):
         self.protocol = TriggerTelnet
         self.action = action
         self.loginpw = loginpw
         self.enablepw = os.getenv('TRIGGER_ENABLEPW', enablepw)
+        self.device = device
         self.action.factory = self
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
