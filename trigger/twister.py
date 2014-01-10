@@ -1735,7 +1735,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 next_init = self.startup_commands.pop(0)
                 log.msg('[%s] Sending initialize command: %r' % (self.device,
                                                                  next_init))
-                self.write(next_init)
+                self.write(next_init.strip() + self.device.delimiter)
                 return None
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
@@ -1758,7 +1758,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self._send_next()
         else:
             log.msg('[%s] Sending command %r' % (self.device, next_command))
-            self.write(next_command + '\n')
+            self.write(next_command + self.device.delimiter)
 
     def timeoutConnection(self):
         """Do this when we timeout."""
