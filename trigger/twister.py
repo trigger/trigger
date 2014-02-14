@@ -215,7 +215,7 @@ def pty_connect(device, action, creds=None, display_banner=None,
         log.msg('[%s] SSH connection test FAILED, falling back to telnet' %
                 device)
         factory = TriggerTelnetClientFactory(d, action, creds,
-                                             init_commands=init_commands)
+                                             init_commands=init_commands, device=device)
         log.msg('Trying telnet to %s' % device, debug=True)
         port = 23
     else:
@@ -1484,11 +1484,12 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
     Factory for a telnet connection.
     """
     def __init__(self, deferred, action, creds=None, loginpw=None,
-                 enablepw=None, init_commands=None):
+                 enablepw=None, init_commands=None, device=None):
         self.protocol = TriggerTelnet
         self.action = action
         self.loginpw = loginpw
         self.enablepw = os.getenv('TRIGGER_ENABLEPW', enablepw)
+        self.device = device
         self.action.factory = self
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
@@ -1737,7 +1738,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 next_init = self.startup_commands.pop(0)
                 log.msg('[%s] Sending initialize command: %r' % (self.device,
                                                                  next_init))
-                self.write(next_init)
+                self.write(next_init.strip() + self.device.delimiter)
                 return None
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
@@ -1760,7 +1761,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self._send_next()
         else:
             log.msg('[%s] Sending command %r' % (self.device, next_command))
-            self.write(next_command + '\n')
+            self.write(next_command + self.device.delimiter)
 
     def timeoutConnection(self):
         """Do this when we timeout."""
