@@ -14,7 +14,7 @@ __author__ = 'Jathan McCollum, Mark Ellzey Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jmccollum@salesforce.com'
 __copyright__ = 'Copyright 2003-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '1.3'
+__version__ = '1.3.1'
 
 from collections import namedtuple
 import csv
@@ -426,7 +426,7 @@ def output_dotty(subnet_table, display=True):
 
     for leaf, subleaves in links.iteritems():
         for subleaf in subleaves:
-            graph += '"%s"--"%s"\n' % (nd[leaf].shortName, nd[subleaf].shortName)
+            graph += '"%s"--"%s"\n' % (leaf.shortName, subleaf.shortName)
         #print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
     graph += '\n}'
 
