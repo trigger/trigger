@@ -10,6 +10,7 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
 
+import copy
 import fcntl
 import os
 import re
@@ -1094,7 +1095,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         log.msg('[%s] COMMANDS: %r' % (self.device, self.factory.commands))
         self.data = ''
         self.initialized = self.factory.initialized
-        self.startup_commands = self.device.startup_commands
+        self.startup_commands = copy.copy(self.device.startup_commands)
         log.msg('[%s] My startup commands: %r' % (self.device,
                                                   self.startup_commands))
 
@@ -1668,7 +1669,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.timeout = timeout
         self.command_interval = command_interval
         self.prompt =  re.compile(settings.IOSLIKE_PROMPT_PAT)
-        self.startup_commands = self.device.startup_commands
+        self.startup_commands = copy.copy(self.device.startup_commands)
         log.msg('[%s] My initialize commands: %r' % (self.device,
                                                      self.startup_commands))
         self.initialized = False
