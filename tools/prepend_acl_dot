@@ -62,7 +62,7 @@ def main():
                         (dev.nodeName, acl_name)
                 log.msg(msg)
                 print msg
-            
+
             elif opts.dryrun:
                 msg = "device %s WILL HAVE association %s moved to %s" % \
                     (dev.nodeName, acl_name, 'acl.%s' % acl_name)
