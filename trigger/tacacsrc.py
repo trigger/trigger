@@ -384,7 +384,7 @@ class Tacacsrc(object):
 
         # We need to return a newline if a field is empty so as not to break
         # .tacacsrc parsing (trust me, this is easier)
-        return encodestring(cryptobj.encrypt(s + padding)) or '\n'
+        return (encodestring(cryptobj.encrypt(s + padding)).replace('\n', '') or '' ) + '\n'
 
     def _decrypt_old(self, s):
         """Decodes using the old method. Strips newline for you."""

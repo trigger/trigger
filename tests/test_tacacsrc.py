@@ -11,18 +11,42 @@ from StringIO import StringIO
 import os
 import unittest
 import tempfile
+from mock import patch
 from trigger.conf import settings
 from trigger.tacacsrc import Tacacsrc, Credentials
 
 
 # Constants
-RIGHT_CREDS = Credentials('jschmoe', 'abc123', 'aol')
-RIGHT_TACACSRC = {
+aol = Credentials('jschmoe', 'abc123', 'aol')
+AOL_TACACSRC = {
     'aol_uname_': 'jschmoe',
     'aol_pwd_': 'abc123',
 }
 RIGHT_PERMS = '0600'
 
+MEDIUMPWCREDS = Credentials('MEDIUMPWCREDS', 'MEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUM', 'MEDIUMPWCREDS')
+MEDIUMPW_TACACSRC = {
+  'MEDIUMPWCREDS_uname_': 'MEDIUMPWCREDS',
+  'MEDIUMPWCREDS_pwd_': 'MEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUMMEDIUM',
+} 
+
+LONGPWCREDS = Credentials('LONGPWCREDS', 'LONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONG', 'LONGPWCREDS')
+LONGPW_TACACSRC = {
+   'LONGPWCREDS_uname_': 'LONGPWCREDS',
+   'LONGPWCREDS_pwd_': 'LONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONG',
+}
+
+EMPTYPWCREDS = Credentials('EMPTYPWCREDS', '', 'EMPTYPWCREDS')
+EMPTYPW_TACACSRC = {
+   'EMPTYPWCREDS_uname_': 'EMPTYPWCREDS',
+   'EMPTYPWCREDS_pwd_': '',
+}
+
+LIST_OF_CREDS = ['aol', 'MEDIUMPWCREDS', 'LONGPWCREDS', ]  
+LIST_OF_TACACSRC = [ AOL_TACACSRC, MEDIUMPW_TACACSRC, LONGPW_TACACSRC ]  
+ALL_CREDS = [ (name,eval(name)) for name in LIST_OF_CREDS] 
+ALL_TACACSRC = dict() 
+[ALL_TACACSRC.update(x) for x in LIST_OF_TACACSRC]
 
 def miniparser(data, tcrc):
     """Manually parse .tacacsrc lines into a dict"""
@@ -43,8 +67,9 @@ class TacacsrcTest(unittest.TestCase):
     def testRead(self):
         """Test reading .tacacsrc."""
         t = Testing_Tacacsrc()
-        self.assertEqual(t.version, '2.0')
-        self.assertEqual(t.creds['aol'], RIGHT_CREDS)
+        for name,value in ALL_CREDS:
+          self.assertEqual(t.version, '2.0')
+          self.assertEqual(t.creds['%s' % name], value)
 
     def _get_perms(self, filename):
         """Get octal permissions for a filename"""
@@ -55,15 +80,19 @@ class TacacsrcTest(unittest.TestCase):
         """Test writing .tacacsrc."""
         _, file_name = tempfile.mkstemp('_tacacsrc')
         t = Testing_Tacacsrc(generate_new=False)
-        t.creds['aol'] = RIGHT_CREDS
-        # Overload the default file_name w/ our temp file
-        t.file_name = file_name
-        t.write()
+
+        for name,value in ALL_CREDS:
+          t.creds['%s' % name] = value
+        # Overload the default file_name w/ our temp file or
+        # create a new tacacsrc by setting file_name to 'tests/data/tacacsrc'
+          t.file_name = file_name 
+          t.write()
 
         # Read the file we wrote back in and check it against what we think it
         # should look like.
+        self.maxDiff = None 
         output = miniparser(t._read_file_old(), t)
-        self.assertEqual(output, RIGHT_TACACSRC)
+        self.assertEqual(output, ALL_TACACSRC) 
 
         # And then compare it against the manually parsed value using
         # miniparser()
@@ -71,6 +100,15 @@ class TacacsrcTest(unittest.TestCase):
             lines = fd.readlines()
             self.assertEqual(output, miniparser(lines, t))
         os.remove(file_name)
+
+    def test_brokenpw(self):
+        self.assertRaises(ValueError, Testing_Tacacsrc, tacacsrc_file='tests/data/brokenpw_tacacsrc') 
+
+    def test_emptypw(self):
+        devnull = open(os.devnull, 'w')
+        with patch('trigger.tacacsrc.prompt_credentials', side_effect=KeyError): 
+          with patch('sys.stdout', devnull):
+            self.assertRaises(KeyError, Testing_Tacacsrc, tacacsrc_file='tests/data/emptypw_tacacsrc') 
 
     def test_perms(self):
         """Test that permissions are being enforced."""
