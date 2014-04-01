@@ -10,6 +10,12 @@
 #
 #########################################
 
+#Test whether HOME variable is set and set to /tmp if not
+if [ -z "$HOME" ]
+then
+  export HOME=/tmp
+fi
+
 BASEDIR=$(dirname $0)
 
 export PATH=/opt/bin:${PATH}
