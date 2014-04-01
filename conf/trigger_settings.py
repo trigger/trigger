@@ -84,6 +84,7 @@ VENDOR_MAP = {
     'JUNIPER': 'juniper',
     'MRV': 'mrv',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
+    'PALO ALTO NETWORKS': 'paloalto',
 }
 
 # A dictionary keyed by manufacturer name containing a list of the device types
@@ -259,7 +260,7 @@ PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#', # ArubaOS 6.1
     #'aruba': r'\S+(?: \(\S+\))?\s?#\s', # ArubaOS 6.2
     'citrix': r'\sDone\n$',
-    'f5': r'(?:\S+\@)?\S+(?:\(.*\))\(tmos\)#\s{1,2}\r?$',
+    'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
@@ -324,6 +325,10 @@ DATABASE_PORT = ''          # Set to '' for default. Not used with sqlite3.
 #===============================
 # ACL Management
 #===============================
+# Whether to allow multi-line comments to be used in Juniper firewall filters.
+# Defaults to False.
+ALLOW_JUNIPER_MULTILINE_COMMENTS = False
+
 # FILTER names of ACLs that should be skipped or ignored by tools
 # NOTE: These should be the names of the filters as they appear on devices. We
 # want this to be mutable so it can be modified at runtime.

@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+check_syntax - Determines if ACL passes parsing check
+"""
+
+__author__ = 'Eileen Watson'
+__maintainer__ = 'Eileen Watson'
+__email__ = 'ewatson@salesforce.com'
+__copyright__ = 'Copyright 2013 Salesforce.com'
+__version__ = '1.0'
+
+import optparse
+import sys
+from simpleparse.error import ParserSyntaxError
+import logging
+import tempfile
+import os
+
+from trigger.acl.parser import parse as acl_parse
+from twisted.python import log
+
+CONTEXT = 3
+
+def parse_args(argv):
+    optp = optparse.OptionParser(description='''\
+        Determine if ACL file passes trigger's parsing checks.''',
+        usage='%prog [opts] file')
+    optp.add_option('-q', '--quiet', action='store_true', help='suppress output')
+    (opts, args) = optp.parse_args(argv)
+
+    return opts, args
+
+def main():
+
+    global opts
+    opts, args = parse_args(sys.argv)
+
+    for file in args[1:]:
+        fd = open(file, 'r')
+        file_contents = fd.read()
+
+        try:
+            acl_parse(file_contents)
+            print "File %s passes the syntax check." % file
+        except Exception as e:
+            print "File %s FAILED the syntax check.  Here is the error:" % file
+            print e
+            print ""
+
+if __name__ == '__main__':
+    tmpfile = tempfile.mktemp()+'_parsing_check'
+    log.startLogging(open(tmpfile, 'a'), setStdout=False)
+    log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
+    main()

@@ -15,8 +15,8 @@ automatically load eligible devices from the queue and email results.
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2012, AOL Inc.'
-__version__ = '1.8'
+__copyright__ = 'Copyright 2003-2012, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.9.2'
 
 # Dist imports
 from collections import defaultdict
@@ -38,6 +38,7 @@ from twisted.python import log
 from xml.etree.cElementTree import Element, SubElement
 
 # Trigger imports
+from trigger import exceptions
 from trigger.acl import parse as acl_parse
 from trigger.acl.queue import Queue
 from trigger.acl.tools import process_bulk_loads, get_bulk_acls
@@ -46,11 +47,14 @@ from trigger.netdevices import NetDevices
 from trigger.twister import execute_junoscript, execute_ioslike
 from trigger.utils.cli import print_severed_head, NullDevice, pretty_time, min_sec
 from trigger.utils.notifications import send_notification, send_email
+from trigger.tacacsrc import Tacacsrc
 
 # Globals
 # Pull in these functions from settings
 get_current_oncall = settings.GET_CURRENT_ONCALL
 create_cm_ticket = settings.CREATE_CM_TICKET
+stage_acls = settings.STAGE_ACLS
+get_tftp_source = settings.GET_TFTP_SOURCE #(dev)
 
 # Our global NetDevices object!
 nd = NetDevices() #production_only=False)  #should be added with a flag
@@ -233,26 +237,6 @@ ACLs listed will load everything in the queue.''')
 
     return opts, args
 
-# TODO (jathan): move this to trigger.acl.tools
-def get_tftp_source(dev):
-    """
-    Determine the right TFTP source-address to use (public vs. private)
-    based on ``settings.VIPS``, and return that address.
-
-    :param dev:
-        A `~trigger.netdevices.NetDevice` object
-    """
-    host = socket.gethostbyname(socket.getfqdn())
-    if opts.no_vip:
-        return host
-    elif host not in settings.VIPS:
-        return host
-    ## hack to make broken routers work (This shouldn't be necessary.)
-    for broken in 'ols', 'rib', 'foldr':
-        if dev.nodeName.startswith(broken):
-            return host
-    return settings.VIPS[host]
-
 # TODO (jathan): Remove these calls later.
 def debug_fakeout():
     """Used for debug, but this method is rarely used."""
@@ -270,7 +254,8 @@ def get_work(opts, args):
     :param args:
         A list of CLI arguments
     """
-    aclargs = set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
+    #removing acl. assumption from files
+    aclargs = set(args[1:]) #set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
 
     work = {}
     bulk_acls = get_bulk_acls()
@@ -382,8 +367,10 @@ def get_work(opts, args):
         else:
             for dev in bouncy_devs:
                 dev_acls = ', '.join(work[dev])
-                print 'Skipping %s on %s (until %s)' % (dev_acls, dev, pretty_time(next_ok[dev]))
-                log.msg('Skipping %s on %s (until %s)' % (dev_acls, dev, pretty_time(next_ok[dev])))
+                print 'Skipping %s on %s (window starts at %s)' % \
+                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev]))
+                log.msg('Skipping %s on %s (window starts at %s)' % \
+                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev])))
                 del work[dev]
             print '\nUse --bouncy to forcefully load on these devices anyway.'
         print
@@ -395,7 +382,7 @@ def get_work(opts, args):
 
     return work
 
-def junoscript_cmds(acls, dev):
+def junoscript_cmds(acls_content, tftp_paths, dev):
     """
     Return a list of Junoscript commands to load the given ACLs, and a
     matching list of tuples (acls remaining, human-readable status message).
@@ -409,24 +396,24 @@ def junoscript_cmds(acls, dev):
     xml = [Element('lock-configuration')]
     status = ['locking configuration']
 
-    for i, acl in enumerate(acls):
+    for i, acl_content in enumerate(acls_content):
         lc = Element('load-configuration', action='replace', format='text')
         body = SubElement(lc, 'configuration-text')
-        body.text = file(settings.FIREWALL_DIR + '/acl.' + acl).read()
+        body.text = acl_content
         xml.append(lc)
-        status.append('loading ACL ' + acl)
+        status.append('loading ACL ' + tftp_paths[i]) #acl)
 
     # Add the proper commit command
     xml.extend(dev.commit_commands)
-    status.append('committing for ' + ','.join(acls))
-    status.append('done for' + ','.join(acls) )
+    status.append('committing for ' + ','.join(tftp_paths)) #acls))
+    status.append('done for' + ','.join(tftp_paths) )
 
     if debug_fakeout():
         xml = [Element('get-software-information')] * (len(status) - 1)
 
     return xml, status
 
-def ioslike_cmds(acls, dev, nonce):
+def ioslike_cmds(tftp_paths, dev): #, nonce):
     """
     Return a list of IOS-like commands to load the given ACLs, and a matching
     list of tuples (acls remaining, human-readable status message).
@@ -441,92 +428,27 @@ def ioslike_cmds(acls, dev, nonce):
         A nonce to use when staging the ACL file for TFTP
     """
     template_base = {
-        # two sets of identical strings
-        'arista': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
-        'cisco': 'copy tftp://%s/acl.%s.%s system:/running-config\n',
-        'dell': 'copy tftp://%s/acl.%s.%s running-config\n',
-        'brocade': 'copy tftp run %s acl.%s.%s\n',
-        'foundry': 'copy tftp run %s acl.%s.%s\n',
+        'arista': 'copy tftp://%s/%s system:/running-config\n',
+        'cisco': 'copy tftp://%s/%s system:/running-config\n',
+        'dell': 'copy tftp://%s/%s running-config\n',
+        'brocade': 'copy tftp run %s %s\n',
+        'foundry': 'copy tftp run %s %s\n',
+        'force10': 'copy tftp://%s/%s running-config\n',
     }
 
     template = template_base[dev.vendor.name]
-    cmds = [template % (get_tftp_source(dev), acl, nonce) for acl in acls]
-    status = ['loading ACL ' + acl for acl in acls]
+    cmds = [template % (get_tftp_source(dev=dev, no_vip=opts.no_vip), path) for path in tftp_paths]
+    status = ['loading ACL ' + path for path in tftp_paths]  #this will print more info
 
     # Add the proper write mem command
     cmds.extend(dev.commit_commands)
-    status.append('saving config for ' + ','.join(acls))
-    status.append('done for ' + ','.join(acls))
+    status.append('saving config for ' + ','.join(tftp_paths)) #acls))
+    status.append('done for ' + ','.join(tftp_paths)) #acls))
 
     if debug_fakeout():
         cmds = ['show ver'] * (len(status) - 1)
 
     return cmds, status
-
-def stage_tftp(acls, nonce, sanitize_acl=False):
-    """
-    Make ACLs available for TFTP.  This cannot just symlink, because
-    tftpd runs chroot.  We also don't want to just point tftpd to
-    ``settings.FIREWALL_DIR``, since then it will have everything all the time,
-    exposed to anyone who asks.
-
-    Files are created with strongly random names so they can't be fetched
-    without that knowledge.  Note that we don't want to clean up on exit
-    because some Foundrys download TFTP in the background (which gives you
-    no chance to catch errors).  Instead ``settings.TFTPROOT_DIR`` should be
-    cleaned up with a cronjob.
-
-    :param acls:
-        A collection of ACL names
-
-    :param nonce:
-        A nonce to use when staging the ACL file for TFTP
-
-    :param sanitize_acl:
-        A Boolean of whether to sanitize on ACL on stage
-    """
-    for acl in acls:
-        source = settings.FIREWALL_DIR + '/acl.%s' % acl
-        dest = settings.TFTPROOT_DIR + '/acl.%s.%s' % (acl, nonce)
-        try:
-            os.stat(dest)
-        except OSError:
-            try:
-                shutil.copyfile(source, dest)
-            except:
-                return None
-            else:
-                os.chmod(dest, 0644)
-
-        # Sanitize in this context is really just stripping the comments for now
-        if sanitize_acl:
-            _sanitize_acl(source, dest)
-
-    return True
-
-def _sanitize_acl(src_file, dst_file):
-    """
-    Sanitize in this context is really just stripping the comments for now.
-
-    :param src_file:
-        The source file to sanitize
-
-    :param dst_file:
-        The destination file for sanitized results
-    """
-    msg = 'Sanitizing ACL {0} as {1}'.format(src_file, dst_file)
-    log.msg(msg)
-
-    with open(src_file, 'r') as src_acl:
-        acl = acl_parse(src_acl)
-    acl.strip_comments()
-
-    output = '\n'.join(acl.output(replace=True)) + '\n'
-    with open(dst_file, 'w') as dst_acl:
-        dst_acl.write(output)
-
-    msg = 'Done sanitizing ACL {0}'.format(dst_file)
-    log.msg(msg)
 
 def group(dev):
     """
@@ -586,7 +508,8 @@ def activate(work, active, failures, jobs, redraw):
         The redraw closure passed along from the caller
     """
     if not active and not work:
-        reactor.stop()
+        if reactor.running:
+            reactor.stop()
 
     while work and len(active) < jobs:
         dev = select_next_device(work, active)
@@ -595,50 +518,80 @@ def activate(work, active, failures, jobs, redraw):
         acls = work[dev]
         del work[dev]
 
-        active[dev] = 'connecting'
+        sanitize_acl = (dev.vendor == 'brocade')
 
-        if dev.vendor == 'juniper':
-            cmds, status = junoscript_cmds(acls, dev)
-            execute = execute_junoscript
-        else:
-            nonce = os.urandom(8).encode('hex')
+        status = []
+        cmds = []
+        acl_contents = []
+        tftp_paths = []
+        fails = None
 
-            # For now this only has to be done for Brocade, so...
-            sanitize_acl = dev.vendor == 'brocade'
+        # Closures galore! Careful; you need to explicitly save current
+        # values (using the default argument trick) 'dev', 'acls', and
+        # 'status', because they vary through this loop.
+        def update_board(results, dev, status):
+            try:
+                active[dev] = status[len(results)]
+            except IndexError:
+                pass
 
-            if not stage_tftp(acls, nonce, sanitize_acl):
-                failures[dev] = "Unable to stage TFTP File %s" % str(acls)
-                return None
-
-            cmds, status = ioslike_cmds(acls, dev, nonce)
-            execute = execute_ioslike
-
-    # Closures galore! Careful; you need to explicitly save current
-    # values (using the default argument trick) 'dev', 'acls', and
-    # 'status', because they vary through this loop.
-        def update_board(results, dev=dev, status=status):
-            active[dev] = status[len(results)]
-        def complete(results, dev=dev, acls=acls):
+        def complete(results, dev, acls):
             clear_load_queue(dev, acls)
-        def eb(reason, dev=dev):
+
+        def eb(reason, dev):
+            log.msg("GOT ERRBACK", reason)
             failures[dev] = reason
-        def move_on(x, dev=dev):
+
+        def move_on(x, dev):
             del active[dev]
-            #activate(work, active, failures, jobs, queue, redraw)
             activate(work, active, failures, jobs, redraw)
 
-        # Check if a device is Foundry-like and inject a 1 second interval
-        # between commands. This is hacky, but its needed because of an issue
-        # where rapidly executed commands are not properly acknowledged by the
-        # device. The same behavior can be witnessed when pasting into an
-        # interactive terminal.
-        if dev.vendor in ('brocade', 'foundry'):
-            d = execute(dev, cmds, incremental=update_board, command_interval=1)
-        else:
-            d = execute(dev, cmds, incremental=update_board)
-        d.addCallback(complete)
-        d.addErrback(eb)
-        d.addBoth(move_on)
+        def stage_acls_cb(unused, dev, acls, log, sanitize_acl):
+            # Wrapper for stage_acls; result is unused
+            active[dev] = 'staging acls'
+            return stage_acls(acls, log, sanitize_acl)
+
+        def check_failure(result, dev):
+            (acl_contents, tftp_paths, fails) = result
+
+            if fails is not None:
+                log.msg("STAGING FAILED:", fails)
+                raise exceptions.ACLStagingFailed(fails)
+
+            active[dev] = 'connecting'
+            if dev.vendor == 'juniper':
+                cmds, status = junoscript_cmds(acl_contents, tftp_paths, dev)
+            else:
+                cmds, status = ioslike_cmds(tftp_paths, dev)
+
+            return (cmds, status)
+
+        # Stage the acls
+        handled_first = defer.Deferred()
+        handled_first.addCallback(stage_acls_cb, dev, acls, log, sanitize_acl)
+        handled_first.addBoth(check_failure, dev)
+        handled_first.addErrback(eb, dev)
+        handled_first.addErrback(move_on, dev)
+
+        # Start staging
+        reactor.callWhenRunning(handled_first.callback, None)
+
+        def chain(result, dev, acls):
+            (cmds, status) = result
+
+            # Lambda function to call update_board() with proper args
+            incremental = lambda x: update_board(x, dev, status)
+
+            if dev.vendor in ('brocade', 'foundry'):
+                handled_second = dev.execute(cmds, incremental=incremental, command_interval=1)
+            else:
+                handled_second = dev.execute(cmds, incremental=incremental)
+            handled_second.addCallback(complete, dev, acls)
+            handled_second.addErrback(eb, dev)
+            handled_second.addBoth(move_on, dev)
+
+        # Try to actually push the changes after staging completes successfully
+        handled_first.addCallback(chain, dev, acls)
 
         redraw()
 
@@ -691,13 +644,16 @@ def main():
     if opts.no_db:
         queue = None
 
+    if (not opts.auto) or (not opts.quiet):
+        print 'Logging to', tmpfile
+
     # Where the magic happens
     work = get_work(opts, args)
 
     if not work:
         if not opts.auto:
             print 'Nothing to load.'
-            log.msg('Nothing to load.')
+        log.msg('Nothing to load.')
         sys.exit(0)
 
     print 'You are about to perform the following loads:'
@@ -727,8 +683,15 @@ def main():
             log.msg('LOAD CANCELLED')
             sys.exit(1)
         print ''
-
-    print 'Logging to', tmpfile
+        # Don't let the credential prompts get hidden behind curses
+        populate_tacacrc = Tacacsrc()
+    else:
+        log.msg('Auto option thrown, checking if credential file exists')
+        tacacsrc_file = settings.TACACSRC
+        if not os.path.exists(tacacsrc_file):
+            log.msg('No %s file exists and auto option enabled.' % tacacsrc_file)
+            sys.exit(1)
+        log.msg('Credential file %s exists, moving on' % tacacsrc_file)
 
     cm_ticketnum = 0
     if not opts.no_cm and not debug_fakeout():

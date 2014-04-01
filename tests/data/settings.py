@@ -13,6 +13,12 @@ PREFIX = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_REALM = 'aol'
 TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, 'tackf'))
 TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'tacacsrc'))
+RIGHT_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'right_tacacsrc'))
+MEDIUMPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'mediumpw_tacacsrc'))
+LONGPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'longpw_tacacsrc'))
+BROKENPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'brokenpw_tacacsrc'))
+EMPTYPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'emptypw_tacacsrc'))
+
 
 # Configs
 NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE',

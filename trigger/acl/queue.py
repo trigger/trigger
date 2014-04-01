@@ -80,7 +80,7 @@ class Queue(object):
         model = self.get_model(queue)
         taskobj = model.create(*args, **kwargs)
 
-    def _normalize(self, arg, prefix='acl.'):
+    def _normalize(self, arg, prefix=''):
         """
         Remove ``prefix`` from ``arg``, and set "escalation" bit.
 

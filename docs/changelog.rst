@@ -2,6 +2,114 @@
 Changelog
 =========
 
+.. _v1.4.3:
+
+1.4.3
+=====
+
+New Features
+------------
+
++ Added a new ``bin/check_syntax`` tool to determine if an ACL passes a
+  syntax check.
++ Acceptance tests can now be run standalone from within a clone of the
+  Trigger repo.
++ :feature:`142` ``bin/gong`` now enables on login if the enable
+  password is provided by way of :setting:`TRIGGER_ENABLEPW`.
+
+Enhancements
+------------
+
++ Improvements to user-experience within ``bin/acl``
+
+  - Help text greatly improved and expanded to be more helpful
+
+    * ``-l`` and ``-m`` args now print a message when load queue is
+      empty
+    * Clarified help text for ``-a`` and ``-r`` args
+
+  - It now requires users to explicitly ask for associations
+    instead of it being default.
+  - The wording on the status output has been improved for clarity
+    and conciseness.
+
++ ``bin/load_acl`` will now validate ``.tacacsrc`` before work begins
+
+Bug Fixes
+---------
+
++ Bugfix in `~trigger.tacacs.Tacacsrc` in which saving a password
+  longer than a certain lengthw could cause the encrypted password hash
+  to contain newlines and therefore become unreadable.
++ :bug:`163` Bugfix to copy startup commands from a device when creating
+  a channel base, otherwise they will get consumed directly from the
+  device, and connections after the first will not send any startup
+  commands.
++ :bug:`157` Bugfix in which
+  `~trigger.twister.TriggerTelnetClientFactory` was missing the
+  ``device`` attribute.
++ Fix a bug causing a crash when using ``gnng --dotty``
++ Bugfix in `~trigger.twister.pty_connect()` to check for telnet
+  fallback before attempting to telnet over pty that would cause a race
+  condition resulting in a crash if neither telnet or SSH are available.
++ Catch invalid hostnames before they bleed through in stderr output
+  when using `~trigger.utils.network.ping`
++ Bugfix to catch exceptions for bad netdevices data in ``bin/netdev``.
++ Fix bugs in auto-enable and remote execution on certain devices
+
+  - The correct delimiter is now mapped out by vendor/platform and
+    attached to the NetDevice object at runtime.
+  - Fixed a bug when executing commands remotely on NetScreen
+    devices running ScreenOS that was causing them to be treated
+    as Juniper routers/switches if the NetDevice attributes
+    vendor=juniper and deviceType=netscreen.
+
++ :bug:`151` Gong now uses chosen dev. from multiple when updating
+  ``.tacacsrc``.
++ :bug:`90` Bugfix causing
+  `~trigger.netdevices.loaders.filesystem.CSVLoader` for netdevices to
+  always succeed.
+
+.. _v1.4.2:
+
+1.4.2
+=====
+
+Warnings
+--------
+
++ With this update, load_acl and acl no longer assume ACL and filter files begin with 'acl.'.  There are two options for updating your deployment to work with this code:
+
+  1. Move files in settings.FIREWALL_DIR to files without the prepended 'acl.'.
+  2. Update autoacls.py and explicit ACL associations to include the prepended 'acl.'  prepend_acl_dot was included in tools/ to help update explicit ACL associations.
+
++ Please note that either change above may have an impact on any non-trigger code.
+
+New Features
+------------
+
++ ACL staging and finding tftp server moved to global settings
+
+  - Allows for more site specific configuration
+
++ Load_acl support for new vendors
+
+  - Force10
+
++ Enhancements to various ACL-related CLI tools
++ Moved staging and tftp server definitions to global settings
+  to allow for site specific configuratons
++ Added tftpy package to trigger.packages.tftpy (MIT License)
+
+
+Bug Fixes
+---------
+
++ Helpful netdev output when no devices found from search
++ :bug:`100` Bug fix to add acl parser support for then accept;
++ :bug:`132` Bugfix to handle inactive IP addresses in acl parser
++ :bug:`133` Bugfix to added interface-specific support for Juniper filters
+
 .. _v1.4.1:
 
 1.4.1
@@ -11,7 +119,7 @@ New Features
 ------------
 
 + Support for new vendors and platforms!!
-  
+
   - F5 BIG-IP application delivery controllers and server load-balancers 
   - MRV LX-series console servers
 

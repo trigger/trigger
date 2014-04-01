@@ -31,6 +31,9 @@ from simpleparse.dispatchprocessor import (DispatchProcessor, dispatch,
 from simpleparse.parser import Parser
 import socket
 from trigger import exceptions
+from trigger.conf import settings
+
+
 
 
 # Exports
@@ -577,18 +580,39 @@ class TIP(IPy.IP):
         # Insert logic to handle 'except' preserve negated flag if it exists
         # already
         negated = getattr(data, 'negated', False)
+
+        # Handle 'inactive:' address objects by setting inactive flag
+        inactive = getattr(data, 'inactive', False)
+
         # Is data a string?
         if isinstance(data, (str, unicode)):
             d = data.split()
-            if len(d) == 2 and d[-1] == 'except':
-                negated = True
-                data = d[0]
+            # This means we got something like "1.2.3.4 except" or "inactive:
+            # 1.2.3.4'
+            if len(d) == 2:
+                # Check if last word is 'except', set negated=True
+                if d[-1] == 'except':
+                    negated = True
+                    data = d[0]
+                # Check if first word is 'inactive:', set inactive=True
+                elif d[0] == 'inactive:':
+                    inactive = True
+                    data = d[1]
+            elif len(d) == 3:
+                if d[-1] == 'except':
+                    negated = True
+                if d[0] == 'inactive:':
+                    inactive = True
+                if inactive and negated:
+                    data = d[1]
+
         self.negated = negated # Set 'negated' variable
+        self.inactive = inactive # Set 'inactive' variable
         IPy.IP.__init__(self, data, **kwargs)
 
-        # Make it print prefixes for /32, /128 if we're negated (and therefore
-        # assuming we're being used in a Juniper ACL.
-        if self.negated:
+        # Make it print prefixes for /32, /128 if we're negated or inactive (and
+        # therefore assuming we're being used in a Juniper ACL.)
+        if self.negated or self.inactive:
             self.NoPrefixForSingleIp = False
 
     def __cmp__(self, other):
@@ -621,6 +645,11 @@ class TIP(IPy.IP):
             rs = rs.split("'")
             rs[1] += ' except'
             rs = "'".join(rs) # Restore original repr
+        if self.inactive:
+            # Insert 'inactive: ' into the repr. (Yes, it's also a hack!)
+            rs = rs.split("'")
+            rs[1] = 'inactive: ' + rs[1]
+            rs = "'".join(rs) # Restore original repr
         return rs
 
     def __str__(self):
@@ -629,6 +658,8 @@ class TIP(IPy.IP):
         rs = IPy.IP.__str__(self)
         if self.negated:
             rs += ' except'
+        if self.inactive:
+            rs = 'inactive: ' + rs
         return rs
 
     def __contains__(self, item):
@@ -675,10 +706,16 @@ class Comment(object):
         """Output the Comment to IOS traditional format."""
         if not self.data:
             return '!'
-        elif self.data.startswith('!'):
-            return '!' + self.data
+
+        data = self.data
+        if data.startswith('!'):
+            prefix = '!'
+            data = prefix + data
         else:
-            return '! ' + self.data
+            prefix = '! '
+        lines = data.splitlines()
+
+        return '\n'.join(prefix + line for line in lines)
 
     def output_ios_named(self):
         """Output the Comment to IOS named format."""
@@ -727,10 +764,12 @@ class ACL(object):
     An abstract access-list object intended to be created by the :func:`parse`
     function.
     """
-    def __init__(self, name=None, terms=None, format=None, family=None):
+    def __init__(self, name=None, terms=None, format=None, family=None,
+                 interface_specific=False):
         check_name(name, exceptions.ACLNameError, max_len=24)
         self.name = name
         self.family = family
+        self.interface_specific = interface_specific
         self.format = format
         self.policers = []
         if terms:
@@ -782,6 +821,10 @@ class ACL(object):
         if self.policers:
             for policer in self.policers:
                 out += ['    ' + x for x in policer.output()]
+
+        # Add interface-specific
+        if self.interface_specific:
+            out += ['    ' + 'interface-specific;']
 
         # Add the terms
         for t in self.terms:
@@ -1701,7 +1744,7 @@ rules = {
 
     'ipv4':       ('digits, (".", digits)*', TIP),
     'ipaddr':     ('ipchars', TIP),
-    'cidr':       ('(ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
+    'cidr':       ('("inactive:", ws+)?, (ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
     'macaddr':    'hex, (":", hex)+',
     'protocol':   (literals(Protocol.name2num) + ' / digits',
                    do_protocol_lookup),
@@ -1867,7 +1910,6 @@ rules.update({
     'ios_ext_line':          ('ios_action_match / ios_ext_name_line / '
                              'ios_ext_no_line / ios_remark_line / '
                              'ios_rebind_acl_line / ios_rebind_receive_acl_line'),
-                             #'ios_ext_no_line / ios_remark_line'),
     S('ios_ext_name_line'): ('"ip", ts, "access-list", ts, '
                              '"extended", ts, word',
                              lambda x: {'name': x[0], 'format': 'ios_named'}),
@@ -1877,7 +1919,6 @@ rules.update({
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
     S('ios_rebind_acl_line'): ('"ip", ts, "rebind-acl", ts, word',
                               lambda x: {'name': x[0], 'format': 'ios_brocade'}),
-                              #lambda x: {'name': x[0], 'format': 'ios'}),
 
     # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
     S('ios_rebind_receive_acl_line'): ('"ip", ts, "rebind-receive-acl", ts, word',
@@ -1904,43 +1945,50 @@ class QuotedString(str):
     def __str__(self):
         return '"' + self + '"'
 
+def juniper_multiline_comments():
+    """
+    Return appropriate multi-line comment grammar for Juniper ACLs.
+
+    This depends on ``settings.ALLOW_JUNIPER_MULTLIINE_COMMENTS``.
+    """
+    single = '-("*/" / "\n")*' # single-line comments only
+    multi = '-"*/"*' # syntactically correct multi-line support
+    if settings.ALLOW_JUNIPER_MULTILINE_COMMENTS:
+        return multi
+    return single
 
 rules.update({
     'jword':                    'double_quoted / word',
     'double_quoted':            ('"\\"", -[\\"]+, "\\""',
-                             lambda x: QuotedString(x[1:-1])),
-    ###'>jws<':                    '(ws / jcomment)+',
-    ###S('jcomment'):            ('"/*", ws?, jcomment_body, ws?, "*/"',
-    ###                             lambda x: Comment(x[0])),
-    ###'jcomment_body':            '-(ws?, "*/")*',
-    ###'<jsemi>':                    'jws?, ";"',
+                                 lambda x: QuotedString(x[1:-1])),
+
+    #'>jws<':                    '(ws / jcomment)+',
+    #S('jcomment'):              ('"/*", ws?, jcomment_body, ws?, "*/"',
+    #                            lambda x: Comment(x[0])),
+    #'jcomment_body':            '-(ws?, "*/")*',
+
     '>jws<':                    '(ws / jcomment)+',
+    S('jcomment'):              ('jslashbang_comment',
+                                 lambda x: Comment(x[0])),
+    '<comment_start>':          '"/*"',
+    '<comment_stop>':           '"*/"',
+    '>jslashbang_comment<':     'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
 
-    S('jcomment'):            ('jslashbang_comment',
-                             lambda x: Comment(x[0])),
-    '<comment_start>':            '"/*"',
-    '<comment_stop>':            '"*/"',
-    '>jslashbang_comment<': 'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
+    'jcomment_body':            juniper_multiline_comments(),
 
-    ## custom force single-line comments only:
-    'jcomment_body':            '-("*/" / "\n")*',
-
-    ## syntactically correct multi-line support:
-    #'jcomment_body':            '-"*/"*',
-
-    ## errors on missing ';', ignores multiple ;; and normalizes to one.
-    '<jsemi>':                    'jws?, [;]+!%s' % errs['semicolon'],
+    # Errors on missing ';', ignores multiple ;; and normalizes to one.
+    '<jsemi>':                  'jws?, [;]+!%s' % errs['semicolon'],
 
     'fragment_flag':            literals(fragment_flag_names),
-    'ip_option':            "digits / " + literals(ip_option_names),
-    'tcp_flag':                    literals(tcp_flag_names),
+    'ip_option':                "digits / " + literals(ip_option_names),
+    'tcp_flag':                 literals(tcp_flag_names),
 })
 
 junos_match_types = []
 
 def braced_list(arg):
     '''Returned braced output.  Will alert if comment is malformed.'''
-    ###return '("{", jws?, (%s, jws?)*, "}")' % arg
+    #return '("{", jws?, (%s, jws?)*, "}")' % arg
     return '("{", jws?, (%s, jws?)*, "}"!%s)' % (arg, errs['comm_start'])
 
 def keyword_match(keyword, arg=None):
@@ -2007,13 +2055,15 @@ def handle_junos_acl(x):
     """
     a = ACL(name=x[0], format='junos')
     for elt in x[1:]:
-        if isinstance(elt, Term):
+        # Handle dictionary args we throw at the constructor
+        if isinstance(elt, dict):
+            a.__dict__.update(elt)
+        elif isinstance(elt, Term):
             a.terms.append(elt)
         elif isinstance(elt, Policer):
-            #a.policers[elt.name] = elt
             a.policers.append(elt)
         else:
-            raise RuntimeError('bad object: %s' % repr(elt))
+            raise RuntimeError('Bad Object: %s' % repr(elt))
     return a
 
 def handle_junos_family_acl(x):
@@ -2053,16 +2103,18 @@ def handle_junos_term(d):
 # the next load of a similar config (e.g., another ACL).  I had a workaround
 # for this but it made the parser substantially slower.
 rules.update({
-    S('junos_raw_acl'):         ('"filter", jws, jword, jws?, ' + \
-                                    braced_list('junos_term / junos_policer'),
-                                    handle_junos_acl),
-    'junos_replace_acl':        ('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
-    S('junos_replace_family_acl'): ('"firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
+    S('junos_raw_acl'):         ('jws?, "filter", jws, jword, jws?, ' + \
+                                 braced_list('junos_iface_specific / junos_term / junos_policer'),
+                                 handle_junos_acl),
+    'junos_iface_specific':     ('("interface-specific", jsemi)',
+                                 lambda x: {'interface_specific': len(x) > 0}),
+    'junos_replace_acl':        ('jws?, "firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'),
+    S('junos_replace_family_acl'): ('jws?, "firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
                                  handle_junos_family_acl),
     S('junos_replace_policers'):('"firewall", jws?, "{", jws?, "replace:", jws?, (junos_policer, jws?)*, "}"',
                                     handle_junos_policers),
     'junos_filter_family':      ('"family", ws, junos_family_type'),
-    'junos_family_type':        ('"inet" / "inet6"'),
+    'junos_family_type':        ('"inet" / "inet6" / "ethernet-switching"'),
     'opaque_braced_group':      ('"{", jws?, (jword / "[" / "]" / ";" / '
                                     'opaque_braced_group / jws)*, "}"',
                                     lambda x: x),
@@ -2074,9 +2126,11 @@ rules.update({
                                     lambda x: {'inactive': len(x) > 0}),
     S('junos_from'):            ('"from", jws?, ' + braced_list('junos_match'),
                                     lambda x: {'match': Matches(dict_sum(x))}),
-    S('junos_then'):            ('"then", jws?, ' +
+    S('junos_then'):            ('junos_basic_then / junos_braced_then', dict_sum),
+    S('junos_braced_then'):     ('"then", jws?, ' +
                                     braced_list('junos_action/junos_modifier, jsemi'),
                                     dict_sum),
+    S('junos_basic_then'):      ('"then", jws?, junos_action, jsemi', dict_sum),
     S('junos_policer'):         ('"policer", jws, junos_term_name, jws?, ' +
                                     braced_list('junos_exceeding / junos_policer_then'),
                                     lambda x: Policer(x[0]['name'], x[1:])),

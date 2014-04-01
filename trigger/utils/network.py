@@ -4,15 +4,19 @@
 Functions that perform network-based things like ping, port tests, etc.
 """
 
-__author__ = 'Jathan McCollum'
+__author__ = 'Jathan McCollum, Eileen Watson'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2012, AOL Inc.'
+__copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013-2014 Salesforce.com'
 
 import commands
+import re
 import socket
 import telnetlib
 from trigger.conf import settings
+
+
+VALID_HOST_RE = re.compile("^[a-z0-9\-\.]+$")
 
 
 # Exports
@@ -39,6 +43,10 @@ def ping(host, count=1, timeout=5):
     >>> network.ping('192.168.199.253')
     False
     """
+    # Make the command silent even for bad input
+    if not VALID_HOST_RE.findall(host):
+        return False
+
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
     status, results = commands.getstatusoutput(ping_command)
 

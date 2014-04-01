@@ -25,8 +25,8 @@ Example::
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '2.2.1'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '2.2.2'
 
 # Imports
 import copy
@@ -34,11 +34,11 @@ import itertools
 import os
 import sys
 import time
+from twisted.python import log
 from trigger.conf import settings
 from trigger.utils import network
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
-from twisted.python import log
 from UserDict import DictMixin
 import xml.etree.cElementTree as ET
 from . import loader
@@ -242,6 +242,9 @@ class NetDevice(object):
         # Determine whether we require an async pty SSH channel
         self.requires_async_pty = self._set_requires_async_pty()
 
+        # Set the correct line-ending per vendor
+        self.delimiter = self._set_delimiter()
+
     def _populate_data(self, data):
         """
         Populate the custom attribute data
@@ -256,6 +259,9 @@ class NetDevice(object):
         # Lowercase the nodeName for completeness.
         if self.nodeName is not None:
             self.nodeName = self.nodeName.lower()
+
+        if self.deviceType is not None:
+            self.deviceType = self.deviceType.upper()
 
         # Cleanup whitespace from owning team
         if self.owningTeam is not None:
@@ -285,6 +291,17 @@ class NetDevice(object):
         )
         return any(RULES)
 
+    def _set_delimiter(self):
+        """
+        Set the delimiter to use for line-endings.
+        """
+        default = '\n'
+        delimiter_map = {
+            'force10': '\r\n',
+        }
+        delimiter = delimiter_map.get(self.vendor.name, default)
+        return delimiter
+
     def _set_startup_commands(self):
         """
         Set the commands to run at startup. For now they are just ones to
@@ -293,28 +310,32 @@ class NetDevice(object):
         def disable_paging_brocade():
             """Brocade commands differ by platform."""
             if self.is_brocade_vdx():
-                return ['terminal length 0\n']
+                return ['terminal length 0']
             else:
-                return ['skip-page-display\n']
+                return ['skip-page-display']
 
         # Commands used to disable paging.
-        default = ['terminal length 0\n']
+        default = ['terminal length 0']
         paging_map = {
             'a10': default,
             'arista': default,
-            'aruba': ['no paging\n'], # v6.2.x this is not necessary
+            'aruba': ['no paging'], # v6.2.x this is not necessary
             'brocade': disable_paging_brocade(), # See comments above
             'cisco': default,
-            'dell': ['terminal datadump\n'],
-            'f5': ['modify cli preference pager disabled\n'],
+            'dell': ['terminal datadump'],
+            'f5': ['modify cli preference pager disabled'],
             'force10': default,
-            'foundry': ['skip-page-display\n'],
-            'juniper': ['set cli screen-length 0\n'],
-            'mrv': ['no pause\n'],
-            'paloalto': ['set cli scripting-mode on\n', 'set cli pager off\n'],
+            'foundry': ['skip-page-display'],
+            'juniper': ['set cli screen-length 0'],
+            'mrv': ['no pause'],
+            'netscreen': ['set console page 0'],
+            'paloalto': ['set cli scripting-mode on', 'set cli pager off'],
         }
 
         cmds = paging_map.get(self.vendor.name)
+        if self.is_netscreen():
+            cmds = paging_map['netscreen']
+
         if cmds is not None:
             return cmds
 
@@ -326,10 +347,10 @@ class NetDevice(object):
         """
         if self.is_ioslike():
             return self._ioslike_commit()
+        elif self.is_netscaler() or self.is_netscreen():
+            return ['save config']
         elif self.vendor == 'juniper':
             return self._juniper_commit()
-        elif self.is_netscaler():
-            return ['save config']
         elif self.vendor == 'paloalto':
             return ['commit']
         elif self.vendor == 'mrv':

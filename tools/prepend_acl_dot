@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+parsing_check - Determines if ACL passes parsing check
+"""
+
+__author__ = 'Eileen Watson'
+__maintainer__ = 'Eileen Watson'
+__email__ = 'ewatson@salesforce.com'
+__copyright__ = 'Copyright 2013 Salesforce.com'
+__version__ = '1.0'
+
+import optparse
+import sys
+import logging
+import tempfile
+import os
+
+from twisted.python import log
+
+from trigger.acl.db import AclsDB
+from trigger.netdevices import NetDevices
+
+adb = AclsDB()
+nd = NetDevices(with_acls=True)
+
+def parse_args(argv):
+    optp = optparse.OptionParser(description='''\
+        Determine if ACL file passes trigger's parsing checks.''',
+        usage='%prog [opts] file')
+    optp.add_option('-d', '--dryrun', action='store_true', default=True,
+            help='Show but don\'t make changes.')
+    optp.add_option('--update', action='store_true',
+            help='Make changes to AclsDB.')
+    optp.add_option('-v', '--verbose', action='store_true', default=True,
+            help='Show output.')
+    optp.add_option('--quiet', action='store_false',
+            help='Don\'t show output.')
+    (opts, args) = optp.parse_args(argv)
+
+    if opts.update:
+        opts.dryrun = False
+    if opts.quiet:
+        opts.verbose = False
+
+
+    return opts, args
+
+def main():
+
+    global opts
+    opts, args = parse_args(sys.argv)
+
+    if opts.verbose:
+        logging.StreamHandler(sys.stdout)
+
+    for dev in nd.all():
+        for acl_name in dev.explicit_acls:
+            if acl_name.startswith('acl.'):
+                msg = "device %s has acl association %s which rquires no change" % \
+                        (dev.nodeName, acl_name)
+                log.msg(msg)
+                print msg
+
+            elif opts.dryrun:
+                msg = "device %s WILL HAVE association %s moved to %s" % \
+                    (dev.nodeName, acl_name, 'acl.%s' % acl_name)
+                log.msg(msg)
+                print msg
+            else:
+                msg = "device %s HAD assocation acl %s moved to %s" % \
+                    (dev.nodeName, acl_name, 'acl.%s' % acl_name)
+                log.msg(msg)
+                print msg
+                adb.add_acl(dev, 'acl.%s' % acl_name)
+                adb.remove_acl(dev, acl_name)
+
+if __name__ == '__main__':
+    tmpfile = tempfile.mktemp()+'_prepend_acl_dot'
+    print "Logging to %s" % tmpfile
+    log.startLogging(open(tmpfile, 'a'), setStdout=False)
+    log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
+    main()

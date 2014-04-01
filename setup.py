@@ -92,6 +92,7 @@ setup(
         'bin/acl_script',
         'bin/aclconv',
         'bin/check_access',
+        'bin/check_syntax',
         'bin/fe',
         'bin/gong',
         'bin/gnng',
@@ -104,6 +105,7 @@ setup(
         'tools/convert_tacacsrc.py',
         'tools/tacacsrc2gpg.py',
         'tools/init_task_db',
+        'tools/prepend_acl_dot',
     ],
     install_requires=requires,
     keywords = [

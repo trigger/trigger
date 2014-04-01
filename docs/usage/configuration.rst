@@ -360,6 +360,24 @@ Default::
 
     True
 
+.. setting:: TRIGGER_ENABLEPW
+
+TRIGGER_ENABLEPW
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.3
+
+When connecting to devices that require the entry of an enable password (such
+as when a ">" prompt is detected), Trigger may automatically execute the
+"enable" command and pass the enable password along for you.
+
+You may provide the enable password by setting the ``TRIGGER_ENABLEPW``
+environment variable.
+
+Default::
+
+    None
+
 .. setting:: SSH_PTY_DISABLED
 
 SSH_PTY_DISABLED
@@ -858,6 +876,19 @@ All of the following esttings are currently only used by ``load_acl``. If and
 when the ``load_acl`` functionality gets moved into the library API, this may
 change.
 
+.. setting:: ALLOW_JUNIPER_MULTILINE_COMMENTS
+
+ALLOW_JUNIPER_MULTILINE_COMMENTS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whether to allow multi-line comments to be used in Juniper firewall filters.
+The default behavior is to result in a syntax error when a multi-line comment
+is detected when parsing a firewall filter using the `~trigger.acl` library.
+
+Default::
+
+    False
+
 .. setting:: AUTOLOAD_FILTER
 
 AUTOLOAD_FILTER
@@ -937,6 +968,85 @@ execution.
 Default::
 
     1
+
+.. setting:: GET_TFTP_SOURCE
+
+GET_TFTP_SOURCE
+~~~~~~~~~~~~~~~
+
+A callable that you may define within ``settings.py``, that given a
+`~trigger.netdevices.NetDevice` object as an argument, will determine the right
+TFTP source-address to utilize.
+
+This is specifically used within the ``bin/load_acl`` tool when connecting to
+IOS-like (Cisco clone) devices to push ACL changes by telling the device from
+where to pull the change over TFTP.
+
+The callable you define must take 2 arguments: ``dev`` (a NetDevice object),
+and ``no_vip`` (a Boolean), and must return a hostname or IP address that  for
+example::
+
+    def _my_tftp_getter(dev=None, no_vip=True):
+        return '1.2.3.4'
+
+.. note::
+   For the default implementation, please see the source code in
+   `~trigger.conf.global_settings`. This version's behavior is modified by
+   :setting:`VIPS` to help decied whether to utilize a public or private IP,
+   and return that address.
+
+Default::
+
+    trigger.conf.global_settings._get_tftp_source()
+
+.. setting:: STAGE_ACLS
+
+STAGE_ACLS
+~~~~~~~~~~
+
+A callable that you may define within ``settings.py`` that given a list of ACL
+filenames will stage the files in the appropriate location for them to be
+retrieved, for example, via TFTP from a remote device. This could do anything
+you require as a staging step prior to executing ACL changes such as uploading
+files to another system.
+
+This is specifically used within the ``bin/load_acl`` tool when preparing ACLs
+to be loaded onto devices.
+
+The callable you define must take 3 arguments: ``acls`` (a list of filenames),
+``log`` (a Twisted Python logging object), and ``sanitize_acls`` (a Boolean).
+It must return a 3-tuple of (acl_contents, file_paths, failures), where:
+``acl_contents`` is a list of strings where each string is the entire contents
+of an ACL file, ``file_paths`` is a list of file paths used to locate the files
+(such as for use with TFTP, and ``fails`` an error string indicating an failure
+or ``None`` indicating success. For example::
+
+    def _my_stage_acls(acls, log=None, sanitize_acls=False):
+        acl_contents = []
+        file_paths = []
+        fails = None
+        for acl in acls:
+            if sanitize_acls:
+                # Do stuff to the acl
+            file_contents = open(acl).read()
+            if not file_contents:
+                fails = "%s could not be read"
+                log.msg(fails)
+                return ([], [], fails)
+            acl_contents.append(file_contents)
+
+        log.msg('All ACLs ready for staging')
+        return (acl_contents, file_paths, fails)
+
+.. note::
+   For the default implementation, please see the source code in
+   `~trigger.conf.global_settings`. This expects to find ACL files within
+   :setting:`FIREWALL_DIR` and to stage them into :setting:`TFTPROOT_DIR`,
+   which assumes that the TFTP server is running on the local system.
+
+Default::
+
+    trigger.conf.global_settings._stage_acls()
 
 On-Call Engineer Display settings
 ---------------------------------
