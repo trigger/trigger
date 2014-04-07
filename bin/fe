@@ -100,10 +100,10 @@ def edit(editfile):
     """
     editor = os.environ.get('EDITOR', 'vim')
     if editor.startswith('vi'):
-        os.spawnlp(os.P_WAIT, editor, '+set sw=4', '+set softtabstop=4',
+        os.spawnlp(os.P_WAIT, editor, editor, '+set sw=4', '+set softtabstop=4',
                    editfile)
     else:
-        os.spawnlp(os.P_WAIT, editor, editfile)
+        os.spawnlp(os.P_WAIT, editor, editor, editfile)
 
     if os.path.basename(editfile): #.startswith('acl.'):
         print 'Normalizing ACL...'
