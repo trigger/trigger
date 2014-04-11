@@ -39,7 +39,7 @@ Bug Fixes
 ---------
 
 + Bugfix in `~trigger.tacacs.Tacacsrc` in which saving a password
-  longer than a certain lengthw could cause the encrypted password hash
+  longer than a certain length could cause the encrypted password hash
   to contain newlines and therefore become unreadable.
 + :bug:`163` Bugfix to copy startup commands from a device when creating
   a channel base, otherwise they will get consumed directly from the
