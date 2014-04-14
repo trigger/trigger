@@ -160,6 +160,12 @@ TELNET_TIMEOUT  = 60
 # Whether or not to allow telnet fallback
 TELNET_ENABLED = True
 
+# Default ports for SSH
+SSH_PORT = 22
+
+# Default port for Telnet
+TELNET_PORT = 23
+
 # A mapping of vendors to the types of devices for that vendor for which you
 # would like to disable interactive (pty) SSH sessions, such as when using
 # bin/gong.
