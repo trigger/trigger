@@ -61,6 +61,7 @@ SUPPORTED_VENDORS = (
     'mrv',
     'netscreen',
     'paloalto',
+    'pica8',
 )
 VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
 
