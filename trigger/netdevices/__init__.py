@@ -353,6 +353,8 @@ class NetDevice(object):
             return self._juniper_commit()
         elif self.vendor == 'paloalto':
             return ['commit']
+        elif self.vendor == 'pica8':
+            return ['commit']
         elif self.vendor == 'mrv':
             return ['save configuration flash']
         elif self.vendor == 'f5':
