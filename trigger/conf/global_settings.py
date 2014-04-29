@@ -98,6 +98,7 @@ VENDOR_MAP = {
     'JUNIPER': 'juniper',
     'MRV': 'mrv',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
+    'PICA8': 'pica8',
 }
 
 # A dictionary keyed by manufacturer name containing a list of the device types
@@ -117,6 +118,7 @@ SUPPORTED_PLATFORMS = {
     'mrv': ['CONSOLE SERVER', 'SWITCH'],
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
     'paloalto': ['FIREWALL'],
+    'pica8': ['ROUTER', 'SWITCH'],
 }
 
 # The tuple of support device types
@@ -141,6 +143,7 @@ DEFAULT_TYPES = {
     'mrv': 'CONSOLE SERVER',
     'netscreen': 'FIREWALL',
     'paloalto': 'FIREWALL',
+    'pica8': 'SWITCH',
 }
 
 # When a vendor is not explicitly defined within `DEFAULT_TYPES`, fallback to
@@ -279,6 +282,7 @@ PROMPT_PATTERNS = {
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
     'paloalto': r'\r\n\S+(?:\>|#)\s?',
+    'pica8': r'\S+(?:\>|#)\s?$',
 }
 
 # When a pattern is not explicitly defined for a vendor, this is what we'll try
