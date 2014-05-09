@@ -47,6 +47,7 @@ CONTINUE_PROMPTS = [
     'proceed?',
     '(y/n):',
     '[y/n]:',
+    '[confirm]',
     # Very specific to ensure bad things don't happen!
     'overwrite file [startup-config] ?[yes/press any key for no]....'
 ]
@@ -1140,12 +1141,23 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             # Do we need to send an enable password?
             if not self.enabled and requires_enable(self, self.data):
                 send_enable(self)
-            return None
+                return None
 
-        log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
+            # Check for confirmation prompts
+            # If the prompt confirms set the index to the matched bytes
+            if is_awaiting_confirmation(self.data):
+                log.msg('[%s] Got confirmation prompt: %r' % \
+                        (self.device, self.data))
+                prompt_idx = self.data.find(bytes)
+            else:
+                return None
+        else:
+            # Or just use the matched regex object...
+            log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
+            prompt_idx = m.start()
 
         # Strip the prompt from the match result
-        result = self.data[:m.start()]
+        result = self.data[:prompt_idx]
         result = result[result.find('\n')+1:]
 
         # Only keep the results once we've sent any startup_commands

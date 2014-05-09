@@ -2,6 +2,17 @@
 Changelog
 =========
 
+.. _v1.4.3r2:
+
+1.4.3r2
+=======
+
+Enhancements
+------------
+
++ Added SSH support for confirmation prompts
++ Added '[confirm]' as one of those prompts
+
 .. _v1.4.3:
 
 1.4.3
