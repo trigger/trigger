@@ -9,6 +9,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.5.6'
 
 import copy
 import fcntl
@@ -216,8 +217,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
 
         factory = TriggerSSHPtyClientFactory(d, action, creds, display_banner,
                                              init_commands, device=device)
-        log.msg('Trying SSH to %s' % device, debug=True)
-        port = 22
+        port = device.nodePort or settings.SSH_PORT
+        log.msg('Trying SSH to %s:%s' % (device, port), debug=True)
 
     # or Telnet?
     elif settings.TELNET_ENABLED:
@@ -225,8 +226,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
                 device)
         factory = TriggerTelnetClientFactory(d, action, creds,
                                              init_commands=init_commands, device=device)
-        log.msg('Trying telnet to %s' % device, debug=True)
-        port = 23
+        port = device.nodePort or settings.TELNET_PORT
+        log.msg('Trying telnet to %s:%s' % (device, port), debug=True)
     else:
         log.msg('[%s] SSH connection test FAILED, telnet fallback disabled' % device)
         return None
@@ -444,8 +445,9 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
                                        command_interval, prompt_pattern,
                                        device, connection_class)
 
-    log.msg('Trying %s SSH to %s' % (method, device), debug=True)
-    reactor.connectTCP(device.nodeName, 22, factory)
+    port = device.nodePort or settings.SSH_PORT
+    log.msg('Trying %s SSH to %s:%s' % (method, device, port), debug=True)
+    reactor.connectTCP(device.nodeName, port, factory)
     return d
 
 def execute_exec_ssh(device, commands, creds=None, incremental=None,
@@ -542,8 +544,9 @@ def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
                                timeout, command_interval)
     factory = TriggerTelnetClientFactory(d, action, creds, loginpw, enablepw)
 
-    log.msg('Trying IOS-like scripting to %s' % device, debug=True)
-    reactor.connectTCP(device.nodeName, 23, factory)
+    port = device.nodePort or settings.TELNET_PORT
+    log.msg('Trying IOS-like scripting to %s:%s' % (device, port), debug=True)
+    reactor.connectTCP(device.nodeName, port, factory)
     return d
 
 def execute_async_pty_ssh(device, commands, creds=None, incremental=None,

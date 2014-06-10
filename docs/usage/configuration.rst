@@ -360,6 +360,32 @@ Default::
 
     True
 
+.. setting:: SSH_PORT
+
+SSH_PORT
+~~~~~~~~
+
+.. versionadded:: 1.4.4
+
+Destination TCP port to use for SSH client connections.
+
+Default::
+
+    22
+
+.. setting:: TELNET_PORT
+
+TELNET_PORT
+~~~~~~~~~~~
+
+.. versionadded:: 1.4.4
+
+Destination TCP port to use for Telnet client connections.
+
+Default::
+
+    23
+
 .. setting:: TRIGGER_ENABLEPW
 
 TRIGGER_ENABLEPW

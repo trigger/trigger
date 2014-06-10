@@ -26,7 +26,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '2.2.2'
+__version__ = '2.3'
 
 # Imports
 import copy
@@ -36,7 +36,7 @@ import sys
 import time
 from twisted.python import log
 from trigger.conf import settings
-from trigger.utils import network
+from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
 from UserDict import DictMixin
@@ -182,6 +182,7 @@ class NetDevice(object):
 
         # Hostname
         self.nodeName = None
+        self.nodePort = None
 
         # Hardware Info
         self.deviceType = None
@@ -196,6 +197,7 @@ class NetDevice(object):
         self.assetID = None
         self.budgetCode = None
         self.budgetName = None
+        self.enablePW = None
         self.owningTeam = None
         self.owner = None
         self.onCallName = None
@@ -212,6 +214,9 @@ class NetDevice(object):
         # If `data` has been passed, use it to update our attributes
         if data is not None:
             self._populate_data(data)
+
+        # Set node remote port based on "hostname:port" as nodeName
+        self._set_node_port()
 
         # Cleanup the attributes (strip whitespace, lowercase values, etc.)
         self._cleanup_attributes()
@@ -263,6 +268,10 @@ class NetDevice(object):
         if self.deviceType is not None:
             self.deviceType = self.deviceType.upper()
 
+        # Make sure the password is bytes not unicode
+        if self.enablePW is not None:
+            self.enablePW = str(self.enablePW)
+
         # Cleanup whitespace from owning team
         if self.owningTeam is not None:
             self.owningTeam = self.owningTeam.strip()
@@ -274,6 +283,26 @@ class NetDevice(object):
                 'down': 'NON-PRODUCTION',
             }
             self.adminStatus = STATUS_MAP.get(self.deviceStatus, STATUS_MAP['up'])
+
+    def _set_node_port(self):
+        """Set the freakin' TCP port"""
+        # If nodename is set, try to parse out a nodePort
+        if self.nodeName is not None:
+            nodeport_info = parse_node_port(self.nodeName)
+            nodeName, nodePort = nodeport_info
+
+            # If the nodeName differs, use it to replace the one we parsed
+            if nodeName != self.nodeName:
+                self.nodeName = nodeName
+
+            # If the port isn't set, set it
+            if nodePort is not None:
+                self.nodePort = nodePort
+                return None
+
+        # Make sure the port is an integer if it's not None
+        if self.nodePort is not None and isinstance(self.nodePort, basestring):
+            self.nodePort = int(self.nodePort)
 
     def _populate_deviceType(self):
         """Try to make a guess what the device type is"""
