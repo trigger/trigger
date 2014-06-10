@@ -124,12 +124,15 @@ def requires_enable(proto_obj, data):
                                                      match.group()))
     return match
 
-def send_enable(proto_obj):
+def send_enable(proto_obj, disconnect_on_fail=True):
     """
     Send 'enable' and enable password to device.
 
     :param proto_obj:
         A Protocol object such as an SSHChannel
+
+    :param disconnect_on_fail:
+        If set, will forcefully disconnect on enable password failure
     """
     log.msg('[%s] Enable required, sending enable commands' % proto_obj.device)
 
@@ -145,6 +148,10 @@ def send_enable(proto_obj):
     else:
         log.msg('[%s] Enable password not found, not enabling.' %
                 proto_obj.device)
+        proto_obj.factory.err = exceptions.EnablePasswordFailure(
+            'Enable password not set.')
+        if disconnect_on_fail:
+            proto_obj.loseConnection()
 
 def stop_reactor():
     """Stop the reactor if it's already running."""
@@ -1011,12 +1018,20 @@ class Interactor(protocol.Protocol):
         self.stdio = stdio.StandardIO(c)
         self.device = self.factory.device # Attach the device object
 
+    def loseConnection(self):
+        """
+        Terminate the connection. Link this to the transport method of the same
+        name.
+        """
+        log.msg('[%s] Forcefully closing transport connection' % self.device)
+        self.factory.transport.loseConnection()
+
     def dataReceived(self, data):
         """And write data to the terminal."""
         # Check whether we need to send an enable password.
         if not self.enabled and requires_enable(self, data):
             log.msg('[%s] Interactive PTY requires enable commands' % self.device)
-            send_enable(self)
+            send_enable(self, disconnect_on_fail=False) # Don't exit on fail
 
         # Setup and run the initial commands, and also assume we're enabled
         if data and not self.initialized:

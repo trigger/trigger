@@ -2,16 +2,19 @@
 Changelog
 =========
 
-.. _v1.4.3r2:
+.. _v1.4.4:
 
-1.4.3r2
-=======
+1.4.4
+=====
 
-Enhancements
-------------
-
++ Fix a minor bug causing ``bin/gong`` send the enable password when it
+  shouldn't.
++ Client connectings (such as those made by ``bin/load_acl``, for example)
+  will now raise an error when it is detected that an enable password is
+  required and one is not provided.
 + Added SSH support for confirmation prompts
-+ Added '[confirm]' as one of those prompts
+
+  - Added ``'[confirm]'`` as one of those prompts
 
 .. _v1.4.3:
 
