@@ -1015,10 +1015,12 @@ class Interactor(protocol.Protocol):
         """And write data to the terminal."""
         # Check whether we need to send an enable password.
         if not self.enabled and requires_enable(self, data):
+            log.msg('[%s] Interactive PTY requires enable commands' % self.device)
             send_enable(self)
 
-        # Setup and run the initial commands
+        # Setup and run the initial commands, and also assume we're enabled
         if data and not self.initialized:
+            self.enabled = True # Forcefully set enable
             self.factory._init_commands(protocol=self)
             self.initialized = True
 
