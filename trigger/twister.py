@@ -9,6 +9,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.5.6'
 
 import copy
 import fcntl
@@ -47,6 +48,7 @@ CONTINUE_PROMPTS = [
     'proceed?',
     '(y/n):',
     '[y/n]:',
+    '[confirm]',
     # Very specific to ensure bad things don't happen!
     'overwrite file [startup-config] ?[yes/press any key for no]....'
 ]
@@ -123,12 +125,15 @@ def requires_enable(proto_obj, data):
                                                      match.group()))
     return match
 
-def send_enable(proto_obj):
+def send_enable(proto_obj, disconnect_on_fail=True):
     """
     Send 'enable' and enable password to device.
 
     :param proto_obj:
         A Protocol object such as an SSHChannel
+
+    :param disconnect_on_fail:
+        If set, will forcefully disconnect on enable password failure
     """
     log.msg('[%s] Enable required, sending enable commands' % proto_obj.device)
 
@@ -144,6 +149,10 @@ def send_enable(proto_obj):
     else:
         log.msg('[%s] Enable password not found, not enabling.' %
                 proto_obj.device)
+        proto_obj.factory.err = exceptions.EnablePasswordFailure(
+            'Enable password not set.')
+        if disconnect_on_fail:
+            proto_obj.loseConnection()
 
 def stop_reactor():
     """Stop the reactor if it's already running."""
@@ -208,8 +217,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
 
         factory = TriggerSSHPtyClientFactory(d, action, creds, display_banner,
                                              init_commands, device=device)
-        log.msg('Trying SSH to %s' % device, debug=True)
-        port = 22
+        port = device.nodePort or settings.SSH_PORT
+        log.msg('Trying SSH to %s:%s' % (device, port), debug=True)
 
     # or Telnet?
     elif settings.TELNET_ENABLED:
@@ -217,8 +226,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
                 device)
         factory = TriggerTelnetClientFactory(d, action, creds,
                                              init_commands=init_commands, device=device)
-        log.msg('Trying telnet to %s' % device, debug=True)
-        port = 23
+        port = device.nodePort or settings.TELNET_PORT
+        log.msg('Trying telnet to %s:%s' % (device, port), debug=True)
     else:
         log.msg('[%s] SSH connection test FAILED, telnet fallback disabled' % device)
         return None
@@ -436,8 +445,9 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
                                        command_interval, prompt_pattern,
                                        device, connection_class)
 
-    log.msg('Trying %s SSH to %s' % (method, device), debug=True)
-    reactor.connectTCP(device.nodeName, 22, factory)
+    port = device.nodePort or settings.SSH_PORT
+    log.msg('Trying %s SSH to %s:%s' % (method, device, port), debug=True)
+    reactor.connectTCP(device.nodeName, port, factory)
     return d
 
 def execute_exec_ssh(device, commands, creds=None, incremental=None,
@@ -534,8 +544,9 @@ def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
                                timeout, command_interval)
     factory = TriggerTelnetClientFactory(d, action, creds, loginpw, enablepw)
 
-    log.msg('Trying IOS-like scripting to %s' % device, debug=True)
-    reactor.connectTCP(device.nodeName, 23, factory)
+    port = device.nodePort or settings.TELNET_PORT
+    log.msg('Trying IOS-like scripting to %s:%s' % (device, port), debug=True)
+    reactor.connectTCP(device.nodeName, port, factory)
     return d
 
 def execute_async_pty_ssh(device, commands, creds=None, incremental=None,
@@ -1010,14 +1021,24 @@ class Interactor(protocol.Protocol):
         self.stdio = stdio.StandardIO(c)
         self.device = self.factory.device # Attach the device object
 
+    def loseConnection(self):
+        """
+        Terminate the connection. Link this to the transport method of the same
+        name.
+        """
+        log.msg('[%s] Forcefully closing transport connection' % self.device)
+        self.factory.transport.loseConnection()
+
     def dataReceived(self, data):
         """And write data to the terminal."""
         # Check whether we need to send an enable password.
         if not self.enabled and requires_enable(self, data):
-            send_enable(self)
+            log.msg('[%s] Interactive PTY requires enable commands' % self.device)
+            send_enable(self, disconnect_on_fail=False) # Don't exit on fail
 
-        # Setup and run the initial commands
+        # Setup and run the initial commands, and also assume we're enabled
         if data and not self.initialized:
+            self.enabled = True # Forcefully set enable
             self.factory._init_commands(protocol=self)
             self.initialized = True
 
@@ -1140,12 +1161,23 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             # Do we need to send an enable password?
             if not self.enabled and requires_enable(self, self.data):
                 send_enable(self)
-            return None
+                return None
 
-        log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
+            # Check for confirmation prompts
+            # If the prompt confirms set the index to the matched bytes
+            if is_awaiting_confirmation(self.data):
+                log.msg('[%s] Got confirmation prompt: %r' % \
+                        (self.device, self.data))
+                prompt_idx = self.data.find(bytes)
+            else:
+                return None
+        else:
+            # Or just use the matched regex object...
+            log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
+            prompt_idx = m.start()
 
         # Strip the prompt from the match result
-        result = self.data[:m.start()]
+        result = self.data[:prompt_idx]
         result = result[result.find('\n')+1:]
 
         # Only keep the results once we've sent any startup_commands

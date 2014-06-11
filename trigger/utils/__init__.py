@@ -62,3 +62,17 @@ def strip_juniper_namespace(path, key, value):
         key = key.replace(ns, '')
 
     return JuniperElement(key, value)
+
+NodePort = namedtuple('HostPort', 'nodeName nodePort')
+def parse_node_port(nodeport, delimiter=':'):
+    """
+    Parse a string in format 'hostname' or 'hostname:port'  and return them
+    as a 2-tuple.
+    """
+    node, _, port = nodeport.partition(delimiter)
+    if port.isdigit():
+        port = int(port)
+    else:
+        port = None
+
+    return NodePort(str(node), port)

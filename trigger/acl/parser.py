@@ -35,7 +35,6 @@ from trigger.conf import settings
 
 
 
-
 # Exports
 __all__ = (
     # Constants,

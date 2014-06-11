@@ -160,6 +160,12 @@ TELNET_TIMEOUT  = 60
 # Whether or not to allow telnet fallback
 TELNET_ENABLED = True
 
+# Default ports for SSH
+SSH_PORT = 22
+
+# Default port for Telnet
+TELNET_PORT = 23
+
 # A mapping of vendors to the types of devices for that vendor for which you
 # would like to disable interactive (pty) SSH sessions, such as when using
 # bin/gong.
@@ -270,24 +276,24 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 # Specially-defined, per-vendor prompt patterns. If a vendor isn't defined here,
 # try to use IOSLIKE_PROMPT_PAT or fallback to DEFAULT_PROMPT_PAT.
 PROMPT_PATTERNS = {
-    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#', # ArubaOS 6.1
-    #'aruba': r'\S+(?: \(\S+\))?\s?#\s', # ArubaOS 6.2
+    'aruba': r'\(\S+\)(?: \(\S+\))?\s?#$', # ArubaOS 6.1
+    #'aruba': r'\S+(?: \(\S+\))?\s?#\s$', # ArubaOS 6.2
     'citrix': r'\sDone\n$',
     'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
-    'paloalto': r'\r\n\S+(?:\>|#)\s?',
+    'paloalto': r'\r\n\S+(?:\>|#)\s?$',
 }
 
 # When a pattern is not explicitly defined for a vendor, this is what we'll try
 # next (since most vendors are in fact IOS-like)
-IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#'
-IOSLIKE_ENABLE_PAT = IOSLIKE_PROMPT_PAT[:-1] + '>'
+IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#\s?$'
+IOSLIKE_ENABLE_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?>\s?$'
 
 # Generic prompt to match most vendors. It assumes that you'll be greeted with
 # a "#" prompt.
-DEFAULT_PROMPT_PAT = r'\S+#'
+DEFAULT_PROMPT_PAT = r'\S+#\s?$'
 
 #===============================
 # Bounce Windows/Change Mgmt

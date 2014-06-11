@@ -2,6 +2,39 @@
 Changelog
 =========
 
+.. _v1.4.4:
+
+1.4.4
+=====
+
+Enhancements
+------------
+
++ Client connectings (such as those made by ``bin/load_acl``, for example)
+  will now raise an error when it is detected that an enable password is
+  required and one is not provided.
++ :feature:`181` Added SSH support for confirmation prompts
+
+  - Added ``'[confirm]'`` as one of those prompts
+
+Bug Fixes
+---------
+
++ :bug:`172` Added ability to specify remote port for NetDevice objects
+
+  - Add defaults in settings.py for SSH (SSH_PORT) and Telnet (SSH_TELNET)
+    ports
+  - Added documentation for SSH_PORT and TELNET_PORT in settings.py
+
++ :bug:`180` Fix prompt patterns to include optional space and hard
+  line-endings.
++ :bug:`184` Pin pytz<=2014.2 to fix unit tests for time being (no pun
+  intended).
++ Fix a minor bug causing ``bin/gong`` send the enable password when it
+  shouldn't.
++ Bugfix when passwords are passed in to make sure they are not unicode
++ ``bin/gong`` will now mark a device as enabled when auto-enable is detected.
+
 .. _v1.4.3:
 
 1.4.3
@@ -39,7 +72,7 @@ Bug Fixes
 ---------
 
 + Bugfix in `~trigger.tacacs.Tacacsrc` in which saving a password
-  longer than a certain lengthw could cause the encrypted password hash
+  longer than a certain length could cause the encrypted password hash
   to contain newlines and therefore become unreadable.
 + :bug:`163` Bugfix to copy startup commands from a device when creating
   a channel base, otherwise they will get consumed directly from the

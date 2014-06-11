@@ -158,6 +158,9 @@ class TwisterError(TriggerError):
 class LoginFailure(TwisterError):
     """Raised when authentication to a remote system fails."""
 
+class EnablePasswordFailure(LoginFailure):
+    """Raised when enable password was required but not found."""
+
 class LoginTimeout(LoginFailure):
     """Raised when login to a remote systems times out."""
 
