@@ -515,8 +515,23 @@ class NetDevice(object):
 
     def is_netscreen(self):
         """Am I a NetScreen running ScreenOS?"""
-        return all([self.is_firewall(),
-                    self.vendor in ('juniper', 'netscreen')])
+        # Are we even a firewall?
+        if not self.is_firewall():
+            return False
+
+        # If vendor or make is netscreen, automatically True
+        if self.vendor == 'netscreen' or self.make.lower() == 'netscreen':
+            return True
+
+        # Final check: Are we made by Juniper and an SSG? This requires that
+        # make or model is populated and has the word 'ssg' in it. This still
+        # fails if it's an SSG running JunOS, but this is not an edge case we
+        # can easily support at this time.
+        is_ssg = (
+            (self.model is not None and 'ssg' in self.model.lower()) or
+            (self.make is not None and 'ssg' in self.make.lower())
+        )
+        return self.vendor == 'juniper' and is_ssg
 
     def is_ioslike(self):
         """
