@@ -520,7 +520,8 @@ class NetDevice(object):
             return False
 
         # If vendor or make is netscreen, automatically True
-        if self.vendor == 'netscreen' or self.make.lower() == 'netscreen':
+        make_netscreen = self.make is not None and self.make.lower() == 'netscreen'
+        if self.vendor == 'netscreen' or make_netscreen:
             return True
 
         # Final check: Are we made by Juniper and an SSG? This requires that
