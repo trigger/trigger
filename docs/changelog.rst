@@ -2,6 +2,23 @@
 Changelog
 =========
 
+.. _v1.4.5:
+
+1.4.5
+=====
+
+New Features
+------------
+
++ There is now a MongoDB loader for NetDevices.
+
+Bug Fixes
+---------
+
++ Make sure Juniper SRX devices are not categorized as being NetScreen devices
++ Bugfix in `~trigger.netdevices.NetDevice.is_netscreen()` to account for when
+  ``.make`` is ``None``
+
 .. _v1.4.4:
 
 1.4.4
