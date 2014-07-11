@@ -1,4 +1,4 @@
-from support import *
+from support import Comment, Remark
 from trigger import exceptions
 from trigger.conf import settings
 from grammar import *
@@ -6,7 +6,6 @@ from grammar import *
 #
 # IOS-like ACLs.
 #
-
 
 def make_inverse_mask(prefixlen):
     """
@@ -17,7 +16,6 @@ def make_inverse_mask(prefixlen):
     """
     inverse_bits = 2 ** (32 - prefixlen) - 1
     return TIP(inverse_bits)
-
 
 # Build a table to unwind Cisco's weird inverse netmask.
 # TODO (jathan): These don't actually get sorted properly, but it doesn't seem
@@ -178,7 +176,3 @@ rules.update({
                              'ts?, icomment?'),
     S('ios_acl'):            ('(ios_line, "\n")*, ios_line', handle_ios_acl),
 })
-
-
-
-

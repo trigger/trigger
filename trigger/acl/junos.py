@@ -1,13 +1,11 @@
-from support import *
+from support import MyDict
 from trigger import exceptions
 from trigger.conf import settings
-from grammar import * 
+from grammar import *
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
 Comments = []
-
-
 
 class PolicerGroup(object):
     """Container for Policer objects. Juniper only."""
@@ -148,8 +146,6 @@ class Policer(object):
         output.append('}')
         return output
 
-#LN 284
-
 # Ordering for JunOS match clauses.  AOL style rules:
 # 1. Use the order found in the IP header, except, put protocol at the end
 #    so it is close to the port and tcp-flags.
@@ -191,12 +187,9 @@ address_matches = set(['address', 'destination-address', 'source-address', 'pref
 for match in list(address_matches):
     address_matches.add(match+'-except')
 
-#-LN 323
-#LN 849
 #
 # JunOS parsing
 #
-
 
 class QuotedString(str):
     def __str__(self):
@@ -353,7 +346,6 @@ def handle_junos_term(d):
         d['modifiers'] = Modifiers(d['modifiers'])
     return Term(**d)
 
-
 # Note there cannot be jws (including comments) before or after the "filter"
 # section of the config.  It's wrong to do this anyway, since if you load
 # that config onto the router, the comments will not remain in place on
@@ -430,5 +422,3 @@ rules.update({
     'junos_arg_modifier_kw':    ('"count" / "forwarding-class" / "ipsec-sa" /'
                                     '"loss-priority" / "policer"'),
 })
-
-#-LN 1085

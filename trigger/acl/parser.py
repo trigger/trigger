@@ -32,8 +32,7 @@ from simpleparse.parser import Parser
 import socket
 from trigger import exceptions
 from trigger.conf import settings
- 
-from dicts import *
+  
 from support import *
 from junos import *
 from ios import *

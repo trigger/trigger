@@ -4,7 +4,6 @@ import IPy
 # ignore them.  Yes, this makes the library not thread-safe.
 Comments = []
 
-
 class MyDict(dict):
     """
     A dictionary subclass to collect common behavior changes used in container
@@ -943,4 +942,3 @@ class Matches(MyDict):
                                     s += ' ' + trailer
                                 a.append(s)
         return a
-

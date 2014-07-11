@@ -1,5 +1,8 @@
 from dicts import *
-from support import *
+from support import (TIP, Protocol, do_icmp_type_lookup, do_icmp_code_lookup, 
+                    do_port_lookup, do_dscp_lookup, do_protocol_lookup)
+
+#
 # Here begins the parsing code.  Break this into another file?
 #
 
@@ -74,8 +77,7 @@ rules = {
     'ipaddr':     ('ipchars', TIP),
     'cidr':       ('("inactive:", ws+)?, (ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),
     'macaddr':    'hex, (":", hex)+',
-    'protocol':   (literals(Protocol.name2num) + ' / digits',
-                   do_protocol_lookup),
+    'protocol':   (literals(Protocol.name2num) + ' / digits', do_protocol_lookup),
     'tcp':        ('"tcp" / "6"', Protocol('tcp')),
     'udp':        ('"udp" / "17"', Protocol('udp')),
     'icmp':       ('"icmp" / "1"', Protocol('icmp')),
@@ -85,4 +87,3 @@ rules = {
     'dscp':       (literals(dscp_names) + ' / digits', do_dscp_lookup),
     'root':       'ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?',
 }
-
