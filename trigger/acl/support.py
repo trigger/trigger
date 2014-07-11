@@ -1,5 +1,6 @@
 import IPy
-
+from trigger import exceptions
+from trigger.conf import settings
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
 Comments = []
