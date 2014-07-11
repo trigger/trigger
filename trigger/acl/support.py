@@ -895,6 +895,47 @@ def check_range(values, min, max):
                 raise exceptions.BadMatchArgRange('match arg %s must be between %d and %d'
                                                   % (str(value), min, max))
 
+# Ordering for JunOS match clauses.  AOL style rules:
+# 1. Use the order found in the IP header, except, put protocol at the end
+#    so it is close to the port and tcp-flags.
+# 2. General before specific.
+# 3. Source before destination.
+junos_match_ordering_list = (
+    'source-mac-address',
+    'destination-mac-address',
+    'packet-length',
+    'fragment-flags',
+    'fragment-offset',
+    'first-fragment',
+    'is-fragment',
+    'prefix-list',
+    'address',
+    'source-prefix-list',
+    'source-address',
+    'destination-prefix-list',
+    'destination-address',
+    'ip-options',
+    'protocol',
+    # TCP/UDP
+    'tcp-flags',
+    'port',
+    'source-port',
+    'destination-port',
+    # ICMP
+    'icmp-code',
+    'icmp-type' )
+
+junos_match_order = {}
+
+for i, match in enumerate(junos_match_ordering_list):
+    junos_match_order[match] = i*2
+    junos_match_order[match+'-except'] = i*2 + 1
+
+# These types of Juniper matches go in braces, not square brackets.
+address_matches = set(['address', 'destination-address', 'source-address', 'prefix-list', 'source-prefix-list', 'destination-prefix-list'])
+for match in list(address_matches):
+    address_matches.add(match+'-except')
+
 class Matches(MyDict):
     """
     Container class for Term.match object used for membership tests on
