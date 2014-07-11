@@ -1,4 +1,4 @@
-from support import Comment, Remark
+from support import Comment, Remark, Matches
 from trigger import exceptions
 from trigger.conf import settings
 from grammar import *
