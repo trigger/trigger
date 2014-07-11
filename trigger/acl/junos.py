@@ -1,6 +1,7 @@
 from trigger import exceptions
 from trigger.conf import settings
 from grammar import *
+from support import junos_match_ordering_list, junos_match_order, address_matches 
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
