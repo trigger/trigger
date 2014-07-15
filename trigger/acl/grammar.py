@@ -1,52 +1,27 @@
-from dicts import *
-from support import (TIP, Protocol, do_icmp_type_lookup, do_icmp_code_lookup, 
-                    do_port_lookup, do_dscp_lookup, do_protocol_lookup, MyDict)
+# -*- coding: utf-8 -*-
 
-#
-# Here begins the parsing code.  Break this into another file?
-#
+"""
+This code is originally from parser.py. This is the basic grammar and rules
+from which the other specific grammars are built. This file is not meant to by used by itself.
+Imported into the specific grammar files.
 
-class Modifiers(MyDict):
-    """
-    Container class for modifiers. These are only supported by JunOS format
-    and are ignored by all others.
-    """
-    def __setitem__(self, key, value):
-        # Handle argument-less modifiers first.
-        if key in ('log', 'sample', 'syslog', 'port-mirror'):
-            if value not in (None, True):
-                raise exceptions.ActionError('"%s" action takes no argument' % key)
-            super(Modifiers, self).__setitem__(key, None)
-            return
-        # Everything below requires an argument.
-        if value is None:
-            raise exceptions.ActionError('"%s" action requires an argument' %
-                                         key)
-        if key == 'count':
-            # JunOS 7.3 docs say this cannot contain underscores and that
-            # it must be 24 characters or less, but this appears to be false.
-            # Doc bug filed 2006-02-09, doc-sw/68420.
-            check_name(value, exceptions.BadCounterName, max_len=255)
-        elif key == 'forwarding-class':
-            check_name(value, exceptions.BadForwardingClassName)
-        elif key == 'ipsec-sa':
-            check_name(value, exceptions.BadIPSecSAName)
-        elif key == 'loss-priority':
-            if value not in ('low', 'high'):
-                raise exceptions.ActionError('"loss-priority" must be "low" or "high"')
-        elif key == 'policer':
-            check_name(value, exceptions.BadPolicerName)
-        else:
-            raise exceptions.ActionError('invalid action: ' + str(key))
-        super(Modifiers, self).__setitem__(key, value)
+#Constants
+    errs
+    rules
+#Functions
+    S
+    literals
+    update
+    dict_sum
+"""
 
-    def output_junos(self):
-        """
-        Output the modifiers to the only supported format!
-        """
-        keys = self.keys()
-        keys.sort()
-        return [k + (self[k] and ' '+str(self[k]) or '') + ';' for k in keys]
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
+__editor__ = 'Joseph Malone'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
+
+from support import *
 
 # Each production can be any of:
 # 1. string
@@ -57,6 +32,7 @@ class Modifiers(MyDict):
 # 3. (string, callable_object) -> object(arg)
 
 subtagged = set()
+
 def S(prod):
     """
     Wrap your grammar token in this to call your helper function with a list
@@ -114,7 +90,6 @@ rules = {
     'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
     'hex':        '[0-9a-fA-F]+',
     'ipchars':    '[0-9a-fA-F:.]+',
-
     'ipv4':       ('digits, (".", digits)*', TIP),
     'ipaddr':     ('ipchars', TIP),
     'cidr':       ('("inactive:", ws+)?, (ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),

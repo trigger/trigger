@@ -1,21 +1,36 @@
-from support import *
-from trigger import exceptions
-from trigger.conf import settings
+# -*- coding: utf-8 -*-
+
+"""
+This code is originally from parser.py. This file is not meant to by used by itself.
+This is for IOS like ACLs
+
+#Constants
+    unary_port_operators
+    rules - this is really from the grammar.py
+# Classes
+    'Remark',
+# Functions
+    'handle_ios_match',
+    'handle_ios_acl',
+"""
+
+#Copied metadata from parser.py
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
+__editor__ = 'Joseph Malone'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
+
 from grammar import *
 
-#
-# IOS-like ACLs.
-#
-
-def make_inverse_mask(prefixlen):
+class Remark(Comment):
     """
-    Return an IP object of the inverse mask of the CIDR prefix.
-
-    :param prefixlen:
-        CIDR prefix
+    IOS extended ACL "remark" lines automatically become comments when
+    converting to other formats of ACL.
     """
-    inverse_bits = 2 ** (32 - prefixlen) - 1
-    return TIP(inverse_bits)
+    def output_ios_named(self):
+        """Output the Remark to IOS named format."""
+        return ' remark ' + self.data
 
 # Build a table to unwind Cisco's weird inverse netmask.
 # TODO (jathan): These don't actually get sorted properly, but it doesn't seem

@@ -18,6 +18,13 @@ invalid ACL and accept *every* valid ACL.
 [<Term: None>]
 """
 
+"""
+7/15/2014
+This file was split into smaller modules: dicts, grammar, junos, ios, and support.
+These modules are then included back into parser.py.
+This makes the code more readable. 
+"""
+
 __author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathanism@aol.com'
@@ -77,17 +84,6 @@ Comments = []
 
 class ACLProcessor(DispatchProcessor):
     pass
-
-def strip_comments(tags):
-    if tags is None:
-        return
-    noncomments = []
-    for tag in tags:
-        if isinstance(tag, Comment):
-            Comments.append(tag)
-        else:
-            noncomments.append(tag)
-    return noncomments
 
 def default_processor(self, (tag, start, stop, subtags), buffer):
     if not subtags:
