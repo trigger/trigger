@@ -10,7 +10,6 @@ This is for IOS like ACLs
 # Classes
     'Remark',
 # Functions
-    'make_inverse_mask',
     'handle_ios_match',
     'handle_ios_acl',
 """
@@ -32,16 +31,6 @@ class Remark(Comment):
     def output_ios_named(self):
         """Output the Remark to IOS named format."""
         return ' remark ' + self.data
-
-def make_inverse_mask(prefixlen):
-    """
-    Return an IP object of the inverse mask of the CIDR prefix.
-
-    :param prefixlen:
-        CIDR prefix
-    """
-    inverse_bits = 2 ** (32 - prefixlen) - 1
-    return TIP(inverse_bits)
 
 # Build a table to unwind Cisco's weird inverse netmask.
 # TODO (jathan): These don't actually get sorted properly, but it doesn't seem
