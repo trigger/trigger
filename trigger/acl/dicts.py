@@ -1,5 +1,69 @@
+# -*- coding: utf-8 -*-
 
-# Proceed at your own risk. It's kind of a mess from here on out!
+"""
+This code is originally from parser.py. It contains all the simple data definitions in
+form of dictionaries and lists and such. This file is not meant to by used by itself.
+Imported into support.py.
+
+Variables defined:
+
+  adrsbk
+  dscp_names
+  fragment_flag_names
+  icmp_reject_codes
+  icmp_types
+  icmp_codes
+  ip_option_names
+  ios_icmp_messages
+  ios_icmp_names
+  junos_match_ordering_list
+  junos_match_order
+  address_matches
+  ports
+  precedence_names
+  tcp_flag_names
+  tcp_flag_specials
+  tcp_flag_rev
+"""
+
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
+__editor__ = 'Joseph Malone'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
+
+adrsbk = { 'svc':{'group':{}, 'book':{}}, 'addr':{'group':{},'book':{}} }
+
+dscp_names = {
+    'be': 0,
+    'cs0': 0,
+    'cs1': 8,
+    'af11': 10,
+    'af12': 12,
+    'af13': 14,
+    'cs2': 16,
+    'af21': 18,
+    'af22': 20,
+    'af23': 22,
+    'cs3': 24,
+    'af31': 26,
+    'af32': 28,
+    'af33': 30,
+    'cs4': 32,
+    'af41': 34,
+    'af42': 36,
+    'af43': 38,
+    'cs5': 40,
+    'ef': 46,
+    'cs6': 48,
+    'cs7': 56
+}
+
+fragment_flag_names = {
+    'dont-fragment': 0x4000,
+    'more-fragments': 0x2000,
+    'reserved': 0x8000 }
+
 icmp_reject_codes = (
     'administratively-prohibited',
     'bad-host-tos',
@@ -12,6 +76,7 @@ icmp_reject_codes = (
     'network-unreachable',
     'port-unreachable',
     'precedence-cutoff',
+
     'precedence-violation',
     'protocol-unreachable',
     'source-host-isolated',
@@ -64,6 +129,13 @@ icmp_codes = {
     'source-host-isolated': 8,
     'source-route-failed': 5}
 
+ip_option_names = {
+    'loose-source-route': 131,
+    'record-route': 7,
+    'router-alert': 148,
+    'strict-source-route': 137,
+    'timestamp': 68 }
+
 # Cisco "ICMP message type names and ICMP message type and code names" from
 # IOS 12.0 documentation.  Verified these against actual practice of 12.1(21),
 # since documentation is incomplete.  For example, is 'echo' code 8, type 0
@@ -113,7 +185,50 @@ ios_icmp_messages = {
     'traceroute': (30,),
     'ttl-exceeded': (11, 0),
     'unreachable': (3,) }
+
 ios_icmp_names = dict([(v, k) for k, v in ios_icmp_messages.iteritems()])
+
+# Ordering for JunOS match clauses.  AOL style rules:
+# 1. Use the order found in the IP header, except, put protocol at the end
+#    so it is close to the port and tcp-flags.
+# 2. General before specific.
+# 3. Source before destination.
+junos_match_ordering_list = (
+    'source-mac-address',
+    'destination-mac-address',
+    'packet-length',
+    'fragment-flags',
+    'fragment-offset',
+    'first-fragment',
+    'is-fragment',
+    'prefix-list',
+    'address',
+    'source-prefix-list',
+    'source-address',
+    'destination-prefix-list',
+    'destination-address',
+    'ip-options',
+    'protocol',
+    # TCP/UDP
+    'tcp-flags',
+    'port',
+    'source-port',
+    'destination-port',
+    # ICMP
+    'icmp-code',
+    'icmp-type' )
+
+junos_match_order = {}
+
+for i, match in enumerate(junos_match_ordering_list):
+    junos_match_order[match] = i*2
+    junos_match_order[match+'-except'] = i*2 + 1
+
+# These types of Juniper matches go in braces, not square brackets.
+address_matches = set(['address', 'destination-address', 'source-address', 'prefix-list', 'source-prefix-list', 'destination-prefix-list'])
+
+for match in list(address_matches):
+    address_matches.add(match+'-except')
 
 # Not all of these are in /etc/services even as of RHEL 4; for example, it
 # has 'syslog' only in UDP, and 'dns' as 'domain'.  Also, Cisco (according
@@ -203,31 +318,6 @@ ports = {
     'zephyr-hm': 2104        # JunOS
 }
 
-dscp_names = {
-    'be': 0,
-    'cs0': 0,
-    'cs1': 8,
-    'af11': 10,
-    'af12': 12,
-    'af13': 14,
-    'cs2': 16,
-    'af21': 18,
-    'af22': 20,
-    'af23': 22,
-    'cs3': 24,
-    'af31': 26,
-    'af32': 28,
-    'af33': 30,
-    'cs4': 32,
-    'af41': 34,
-    'af42': 36,
-    'af43': 38,
-    'cs5': 40,
-    'ef': 46,
-    'cs6': 48,
-    'cs7': 56
-}
-
 precedence_names = {
     'critical-ecp': 0xa0,        # JunOS
     'critical': 0xa0,                # IOS
@@ -241,18 +331,6 @@ precedence_names = {
     'priority': 0x20,
     'routine': 0x00 }
 
-ip_option_names = {
-    'loose-source-route': 131,
-    'record-route': 7,
-    'router-alert': 148,
-    'strict-source-route': 137,
-    'timestamp': 68 }
-
-fragment_flag_names = {
-    'dont-fragment': 0x4000,
-    'more-fragments': 0x2000,
-    'reserved': 0x8000 }
-
 tcp_flag_names = {
     'ack': 0x10,
     'fin': 0x01,
@@ -264,7 +342,5 @@ tcp_flag_names = {
 tcp_flag_specials = {
     'tcp-established': '"ack | rst"',
     'tcp-initial': '"syn & !ack"' }
+
 tcp_flag_rev = dict([(v, k) for k, v in tcp_flag_specials.iteritems()])
-
-adrsbk = { 'svc':{'group':{}, 'book':{}}, 'addr':{'group':{},'book':{}} }
-

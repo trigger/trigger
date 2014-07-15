@@ -1,10 +1,37 @@
-from dicts import *
-from support import (TIP, Protocol, do_icmp_type_lookup, do_icmp_code_lookup, 
-                    do_port_lookup, do_dscp_lookup, do_protocol_lookup, MyDict)
+# -*- coding: utf-8 -*-
 
-#
-# Here begins the parsing code.  Break this into another file?
-#
+"""
+This code is originally from parser.py. This is the basic grammar and rules
+from which the other specific grammars are built. This file is not meant to by used by itself.
+Imported into the specific grammar files.
+
+#Constants
+    errs
+    rules
+#Classes
+    Modifiers
+#Functions
+    S
+    literals
+    update
+    dict_sum
+"""
+
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
+__editor__ = 'Joseph Malone'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
+
+from support import *
+
+# Each production can be any of:
+# 1. string
+#    if no subtags: -> matched text
+#    if single subtag: -> value of that
+#    if list: -> list of the value of each tag
+# 2. (string, object) -> object
+# 3. (string, callable_object) -> object(arg)
 
 class Modifiers(MyDict):
     """
@@ -48,15 +75,8 @@ class Modifiers(MyDict):
         keys.sort()
         return [k + (self[k] and ' '+str(self[k]) or '') + ';' for k in keys]
 
-# Each production can be any of:
-# 1. string
-#    if no subtags: -> matched text
-#    if single subtag: -> value of that
-#    if list: -> list of the value of each tag
-# 2. (string, object) -> object
-# 3. (string, callable_object) -> object(arg)
-
 subtagged = set()
+
 def S(prod):
     """
     Wrap your grammar token in this to call your helper function with a list
@@ -114,7 +134,6 @@ rules = {
     'anychar':    "[ a-zA-Z0-9.$:()&,/'_-]",
     'hex':        '[0-9a-fA-F]+',
     'ipchars':    '[0-9a-fA-F:.]+',
-
     'ipv4':       ('digits, (".", digits)*', TIP),
     'ipaddr':     ('ipchars', TIP),
     'cidr':       ('("inactive:", ws+)?, (ipaddr / ipv4), "/", digits, (ws+, "except")?', TIP),

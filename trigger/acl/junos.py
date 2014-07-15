@@ -1,36 +1,39 @@
-from trigger import exceptions
-from trigger.conf import settings
+# -*- coding: utf-8 -*-
+
+"""
+This code is originally from parser.py. This file is not meant to by used by itself.
+This is for JunOS like ACLs
+
+#Constants
+    junos_match_types
+    rules - this is really from the grammar.py
+# Classes
+    Policer
+    PolicerGroup
+    QuotedString
+# Functions
+    braced_list
+    keyword_match
+    range_match
+    handle_junos_acl
+    handle_junos_family_acl
+    handle_junos_policers
+    handle_junos_term
+    juniper_multiline_comments
+"""
+
+#Copied metadata from parser.py
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
+__editor__ = 'Joseph Malone'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
+
 from grammar import *
-from support import junos_match_ordering_list, junos_match_order, address_matches 
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
 Comments = []
-
-class PolicerGroup(object):
-    """Container for Policer objects. Juniper only."""
-    def __init__(self, format=None):
-        self.policers = []
-        self.format   = format
-        global Comments
-        self.comments = Comments
-        Comments = []
-
-    def output(self, format=None, *largs, **kwargs):
-        if format is None:
-            format = self.format
-        return getattr(self,'output_' + format)(*largs, **kwargs)
-
-    def output_junos(self, replace=False):
-        output = []
-        for ent in self.policers:
-            for x in ent.output():
-                output.append(x)
-
-        if replace:
-            return ['firewall {', 'replace:'] + ['    '+x for x in output] + ['}']
-        else:
-            return output
 
 class Policer(object):
     """
@@ -104,52 +107,34 @@ class Policer(object):
         output.append('}')
         return output
 
-#
-# JunOS parsing
-#
+class PolicerGroup(object):
+    """Container for Policer objects. Juniper only."""
+    def __init__(self, format=None):
+        self.policers = []
+        self.format   = format
+        global Comments
+        self.comments = Comments
+        Comments = []
+
+    def output(self, format=None, *largs, **kwargs):
+        if format is None:
+            format = self.format
+        return getattr(self,'output_' + format)(*largs, **kwargs)
+
+    def output_junos(self, replace=False):
+        output = []
+        for ent in self.policers:
+            for x in ent.output():
+                output.append(x)
+
+        if replace:
+            return ['firewall {', 'replace:'] + ['    '+x for x in output] + ['}']
+        else:
+            return output
 
 class QuotedString(str):
     def __str__(self):
         return '"' + self + '"'
-
-def juniper_multiline_comments():
-    """
-    Return appropriate multi-line comment grammar for Juniper ACLs.
-
-    This depends on ``settings.ALLOW_JUNIPER_MULTLIINE_COMMENTS``.
-    """
-    single = '-("*/" / "\n")*' # single-line comments only
-    multi = '-"*/"*' # syntactically correct multi-line support
-    if settings.ALLOW_JUNIPER_MULTILINE_COMMENTS:
-        return multi
-    return single
-
-rules.update({
-    'jword':                    'double_quoted / word',
-    'double_quoted':            ('"\\"", -[\\"]+, "\\""',
-                                 lambda x: QuotedString(x[1:-1])),
-
-    #'>jws<':                    '(ws / jcomment)+',
-    #S('jcomment'):              ('"/*", ws?, jcomment_body, ws?, "*/"',
-    #                            lambda x: Comment(x[0])),
-    #'jcomment_body':            '-(ws?, "*/")*',
-
-    '>jws<':                    '(ws / jcomment)+',
-    S('jcomment'):              ('jslashbang_comment',
-                                 lambda x: Comment(x[0])),
-    '<comment_start>':          '"/*"',
-    '<comment_stop>':           '"*/"',
-    '>jslashbang_comment<':     'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
-
-    'jcomment_body':            juniper_multiline_comments(),
-
-    # Errors on missing ';', ignores multiple ;; and normalizes to one.
-    '<jsemi>':                  'jws?, [;]+!%s' % errs['semicolon'],
-
-    'fragment_flag':            literals(fragment_flag_names),
-    'ip_option':                "digits / " + literals(ip_option_names),
-    'tcp_flag':                 literals(tcp_flag_names),
-})
 
 junos_match_types = []
 
@@ -262,6 +247,46 @@ def handle_junos_term(d):
     if 'modifiers' in d:
         d['modifiers'] = Modifiers(d['modifiers'])
     return Term(**d)
+
+#For multiline comments
+def juniper_multiline_comments():
+    """
+    Return appropriate multi-line comment grammar for Juniper ACLs.
+
+    This depends on ``settings.ALLOW_JUNIPER_MULTLIINE_COMMENTS``.
+    """
+    single = '-("*/" / "\n")*' # single-line comments only
+    multi = '-"*/"*' # syntactically correct multi-line support
+    if settings.ALLOW_JUNIPER_MULTILINE_COMMENTS:
+        return multi
+    return single
+
+rules.update({
+    'jword':                    'double_quoted / word',
+    'double_quoted':            ('"\\"", -[\\"]+, "\\""',
+                                 lambda x: QuotedString(x[1:-1])),
+
+    #'>jws<':                    '(ws / jcomment)+',
+    #S('jcomment'):              ('"/*", ws?, jcomment_body, ws?, "*/"',
+    #                            lambda x: Comment(x[0])),
+    #'jcomment_body':            '-(ws?, "*/")*',
+
+    '>jws<':                    '(ws / jcomment)+',
+    S('jcomment'):              ('jslashbang_comment',
+                                 lambda x: Comment(x[0])),
+    '<comment_start>':          '"/*"',
+    '<comment_stop>':           '"*/"',
+    '>jslashbang_comment<':     'comment_start, jcomment_body, !%s, comment_stop' % errs['comm_stop'],
+
+    'jcomment_body':            juniper_multiline_comments(),
+
+    # Errors on missing ';', ignores multiple ;; and normalizes to one.
+    '<jsemi>':                  'jws?, [;]+!%s' % errs['semicolon'],
+
+    'fragment_flag':            literals(fragment_flag_names),
+    'ip_option':                "digits / " + literals(ip_option_names),
+    'tcp_flag':                 literals(tcp_flag_names),
+})
 
 # Note there cannot be jws (including comments) before or after the "filter"
 # section of the config.  It's wrong to do this anyway, since if you load

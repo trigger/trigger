@@ -22,7 +22,6 @@ support the various modules for parsing. This file is not meant to by used by it
     'MyDict',
     'Protocol',
     'RangeList',
-    'Remark',
     'Term',
     'TermList',
     'TIP',
@@ -280,6 +279,8 @@ class RangeList(object):
             return 0
         else:
             return 0
+# Classes
+    'Remark',
 
     def __contains__(self, obj):
         """
@@ -485,15 +486,6 @@ class Comment(object):
     def output_iosxr(self):
         """Output the Comment to IOS XR format."""
         return self.output_ios()
-
-class Remark(Comment):
-    """
-    IOS extended ACL "remark" lines automatically become comments when
-    converting to other formats of ACL.
-    """
-    def output_ios_named(self):
-        """Output the Remark to IOS named format."""
-        return ' remark ' + self.data
 
 class ACL(object):
     """
@@ -943,48 +935,6 @@ class Protocol(object):
     def __getattr__(self, name):
         '''Allow arithmetic operations to work.'''
         return getattr(self.value, name)
-
-
-# Ordering for JunOS match clauses.  AOL style rules:
-# 1. Use the order found in the IP header, except, put protocol at the end
-#    so it is close to the port and tcp-flags.
-# 2. General before specific.
-# 3. Source before destination.
-junos_match_ordering_list = (
-    'source-mac-address',
-    'destination-mac-address',
-    'packet-length',
-    'fragment-flags',
-    'fragment-offset',
-    'first-fragment',
-    'is-fragment',
-    'prefix-list',
-    'address',
-    'source-prefix-list',
-    'source-address',
-    'destination-prefix-list',
-    'destination-address',
-    'ip-options',
-    'protocol',
-    # TCP/UDP
-    'tcp-flags',
-    'port',
-    'source-port',
-    'destination-port',
-    # ICMP
-    'icmp-code',
-    'icmp-type' )
-
-junos_match_order = {}
-
-for i, match in enumerate(junos_match_ordering_list):
-    junos_match_order[match] = i*2
-    junos_match_order[match+'-except'] = i*2 + 1
-
-# These types of Juniper matches go in braces, not square brackets.
-address_matches = set(['address', 'destination-address', 'source-address', 'prefix-list', 'source-prefix-list', 'destination-prefix-list'])
-for match in list(address_matches):
-    address_matches.add(match+'-except')
 
 class Matches(MyDict):
     """
