@@ -1,34 +1,48 @@
+# -*- coding: utf-8 -*-
+
+"""
+This code is originally from parser.py. It consists of a lot of classes which
+support the various modules for parsing. This file is not meant to by used by itself.
+
+# Functions
+    'check_name',
+    'check_range',
+    'do_dscp_lookup',
+    'do_icmp_type_lookup',
+    'do_icmp_code_lookup',
+    'do_ip_option_lookup',
+    'do_lookup',
+    'do_port_lookup',
+    'do_protocol_lookup',
+    'strip_comments',
+# Classes
+    'ACL',
+    'Comment',
+    'Matches',
+    'MyDict',
+    'Protocol',
+    'RangeList',
+    'Remark',
+    'Term',
+    'TermList',
+    'TIP',
+"""
+
+#Copied metadata from parser.py
+__author__ = 'Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields'
+__editor__ = 'Joseph Malone'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathanism@aol.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com'
+
 import IPy
 from trigger import exceptions
 from trigger.conf import settings
+from dicts import *
+
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
 Comments = []
-
-class MyDict(dict):
-    """
-    A dictionary subclass to collect common behavior changes used in container
-    classes for the ACL components: Modifiers, Matches.
-    """
-    def __init__(self, d=None, **kwargs):
-        if d:
-            if not hasattr(d, 'keys'):
-                d = dict(d)
-            self.update(d)
-        if kwargs:
-            self.update(kwargs)
-
-    def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, str(self))
-
-    def __str__(self):
-        return ', '.join(['%s %s' % (k, v) for k, v in self.iteritems()])
-
-    def update(self, d):
-        '''Force this to go through __setitem__.'''
-        for k, v in d.iteritems():
-            self[k] = v
-
 
 def check_name(name, exc, max_len=255, extra_chars=' -_.'):
     """
@@ -54,6 +68,89 @@ def check_name(name, exc, max_len=255, extra_chars=' -_.'):
                 or (char >= 'A' and char <= 'Z')
                 or (char >= '0' and char <= '9')):
             raise exc('Invalid character "%s" in name "%s"' % (char, name))
+
+def check_range(values, min, max):
+    for value in values:
+        try:
+            for subvalue in value:
+                check_range([subvalue], min, max)
+        except TypeError:
+            if not min <= value <= max:
+                raise exceptions.BadMatchArgRange('match arg %s must be between %d and %d'
+                                                  % (str(value), min, max))
+
+# Having this take the dictionary itself instead of a function is very slow.
+def do_lookup(lookup_func, arg):
+    if isinstance(arg, tuple):
+        return tuple([do_lookup(lookup_func, elt) for elt in arg])
+
+    try:
+        return int(arg)
+    except TypeError:
+        return arg
+    except ValueError:
+        pass
+    # Ok, look it up by name.
+    try:
+        return lookup_func(arg)
+    except KeyError:
+        raise exceptions.UnknownMatchArg('match argument "%s" not known' % arg)
+
+def do_protocol_lookup(arg):
+    if isinstance(arg, tuple):
+        return (Protocol(arg[0]), Protocol(arg[1]))
+    else:
+        return Protocol(arg)
+
+def do_port_lookup(arg):
+    return do_lookup(lambda x: ports[x], arg)
+
+def do_icmp_type_lookup(arg):
+    return do_lookup(lambda x: icmp_types[x], arg)
+
+def do_icmp_code_lookup(arg):
+    return do_lookup(lambda x: icmp_codes[x], arg)
+
+def do_ip_option_lookup(arg):
+    return do_lookup(lambda x: ip_option_names[x], arg)
+
+def do_dscp_lookup(arg):
+    return do_lookup(lambda x: dscp_names[x], arg)
+
+def strip_comments(tags):
+    if tags is None:
+        return
+    noncomments = []
+    for tag in tags:
+        if isinstance(tag, Comment):
+            Comments.append(tag)
+        else:
+            noncomments.append(tag)
+    return noncomments
+
+class MyDict(dict):
+    """
+    A dictionary subclass to collect common behavior changes used in container
+    classes for the ACL components: Modifiers, Matches.
+    """
+    def __init__(self, d=None, **kwargs):
+        if d:
+            if not hasattr(d, 'keys'):
+                d = dict(d)
+            self.update(d)
+        if kwargs:
+            self.update(kwargs)
+
+    def __repr__(self):
+        return '<%s: %s>' % (self.__class__.__name__, str(self))
+
+    def __str__(self):
+        return ', '.join(['%s %s' % (k, v) for k, v in self.iteritems()])
+
+    def update(self, d):
+        '''Force this to go through __setitem__.'''
+        for k, v in d.iteritems():
+            self[k] = v
 
 class RangeList(object):
     """
@@ -847,53 +944,6 @@ class Protocol(object):
         '''Allow arithmetic operations to work.'''
         return getattr(self.value, name)
 
-# Having this take the dictionary itself instead of a function is very slow.
-def do_lookup(lookup_func, arg):
-    if isinstance(arg, tuple):
-        return tuple([do_lookup(lookup_func, elt) for elt in arg])
-
-    try:
-        return int(arg)
-    except TypeError:
-        return arg
-    except ValueError:
-        pass
-    # Ok, look it up by name.
-    try:
-        return lookup_func(arg)
-    except KeyError:
-        raise exceptions.UnknownMatchArg('match argument "%s" not known' % arg)
-
-def do_protocol_lookup(arg):
-    if isinstance(arg, tuple):
-        return (Protocol(arg[0]), Protocol(arg[1]))
-    else:
-        return Protocol(arg)
-
-def do_port_lookup(arg):
-    return do_lookup(lambda x: ports[x], arg)
-
-def do_icmp_type_lookup(arg):
-    return do_lookup(lambda x: icmp_types[x], arg)
-
-def do_icmp_code_lookup(arg):
-    return do_lookup(lambda x: icmp_codes[x], arg)
-
-def do_ip_option_lookup(arg):
-    return do_lookup(lambda x: ip_option_names[x], arg)
-
-def do_dscp_lookup(arg):
-    return do_lookup(lambda x: dscp_names[x], arg)
-
-def check_range(values, min, max):
-    for value in values:
-        try:
-            for subvalue in value:
-                check_range([subvalue], min, max)
-        except TypeError:
-            if not min <= value <= max:
-                raise exceptions.BadMatchArgRange('match arg %s must be between %d and %d'
-                                                  % (str(value), min, max))
 
 # Ordering for JunOS match clauses.  AOL style rules:
 # 1. Use the order found in the IP header, except, put protocol at the end
