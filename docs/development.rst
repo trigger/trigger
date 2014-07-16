@@ -72,10 +72,10 @@ contributors.
   create prerelease versions for testing -- or simply released as-is.
 * While we try our best not to commit broken code or change APIs without
   warning, as with many other open-source projects we can only have a guarantee
-  of stability in the release branches. Only follow ``master`` (or, even worse,
+  of stability in the release branches. Only follow ``develop`` (or, even worse,
   feature branches!) if you're willing to deal with a little pain.
 * Bugfixes are to be performed on release branches and then merged into
-  ``master`` so that ``master`` is always up-to-date (or nearly so; while it's
+  ``develop`` so that ``develop`` is always up-to-date (or nearly so; while it's
   not mandatory to merge after every bugfix, doing so at least daily is a good
   idea.)
 
