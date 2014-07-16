@@ -12,9 +12,9 @@ Contributing
 
 There are several ways to get involved with Trigger:
 
-* **Use Trigger and send us feedback!** This is the best and easiest to improve
-  the project -- let us know how you currently use Trigger and how you want to
-  use it. (Please search the `ticket tracker
+* **Use Trigger and send us feedback!** This is the best and easiest way to
+  improve the project -- let us know how you currently use Trigger and how you
+  want to use it. (Please search the `ticket tracker
   <https://github.com/trigger/trigger/issues>`_ first, though, when submitting
   feature ideas.)
 * **Report bugs.** If you use Trigger and think you've found a bug, check on
