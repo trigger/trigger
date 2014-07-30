@@ -225,12 +225,45 @@ the environment variable ``TRIGGER_SETTINGS`` to the desired location. If you
 go this route, you must make sure all Trigger-based tools have this set prior
 to any imports!
 
+Copy metadata file
+------------------
+
+Trigger's `~trigger.netdevices` module expects to find the device metadata file
+in :setting:`PREFIX`. This file provides Trigger with information about your
+devices and is at the core of Trigger’s device interaction. Anything that
+communicates with devices relies on the metadata stored within this file.
+
+For the purpose of basic config, we'll just use the sample ``netdevices.json`` file::
+
+    sudo cp conf/netdevices.json /etc/trigger/netdevices.json
+
+For more information on how Trigger uses the netdevices file please see
+:doc:`usage/netdevices`.
+
+Copy shared secret file
+-----------------------
+
+By default, Trigger's `~trigger.tacacsrc` module expects to find ``.tackf`` in
+the :setting:`PREFIX`. This is the location of the file that contains the
+passphrase used for the symettric encryption of user credentials within the
+``.tacacsrc`` file. For starters, just use the sample file provided in the
+Trigger distribution::
+
+    sudo cp tests/data/tackf /etc/trigger/.tackf
+
+If you're using a non-standard location, be sure to update the
+:setting:`TACACSRC_KEYFILE` configuration variable within ``settings.py`` with the
+location of ``.tackf``!
+
+For more information on how Trigger uses encryption to protect credentials
+please see :doc:`usage/tacacsrc`.
+
 Copy autoacl.py
 ---------------
 
 Trigger's `~trigger.acl.autoacl` module expects to find ``autoacl.py`` in the
 :setting:`PREFIX`. This is used to customize the automatic ACL associations for
-network devices.  
+network devices.
 
 ::
 
@@ -240,16 +273,20 @@ If you're using a non-standard location, be sure to update the
 :setting:`AUTOACL_FILE` configuration variable within ``settings.py`` with the
 location of ``autoacl.py``!
 
-Copy metadata file
-------------------
+Copy bounce.py
+--------------
 
-Trigger's `~trigger.netdevices` module expects to find the device metadata file in
-:setting:`PREFIX`. This is used to customize the automatic ACL associations for
-network devices.  
+Trigger's `~trigger.changemgmt.bounce` module expects to find ``bounce.py`` in
+the :setting:`PREFIX`. This module controls how change management (aka
+maintenance or "bounce") windows get auto-applied to network devices.
 
-For the purpose of basic config, we'll just use the sample ``netdevices.xml`` file::
+::
 
-    sudo cp conf/netdevices.xml /etc/trigger/netdevices.xml
+    sudo cp conf/bounce.py /etc/trigger/bounce.py
+
+If you're using a non-standard location, be sure to update the
+:setting:`BOUNCE_FILE` configuration variable within ``settings.py`` with the
+location of ``bounce.py``!
 
 Verifying Functionality
 =======================
