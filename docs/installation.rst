@@ -207,9 +207,11 @@ That's it! Now you're ready to configure Trigger.
 Basic Configuration
 ===================
 
-For these steps you'll need to download the `Trigger tarball
-<https://github.com/trigger/trigger/tarball/master>`_, expand it, and then navigate
-to the root directory (the same directory in which you'll find ``setup.py``).
+.. note::
+    For these steps you'll need to download the `Trigger tarball
+    <https://github.com/trigger/trigger/tarball/develop>`_, expand it, and then
+    navigate to the root directory (the same directory in which you'll find
+    ``setup.py``).
 
 Copy settings.py
 ----------------
@@ -251,6 +253,12 @@ For the purpose of basic config, we'll just use the sample ``netdevices.xml`` fi
 
 Verifying Functionality
 =======================
+
+.. note::
+    For these steps you'll still need to be at the root directory of the
+    `Trigger tarball <https://github.com/trigger/trigger/tarball/develop>`_. If
+    you haven't already, download it,  expand it, and then navigate to the root
+    directory (the same directory in which you'll find ``setup.py``).
 
 Once the dependencies are installed, fire up your trusty Python interpreter in
 interactive mode and try doing stuff.
