@@ -38,6 +38,9 @@ nosetests.xml
 
 # Twisted stuff
 dropin.cache
+twistd.log
+twistd.pid
+trigger-xmlrpc.log
 
 # Mac OS X index files
 .DS_Store
