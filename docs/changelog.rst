@@ -10,7 +10,11 @@ Changelog
 New Features
 ------------
 
-+ There is now a MongoDB loader for NetDevices.
++ There is now a MongoDB loader for `~trigger.netdevices.NetDevices`.
++ :feature:`140` There is a new `~trigger.cmds.ReactorlessCommando` that allows
+  for running multiple `~trigger.cmds.Commando` instances in the same program
+  under the same reactor by preventing the instances from doing it themselves.
++ :feature:`182` ``bin/run_cmds`` will now log all activity to a logfile in ``/tmp``
 
 Bug Fixes
 ---------
@@ -18,6 +22,7 @@ Bug Fixes
 + Make sure Juniper SRX devices are not categorized as being NetScreen devices
 + Bugfix in `~trigger.netdevices.NetDevice.is_netscreen()` to account for when
   ``.make`` is ``None``
++ :bug:`
 
 .. _v1.4.4:
 
