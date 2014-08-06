@@ -165,6 +165,7 @@ class JuniperSRX(object):
 
         if success and nextchar == len(string):
             assert len(children) == 1
+            print children
             return children[0]
         else:
             line = string[:nextchar].count('\n') + 1
