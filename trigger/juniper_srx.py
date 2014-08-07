@@ -70,7 +70,7 @@ class JuniperSRX(object):
             'udp':       ('"udp" / "17"', Protocol('udp')),
             'icmp':      ('"icmp" / "1"', Protocol('icmp')),
             #root is used as "production" for the parser. This is the beginning of the parsing tree
-            S('root'):     'jws?, "security", jws?, "{", ws, policies, ws, "}"',
+            S('root'):     'jws?, security', #/ zones'),
             #
             # Junos general grammar stuff (copied from /trigger/acl/junos.py)
             #
@@ -96,7 +96,8 @@ class JuniperSRX(object):
             
             #jws? DEMANDS A space!!!
 #             S('policies'):                  '"policies", jws?, "{", jws?, from_to_zone_section+, jws?, "}"',
-
+            
+            S('security'):                  '"security", jws?,' + braced_list('policies / zones'), #
             S('policies'):                  '"policies", jws?,' + braced_list('from_to_zone_section+'),
             S('from_to_zone_section'):      '"from-zone", jws?, from_zone, jws?, "to-zone", jws?, to_zone, jws?,' + braced_list('policy+'),
             'from_zone':                    'jword',
@@ -110,6 +111,20 @@ class JuniperSRX(object):
             S('then'):                      '"then", jws?, "{", jws?, action, jws?, ";", jws?, log*, jws?, "}"',
             'action':                       'jword',
             'log':                          '"log", jws?, "{", jws?, "session-init;", jws?, "session-close;", jws?, "}"',
+            #Zones !!
+            S('zones'):                     '"zones", jws?,' + braced_list('security_zone_section+'),
+            S('security_zone_section'):     '"security-zone", jws?, security_zone, jws?,' + braced_list('address_book / host_inbound_traffic / interfaces'),
+            'security_zone':                'jword',
+            S('address_book'):              '"address-book", jws?,' + braced_list('address_book_address+ / address_set+'),
+            'address_book_address':         '"address", jws?, ipv4/address_obj, jws?, jword, ";"', #fix jword
+            S('address_set'):               '"address-set", jws?, address_obj, jws?,' + braced_list('address_set_address+'),
+            'address_set_address':          '"address", jws?, ipv4, ";"',
+            S('host_inbound_traffic'):      '"host-inbound-traffic", jws?,' + braced_list('system_services+'),
+            S('system_services'):           '"system-services", jws?,' + braced_list('system_services_item+'),
+            'system_services_item':         'jword, ";"',
+            S('interfaces'):                '"interfaces", jws?,' + braced_list('interfaces_item+'),
+            'interfaces_item':              'jword, ";"',
+
 
 
          
@@ -165,7 +180,7 @@ class JuniperSRX(object):
 
         if success and nextchar == len(string):
             assert len(children) == 1
-            print children
+            #print children
             return children[0]
         else:
             line = string[:nextchar].count('\n') + 1
