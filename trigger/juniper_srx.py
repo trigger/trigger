@@ -6,13 +6,11 @@ Broken apart from acl.parser because the approaches are vastly different from ea
 other.
 
 CURRENT STATUS:
- * Need to remove, refactor more of the existing NetScreen functions.
- * Need to complete restructuring of classes (associate address books with their
-   parent policies, maybe other tasks)
+ * Work in progress
  * (see /shared/ for more notes)
 """
 
-__author__ = 'Jathan McCollum, Mark Thomas'
+__author__ = 'Jathan McCollum, Mark Thomas, Joseph Malone'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2007-2012, AOL Inc.'
@@ -28,13 +26,12 @@ from trigger import exceptions
 
 
 # TODO (jathan): Implement __all__
-__all__ = ()
+__all__ = ('JuniperSRX', 'SRXPolicy', 'SRXZone')
 
 def braced_list(arg):
     '''Returned braced output.  Will alert if comment is malformed.'''
     #return '("{", jws?, (%s, jws?)*, "}")' % arg
     return '("{", jws?, (%s, jws?)*, "}"!%s)' % (arg, errs['comm_start'])
-
 
 # Classes
 class JuniperSRX(object):
@@ -42,10 +39,7 @@ class JuniperSRX(object):
     Parses and generates Juniper SRX firewall policy.
     """
     def __init__(self):
-        #self.applications   = SRXApplications()
-        self.interfaces     = []
-        self.address_groups = []
-        self.service_groups = []
+        self.zones          = []
         self.policies       = []
         self.grammar        = []
 
@@ -86,7 +80,6 @@ class JuniperSRX(object):
             'jcomment_body':            juniper_multiline_comments(),
             # Errors on missing ';', ignores multiple ;; and normalizes to one.
             '<jsemi>':                  'jws?, [;]+!%s' % errs['semicolon'],
-
             'fragment_flag':            literals(fragment_flag_names),
             'ip_option':                "digits / " + literals(ip_option_names),
             'tcp_flag':                 literals(tcp_flag_names),
@@ -95,8 +88,7 @@ class JuniperSRX(object):
             # TODO: come up with this grammar
             
             #jws? DEMANDS A space!!!
-#             S('policies'):                  '"policies", jws?, "{", jws?, from_to_zone_section+, jws?, "}"',
-            
+           
             S('security'):                  '"security", jws?,' + braced_list('policies / zones'), #
             S('policies'):                  '"policies", jws?,' + braced_list('from_to_zone_section+'),
             S('from_to_zone_section'):      '"from-zone", jws?, from_zone, jws?, "to-zone", jws?, to_zone, jws?,' + braced_list('policy+'),
@@ -113,7 +105,7 @@ class JuniperSRX(object):
             'log':                          '"log", jws?, "{", jws?, "session-init;", jws?, "session-close;", jws?, "}"',
             #Zones !!
             S('zones'):                     '"zones", jws?,' + braced_list('security_zone_section+'),
-            S('security_zone_section'):     '"security-zone", jws?, security_zone, jws?,' + braced_list('address_book / host_inbound_traffic / interfaces'),
+            S('security_zone_section'):     '"security-zone", jws?, security_zone, jws?,' + braced_list('address_book+ / host_inbound_traffic / interfaces'),
             'security_zone':                'jword',
             S('address_book'):              '"address-book", jws?,' + braced_list('address_book_address+ / address_set+'),
             'address_book_address':         '"address", jws?, ipv4/address_obj, jws?, jword, ";"', #fix jword
@@ -124,15 +116,6 @@ class JuniperSRX(object):
             'system_services_item':         'jword, ";"',
             S('interfaces'):                '"interfaces", jws?,' + braced_list('interfaces_item+'),
             'interfaces_item':              'jword, ";"',
-
-
-
-         
-
-#acl = parser.parse("filter 123 { term T1 { from { destination-address { 10.20.30.40/32; } protocol tcp; destination-port 80; } then { accept; } } }")
-
-
-
         }
 
         for production, rule, in rules.iteritems():
@@ -159,10 +142,8 @@ class JuniperSRX(object):
             return multi
         return single
 
-
     def parse(self, data):
         """Parse policy into list of NSPolicy objects."""
-        #print self.grammar
         parser = ACLParser(self.grammar)
         try:
             string = data.read()
@@ -171,16 +152,8 @@ class JuniperSRX(object):
 
         success, children, nextchar = parser.parse(string)
 
-        #print success
-        #print children
-        #print nextchar
-        #print string
-        #print data
-        #print len(string)
-
         if success and nextchar == len(string):
             assert len(children) == 1
-            #print children
             return children[0]
         else:
             line = string[:nextchar].count('\n') + 1
@@ -188,29 +161,65 @@ class JuniperSRX(object):
             print "Error at: ", string[nextchar:]
             raise exceptions.ParseError('Could not match syntax. Please report as a bug.', line, column)
 
-    def netmask2cidr(self, iptuple):
-        """Converts dotted-quad netmask to cidr notation"""
-        if len(iptuple) == 2:
-            addr, mask = iptuple
-            ipstr = addr.strNormal() + '/' + mask.strNormal()
-            return TIP(ipstr)
-        return TIP(iptuple[0].strNormal())
-
-
     def output(self):
-        ret = []
-        for ent in self.address_book.output():
-            ret.append(ent)
-        for ent in self.service_book.output():
-            ret.append(ent)
-        for ent in self.policies:
-            for line in ent.output():
-                ret.append(line)
-        return ret
+        pass
 
-    def output_terms(self):
-        ret = []
-        for ent in self.policies:
-            for term in ent.output_terms():
-                ret.append(term)
-        return ret
+def rip_list(parsed_list=[]):
+    """
+    Take in a list that has been parsed and rip it apart into its appropriate objects
+    Return a JuniperSRX object
+    """
+    data_list = parsed_list[:]
+    from_to_zones = data_list[0]
+
+    jSRX = JuniperSRX()
+    
+    for zone in from_to_zones:
+        from_zone = zone[0]
+        zone.remove(from_zone)
+        to_zone = zone[0]
+        zone.remove(to_zone)
+        for policy_list in zone:
+            policy = SRXPolicy(policy_list, from_zone, to_zone)
+            jSRX.policies.append(policy)
+
+    zones = data_list[1]   
+    for zone_list in zones:
+       zone = SRXZone(zone_list) 
+       jSRX.zones.append(zone)
+    return jSRX
+
+class SRXPolicy(JuniperSRX):
+    """
+    Container for individual policy definitions. This is strictly based on the grammar for SRX.
+    All the positions in the lists are hardcorded. If the grammar gets changed, change this, too.
+    """
+    #TODO: Design this better. It works, but may break in many cases
+    def __init__(self, parsed_list = [], from_zone="", to_zone=""):
+        self.store_list = parsed_list[:]
+        self.from_zone = from_zone
+        self.to_zone = to_zone
+        self.name = self.store_list[0]
+        self.match_source_address = self.store_list[1][0]
+        self.match_destination_address = self.store_list[1][1]
+        if len(self.store_list[2][0]) > 2:
+            self.match_application = self.store_list[1][2]
+        self.then_action = self.store_list[2][0]
+        if len(self.store_list[2][0]) > 1:
+            self.then_log = self.store_list[2][1]
+
+class SRXZone(JuniperSRX):
+    """
+    Container for individual zone definitions. This is strictly based on the grammar for SRX.
+    All the positions in the lists are hardcorded. If the grammar gets changed, change this, too.
+    """
+    #TODO: Design this better. It works, but may break in many cases
+    def __init__(self, parsed_list = []):
+        self.store_list = parsed_list[:]
+        self.name = self.store_list[0]
+        #TODO: create little address_book objects to hold pairs for the most part
+        self.address_book = self.store_list[1]    
+        if len(self.store_list) > 2:
+            self.host_inbound_traffic = self.store_list[2]
+        if len(self.store_list) > 3:
+            self.interfaces = self.store_list[3]           
