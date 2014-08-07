@@ -96,6 +96,10 @@ figuring this out, obviously).
 This section will be more of a log format, with more recent progress updates
 towards the top.
 
+### 2014-08-07 ###
+Joseph has made major progress in implementing the SRX parser. He also filed a
+pull request with the main project for the refactoring he did earlier.
+
 ### 2014-08-05 ###
 The past several workdays have been spent working on a series of band-aid
 python programs that automate adding large numbers of IP addresses into
