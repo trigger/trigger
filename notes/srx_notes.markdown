@@ -96,6 +96,19 @@ figuring this out, obviously).
 This section will be more of a log format, with more recent progress updates
 towards the top.
 
+### 2014-08-20 ###
+Joseph's last day is tomorrow. He has been making sure that all the current code is pushed 
+to the repos and that the informational documents are uploaded as well. The current state of
+the srx_grammar is that it needs work. **There is the basic grammar and basic object implementation.
+These need to be flushed out. juniper_srx.py contains the work done.**
+
+### 2014-08-18 ###
+Joseph spent the past week editing the the bulk IP adder for SSG and SRX devices.  
+
+### 2014-08-11 ###
+Joseph has implemented a basic grammar to parse the SRX ACL. After being parsed, the ACL is
+put into objects. He has implemented several of these objects.
+
 ### 2014-08-07 ###
 Joseph has made major progress in implementing the SRX parser. He also filed a
 pull request with the main project for the refactoring he did earlier.
