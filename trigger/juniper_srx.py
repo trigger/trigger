@@ -8,6 +8,19 @@ other.
 CURRENT STATUS:
  * Work in progress
  * (see /shared/ for more notes)
+
+Example data:
+    https://gist.github.com/josephm28/2d2f62e664f5b97c0939
+
+TODO:
+    * Flush out the grammar and the object creation.
+    * Give all the SRX objects __repr__ so that instead of something like "<trigger.juniper_srx.SRXPolicy at 0x106f4ea50>"
+      it shows up like "<SRXPolicy: 3, from_zone: untrust, to_zone: trust>". Concise, yet descriptive.
+    * Get everything contained within the primary object. e.g. when you instantiate JuniperSRX() and then call parse(),
+      the object itself is updated, instead of creating a new object.
+    * Integrate this with the rest of Trigger
+    * Make it so that you can convert from other ACLs to SRX and vice versa.
+
 """
 
 __author__ = 'Jathan McCollum, Mark Thomas, Joseph Malone'
