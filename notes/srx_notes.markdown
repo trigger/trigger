@@ -43,6 +43,10 @@ will be stripped.
  NetScreen has a "top-level" address book that associates IP objects with names.
  In SRX, each zone has its own address-book specifying these associations.
 
+### SRX Note ###
+Delete an SRX security-zone:
+   delete security zones security-zone detrust
+
 ### SRX Grammar Documentation / Exploration ###
 I've had quite some time to familiarize myself with the old junos.py stuff. It's
 helped to point me in the right direction as far as actually making the SRX
