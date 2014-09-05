@@ -2,6 +2,38 @@
 Changelog
 =========
 
+.. _v1.4.5:
+
+1.4.5
+=====
+
+New Features
+------------
+
++ There is now a MongoDB loader for `~trigger.netdevices.NetDevices`.
++ :feature:`140` There is a new `~trigger.cmds.ReactorlessCommando` that allows
+  for running multiple `~trigger.cmds.Commando` instances in the same program
+  under the same reactor by preventing the instances from doing it themselves.
++ :feature:`182` ``bin/run_cmds`` will now log all activity to a logfile in ``/tmp``
++ :feature:`195` The `~trigger.acl` library has been refactored to be more
+  modular, breaking out vendor-specific grammar details into their own modules
+  (`~trigger.acl.ios`, `~trigger.acl.junos`).
+
+Documentation
+-------------
+
++ Improved the documentation for :doc:`usage/tacacsrc`.
++ The :doc:`installation` page now includes instructions for using
+  ``bounce.py`` to configure maintenance windows.
+
+Bug Fixes
+---------
+
++ Make sure Juniper SRX devices are not categorized as being NetScreen devices
++ Bugfix in `~trigger.netdevices.NetDevice.is_netscreen()` to account for when
+  ``.make`` is ``None``
++ Minor bugfix in ``start_xmlrpc.sh`` example script
+
 .. _v1.4.4:
 
 1.4.4

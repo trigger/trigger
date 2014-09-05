@@ -2,6 +2,8 @@
 Managing Credentials with .tacacsrc
 ===================================
 
+.. _tacacsrc:
+
 About
 =====
 
@@ -16,21 +18,24 @@ How it works
 The `~trigger.tacacsrc.Tacacsrc` class is the core interface for encrypting
 credentials when they are stored, and decrypting the credentials when they are
 retrieved. A unique ``.tacacsrc`` file is stored in each user's home directory,
-and is forcefully set to be readable only (permissions: ``0400``) by the owning user.
+and is forcefully set to be readable only (permissions: ``0600``) by the owning user.
 
 There are two implementations, the first of which is the only one that is
 officially supported at this time, and which is properly documented.
 
-1. Shared key encryption
+1. Symmetric key encryption
 
    This method is the default. It relies on a shared key to be stored in a file
    somewhere on the system. The location of this file can be customized in
    ``settings.py`` using :setting:`TACACSRC_KEYFILE`.
 
-   This method has a glaring security flaw in that anyone who discerns the
-   location of the keyfile can see the passphrase used for the encryption. This
-   risk is mitigated somewhat by ensuring that each user's ``.tacacsrc`` has
-   strict file permissions.
+   The default location for this file is ``/etc/trigger/.tackf``. If this file
+   is not found, Trigger will complain loudly when it tries to access it.
+
+   This method requires that the key file be world-readable, so that the key
+   can be used to encrypt and decrypt credentials. The risk of exploitation is
+   reduced by ensuring that each user's ``.tacacsrc`` has strict file
+   permissions and that only the user encrypting the file can decrypt it.
 
 2. GPG encryption
 
@@ -115,10 +120,20 @@ This function will return ``True`` upon a successful update to ``.tacacsrc``.
 Using GPG encryption
 ====================
 
-**EXPERIMENTAL! PROCEED AT YOUR OWN RISK!! FEEDBACK WELCOME!!**
+.. warning::
+   While this functionality has been tested, it is still considered to be
+   **experimental** because it requires so many manual steps! If you do wish to
+   proceed, please consider providing us feedback on how we can streamline this
+   integration!
 
-Before you proceed, you must make sure to have gpg2 and gpg-agent installed on
-your system.
+Before you proceed, you must make sure to have ``gnupg2`` and ``gnupg-agent``
+installed on your system.
+
+.. note::
+   For now, it is still required that you provide a file at the location
+   specified by :setting:`TACACSRC_KEYFILE` in ``settings.py``. This file is
+   not used, but is still loaded so must be present.
+
 
 Enabling GPG
 ------------
@@ -128,6 +143,11 @@ In ``settings.py`` set :setting:`USE_GPG_AUTH` to ``True``.
 Generating your GPG key
 -----------------------
 
+.. note::
+   Generating a key can take a long time because it requires the generation of
+   a large amount of random numbers. We recommend you install ``rng-tools`` to
+   help improve the speed and entropy of generating cryptographic keys.
+
 Execute::
 
     gpg2 --gen-key
@@ -135,13 +155,13 @@ Execute::
 When asked fill these in with the values appropriate for you::
 
     Real name: jathan
-    Email address: jathan.mccollum@teamaol.com
+    Email address: jathan@gmail.com
     Comment: Jathan McCollum
 
 It will confirm::
 
     You selected this USER-ID:
-        "jathan (Jathan McCollum) <jathan@marduk.itsec.aol.com>"
+        "jathan (Jathan McCollum) <jathan@host.example.com>
 
 Here is a snippet to try and make this part of the core API, but is not yet
 implemented::

@@ -39,8 +39,8 @@ contents would be the config you want loaded to that specific device.
 __author__ = 'Jathan McCollum, Mike Biancianello'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '3.0'
+__copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013-2014, Salesforce.com'
+__version__ = '3.1'
 
 
 # Imports
@@ -48,6 +48,8 @@ from optparse import OptionParser
 import os
 import re
 import sys
+import tempfile
+from twisted.python import log
 
 
 # Globals
@@ -74,8 +76,13 @@ def main(action_class=None):
         sys.exit("You must specify a docommand action class.")
 
     if os.getenv('DEBUG'):
-        from twisted.python import log
         log.startLogging(sys.stdout, setStdout=False)
+
+    # Always log all the activity to a file!
+    logfile = tempfile.mktemp() + '_run_cmds'
+    log.startLogging(open(logfile, 'a'), setStdout=False)
+    log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'],
+        os.getuid(), ' '.join(sys.argv)))
 
     # Description comes from a class attribute on the action_class
     opts, args = parse_args(sys.argv, description=action_class.description)
