@@ -767,6 +767,18 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """Verify host key, but don't actually verify. Awesome."""
         return defer.succeed(True)
 
+    def connectionMade(self):
+        """Once the connection is up, set the ciphers but don't do anything else!"""
+        self.currentEncryptions = transport.SSHCiphers('none', 'none', 'none', 'none')
+        self.currentEncryptions.setKeys('', '', '', '', '', '')
+
+    def dataReceived(self, data):
+        """Convert data into packets"""
+        prev_gotVersion = self.gotVersion
+        transport.SSHClientTransport.dataReceived(self, data)
+        if self.gotVersion and not prev_gotVersion:
+            transport.SSHClientTransport.connectionMade(self)
+
     def connectionSecure(self):
         """Once we're secure, authenticate."""
         ua = TriggerSSHUserAuth(self.factory.creds.username,
