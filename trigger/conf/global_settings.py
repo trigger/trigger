@@ -425,7 +425,7 @@ BULK_MAX_HITS_DEFAULT = 1
 def _stage_acls(acls, log=None, sanitize_acl=False):
     """stage the new ACL files for load_acl"""
 
-    import os
+    import os, shutil
     from trigger.acl import parse as acl_parse
 
     acl_contents = []
@@ -438,9 +438,7 @@ def _stage_acls(acls, log=None, sanitize_acl=False):
         source = FIREWALL_DIR + '/%s' % acl
         dest = TFTPROOT_DIR + '/%s.%s' % (acl, nonce)
 
-        try:
-            os.stat(dest)
-        except OSError:
+        if not os.path.exists(dest):
             try:
                 shutil.copyfile(source, dest)
             except:
