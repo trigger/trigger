@@ -2,6 +2,17 @@
 Changelog
 =========
 
+.. _v1.4.6:
+
+1.4.6
+=====
+
+Bug Fixes
+---------
+
++ :bug:`198` Fix hanging SSH connections to Cisco equipment due to client
+  sending key exchange messages before remote device.
+
 .. _v1.4.5:
 
 1.4.5
