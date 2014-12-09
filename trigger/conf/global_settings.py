@@ -24,7 +24,13 @@ USE_GPG_AUTH = False
 USER_HOME = os.getenv('HOME')
 TACACSRC = os.getenv('TACACSRC', os.path.join(USER_HOME, '.tacacsrc'))
 TACACSRC_KEYFILE = os.getenv('TACACSRC_KEYFILE', os.path.join(PREFIX, '.tackf'))
-TACACSRC_PASSPHRASE = '' # NYI
+
+# If set, use the TACACSRC_PASSPHRASE, otherwise default to TACACSRC_KEYFILE
+TACACSRC_USE_PASSPHRASE = False
+
+# Use this passphrase to encrypt credentials.CHANGE THIS IN YOUR FILE BEFORE
+# USING THIS IN YOUR ENVIRONMENT.
+TACACSRC_PASSPHRASE = ''
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc

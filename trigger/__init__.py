@@ -1,4 +1,4 @@
-__version__ = (1, 4, 6)
+__version__ = (1, 4, 7)
 
 full_version = '.'.join(map(str, __version__[0:3])) + ''.join(__version__[3:])
 release = full_version

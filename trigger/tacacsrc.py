@@ -273,7 +273,15 @@ class Tacacsrc(object):
                 self.creds[settings.DEFAULT_REALM] = prompt_credentials(device='tacacsrc')
                 self.write()
         else:
-            self.key = self._get_key_old(settings.TACACSRC_KEYFILE)
+            # If passphrase is enable, use that
+            if settings.TACACSRC_USE_PASSPHRASE:
+                passphrase = settings.TACACSRC_PASSPHRASE
+                import hashlib
+                key = hashlib.md5(passphrase).hexdigest()[:24] # 24 bytes
+                self.key = key
+            # Otherwise read from keyfile.
+            else:
+                self.key = self._get_key_old(settings.TACACSRC_KEYFILE)
 
             if not self.generate_new:
                 self.rawdata = self._read_file_old()
@@ -293,10 +301,17 @@ class Tacacsrc(object):
         '''Of course, encrypting something in the filesystem using a key
         in the filesystem really doesn't buy much.  This is best referred
         to as obfuscation of the .tacacsrc.'''
-        with open(keyfile, 'r') as kf:
-            key = kf.readline()
-        if key[-1].isspace():
-            key = key[:-1]
+        try:
+            with open(keyfile, 'r') as kf:
+                key = kf.readline().strip()
+        except IOError as err:
+            msg = 'Keyfile at %s not found. Please create it.' % keyfile
+            raise CouldNotParse(msg)
+
+        if not key:
+            msg = 'Keyfile at %s must contain a passphrase.' % keyfile
+            raise CouldNotParse(msg)
+
         key += self._get_key_nonce_old()
         key = _perl_pack_Hstar_old((key + (' ' * 48))[:48])
         assert(len(key) == 24)

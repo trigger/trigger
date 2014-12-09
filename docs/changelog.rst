@@ -2,6 +2,24 @@
 Changelog
 =========
 
+.. _v1.4.7:
+
+1.4.7
+=====
+
+New Features
+------------
+
++ The .tacacsrc passphrase may now be stored in ``settings.py``.
+
+Bug Fixes
+---------
+
++ :bug:`144` Bugfix to detect missing or empty .tacacsrc keyfile.
+
+Bug Fixes
+---------
+
 .. _v1.4.6:
 
 1.4.6
