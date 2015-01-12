@@ -679,7 +679,10 @@ class NetACLInfo(Commando):
     def to_cisco(self, dev, commands=None, extra=None):
         """This is the "show me all interface information" command we pass to
         IOS devices"""
-        return ['show configuration | include ^(interface | ip address | ip access-group | description|!)']
+        if dev.is_cisco_asa():
+            return ['show running-config | include ^(interface | ip address | nameif | description |access-group|!)']
+        else:
+            return ['show configuration | include ^(interface | ip address | ip access-group | description|!)']
 
     def to_arista(self, dev, commands=None, extra=None):
         """
