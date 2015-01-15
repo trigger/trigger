@@ -22,7 +22,7 @@ Example::
 
 """
 
-__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields, Codey Oxley'
+__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
