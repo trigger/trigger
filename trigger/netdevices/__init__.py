@@ -574,6 +574,11 @@ class NetDevice(object):
         may be used between Cisco's ASA and IOS platforms. Cisco ASA is still
         very IOS-like, but there are still several gotcha's between the
         platforms.
+
+        Will return True if vendor is Cisco and platform is Firewall. This
+        is to allow operability if using .csv NetDevices and pretty safe to
+        assume considering ASA (was PIX) are Cisco's flagship(if not only)
+        Firewalls.
         """
         if hasattr(self, '_is_cisco_asa'):
             return self._is_cisco_asa
@@ -584,6 +589,8 @@ class NetDevice(object):
 
         if self.make is not None:
             self._is_cisco_asa = 'asa' in self.make.lower()
+
+        self._is_cisco_asa = self.vendor == 'cisco' and self.is_firewall()
 
         return self._is_cisco_asa
 
