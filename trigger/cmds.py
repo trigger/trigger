@@ -295,6 +295,9 @@ class Commando(object):
             from_juniper
             to_foundry
 
+        and defaults to ``self.from_base`` and ``self.to_base`` methods if
+        customized methods not found.
+
         :param device:
             A `~trigger.netdevices.NetDevice` object
 
@@ -360,13 +363,16 @@ class Commando(object):
 
     def parse(self, results, device):
         """
-        Parse output from a device.
+        Parse output from a device. Calls to ``self._lookup_method`` to find
+        specific ``from`` method.
 
         Define a 'from_{vendor_name}' method to customize the behavior for each
         platform.
 
         :param results:
             The results of the commands executed on the device
+        :type results:
+            list
 
         :param device:
             A `~trigger.netdevices.NetDevice` object
@@ -715,7 +721,12 @@ class NetACLInfo(Commando):
         alld = data[0]
 
         log.msg('Parsing interface data (%d bytes)' % len(alld))
-        self.config[device] = _parse_ios_interfaces(alld, skip_disabled=self.skip_disabled)
+        if not device.is_cisco_asa():
+            self.config[device] = _parse_ios_interfaces(alld, skip_disabled=self.skip_disabled)
+        else:
+            self.config[device] = {
+                    "unsupported": "ASA ACL parsing unsupported this release"
+                    }
 
         return True
 
