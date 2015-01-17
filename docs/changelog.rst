@@ -11,10 +11,10 @@ New Features
 ------------
 
 + Cisco ASA firewall now supported as a NetDevice. To begin using, ensure
-  that 'FIREWALL' is added in your settings.py as a supported cisco platform.o
+  that ``FIREWALL`` is added in your settings.py as a supported cisco platform.o
 
-  For it to enable properly, either the netdevice attribute enablePW needs
-  to be set or the environment variable TRIGGER_ENABLEPW does. For now, I
+  For it to enable properly, either the netdevice attribute ``enablePW`` needs
+  to be set or the environment variable ``TRIGGER_ENABLEPW`` does. For now, I
   typically accomplish this via::
 
       >>> from trigger.conf import settings
