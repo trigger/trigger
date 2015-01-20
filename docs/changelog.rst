@@ -2,6 +2,33 @@
 Changelog
 =========
 
+.. _v1.4.8:
+
+1.4.8
+=====
+
+New Features
+------------
+
++ Cisco ASA firewall now supported as a NetDevice. To begin using, ensure
+  that ``FIREWALL`` is added in your settings.py as a supported cisco platform.o
+
+  For it to enable properly, either the netdevice attribute ``enablePW`` needs
+  to be set or the environment variable ``TRIGGER_ENABLEPW`` does. For now, I
+  typically accomplish this via::
+
+      >>> from trigger.conf import settings
+      >>> from trigger import tacacsrc
+      >>> settings.DEFAULT_REALM = 'MyRealm'
+      >>> os.environ['TRIGGER_ENABLEPW'] = \
+              tacacsrc.get_device_password(settings.DEFAULT_REALM).password
+      >>> # Then the rest of my program
+
+  ACL parsing for ASA is not implemented yet. NetACLInfo will generate the
+  proper command, but will currently just add a message warning about future
+  support
+
+
 .. _v1.4.7:
 
 1.4.7

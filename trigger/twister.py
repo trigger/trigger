@@ -1043,6 +1043,12 @@ class Interactor(protocol.Protocol):
 
     def dataReceived(self, data):
         """And write data to the terminal."""
+        # -- Left during debugging. Enable on ASA not fixed here yet -- #
+        # log.msg('[%s] DATA: %r' % (self.device, data))
+        # if requires_enable(self, data):
+        #     log.msg('[%s] Device Requires Enable: %s' % (self.device, requires_enable(self, data)))
+        #     log.msg('[%s] Is Device Currently Enabled: %s' % (self.device, self.enabled))
+
         # Check whether we need to send an enable password.
         if not self.enabled and requires_enable(self, data):
             log.msg('[%s] Interactive PTY requires enable commands' % self.device)
