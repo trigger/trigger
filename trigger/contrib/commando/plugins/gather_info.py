@@ -2,7 +2,9 @@
 Plugin for gathering info from devices. Only Cisco currently (including ASA).
 
 Will try to parse as much info from commands and place as key-values under
-host results. Currently only being done via ``show version`` output.
+host results. Currently only being done via ``show version`` output. Will
+also run all commands listed under ``to_cisco()`` depending on the platform
+and can be accessed via each host's ``commands_ran`` dictionary under results.
 
 Use-case is likely limited for well-established networks, but for
 environments (MSP) where one might be handed list of IP addresses with
