@@ -31,6 +31,22 @@ quickly. For example::
     >>>     print("[{}] {}: {}".format(host,
                                        value['hostname'],
                                        value['serial_no']))
+
+GatherInfo.results will look something like::
+
+    {"host1": {
+                "hostname": "host1",
+                "serial_no": "xxxyyy",
+                # ..other parsed attrs..
+                "commands_ran": {
+                                  "show version": "[OUTPUT]",
+                                  "show run": "[OUTPUT]",
+                                  # ..and so on..
+                                }
+              }
+    }
+
+
 """
 
 import re
