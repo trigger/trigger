@@ -343,6 +343,13 @@ class NetDevice(object):
             else:
                 return ['skip-page-display']
 
+        def disable_paging_cisco():
+            """Cisco ASA commands differ from IOS"""
+            if self.is_cisco_asa():
+                return ['terminal pager 0']
+            else:
+                return default
+
         # Commands used to disable paging.
         default = ['terminal length 0']
         paging_map = {
@@ -350,7 +357,7 @@ class NetDevice(object):
             'arista': default,
             'aruba': ['no paging'], # v6.2.x this is not necessary
             'brocade': disable_paging_brocade(), # See comments above
-            'cisco': default,
+            'cisco': disable_paging_cisco(),
             'dell': ['terminal datadump'],
             'f5': ['modify cli preference pager disabled'],
             'force10': default,
@@ -558,6 +565,35 @@ class NetDevice(object):
         if self.make is not None:
             self._is_brocade_vdx = 'vdx' in self.make.lower()
         return self._is_brocade_vdx
+
+    def is_cisco_asa(self):
+        """
+        Am I a Cisco ASA Firewall?
+
+        This is used to account for slight differences in the commands that
+        may be used between Cisco's ASA and IOS platforms. Cisco ASA is still
+        very IOS-like, but there are still several gotcha's between the
+        platforms.
+
+        Will return True if vendor is Cisco and platform is Firewall. This
+        is to allow operability if using .csv NetDevices and pretty safe to
+        assume considering ASA (was PIX) are Cisco's flagship(if not only)
+        Firewalls.
+        """
+        if hasattr(self, '_is_cisco_asa'):
+            return self._is_cisco_asa
+
+        if not (self.vendor == 'cisco' and self.is_firewall()):
+            self._is_cisco_asa = False
+            return False
+
+        if self.make is not None:
+            self._is_cisco_asa = 'asa' in self.make.lower()
+
+        self._is_cisco_asa = self.vendor == 'cisco' and self.is_firewall()
+
+        return self._is_cisco_asa
+
 
     def _ssh_enabled(self, disabled_mapping):
         """Check whether vendor/type is enabled against the given mapping."""

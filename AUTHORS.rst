@@ -18,3 +18,4 @@ lifetime:
 - `Mike Biancaniello <https://github.com/chepazzo>`_
 - `Murat Ezbiderli <https://github.com/mezbiderli>`_
 - `Johannes Erdfelt <https://github.com/jerdfelt>`_
+- `Codey Oxley <https://github.com/coxley>`_
