@@ -389,6 +389,8 @@ class NetDevice(object):
             return self._juniper_commit()
         elif self.vendor == 'paloalto':
             return ['commit']
+        elif self.vendor == 'pica8':
+            return ['commit']
         elif self.vendor == 'mrv':
             return ['save configuration flash']
         elif self.vendor == 'f5':
@@ -519,6 +521,13 @@ class NetDevice(object):
     def is_netscaler(self):
         """Am I a NetScaler?"""
         return all([self.is_switch(), self.vendor=='citrix'])
+
+    def is_pica8(self):
+        """Am I a Pica8?"""
+        ## This is only really needed because pica8 
+        ## doesn't have a global command to disable paging
+        ## so we need to do some special magic.
+        return all([self.vendor=='pica8'])
 
     def is_netscreen(self):
         """Am I a NetScreen running ScreenOS?"""

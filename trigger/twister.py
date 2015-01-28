@@ -344,6 +344,8 @@ def _choose_execute(device, force_cli=False):
             _execute = execute_async_pty_ssh
         else:
             _execute = execute_junoscript
+    elif device.is_pica8():
+        _execute = execute_pica8
     else:
         _execute = execute_async_pty_ssh
 
@@ -631,6 +633,24 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
                                with_errors, timeout, command_interval,
                                channel_class, method=method)
 
+def execute_pica8(device, commands, creds=None, incremental=None,
+                      with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
+                      command_interval=0):
+    """
+    Execute commands on a Pica8 device.  This is only needed to append 
+    '| no-more' to show commands because Pica8 currently (v2.2) lacks 
+    a global command to disable paging.
+
+    Please see `~trigger.twister.execute` for a full description of the
+    arguments and how this works.
+    """
+    assert device.is_pica8()
+
+    channel_class = TriggerSSHPica8Channel
+    method = 'Async PTY'
+    return execute_generic_ssh(device, commands, creds, incremental,
+                               with_errors, timeout, command_interval,
+                               channel_class, method=method)
 
 # Classes
 #==================
@@ -1508,6 +1528,31 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
             log.msg('[%s] Waiting %s seconds before sending next command' %
                     (self.device, self.command_interval))
         reactor.callLater(self.command_interval, self._send_next)
+
+PICA8_NO_MORE_COMMANDS = ['show']
+class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
+    def _setup_commanditer(self, commands=None):
+        """
+        Munge our list of commands and overload self.commanditer to append
+        " | no-more" to any "show" commands.
+        """
+        if commands is None:
+            commands = self.factory.commands
+        new_commands = []
+        for command in commands:
+            root = command.split(' ', 1)[0] # get the root command
+            if root in PICA8_NO_MORE_COMMANDS:
+                command += ' | no-more'
+            new_commands.append(command)
+        self.commanditer = iter(new_commands)
+ 
+    def channelOpen(self, data):
+        """
+        Override channel open, which is where commanditer is setup in the
+        base class.
+        """
+        super(TriggerSSHPica8Channel, self).channelOpen(data)
+        self._setup_commanditer() # Replace self.commanditer with our version
 
 #==================
 # XML Stuff (for Junoscript)

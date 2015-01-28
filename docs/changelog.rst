@@ -2,6 +2,16 @@
 Changelog
 =========
 
+.. _v1.4.9:
+
+1.4.9
+=====
+
+New Features
+------------
+
++ Support for Pica8 routers and switches has been added!
+
 .. _v1.4.8:
 
 1.4.8
@@ -199,10 +209,14 @@ Bug Fixes
 Warnings
 --------
 
-+ With this update, load_acl and acl no longer assume ACL and filter files begin with 'acl.'.  There are two options for updating your deployment to work with this code:
++ With this update, load_acl and acl no longer assume ACL and filter files
+  begin with 'acl.'.  There are two options for updating your deployment to
+  work with this code:
 
   1. Move files in settings.FIREWALL_DIR to files without the prepended 'acl.'.
-  2. Update autoacls.py and explicit ACL associations to include the prepended 'acl.'  prepend_acl_dot was included in tools/ to help update explicit ACL associations.
+  2. Update autoacls.py and explicit ACL associations to include the prepended
+     'acl.'  prepend_acl_dot was included in tools/ to help update explicit ACL
+     associations.
 
 + Please note that either change above may have an impact on any non-trigger code.
 
@@ -241,7 +255,7 @@ New Features
 
 + Support for new vendors and platforms!!
 
-  - F5 BIG-IP application delivery controllers and server load-balancers 
+  - F5 BIG-IP application delivery controllers and server load-balancers
   - MRV LX-series console servers
 
 + New tool ``bin/run_cmds`` to run commands from the CLI!
@@ -556,7 +570,7 @@ trigger.utils
   `~trigger.netdevices` to make it easier to populate
   `~trigger.netdevices.NetDevices` from arbitrary sources by implementing
   pluggable loaders.
-  
+
   - This module has been converted into a package.
   - All hard-coded metadata parsing functions and associated imports have been
     replaced with loader plugin classes. Filesystem loaders provided by default
@@ -596,7 +610,7 @@ trigger.utils
 
 + The following changes have been made within `~trigger.cmds`, which provides
   an extensible, developer-friendly interface to writing command exeuction
-  adapters: 
+  adapters:
 
   - Added a ``force_cli`` flag to `~trigger.cmds.Commando` constructor to force
     CLI execution on Juniper devices instead of Junoscript.
