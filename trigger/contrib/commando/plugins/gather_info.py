@@ -24,6 +24,7 @@ quickly. For example::
     >>> os.environ['TRIGGER_ENABLEPW'] = \
     >>>     tacacsrc.get_device_password(settings.DEFAULT_REALM).password
     >>>
+    >>> device_list = NetDevices()
     >>> gi = GatherInfo(devices=device_list)
     >>> gi.run()
     >>>
@@ -69,6 +70,7 @@ class GatherInfo(Commando):
     """Extension of Commando class for generating the proper commands to
     run per-platform.
     """
+    vendors = ['cisco']
     ios_shver_parse = re.compile(r'''
         (?P<hostname>\S*)               (?# Capture Hostname)
         \suptime\sis\s                  (?# Match " uptime is ")
