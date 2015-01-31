@@ -4,6 +4,7 @@ from trigger.netdevices import NetDevices
 from trigger.cmds import ReactorlessCommando
 from twisted.python import log
 from twisted.internet import defer, task, reactor
+import os
 import re
 import sys
 import time
@@ -24,11 +25,11 @@ class getRouterDetails(ReactorlessCommando):
 		print "Error in getRouterDetails for device {}\n{}".format(device,failure.getTraceback())
 
 def validateRouterDetails(result):
-	print "In validateRouterDetails"
+	print "Validating router details"
 	devicesToCorrect = []
 
 	for device, results in result.items():
-		print "Processing result set for device {}".format(device)
+		# print "Processing result set for device {}".format(device)
 		routers[device].normalize["trigger_acl"] = True
 		for line in results["show run | i ip access-list"].splitlines():
 			line=line.strip()
@@ -53,14 +54,14 @@ def validateRouterDetails(result):
 	return devicesToCorrect or None
 
 def initiateRouterNormalization(devices):
-	print "In initiateRouterNormalization"
+	print "Queueing routers for normalization"
 	# log.startLogging(sys.stdout, setStdout=False)
 	if devices is not None:
 		deferreds = []
 		for device in devices:
 			print "Will normalize router {} ".format(device)
 			if routers[device].normalize["trigger_acl"]:
-				print "Need to normalize ACL on router {}".format(device)
+				print "Need to normalize ACL".format(device)
 				routers[device].commando = ReactorlessCommando([device],commands=routers[device].commands)
 				deferreds.append(routers[device].commando.run())
 		return defer.DeferredList(deferreds)
@@ -79,14 +80,26 @@ def stop_reactor(result):
 if __name__ == '__main__':
 	nd = NetDevices()
 	device_list = ['r1', 'r2', 'r3']
+	up_device_list = []
 	routers={}
 
+	print "Ping testing {} devices ({})".format(len(device_list)," ".join(device_list))
+
 	for device in device_list:
+		response = os.system("ping -c 2 {} >/dev/null 2>&1".format(device))
+		if response == 0:
+			up_device_list.append(device)
+		else:
+			print "Not processing device {}, failed to responded to ping".format(device)
+
+	print "Processing responsive {} devices ({})".format(len(up_device_list)," ".join(up_device_list))
+
+	for device in up_device_list:
 		routers[device]=Router(device)
 
 	# log.startLogging(sys.stdout, setStdout=False)
 
-	d = getRouterDetails(device_list).run()
+	d = getRouterDetails(up_device_list).run()
 	d.addCallback(validateRouterDetails)
 	d.addCallback(initiateRouterNormalization)
 	d.addBoth(stop_reactor)
