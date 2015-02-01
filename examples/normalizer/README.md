@@ -7,9 +7,9 @@ There are a number of todos, the most signficiant is that I would like to return
 Here is the result of two executions against a set of three routers, one of which requires normalization and one of which is offline.
 
 ```
-johnf@pstanadm1:~/TriggerTest$ ./TriggerReactorlessNormalize.py 
+johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py
 Ping testing 3 devices (r1 r2 r3)
-Not processing device r3, failed to responded to ping
+Failed to ping host r3
 Processing responsive 2 devices (r1 r2)
 Validating router details
 Queueing routers for normalization
@@ -17,11 +17,10 @@ Will normalize router r1
 Need to normalize ACL
 Job state is True
 Device r1
-johnf@pstanadm1:~/TriggerTest$ ./TriggerReactorlessNormalize.py 
+johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py
 Ping testing 3 devices (r1 r2 r3)
-Not processing device r3, failed to responded to ping
-Processing responsive 2 devices (r1 r2)
+Failed to ping host r3
+Processing responsive 2 devices (r2 r1)
 Validating router details
-Queueing routers for normalization
 No devices need to be normalized
 ```
