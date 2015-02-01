@@ -156,10 +156,11 @@ def validateRouterDetails(result):
 		# Because there is a negative test for the presence of the ACL we need to set normalizeRequired=True here, it would normally be done inside the test for a rule
 		if routers[device].normalize["trigger_acl"]:
 			routers[device].normalizeRequired=True
+			print "Will normalized trigger-test acl on device {}".format(device)
 		if routers[device].normalizeRequired:
 			if routers[device].normalize["trigger_acl"]:
 				devicesToCorrect.append(device)
-				routers[device].commands+=["conf t","ip access-list standard trigger-test-1","permit 1.1.1.1","end"]
+				routers[device].commands+=["ip access-list standard trigger-test-1","permit 1.1.1.1"]
 			pre_commands=["write mem","reload in 5","y","conf t"]
 			post_commands=["end","reload cancel","write mem"]
 			routers[device].commands=pre_commands+routers[device].commands+post_commands
@@ -170,12 +171,10 @@ def validateRouterDetails(result):
 def initiateRouterNormalization(devices):
 	# log.startLogging(sys.stdout, setStdout=False)
 	if devices is not None:
-		print "Queueing routers for normalization"
+		print "Normalizing {} devices ({})".format(len(devices)," ".join(devices))
 		deferreds = []
 		for device in devices:
-			print "Will normalize router {} ".format(device)
-			if routers[device].normalize["trigger_acl"]:
-				print "Need to normalize ACL".format(device)
+			if routers[device].normalizeRequired:
 				routers[device].commando = ReactorlessCommando([device],commands=routers[device].commands)
 				deferreds.append(routers[device].commando.run())
 		return defer.DeferredList(deferreds)
@@ -240,6 +239,5 @@ if __name__ == '__main__':
 
 	if d.result is not None:
 		for (state,output) in d.result:
-			print "Job state is {}".format(state)
 			for device in output:
-				print "Device {}".format(device)
+				print "Device {} job state is {}".format(device,state)

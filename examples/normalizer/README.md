@@ -12,15 +12,13 @@ Ping testing 3 devices (r1 r2 r3)
 Failed to ping host r3
 Processing responsive 2 devices (r1 r2)
 Validating router details
-Queueing routers for normalization
-Will normalize router r1 
-Need to normalize ACL
-Job state is True
-Device r1
+Will normalized trigger-test acl on device r1
+Normalizing 1 devices (r1)
+Device r1 job state is True
 johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py
 Ping testing 3 devices (r1 r2 r3)
 Failed to ping host r3
-Processing responsive 2 devices (r2 r1)
+Processing responsive 2 devices (r1 r2)
 Validating router details
 No devices need to be normalized
 ```
