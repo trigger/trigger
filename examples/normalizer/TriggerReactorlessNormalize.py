@@ -1,69 +1,5 @@
 #!/usr/bin/python
 
-# Ping Stuff
-
-import subprocess
-import threading
-
-class Pinger(object):
-	hosts = [] # List of all hosts/ips in our input queue
-	up_hosts =[]
-
-	# How many ping process at the time.
-	thread_count = 4
-
-	# Lock object to keep track the threads in loops, where it can potentially be race conditions.
-	lock = threading.Lock()
-
-	def ping(self, ip):
-		# Use the system ping command with count of 1 and wait time of 1.
-		ret = subprocess.call(['ping', '-c', '3', '-W', '2', ip],
-							  stdout=open('/dev/null', 'w'), stderr=open('/dev/null', 'w'))
-
-		return ret == 0 # Return True if our ping command succeeds
-
-	def pop_queue(self):
-		ip = None
-
-		self.lock.acquire() # Grab or wait+grab the lock.
-
-		if self.hosts:
-			ip = self.hosts.pop()
-
-		self.lock.release() # Release the lock, so another thread could grab it.
-
-		return ip
-
-	def dequeue(self):
-		while True:
-			ip = self.pop_queue()
-
-			if not ip:
-				return None
-
-			if self.ping(ip):
-				self.up_hosts.append(ip)
-			else:
-				print "Failed to ping host {}".format(ip)
-
-	def start(self):
-		threads = []
-
-		for i in range(self.thread_count):
-			# Create self.thread_count number of threads that together will
-			# cooperate removing every ip in the list. Each thread will do the
-			# job as fast as it can.
-			t = threading.Thread(target=self.dequeue)
-			t.start()
-			threads.append(t)
-
-		# Wait until all the threads are done. .join() is blocking.
-		[ t.join() for t in threads ]
-
-		return self.up_hosts
-
-# Actual Trigger Stuff
-
 from trigger.netdevices import NetDevices
 from trigger.cmds import ReactorlessCommando
 from twisted.python import log
@@ -72,6 +8,7 @@ import os
 import re
 import sys
 import time
+from pinger import Pinger
 
 class Router(object):
 	def __init__(self, name):
@@ -120,23 +57,6 @@ class getRouterDetails(ReactorlessCommando):
 	# 		device=jobs.pop()
 
 	# 	return device
-
-	# def _setup_jobs(self):
-	#	# This does not work well, it's a serial process
-	# 	for device in self.devices:
-	# 		print "Processing device {}".format(device)
-	# 		try:
-	# 			devobj = self.nd.find(str(device))
-	# 		except KeyError:
-	# 			print 'Device not found in NetDevices: {}'.format(device)
-	# 			self.devices.remove(device)
-	# 			continue
-	# 		if not devobj.is_reachable():
-	# 			print "Device {} is not reachable, not processing".format(device)
-	# 			self.devices.remove(device)
-
-	# 	return super(getRouterDetails, self)._setup_jobs()
-
 
 def validateRouterDetails(result):
 	print "Validating router details"
@@ -192,23 +112,20 @@ def stop_reactor(result):
 
 if __name__ == '__main__':
 	nd = NetDevices()
-	device_list = ['r1', 'r2', 'r3']
 	up_device_list = []
 	routers={}
+
+	# Accept a list of routers and argument or parse test-units.csv
+	if len(sys.argv) > 1:
+		device_list = sys.argv[1:]
+	else:
+		print "Processing all sites"
+		with open('test-units.csv', 'rb') as csvfile:
+			spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+			for row in spamreader:
+				device_list.append(row[0])
+
 	device_list = map(lambda x:x.lower(),device_list)
-
-	# This will ping devices before connecting 
-
-	# print "Ping testing {} devices ({})".format(len(device_list)," ".join(device_list))
-
-	# for device in device_list:
-	# 	response = os.system("ping -c 2 {} >/dev/null 2>&1".format(device))
-	# 	if response == 0:
-	# 		up_device_list.append(device)
-	# 	else:
-	# 		print "Not processing device {}, failed to responded to ping".format(device)
-
-	# print "Processing responsive {} devices ({})".format(len(up_device_list)," ".join(up_device_list))
 
 	print "Ping testing {} devices ({})".format(len(device_list)," ".join(device_list))
 

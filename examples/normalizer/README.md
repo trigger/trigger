@@ -4,10 +4,11 @@ This example version of a Normalizer will connect to a defined set of routers. I
 
 There are a number of todos, the most signficiant is that I would like to return the ordered command output including commands that occur more than once (e.g. write mem).
 
-Here is the result of two executions against a set of three routers, one of which requires normalization and one of which is offline.
+Here is the result of two executions against a set of three routers, one of which requires normalization and one of which is offline. There is a third execution where a specific router is specified on the command line. By default all routers in test-units.csv will be processed.
 
 ```
-johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py
+1 johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py 
+Processing all sites
 Ping testing 3 devices (r1 r2 r3)
 Failed to ping host r3
 Processing responsive 2 devices (r1 r2)
@@ -15,10 +16,16 @@ Validating router details
 Will normalized trigger-test acl on device r1
 Normalizing 1 devices (r1)
 Device r1 job state is True
-johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py
+johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py 
+Processing all sites
 Ping testing 3 devices (r1 r2 r3)
 Failed to ping host r3
-Processing responsive 2 devices (r1 r2)
+Processing responsive 2 devices (r2 r1)
+Validating router details
+No devices need to be normalized
+johnf@pstanadm1:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py r1
+Ping testing 1 devices (r1)
+Processing responsive 1 devices (r1)
 Validating router details
 No devices need to be normalized
 ```
