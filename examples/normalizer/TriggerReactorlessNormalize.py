@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
-from trigger.netdevices import NetDevices
-from trigger.cmds import ReactorlessCommando
-from twisted.python import log
-from twisted.internet import defer, task, reactor
 import os
 import re
 import sys
 import time
+import csv
+from trigger.netdevices import NetDevices
+from trigger.cmds import ReactorlessCommando
+from twisted.python import log
+from twisted.internet import defer, task, reactor
 from pinger import Pinger
 
 class Router(object):
@@ -112,6 +113,7 @@ def stop_reactor(result):
 
 if __name__ == '__main__':
 	nd = NetDevices()
+	device_list=[]
 	up_device_list = []
 	routers={}
 
@@ -124,6 +126,11 @@ if __name__ == '__main__':
 			spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
 			for row in spamreader:
 				device_list.append(row[0])
+		user_response = raw_input("Are you certain you want to normalize {} devices? [y/N]\n".format(len(device_list)))
+		m = re.search ("^[yY]",user_response)
+		if m is None:
+			print "Aborting processing"
+			exit(1)
 
 	device_list = map(lambda x:x.lower(),device_list)
 

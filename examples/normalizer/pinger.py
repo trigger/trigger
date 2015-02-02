@@ -8,7 +8,7 @@ class Pinger(object):
 	up_hosts =[]
 
 	# How many ping process at the time.
-	thread_count = 4
+	thread_count = 20
 
 	# Lock object to keep track the threads in loops, where it can potentially be race conditions.
 	lock = threading.Lock()
