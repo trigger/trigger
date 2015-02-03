@@ -102,7 +102,7 @@ SUPPORTED_PLATFORMS = {
     'arista': ['SWITCH'],                         # Your "Cloud" network vendor
     'aruba': ['SWITCH'],                          # Wireless Controllers
     'brocade': ['ROUTER', 'SWITCH'],
-    'cisco': ['ROUTER', 'SWITCH'],
+    'cisco': ['FIREWALL', 'ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
     'f5': ['LOAD BALANCING', 'SWITCH'],
