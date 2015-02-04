@@ -13,7 +13,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2014 Salesforce.com'
-__version__ = '2.4'
+__version__ = '2.4.1'
 
 import collections
 import datetime
@@ -231,11 +231,13 @@ class Commando(object):
         abstracted out so that this behavior may be customized, such as for
         future support for incremental callbacks.
 
+        If a device is determined to be invalid, you must return ``None``.
+
         :param jobs:
             (Optional) The jobs queue. If not set, uses ``self.jobs``.
 
         :returns:
-            A `~trigger.netdevices.NetDevice` object
+            A `~trigger.netdevices.NetDevice` object or ``None``.
         """
         if jobs is None:
             jobs = self.jobs
@@ -249,6 +251,9 @@ class Commando(object):
         """
         while self.jobs and self.curr_conns < self.max_conns:
             device = self.select_next_device()
+            if device is None:
+                log.msg('No device returned when adding worker. Moving on.')
+                continue
 
             self._increment_connections()
             log.msg('connections:', self.curr_conns)
