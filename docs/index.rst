@@ -162,7 +162,7 @@ Please note that all documentation is written with users of Python 2.6 or
 higher in mind. It's safe to assume that Trigger will not work properly on
 Python versions earlier than Python 2.6.
 
-For now, most of our documentation is automatically generated form the source
+For now, most of our documentation is automatically generated from the source
 code documentation, which is usually very detailed. As we move along, this will
 change, especially with regards to some of the more creative ways in which we
 use Trigger's major functionality.
@@ -303,7 +303,7 @@ OpenHatch
 ---------
 
 Find Trigger on Openhatch at 
-`http://openhatch.org/+projects/Trigger <http://openhatch.org/+projects/Trigger>`_!
+`http://openhatch.org/projects/Trigger <http://openhatch.org/projects/Trigger>`_!
 
 .. _license:
 
