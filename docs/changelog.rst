@@ -11,6 +11,7 @@ New Features
 ------------
 
 + Support for Pica8 routers and switches has been added!
++ :feature:`135` Support for SSH public key authentication has been added!
 + An ehancement to `~trigger.cmds.Commando.select_next_device()` to support
   skipping a `~trigger.netdevices.NetDevice` object for selection. If you
   overload this method in a subclass and want to skip the device, just return

@@ -20,14 +20,16 @@ import socket
 import struct
 import sys
 import tty
-from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
-                                   tostring)
-from twisted.conch.ssh import channel, common, session, transport, userauth
+from twisted.conch.client.default import SSHUserAuthClient
+from twisted.conch.ssh import channel, common, session, transport
 from twisted.conch.ssh.connection import SSHConnection
 from twisted.conch import telnet
 from twisted.internet import defer, error, protocol, reactor, stdio
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
+from twisted.python.usage import Options
+from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
+                                   tostring)
 
 from trigger.conf import settings
 from trigger import tacacsrc, exceptions
@@ -801,7 +803,11 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""
-        ua = TriggerSSHUserAuth(self.factory.creds.username,
+        # The default SSHUserAuth requires options to be set.
+        options = Options()
+        options.identitys = None  # Let it use defaults
+        options['noagent'] = None  # Use ssh-agent if SSH_AUTH_SOCK is set
+        ua = TriggerSSHUserAuth(self.factory.creds.username, options,
                                 self.factory.connection_class(self.factory.commands))
         self.requestService(ua)
 
@@ -837,11 +843,11 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
 
-class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
+
+class TriggerSSHUserAuth(SSHUserAuthClient):
     """Perform user authentication over SSH."""
-    # We are not yet in a world where network devices support publickey
-    # authentication, so these are it.
-    preferredOrder = ['password', 'keyboard-interactive']
+    # Always try publickey first.
+    preferredOrder = ['publickey', 'password', 'keyboard-interactive']
 
     def getPassword(self, prompt=None):
         """Send along the password."""
@@ -931,11 +937,14 @@ class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
         try:
             method = iterator.next()
         except StopIteration:
-            #self.transport.sendDisconnect(
-            #    transport.DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE,
-            #    'no more authentication methods available')
-            self.transport.factory.err = exceptions.LoginFailure(
-                'No more authentication methods available')
+            msg = (
+                'No more authentication methods available.\n'
+                'Tried: %s\n'
+                'If not using ssh-agent w/ public key, make sure '
+                'SSH_AUTH_SOCK is not set and try again.\n' \
+                % (self.preferredOrder,)
+            )
+            self.transport.factory.err = exceptions.LoginFailure(msg)
             self.transport.loseConnection()
         else:
             d = defer.maybeDeferred(self.tryAuth, method)
