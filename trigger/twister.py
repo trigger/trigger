@@ -20,14 +20,16 @@ import socket
 import struct
 import sys
 import tty
-from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
-                                   tostring)
-from twisted.conch.ssh import channel, common, session, transport, userauth
+from twisted.conch.client.default import SSHUserAuthClient
+from twisted.conch.ssh import channel, common, session, transport
 from twisted.conch.ssh.connection import SSHConnection
 from twisted.conch import telnet
 from twisted.internet import defer, error, protocol, reactor, stdio
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
+from twisted.python.usage import Options
+from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
+                                   tostring)
 
 from trigger.conf import settings
 from trigger import tacacsrc, exceptions
@@ -344,6 +346,8 @@ def _choose_execute(device, force_cli=False):
             _execute = execute_async_pty_ssh
         else:
             _execute = execute_junoscript
+    elif device.is_pica8():
+        _execute = execute_pica8
     else:
         _execute = execute_async_pty_ssh
 
@@ -631,6 +635,24 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
                                with_errors, timeout, command_interval,
                                channel_class, method=method)
 
+def execute_pica8(device, commands, creds=None, incremental=None,
+                      with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
+                      command_interval=0):
+    """
+    Execute commands on a Pica8 device.  This is only needed to append 
+    '| no-more' to show commands because Pica8 currently (v2.2) lacks 
+    a global command to disable paging.
+
+    Please see `~trigger.twister.execute` for a full description of the
+    arguments and how this works.
+    """
+    assert device.is_pica8()
+
+    channel_class = TriggerSSHPica8Channel
+    method = 'Async PTY'
+    return execute_generic_ssh(device, commands, creds, incremental,
+                               with_errors, timeout, command_interval,
+                               channel_class, method=method)
 
 # Classes
 #==================
@@ -781,7 +803,11 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""
-        ua = TriggerSSHUserAuth(self.factory.creds.username,
+        # The default SSHUserAuth requires options to be set.
+        options = Options()
+        options.identitys = None  # Let it use defaults
+        options['noagent'] = None  # Use ssh-agent if SSH_AUTH_SOCK is set
+        ua = TriggerSSHUserAuth(self.factory.creds.username, options,
                                 self.factory.connection_class(self.factory.commands))
         self.requestService(ua)
 
@@ -817,11 +843,11 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
 
-class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
+
+class TriggerSSHUserAuth(SSHUserAuthClient):
     """Perform user authentication over SSH."""
-    # We are not yet in a world where network devices support publickey
-    # authentication, so these are it.
-    preferredOrder = ['password', 'keyboard-interactive']
+    # Always try publickey first.
+    preferredOrder = ['publickey', 'password', 'keyboard-interactive']
 
     def getPassword(self, prompt=None):
         """Send along the password."""
@@ -911,11 +937,14 @@ class TriggerSSHUserAuth(userauth.SSHUserAuthClient):
         try:
             method = iterator.next()
         except StopIteration:
-            #self.transport.sendDisconnect(
-            #    transport.DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE,
-            #    'no more authentication methods available')
-            self.transport.factory.err = exceptions.LoginFailure(
-                'No more authentication methods available')
+            msg = (
+                'No more authentication methods available.\n'
+                'Tried: %s\n'
+                'If not using ssh-agent w/ public key, make sure '
+                'SSH_AUTH_SOCK is not set and try again.\n' \
+                % (self.preferredOrder,)
+            )
+            self.transport.factory.err = exceptions.LoginFailure(msg)
             self.transport.loseConnection()
         else:
             d = defer.maybeDeferred(self.tryAuth, method)
@@ -1508,6 +1537,31 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
             log.msg('[%s] Waiting %s seconds before sending next command' %
                     (self.device, self.command_interval))
         reactor.callLater(self.command_interval, self._send_next)
+
+PICA8_NO_MORE_COMMANDS = ['show']
+class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
+    def _setup_commanditer(self, commands=None):
+        """
+        Munge our list of commands and overload self.commanditer to append
+        " | no-more" to any "show" commands.
+        """
+        if commands is None:
+            commands = self.factory.commands
+        new_commands = []
+        for command in commands:
+            root = command.split(' ', 1)[0] # get the root command
+            if root in PICA8_NO_MORE_COMMANDS:
+                command += ' | no-more'
+            new_commands.append(command)
+        self.commanditer = iter(new_commands)
+ 
+    def channelOpen(self, data):
+        """
+        Override channel open, which is where commanditer is setup in the
+        base class.
+        """
+        super(TriggerSSHPica8Channel, self).channelOpen(data)
+        self._setup_commanditer() # Replace self.commanditer with our version
 
 #==================
 # XML Stuff (for Junoscript)
