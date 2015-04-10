@@ -13,8 +13,10 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2014 Salesforce.com'
-__version__ = '2.4.1'
+__version__ = '2.6'
 
+
+# Imports
 import collections
 import datetime
 import itertools
@@ -24,6 +26,7 @@ from xml.etree.cElementTree import ElementTree, Element, SubElement
 import sys
 from twisted.python import log
 from twisted.internet import defer, task
+
 from trigger.netdevices import NetDevices
 from trigger.conf import settings
 from trigger import exceptions
@@ -271,7 +274,7 @@ class Commando(object):
                                    force_cli=self.force_cli)
 
             # Add the parser callback for great justice!
-            async.addCallback(self.parse, device)
+            async.addCallback(self.parse, device, commands)
 
             # If parse fails, still decrement and track the error
             async.addErrback(self.errback, device)
@@ -315,27 +318,50 @@ class Commando(object):
         }
         assert method in METHOD_MAP
 
-        desired_attr = None
+        desired_method = None
 
         # Select the desired vendor name.
-        desired_vendor = device.vendor
-        if device.is_netscreen(): # Workaround until we implement device drivers
+        desired_vendor = device.vendor.name
+
+        # Workaround until we implement device drivers
+        if device.is_netscreen():
             desired_vendor = 'netscreen'
 
-        for vendor, types in self.platforms.iteritems():
-            meth_attr = METHOD_MAP[method] % desired_vendor
-            if device.deviceType in types:
-                if hasattr(self, meth_attr):
-                    desired_attr = meth_attr
-                    break
+        vendor_types = self.platforms.get(desired_vendor)
+        method_name = METHOD_MAP[method] % desired_vendor  # => 'to_cisco'
+        device_type = device.deviceType
 
-        if desired_attr is None:
-            if self.allow_fallback:
-                desired_attr = METHOD_MAP[method] % 'base'
+        if device_type in vendor_types:
+            if hasattr(self, method_name):
+                log.msg(
+                    '[%s] Found %r method: %s' % (device, method, method_name)
+                )
+                desired_method = method_name
             else:
-                raise exceptions.UnsupportedVendor("The vendor '%s' had no available %s method. Please check your ``vendors`` and ``platforms`` attributes in your class object." % (device.vendor, method))
+                log.msg(
+                    '[%s] Did not find %r method: %s' % (device, method,
+                                                         method_name)
+                )
+        else:
+            raise exceptions.UnsupportedDeviceType(
+                'Device %r has an invalid type %r for vendor %r. Must be '
+                'one of %r.' % (device.nodeName, device_type,
+                                desired_vendor, vendor_types)
+            )
 
-        func = getattr(self, desired_attr)
+        if desired_method is None:
+            if self.allow_fallback:
+                desired_method = METHOD_MAP[method] % 'base'
+                log.msg('[%s] Fallback enabled. Using base method: %r' %
+                        (device, desired_method))
+            else:
+                raise exceptions.UnsupportedVendor(
+                    'The vendor %r had no available %s method. Please check '
+                    'your `vendors` and `platforms` attributes in your class '
+                    'object.' % (device.vendor.name, method)
+                )
+
+        func = getattr(self, desired_method)
         return func
 
     def generate(self, device, commands=None, extra=None):
@@ -347,16 +373,20 @@ class Commando(object):
         platform.
 
         :param device:
-            A `~trigger.netdevices.NetDevice` object
+            NetDevice object
+        :type device:
+            `~trigger.netdevices.NetDevice`
 
         :param commands:
             (Optional) A list of commands to execute on the device. If not
             specified in they will be inherited from commands passed to the
             class constructor.
+        :type commands:
+            list
 
         :param extra:
-            (Optional) A dictionary of extra data to send to the generate method for the
-            device.
+            (Optional) A dictionary of extra data to send to the generate
+            method for the device.
         """
         if commands is None:
             commands = self.commands
@@ -366,7 +396,7 @@ class Commando(object):
         func = self._lookup_method(device, method='generate')
         return func(device, commands, extra)
 
-    def parse(self, results, device):
+    def parse(self, results, device, commands=None):
         """
         Parse output from a device. Calls to ``self._lookup_method`` to find
         specific ``from`` method.
@@ -380,10 +410,19 @@ class Commando(object):
             list
 
         :param device:
-            A `~trigger.netdevices.NetDevice` object
+            Device object
+        :type device:
+            `~trigger.netdevices.NetDevice`
+
+        :param commands:
+            (Optional) A list of commands to execute on the device. If not
+            specified in they will be inherited from commands passed to the
+            class constructor.
+        type commands:
+            list
         """
         func = self._lookup_method(device, method='parse')
-        return func(results, device)
+        return func(results, device, commands)
 
     def errback(self, failure, device):
         """
@@ -489,20 +528,19 @@ class Commando(object):
     #=======================================
     # Base generate (to_)/parse (from_) methods
     #=======================================
-
     def to_base(self, device, commands=None, extra=None):
         commands = commands or self.commands
         log.msg('Sending %r to %s' % (commands, device))
         return commands
 
-    def from_base(self, results, device):
+    def from_base(self, results, device, commands=None):
+        commands = commands or self.commands
         log.msg('Received %r from %s' % (results, device))
-        self.store_results(device, self.map_results(self.commands, results))
+        self.store_results(device, self.map_results(commands, results))
 
     #=======================================
     # Vendor-specific generate (to_)/parse (from_) methods
     #=======================================
-
     def to_juniper(self, device, commands=None, extra=None):
         """
         This just creates a series of ``<command>foo</command>`` elements to
@@ -520,6 +558,7 @@ class Commando(object):
             ret.append(cmd)
 
         return ret
+
 
 class ReactorlessCommando(Commando):
     """
@@ -602,6 +641,7 @@ class ReactorlessCommando(Commando):
 
         # Otherwise tell the reactor to call me again after 0.5 seconds.
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)
+
 
 class NetACLInfo(Commando):
     """
@@ -720,7 +760,7 @@ class NetACLInfo(Commando):
     to_brocade = to_cisco
     to_foundry = to_cisco
 
-    def from_cisco(self, data, device):
+    def from_cisco(self, data, device, commands=None):
         """Parse IOS config based on EBNF grammar"""
         self.results[device.nodeName] = data #"MY OWN IOS DATA"
         alld = data[0]
@@ -756,7 +796,7 @@ class NetACLInfo(Commando):
     def __children_with_namespace(self, ns):
         return lambda elt, tag: elt.findall('./' + ns + tag)
 
-    def from_juniper(self, data, device):
+    def from_juniper(self, data, device, commands=None):
         """Do all the magic to parse Junos interfaces"""
         self.results[device.nodeName] = data #"MY OWN JUNOS DATA"
 
@@ -823,6 +863,7 @@ class NetACLInfo(Commando):
 
         self.config[device] = dta
         return True
+
 
 def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disabled=True):
     """
@@ -952,6 +993,7 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disab
         return _cleanup_interface_results(results, skip_disabled=skip_disabled)
     return results
 
+
 def _cleanup_interface_results(results, skip_disabled=True):
     """
     Takes ParseResults dictionary-like object and returns an actual dict of
@@ -991,15 +1033,18 @@ def _cleanup_interface_results(results, skip_disabled=True):
 
     return newdict
 
+
 def _make_ipy(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list of
     IP address objects"""
     return [IP(addr) for addr, mask in nets]
 
+
 def _make_cidrs(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list CIDR
     blocks"""
     return [IP(addr).make_net(mask) for addr, mask in nets]
+
 
 def _dump_interfaces(idict):
     """Prints a dict of parsed interface results info for use in debugging"""
