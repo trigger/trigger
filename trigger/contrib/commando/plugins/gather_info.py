@@ -122,7 +122,7 @@ class GatherInfo(Commando):
                     'show switch detail',
                     'show run | i ip domain-name']
 
-    def from_cisco(self, results, device):
+    def from_cisco(self, results, device, commands=None):
         """Parses output of certain commands and add to ``self.results``
 
         A lot of good information can be retrieved from show version. Method

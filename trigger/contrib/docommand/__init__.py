@@ -12,7 +12,7 @@ __author__ = 'Jathan McCollum, Mike Biancianello'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '3.0'
+__version__ = '3.1'
 
 
 # Imports
@@ -41,7 +41,7 @@ class DoCommandBase(Commando):
     """
     description = 'Insert description here.'
 
-    def from_base(self, results, device):
+    def from_base(self, results, device, commands=None):
         """Call store_results without calling map_results"""
         log.msg('Received %r from %s' % (results, device))
         self.store_results(device, results)
@@ -139,7 +139,7 @@ class CommandRunner(DoCommandBase):
     def __children_with_namespace(self, ns):
         return lambda elt, tag: elt.findall('./' + ns + tag)
 
-    def from_juniper(self, data, device):
+    def from_juniper(self, data, device, commands=None):
         devname = device.nodeName
         ns = '{http://xml.juniper.net/xnm/1.1/xnm}'
         if self.verbose:
@@ -282,7 +282,7 @@ class ConfigLoader(Commando):
     def __children_with_namespace(self, ns):
         return lambda elt, tag: elt.findall('./' + ns + tag)
 
-    def from_juniper(self, data, device):
+    def from_juniper(self, data, device, commands=None):
         """Parse results from a Juniper device."""
         devname = device.nodeName
         if self.verbose:
