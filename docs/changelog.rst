@@ -2,6 +2,26 @@
 Changelog
 =========
 
+.. _v.1.5:
+
+1.5
+===
+
+.. warning::
+   This release has introduced a change the ``Commando.parse()`` method that
+   WILL require a minor change to any subclasses of Commando in your
+   applications.
+
+   You will need to modify any custom ``from_{vendor}`` methods to take an
+   optional ``commands`` argument. It is recommended that you add
+   ``commands=None``.
+
+Bug Fixes
+---------
+
++ :bug:`168` Fixed a bug in `~trigger.cmds.Commando.parse()` where `None` was listed as
+  the command in results causing result data to be lost.
+
 .. _v1.4.9:
 
 1.4.9

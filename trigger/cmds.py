@@ -418,7 +418,7 @@ class Commando(object):
             (Optional) A list of commands to execute on the device. If not
             specified in they will be inherited from commands passed to the
             class constructor.
-        type commands:
+        :type commands:
             list
         """
         func = self._lookup_method(device, method='parse')
