@@ -23,41 +23,8 @@ class Router(object):
 class getRouterDetails(ReactorlessCommando):
 	commands = ['show run | i ip access-list']
 
-	# def to_cisco(self, device, commands=None, extra=None):
-	# 	#Perform a ping test to validate the availability of a host, 
-	# 	#I'm pretty confident this is the best place to do it but I 
-	# 	#can't get it to exit before connecting to the device
-	# 	#another option would be to create a Twisted pre-process
-	
-	# 	print "In to_cisco for device {}".format(device)
-	# 	if not device.is_reachable():
-	# 		print "Can't ping device {}, if only I could stop it!".format(device)
-	# 		print type(self)
-	# 		print dir(self)
-	# 		return []
-	# 	else:
-	# 		print "Processing device {}, it's reachable!".format(device)
-	# 		return commands
-
 	def errback(self, failure, device):
 		print "Error in getRouterDetails for device {}\n{}".format(device,failure.getTraceback())
-
-	# def select_next_device(self, jobs=None):
-	#	# This seemed a clean approach , but it's still processed serially, 
-	#	# it does allow other jobs to run once one of them pings clean
-	#	# Currently there's a bug where it tries to pop none, it will perform 
-	#	# badly if you have a number of devices that don't respond in a row
-	# 
-	#  	if jobs is None:
-	# 		jobs = self.jobs
-
-	# 	device = jobs.pop()
-
-	# 	while not device.is_reachable():
-	# 		print "Device {} is not reachable, not processing".format(device)
-	# 		device=jobs.pop()
-
-	# 	return device
 
 def validateRouterDetails(result):
 	print "Validating router details"
@@ -82,29 +49,42 @@ def validateRouterDetails(result):
 			if routers[device].normalize["trigger_acl"]:
 				devicesToCorrect.append(device)
 				routers[device].commands+=["ip access-list standard trigger-test-1","permit 1.1.1.1"]
-			pre_commands=["write mem","reload in 5","y","conf t"]
-			post_commands=["end","reload cancel","write mem"]
+			pre_commands=["conf t"]
+			post_commands=["end","write mem"]
 			routers[device].commands=pre_commands+routers[device].commands+post_commands
 			# print "Commands to run on device {} are {}".format(device,routers[device].commands)
 
 	return devicesToCorrect or None
 
-def initiateRouterNormalization(devices):
-	# log.startLogging(sys.stdout, setStdout=False)
-	if devices is not None:
-		print "Normalizing {} devices ({})".format(len(devices)," ".join(devices))
-		deferreds = []
-		for device in devices:
-			if routers[device].normalizeRequired:
-				routers[device].commando = ReactorlessCommando([device],commands=routers[device].commands)
-				deferreds.append(routers[device].commando.run())
-		return defer.DeferredList(deferreds)
-	else:
-		print "No devices need to be normalized"
-	return None
+class normalizeRouters(ReactorlessCommando):
+	def to_cisco(self, dev, commands=None, extra=None):
+		dev_commands = routers[dev.nodeName].commands
+		# self.commands = dev_commands
+		# print "Device {}: Executing Commands:\n{}".format(dev.nodeName,dev_commands)
+		return dev_commands
+
+	def from_cisco(self, results, device):
+		dev_commands = routers[device.nodeName].commands
+		# print "In from_cisco for {}, storing results {} from commands {}".format(device,results,self.commands)
+		log.msg('Received %r from %s' % (results, device))
+		self.store_results(device, self.map_results(dev_commands, results))
 
 	def errback(self, failure, device):
-		print "Error in initiateRouterNormalization for device {}\n{}".format(device,failure.getTraceback())
+		print "Error in normalizeRouters for device {}\n{}".format(device,failure.getTraceback())
+
+
+def initiateRouterNormalization(devices):
+	#log.startLogging(sys.stdout, setStdout=False)
+	if devices is not None:
+		print "Normalizing {} devices ({})".format(len(devices)," ".join(devices))
+		devicesToNormalize = []
+		for device in devices:
+			if routers[device].normalizeRequired:
+				devicesToNormalize.append(device)
+		return normalizeRouters(devicesToNormalize).run()
+	else:
+		print "No devices need to be normalized".format()
+	return None
 
 def stop_reactor(result):
 	if reactor.running:
@@ -144,10 +124,6 @@ if __name__ == '__main__':
 
 	print "Processing responsive {} devices ({})".format(len(up_device_list)," ".join(up_device_list))
 
-	# Skip Ping
-
-	# up_device_list = device_list
-
 
 	for device in up_device_list:
 		routers[device]=Router(device)
@@ -162,6 +138,10 @@ if __name__ == '__main__':
 	reactor.run()
 
 	if d.result is not None:
-		for (state,output) in d.result:
-			for device in output:
-				print "Device {} job state is {}".format(device,state)
+		for device in d.result.keys():
+			# print "Device {}: Command Output:\n{}".format(device,d.result[device][None])
+			m = re.search(r"\[OK\]",d.result[device]["write mem"])
+			if m is not None:
+				print "Device {}: Configuration Saved".format(device)
+			else:
+				print "Device {}: Warning no [OK] in Output".format(device)

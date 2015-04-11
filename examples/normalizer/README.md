@@ -7,15 +7,15 @@ There are a number of todos, the most signficiant is that I would like to return
 Here is the result of two executions against a set of three routers, one of which requires normalization and one of which is offline. There is a third execution where a specific router is specified on the command line. By default all routers in test-units.csv will be processed.
 
 ```
-1 johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py 
+johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py 
 Processing all sites
 Ping testing 3 devices (r1 r2 r3)
 Failed to ping host r3
 Processing responsive 2 devices (r1 r2)
 Validating router details
-Will normalized trigger-test acl on device r1
-Normalizing 1 devices (r1)
-Device r1 job state is True
+Will normalized trigger-test acl on device r2
+Normalizing 1 devices (r2)
+Device r2: Configuration Saved
 johnf@triggertest:~/TriggerTest⟫ ./TriggerReactorlessNormalize.py 
 Processing all sites
 Ping testing 3 devices (r1 r2 r3)
