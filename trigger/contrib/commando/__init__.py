@@ -16,9 +16,9 @@ This differs from `~trigger.cmds.Commando` in that:
 
 __author__ = 'Jathan McCollum, Mike Biancaniello'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2012-2013, AOL Inc.'
-__version__ = '0.2'
+__version__ = '0.2.1'
 
 
 # Imports
@@ -79,16 +79,16 @@ class CommandoApplication(Commando):
 
         self.deferred = defer.Deferred()
 
-    def from_base(self, results, device):
+    def from_base(self, results, device, commands=None):
         """Call store_results directly"""
         log.msg('Received %r from %s' % (results, device))
         self.store_results(device, results)
 
-    def from_juniper(self, results, device):
+    def from_juniper(self, results, device, commands=None):
         """(Maybe) convert Juniper XML results into a strings"""
         # If we've set force_cli, use to_base() instead
         if self.force_cli:
-            return self.from_base(results, device)
+            return self.from_base(results, device, commands)
 
         from xml.etree.cElementTree import tostring
         log.msg('Got XML from %s' % device)

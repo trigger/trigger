@@ -29,7 +29,7 @@ class ShowClock(CommandoApplication):
         self.commands = [cmd]
         return self.commands
 
-    def from_cisco(self, data, device):
+    def from_cisco(self, data, device, commands=None):
         """Parse Cisco time"""
         # => '16:18:21.763 GMT Thu Jun 28 2012\n'
         fmt = '%H:%M:%S.%f %Z %a %b %d %Y\n'
@@ -42,7 +42,7 @@ class ShowClock(CommandoApplication):
             results.append(jdata)
         self.store_results(device, results)
 
-    def from_brocade(self, data, device):
+    def from_brocade(self, data, device, commands=None):
         """
         Parse Brocade time. Brocade switches and routers behave
         differently...
@@ -63,7 +63,7 @@ class ShowClock(CommandoApplication):
             results.append(jdata)
         self.store_results(device, results)
 
-    def from_juniper(self, data, device):
+    def from_juniper(self, data, device, commands=None):
         """Do all the magic to parse Junos interfaces"""
         self.raw = data
         results=[]

@@ -125,7 +125,7 @@ class ConfigDevice(CommandoApplication):
         cmds.append(Element('commit-configuration'))
         return cmds
 
-    def from_juniper(self, data, device):
+    def from_juniper(self, data, device, commands=None):
         """Do all the magic to parse Junos interfaces"""
         #print 'device:', device
         #print 'data len:', len(data)
