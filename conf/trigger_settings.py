@@ -161,6 +161,9 @@ TELNET_ENABLED = True
 # Default ports for SSH
 SSH_PORT = 22
 
+# The preferred order in which SSH authentication methods are tried.
+SSH_AUTHENTICATION_ORDER = ['password', 'keyboard-interactive', 'publickey']
+
 # Default port for Telnet
 TELNET_PORT = 23
 
