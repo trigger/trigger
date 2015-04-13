@@ -2,6 +2,21 @@
 Changelog
 =========
 
+.. _v1.5.1:
+
+1.5.1
+=====
+
+New Features
+------------
+
++ The SSH authentication order is now a configurable setting. Public key is now
+  the last method by default, but this is now easily configured in
+  ``settings.py`` using the new :setting:`SSH_AUTHENTICATION_ORDER` setting.
++ The ``command_interval`` argument may now be passed to
+  `~trigger.cmds.Commando` and its subclasses. This allows you to specify a
+  delay time in seconds to wait between sending commands to devices.
+
 .. _v.1.5:
 
 1.5
