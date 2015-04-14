@@ -17,6 +17,12 @@ New Features
   `~trigger.cmds.Commando` and its subclasses. This allows you to specify a
   delay time in seconds to wait between sending commands to devices.
 
+Enhancements
+------------
+
++ The example script the Trigger XMLRPC service has been improved to check the
+  pid file and kill the existing ``twistd`` process by process id.
+
 .. _v.1.5:
 
 1.5
