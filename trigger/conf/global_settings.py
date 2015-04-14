@@ -176,6 +176,9 @@ SSH_PORT = 22
 # Default port for Telnet
 TELNET_PORT = 23
 
+# The preferred order in which SSH authentication methods are tried.
+SSH_AUTHENTICATION_ORDER = ['password', 'keyboard-interactive', 'publickey']
+
 # A mapping of vendors to the types of devices for that vendor for which you
 # would like to disable interactive (pty) SSH sessions, such as when using
 # bin/gong.

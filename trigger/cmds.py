@@ -13,7 +13,7 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2014 Salesforce.com'
-__version__ = '2.6'
+__version__ = '2.7'
 
 
 # Imports
@@ -111,6 +111,9 @@ class Commando(object):
     :param with_acls:
          Whether to load ACL associations (requires Redis). Defaults to whatever
          is specified in settings.WITH_ACLS
+
+    :param command_interval:
+         (Optional) Amount of time in seconds to wait between sending commands.
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -137,7 +140,7 @@ class Commando(object):
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
                  allow_fallback=True, with_errors=True, force_cli=False,
-                 with_acls=False):
+                 with_acls=False, command_interval=0):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -152,6 +155,7 @@ class Commando(object):
         self.allow_fallback = allow_fallback
         self.with_errors = with_errors
         self.force_cli = force_cli
+        self.command_interval = command_interval
         self.curr_conns = 0
         self.jobs = []
 
@@ -271,7 +275,8 @@ class Commando(object):
                                    incremental=self.incremental,
                                    timeout=self.timeout,
                                    with_errors=self.with_errors,
-                                   force_cli=self.force_cli)
+                                   force_cli=self.force_cli,
+                                   command_interval=self.command_interval)
 
             # Add the parser callback for great justice!
             async.addCallback(self.parse, device, commands)

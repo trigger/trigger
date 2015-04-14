@@ -373,6 +373,20 @@ Default::
 
     22
 
+.. setting:: SSH_AUTHENTICATION_ORDER
+
+SSH_AUTHENTICATION_ORDER
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.5.1
+
+The preferred order in which SSH authentication methods are tried. Customize
+this if you wish to change the order of, or modify the supported methods.
+
+Default::
+
+    ['password', 'keyboard-interactive', 'publickey']
+
 .. setting:: TELNET_PORT
 
 TELNET_PORT

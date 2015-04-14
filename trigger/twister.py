@@ -846,8 +846,8 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
 class TriggerSSHUserAuth(SSHUserAuthClient):
     """Perform user authentication over SSH."""
-    # Always try publickey first.
-    preferredOrder = ['publickey', 'password', 'keyboard-interactive']
+    # The preferred order in which SSH authentication methods are tried.
+    preferredOrder = settings.SSH_AUTHENTICATION_ORDER
 
     def getPassword(self, prompt=None):
         """Send along the password."""
