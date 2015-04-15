@@ -2,6 +2,18 @@
 Changelog
 =========
 
+.. _v1.5.2:
+
+1.5.2
+=====
+
+Bug Fixes
+---------
+
++ :bug:`210` Addressed an issue where the buffer storing results from a command
+  was not properly cleared when output continued to be sent after the prompt
+  was displayed.
+
 .. _v1.5.1:
 
 1.5.1

@@ -11,6 +11,7 @@ __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
 __version__ = '1.5.6'
 
+
 import copy
 import fcntl
 import os
@@ -1220,12 +1221,14 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 return None
         else:
             # Or just use the matched regex object...
+            log.msg('[%s] STATE: buffer %r' % (self.device, self.data))
             log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
             prompt_idx = m.start()
 
         # Strip the prompt from the match result
-        result = self.data[:prompt_idx]
-        result = result[result.find('\n')+1:]
+        result = self.data[:prompt_idx]  # Cut the prompt out
+        result = result[result.find('\n')+1:]  # Keep all from first newline
+        log.msg('[%s] STATE: result %r' % (self.device, result))
 
         # Only keep the results once we've sent any startup_commands
         if self.initialized:
@@ -1244,13 +1247,12 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
                         (self.device, self.command_interval))
+            self.data = ''  # Flush the buffer before next command
             reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
         """Send the next command in the stack."""
-        # Reset the timeout and the buffer for each new command
-        self.data = ''
-        self.resetTimeout()
+        self.resetTimeout()  # Reset the timeout
 
         if not self.initialized:
             log.msg('[%s] Not initialized; sending startup commands' %
