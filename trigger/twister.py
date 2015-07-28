@@ -7,9 +7,9 @@ I/O framework. The Trigger Twister is just like the Mersenne Twister, except not
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '1.5.6'
+__version__ = '1.5.7'
 
 
 import copy
@@ -41,20 +41,6 @@ from trigger.utils import network, cli
 # docs; so let's make sure we account for that ;)
 #__all__ = ('connect', 'execute', 'stop_reactor')
 
-
-# Constants
-# Prompts sent by devices that indicate the device is awaiting user
-# confirmation. The last one is very specific because we want to make sure bad
-# things don't happen.
-CONTINUE_PROMPTS = [
-    'continue?',
-    'proceed?',
-    '(y/n):',
-    '[y/n]:',
-    '[confirm]',
-    # Very specific to ensure bad things don't happen!
-    'overwrite file [startup-config] ?[yes/press any key for no]....'
-]
 
 # Functions
 #==================
@@ -105,7 +91,7 @@ def is_awaiting_confirmation(prompt):
         The prompt string to check
     """
     prompt = prompt.lower()
-    matchlist = CONTINUE_PROMPTS
+    matchlist = settings.CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
 
 def requires_enable(proto_obj, data):
