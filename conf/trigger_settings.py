@@ -144,6 +144,10 @@ DEFAULT_TYPES = {
 # this type.
 FALLBACK_TYPE = 'ROUTER'
 
+# When a manufacturer/vendor is not explicitly defined, fallback to to this
+# value.
+FALLBACK_MANUFACTURER = 'UNKNOWN'
+
 #===============================
 # Twister
 #===============================

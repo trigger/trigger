@@ -2,6 +2,22 @@
 Changelog
 =========
 
+.. _v1.5.3:
+
+1.5.3
+=====
+
+Enhancements
+------------
+
++ An identity test for `~trigger.netdevices.NetDevice` objects has been added
+  that can be used to check whether a devices is a Cisco Nexus. You may utilize
+  it by calling `.is_cisco_nexus()` on any `NetDevice` object.
++ Support for parsing interfaces on Cisco Nexus devices has been added.
++ A new global setting now defines what to do when a device object does not
+  have a manufacturer defined (See: :setting:`FALLBACK_MANUFACTURER`) which
+  defaults to the value ``UNKNOWN``.
+
 .. _v1.5.2:
 
 1.5.2

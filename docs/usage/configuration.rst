@@ -311,11 +311,26 @@ FALLBACK_TYPE
 
 .. versionadded:: 1.2
 
-When a vendor is not explicitly defined within :setting:`DEFAULT_TYPES`, fallback to this type.
+When a vendor is not explicitly defined within :setting:`DEFAULT_TYPES`,
+fallback to this type.
 
 Default::
 
     'ROUTER'
+
+.. setting:: FALLBACK_MANUFACTURER
+
+FALLBACK_MANUFACTURER
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.5.3
+
+When a manufacturer/vendor is not explicitly defined for a
+`~trigger.netdevices.NetDevice` object, fallback to to this value.
+
+Default::
+
+    'UNKNOWN'
 
 Twister settings
 ----------------

@@ -26,12 +26,13 @@ __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '2.3.1'
+__version__ = '2.3.2'
 
 # Imports
 import copy
 import itertools
 import os
+import re
 import sys
 import time
 from twisted.python import log
@@ -187,7 +188,7 @@ class NetDevice(object):
         # Hardware Info
         self.deviceType = None
         self.make = None
-        self.manufacturer = None
+        self.manufacturer = settings.FALLBACK_MANUFACTURER
         self.vendor = None
         self.model = None
         self.serialNumber = None
@@ -370,6 +371,7 @@ class NetDevice(object):
         }
 
         cmds = paging_map.get(self.vendor.name)
+
         if self.is_netscreen():
             cmds = paging_map['netscreen']
 
@@ -405,7 +407,7 @@ class NetDevice(object):
         """
         if self.is_brocade_vdx() or self.vendor == 'dell':
             return ['copy running-config startup-config', 'y']
-        elif self.make and 'nexus' in self.make.lower():
+        elif self.is_cisco_nexus():
             return ['copy running-config startup-config']
         else:
             return ['write memory']
@@ -604,6 +606,18 @@ class NetDevice(object):
 
         return self._is_cisco_asa
 
+    def is_cisco_nexus(self):
+        """
+        Am I a Cisco Nexus device?
+        """
+        words = (self.make, self.model)
+        patterns = ('n.k', 'nexus')  # Patterns to match
+        pairs = itertools.product(patterns, words)
+
+        for pat, word in pairs:
+            if word and re.search(pat, word.lower()):
+                return True
+        return False
 
     def _ssh_enabled(self, disabled_mapping):
         """Check whether vendor/type is enabled against the given mapping."""
