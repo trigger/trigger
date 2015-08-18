@@ -24,9 +24,9 @@ Example::
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '2.3'
+__version__ = '2.3.1'
 
 # Imports
 import copy
@@ -358,6 +358,7 @@ class NetDevice(object):
             'aruba': ['no paging'], # v6.2.x this is not necessary
             'brocade': disable_paging_brocade(), # See comments above
             'cisco': disable_paging_cisco(),
+            'citrix': ['set cli mode page off'],
             'dell': ['terminal datadump'],
             'f5': ['modify cli preference pager disabled'],
             'force10': default,
@@ -814,8 +815,14 @@ class NetDevices(DictMixin):
         def __getitem__(self, key):
             return self._dict[key]
 
+        def __contains__(self, item):
+            return item in self._dict
+
         def keys(self):
             return self._dict.keys()
+
+        def values(self):
+            return self._dict.values()
 
         def find(self, key):
             """
@@ -827,18 +834,18 @@ class NetDevices(DictMixin):
             :param string key: Hostname prefix to find.
             :returns: NetDevice object
             """
-            if key in self._dict:
-                return self._dict[key]
+            if key in self:
+                return self[key]
 
-            matches = [x for x in self._dict.keys() if x.startswith(key+'.')]
+            matches = [x for x in self.keys() if x.startswith(key + '.')]
 
             if matches:
-                return self._dict[matches[0]]
+                return self[matches[0]]
             raise KeyError(key)
 
         def all(self):
             """Returns all NetDevice objects."""
-            return self._dict.values()
+            return self.values()
 
         def search(self, token, field='nodeName'):
             """
@@ -953,12 +960,13 @@ class NetDevices(DictMixin):
         """
         if with_acls is None:
             with_acls = settings.WITH_ACLS
-        if NetDevices._Singleton is None:
-            NetDevices._Singleton = NetDevices._actual(production_only=production_only,
-                                                       with_acls=with_acls)
+        classobj = self.__class__
+        if classobj._Singleton is None:
+            classobj._Singleton = classobj._actual(production_only=production_only,
+                                                   with_acls=with_acls)
 
     def __getattr__(self, attr):
-        return getattr(NetDevices._Singleton, attr)
+        return getattr(self.__class__._Singleton, attr)
 
     def __setattr__(self, attr, value):
-        return setattr(NetDevices._Singleton, attr, value)
+        return setattr(self.__class__._Singleton, attr, value)

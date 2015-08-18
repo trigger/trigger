@@ -2,6 +2,27 @@
 Changelog
 =========
 
+.. _v1.5.2:
+
+1.5.2
+=====
+
+New Features
+------------
+
++ `~trigger.netdevices.NetDevices` can now be properly subclassed and extended.
++ A disable paging command has been added for Citrix NetScaler devices.
++ String patterns used for detecting continue prompts is now globally
+  configurable. (See :setting:`CONTINUE_PROMPTS`)
+
+Bug Fixes
+---------
+
++ :bug:`210` Addressed an issue where the buffer storing results from a command
+  was not properly cleared when output continued to be sent after the prompt
+  was displayed.
++ `bin/run_cmds` will now no longer hide errors when in `--verbose` mode.
+
 .. _v1.5.1:
 
 1.5.1

@@ -467,6 +467,38 @@ Default::
 
     ('a10', 'arista', 'brocade', 'cisco', 'dell', 'foundry')
 
+.. setting:: CONTINUE_PROMPTS
+
+CONTINUE_PROMPTS
+~~~~~~~~~~~~~~~~
+
+A list of strings representing continue prompts sent by devices that indicate
+the device is awaiting user confirmation when interacting with the device. If a
+continue prompt is detected, Trigger will temporarily set this value to the
+prompt and send along the next command (for example if you're expecting such a
+prompt and you want to send along "yes").
+
+When checking these prompts, the incoming output data from the device will be
+tested whether it **ends with** one of these prompts. These should be as
+specific as possible, including trailing spaces.
+
+The default values are common continue prompts encountered throughout the
+lifetime of the Trigger project's development, and is by no means
+comprehensive. If you need to customize these prompts for your environment,
+utilize this setting.
+
+Default::
+
+    [
+        'continue?',
+        'proceed?',
+        '(y/n):',
+        '[y/n]:',
+        '[confirm]',
+        '[yes/no]: ',
+        'overwrite file [startup-config] ?[yes/press any key for no]....'
+    ]
+
 .. setting:: GORC_FILE
 
 GORC_FILE

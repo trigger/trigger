@@ -7,9 +7,10 @@ I/O framework. The Trigger Twister is just like the Mersenne Twister, except not
 
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '1.5.6'
+__version__ = '1.5.7'
+
 
 import copy
 import fcntl
@@ -40,20 +41,6 @@ from trigger.utils import network, cli
 # docs; so let's make sure we account for that ;)
 #__all__ = ('connect', 'execute', 'stop_reactor')
 
-
-# Constants
-# Prompts sent by devices that indicate the device is awaiting user
-# confirmation. The last one is very specific because we want to make sure bad
-# things don't happen.
-CONTINUE_PROMPTS = [
-    'continue?',
-    'proceed?',
-    '(y/n):',
-    '[y/n]:',
-    '[confirm]',
-    # Very specific to ensure bad things don't happen!
-    'overwrite file [startup-config] ?[yes/press any key for no]....'
-]
 
 # Functions
 #==================
@@ -104,7 +91,7 @@ def is_awaiting_confirmation(prompt):
         The prompt string to check
     """
     prompt = prompt.lower()
-    matchlist = CONTINUE_PROMPTS
+    matchlist = settings.CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
 
 def requires_enable(proto_obj, data):
@@ -1220,12 +1207,14 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 return None
         else:
             # Or just use the matched regex object...
+            log.msg('[%s] STATE: buffer %r' % (self.device, self.data))
             log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
             prompt_idx = m.start()
 
         # Strip the prompt from the match result
-        result = self.data[:prompt_idx]
-        result = result[result.find('\n')+1:]
+        result = self.data[:prompt_idx]  # Cut the prompt out
+        result = result[result.find('\n')+1:]  # Keep all from first newline
+        log.msg('[%s] STATE: result %r' % (self.device, result))
 
         # Only keep the results once we've sent any startup_commands
         if self.initialized:
@@ -1244,13 +1233,12 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
                         (self.device, self.command_interval))
+            self.data = ''  # Flush the buffer before next command
             reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
         """Send the next command in the stack."""
-        # Reset the timeout and the buffer for each new command
-        self.data = ''
-        self.resetTimeout()
+        self.resetTimeout()  # Reset the timeout
 
         if not self.initialized:
             log.msg('[%s] Not initialized; sending startup commands' %

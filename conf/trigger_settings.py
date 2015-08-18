@@ -195,6 +195,22 @@ IOSLIKE_VENDORS = (
     'foundry',
 )
 
+# Prompts sent by devices that indicate the device is awaiting user
+# confirmation when interacting with the device. If a continue prompt is
+# detected, Trigger will temporarily set this value to the prompt and send
+# along the next command (for example if you're expecting such a prompt and you
+# want to send along "yes"). These should be as specific as possible because we
+# want to make sure bad things don't happen.
+CONTINUE_PROMPTS = [
+    'continue?',
+    'proceed?',
+    '(y/n):',
+    '[y/n]:',
+    '[confirm]',
+    '[yes/no]: ',
+    'overwrite file [startup-config] ?[yes/press any key for no]....'
+]
+
 # The file path where .gorc is expected to be found.
 GORC_FILE = '~/.gorc'
 
