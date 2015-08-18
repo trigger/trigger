@@ -7,6 +7,13 @@ Changelog
 1.5.2
 =====
 
+New Features
+------------
+
++ `~trigger.netdevices.NetDevices` can now be properly subclassed and extended.
++ A disable paging command has been added for Citrix NetScaler devices.
+
+
 Bug Fixes
 ---------
 
