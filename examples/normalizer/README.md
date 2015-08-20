@@ -34,12 +34,6 @@ Device,Last Access,Version
 r1,Never,Unknown
 r2,2015-08-20 09:00,15.2(4)M6
 r3,2015-08-20 09:00,15.2(4)M6
-johnf@pstanadm1:~/TriggerOpen$ date
-Thu Aug 20 09:00:56 EDT 2015
-johnf@pstanadm1:~/TriggerOpen$ date
-Thu Aug 20 09:00:58 EDT 2015
-johnf@pstanadm1:~/TriggerOpen$ date
-Thu Aug 20 09:01:00 EDT 2015
 johnf@pstanadm1:~/TriggerOpen$ ./Report.py r2
 johnf@pstanadm1:~/TriggerOpen$ cat report.csv 
 Device,Last Access,Version
@@ -48,7 +42,7 @@ r2,2015-08-20 09:01,15.2(4)M6
 r3,2015-08-20 09:00,15.2(4)M6
 ```
 
-
 # ToDo
 
-
+* Support for device name globbing
+* Place command execution results into an ordered list
