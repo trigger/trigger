@@ -5,23 +5,39 @@ import re
 import sys
 import time
 import csv
+from datetime import datetime, timedelta
 from trigger.netdevices import NetDevices
 from trigger.cmds import ReactorlessCommando
 from twisted.python import log
 from twisted.internet import defer, task, reactor
-from pinger import Pinger
-
-class Router(object):
-	def __init__(self, name):
-		self.name = name
-		self.acls = []
-		self.normalize = {}
-		self.normalizeRequired = False
-		self.commands = []
-		self.commando = None
+from Router import Router
+import jsonpickle
 
 class getRouterDetails(ReactorlessCommando):
-	commands = ['show run | i ip access-list']
+	commands = Router.showCommands
+
+	def select_next_device(self, jobs=None):
+		"""
+		Select another *reachable* device.
+		"""
+		if jobs is None:
+			jobs = self.jobs
+
+		next_device = jobs.pop()
+		log.msg('Selecting next device: %s' % next_device)
+
+		# If I ping, return me.
+		if next_device.is_reachable():
+			log.msg('PING [SUCCESS]: %s' % next_device)
+			return next_device
+		# Otherwise return None and store me as an error.
+		else:
+			msg = 'PING [FAILURE]: %s' % next_device
+			log.msg(msg)
+			print "Failed to ping host {}".format(next_device)
+			if self.verbose:
+				print msg
+			return None
 
 	def errback(self, failure, device):
 		print "Error in getRouterDetails for device {}\n{}".format(device,failure.getTraceback())
@@ -31,28 +47,11 @@ def validateRouterDetails(result):
 	devicesToCorrect = []
 
 	for device, results in result.items():
-		# print "Processing result set for device {}".format(device)
-		routers[device].normalize["trigger_acl"] = True
-		for line in results["show run | i ip access-list"].splitlines():
-			line=line.strip()
-			m = re.search("ip access-list \S+ (\S+)",line)
-			if m is not None:
-				routers[device].acls.append(m.group(1))
-			m = re.search("ip access-list standard trigger-test-1",line)
-			if m is not None:
-				routers[device].normalize["trigger_acl"] = False
-		# Because there is a negative test for the presence of the ACL we need to set normalizeRequired=True here, it would normally be done inside the test for a rule
-		if routers[device].normalize["trigger_acl"]:
-			routers[device].normalizeRequired=True
-			print "Will normalized trigger-test acl on device {}".format(device)
+		routers[device].results = results
+		routers[device].validate()
+		routers[device].normalize()
 		if routers[device].normalizeRequired:
-			if routers[device].normalize["trigger_acl"]:
-				devicesToCorrect.append(device)
-				routers[device].commands+=["ip access-list standard trigger-test-1","permit 1.1.1.1"]
-			pre_commands=["conf t"]
-			post_commands=["end","write mem"]
-			routers[device].commands=pre_commands+routers[device].commands+post_commands
-			# print "Commands to run on device {} are {}".format(device,routers[device].commands)
+			devicesToCorrect.append(device)
 
 	return devicesToCorrect or None
 
@@ -63,11 +62,13 @@ class normalizeRouters(ReactorlessCommando):
 		# print "Device {}: Executing Commands:\n{}".format(dev.nodeName,dev_commands)
 		return dev_commands
 
-	def from_cisco(self, results, device):
-		dev_commands = routers[device.nodeName].commands
+	def from_cisco(self, results, device, commands=None):
+		commands = commands or self.commands
+
+		# dev_commands = routers[device.nodeName].commands
 		# print "In from_cisco for {}, storing results {} from commands {}".format(device,results,self.commands)
 		log.msg('Received %r from %s' % (results, device))
-		self.store_results(device, self.map_results(dev_commands, results))
+		self.store_results(device, self.map_results(commands, results))
 
 	def errback(self, failure, device):
 		print "Error in normalizeRouters for device {}\n{}".format(device,failure.getTraceback())
@@ -92,10 +93,19 @@ def stop_reactor(result):
 		return result 
 
 if __name__ == '__main__':
+
 	nd = NetDevices()
 	device_list=[]
-	up_device_list = []
 	routers={}
+
+	try:
+		stateFile = open("routerstate.json","r")
+		data = stateFile.read()
+		stateFile.close()
+		routers = jsonpickle.decode(data)
+		data = None
+	except Exception as e:
+		print("Failed to open routerstate.json")
 
 	# Accept a list of routers and argument or parse test-units.csv
 	if len(sys.argv) > 1:
@@ -114,23 +124,15 @@ if __name__ == '__main__':
 
 	device_list = map(lambda x:x.lower(),device_list)
 
-	print "Ping testing {} devices ({})".format(len(device_list)," ".join(device_list))
+	print "Processing {} devices ({})".format(len(device_list)," ".join(device_list))
 
-	ping = Pinger()
-	ping.thread_count = 8
-	ping.hosts = device_list
-
-	up_device_list = ping.start()
-
-	print "Processing responsive {} devices ({})".format(len(up_device_list)," ".join(up_device_list))
-
-
-	for device in up_device_list:
-		routers[device]=Router(device)
+	for device in device_list:
+		if not device in routers:
+			routers[device]=Router(device)
 
 	# log.startLogging(sys.stdout, setStdout=False)
 
-	d = getRouterDetails(up_device_list).run()
+	d = getRouterDetails(device_list).run()
 	d.addCallback(validateRouterDetails)
 	d.addCallback(initiateRouterNormalization)
 	d.addBoth(stop_reactor)
@@ -145,3 +147,9 @@ if __name__ == '__main__':
 				print "Device {}: Configuration Saved".format(device)
 			else:
 				print "Device {}: Warning no [OK] in Output".format(device)
+
+	stateFile = open("routerstate.json","w")
+	jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
+	data = jsonpickle.encode(routers)
+	stateFile.write(data)
+
