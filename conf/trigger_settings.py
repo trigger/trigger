@@ -56,6 +56,7 @@ SUPPORTED_VENDORS = (
     'a10',
     'arista',
     'aruba',
+    'avocent',
     'brocade',
     'cisco',
     'citrix',
@@ -81,6 +82,7 @@ VENDOR_MAP = {
     'A10 NETWORKS': 'a10',
     'ARISTA NETWORKS': 'arista',
     'ARUBA NETWORKS': 'aruba',
+    'AVOCENT': 'avocent',
     'BROCADE': 'brocade',
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
@@ -101,23 +103,30 @@ SUPPORTED_PLATFORMS = {
     'a10': ['SWITCH'],
     'arista': ['SWITCH'],                         # Your "Cloud" network vendor
     'aruba': ['SWITCH'],                          # Wireless Controllers
+    'avocent': ['CONSOLE'],
     'brocade': ['ROUTER', 'SWITCH'],
     'cisco': ['FIREWALL', 'ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
-    'f5': ['LOAD BALANCING', 'SWITCH'],
+    'f5': ['LOAD_BALANCER', 'SWITCH'],
     'force10': ['ROUTER', 'SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],
     'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
-    'mrv': ['CONSOLE SERVER', 'SWITCH'],
+    'mrv': ['CONSOLE', 'SWITCH'],
     'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
     'paloalto': ['FIREWALL'],
     'pica8': ['ROUTER', 'SWITCH'],
 }
 
 # The tuple of support device types
-SUPPORTED_TYPES = ('CONSOLE SERVER', 'FIREWALL', 'DWDM', 'LOAD BALANCING',
-                   'ROUTER', 'SWITCH')
+SUPPORTED_TYPES = (
+    'CONSOLE',
+    'DWDM',
+    'FIREWALL',
+    'LOAD_BALANCER',
+    'ROUTER',
+    'SWITCH'
+)
 
 # A mapping of of vendor names to the default device type for each in the
 # event that a device object is created and the deviceType attribute isn't set
@@ -126,15 +135,16 @@ DEFAULT_TYPES = {
     'a10': 'SWITCH',
     'arista': 'SWITCH',
     'aruba': 'SWITCH',
+    'avocent': 'CONSOLE',
     'brocade': 'SWITCH',
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
     'dell': 'SWITCH',
-    'f5': 'LOAD BALANCING',
+    'f5': 'LOAD_BALANCER',
     'force10': 'ROUTER',
     'foundry': 'SWITCH',
     'juniper': 'ROUTER',
-    'mrv': 'CONSOLE SERVER',
+    'mrv': 'CONSOLE',
     'netscreen': 'FIREWALL',
     'paloalto': 'FIREWALL',
     'pica8': 'SWITCH',
@@ -298,6 +308,7 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 PROMPT_PATTERNS = {
     'aruba': r'\(\S+\)(?: \(\S+\))?\s?#$', # ArubaOS 6.1
     #'aruba': r'\S+(?: \(\S+\))?\s?#\s$', # ArubaOS 6.2
+    'avocent': r'\S+[#\$]|->\s?$',
     'citrix': r'\sDone\n$',
     'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
     'juniper': r'\S+\@\S+(?:\>|#)\s$',

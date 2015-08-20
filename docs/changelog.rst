@@ -7,6 +7,11 @@ Changelog
 1.5.3
 =====
 
+New Features
+------------
+
++ Remote execution on Avocent console servers is now officially supported.
+
 Enhancements
 ------------
 
