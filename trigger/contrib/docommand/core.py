@@ -426,7 +426,7 @@ def verify_opts(opts):
     isp = opts.device_path is not None
     if isp:
         if not os.path.isdir(opts.device_path):
-            return False, 'ERROR: %r is not a valid path\n' % path
+            return False, 'ERROR: %r is not a valid directory\n' % opts.device_path
         else:
             return True, ''
     elif isdf or iscf or isd or isc:
