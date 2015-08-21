@@ -1,6 +1,10 @@
 What is Trigger?
 ================
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/trigger/trigger
+   :target: https://gitter.im/trigger/trigger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 Trigger is a robust network automation toolkit written in Python that was
 designed for interfacing with network devices and managing network
 configuration and security policy. It increases the speed and efficiency of
