@@ -1,6 +1,10 @@
 What is Trigger?
 ================
 
+.. image:: https://travis-ci.org/trigger/trigger.png
+   :alt: Build Status
+   :target: https://travis-ci.org/trigger/trigger
+   
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/trigger/trigger
    :target: https://gitter.im/trigger/trigger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
