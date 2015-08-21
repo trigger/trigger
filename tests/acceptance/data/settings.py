@@ -81,7 +81,7 @@ SUPPORTED_PLATFORMS = {
     'a10': ['SWITCH'],
     'arista': ['SWITCH'],                         # Your "Cloud" network vendor
     'brocade': ['ROUTER', 'SWITCH'],
-    'cisco': ['ROUTER', 'SWITCH'],
+    'cisco': ['FIREWALL', 'ROUTER', 'SWITCH'],
     'citrix': ['SWITCH'],                         # Assumed to be NetScalers
     'dell': ['SWITCH'],
     'foundry': ['ROUTER', 'SWITCH'],

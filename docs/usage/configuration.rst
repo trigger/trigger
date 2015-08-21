@@ -245,7 +245,7 @@ Default::
         'a10': ['SWITCH'],
         'arista': ['SWITCH'],
         'brocade': ['ROUTER', 'SWITCH'],
-        'cisco': ['ROUTER', 'SWITCH'],
+        'cisco': ['ROUTER', 'SWITCH', 'FIREWALL'],
         'citrix': ['SWITCH'],
         'dell': ['SWITCH'],
         'foundry': ['ROUTER', 'SWITCH'],

@@ -14,6 +14,19 @@ With the high number of network devices on the AOL network this application is
 invaluable to performance and reliability. We hope you'll find it useful on
 your network and consider participating!
 
+Supported Platforms
+===================
+
+* Cisco IOS, NX-OS, and ASA software
+* Juniper Junos and ScreenOS
+* Force10 router and switch platforms running FTOS
+* Arista Networks 7000-family switches
+* ... and more!
+
+Refer to the `official docs`_ for the full list.
+
+.. _official docs: http://trigger.readthedocs.org/en/latest/#supported-platforms
+
 Key Features
 ============
 
