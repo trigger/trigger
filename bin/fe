@@ -5,92 +5,25 @@
 fe - the File Editor. Uses RCS to maintain ACL policy versioning.
 """
 
-__author__ = 'Jathan McCollum, Mark Ellzey Thomas, Michael Shields'
+__author__ = ('Jathan McCollum, Mark Ellzey Thomas, Michael Shields, '
+              'Michael Harding')
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2002-2013, AOL Inc.'
 __version__ = '1.2.1'
 
-
-import os
-import re
-from simpleparse.error import ParserSyntaxError
 import sys
-import termios
-
-from trigger import acl
-from trigger.acl.parser import TIP
+import os
+#import trigger.acl.fe as fe
 from trigger.utils.cli import yesno
+from trigger.conf import settings
+from simpleparse.error import ParserSyntaxError
+from trigger.exceptions import ParseError
+import trigger.acl.fe as fe
+import re
 
-psa_checks = (
-    (lambda t: 'source-port' in t.match, 'source port'),
-    (lambda t: 'tos' in t.match, 'ToS'),
-    (lambda t: 'precedence' in t.match, 'precedence'),
-    (lambda t: 'protocol' in t.match and 'igmp' in t.match['protocol'], 'IGMP')
-)
-
-def gsr_checks(a):
-    '''PSA and SALSA checks, if the ACL is tagged appropriately.'''
-    ok = True
-    max_lines, psa = None, False
-    if [c for c in a.comments if 'SALSA' in c]:
-        max_lines = 128
-    elif [c for c in a.comments if 'PSA-128' in c]:
-        max_lines, psa = 128, True
-    elif [c for c in a.comments if 'PSA-448' in c]:
-        max_lines, psa = 448, True
-    if max_lines and len(a.terms) > max_lines:
-        print 'ACL has %d lines, max %d (GSR limit)' \
-              % (len(a.terms), max_lines)
-        ok = False
-    if psa:
-        for t in a.terms:
-            for check, reason in psa_checks:
-                if check(t):
-                    print 'Match on %s not permitted in PSA mode' % reason
-                    for line in t.output_ios():
-                        print '    ' + line
-                    ok = False
-    return ok
-
-def normalize(a):
-    '''Fix up the ACL, and return False if there are problems.'''
-
-    if isinstance(a, acl.PolicerGroup):
-        return True
-
-    ok = True
-
-    # JunOS counter policy and duplicate term names.
-    if a.format == 'junos':
-        names = set()
-        for t in a.terms:
-            if t.name in names:
-                print 'Duplicate term name', t.name
-                ok = False
-            else:
-                names.add(t.name)
-
-    # GSR checks.
-    if a.format == 'ios':   # not ios_named
-        if not gsr_checks(a):
-            ok = False
-
-    # Check for 10/8.
-    for t in a.terms:
-        for addr in ('address', 'source-address', 'destination-address'):
-            for block in t.match.get(addr, []):
-                if block == TIP('10.0.0.0/8'):
-                    print 'Matching on 10.0.0.0/8 is never correct'
-                    for line in t.output(a.format):
-                        print '    ' + line
-                    ok = False
-
-    # Here is the place to put other policy checks; for example, we could
-    # check blue to green HTTP and make sure all those terms have a comment
-    # in a standardized format saying it was approved.
-
-    return ok
+# end built-in acl parsing
+sys.path.append(os.path.dirname(__file__))
 
 def edit(editfile):
     """
@@ -98,30 +31,70 @@ def edit(editfile):
     confirms they want to bypass failed normalization. Returns a file object of
     the diff output.
     """
-    editor = os.environ.get('EDITOR', 'vim')
-    if editor.startswith('vi'):
-        os.spawnlp(os.P_WAIT, editor, editor, '+set sw=4', '+set softtabstop=4',
-                   editfile)
-    else:
-        os.spawnlp(os.P_WAIT, editor, editor, editfile)
-
-    if os.path.basename(editfile): #.startswith('acl.'):
-        print 'Normalizing ACL...'
-        a = None
+    accepted = False
+    # following line is essentially a no-op
+    # do plug in processing here
+    # figure out the base file name, so we can do regular
+    # expression parsing
+    fn = os.path.basename(editfile)
+    try:
+        #import fe_extensions
+        #tests = fe_extensions.tests
         try:
-            a = acl.parse(file(editfile))
-        except ParserSyntaxError, e:
-            print e
-        except TypeError, e:
-            print  e
-        except Exception, e:
-            print 'ACL parse failed: ', sys.exc_type, ':', e
-        if a and normalize(a):
-            output = '\n'.join(a.output(replace=True)) + '\n'
-            file(editfile, 'w').write(output)
+            sys.path.extend(settings.FE_EXT_DIRS)
+        except:
+            pass
+        ctests = settings.FE_TESTS
+        tl = []
+        tests = []
+        for c in ctests:
+            if isinstance(c,basestring):
+                tl.append(c)
+            else:
+                assert(len(c)==2)
+                if re.match(c[0],fn):
+                    tl.extend(c[1])
+                else:
+                    continue
+            # convert the strings to functions
+        for s in tl:
+            s = s.split('.')
+            m = __import__(s[0])
+            for n in s[1:]:
+                m = getattr(m, n)
+            tests.append(m)
+    except (AttributeError, NameError):
+        tests = (fe.acltest,)
+    while not accepted:
+        editor = os.environ.get('EDITOR', 'vim')
+        if editor.startswith('vi'):
+            os.spawnlp(os.P_WAIT, editor, editor, '+set sw=4',
+                       '+set softtabstop=4', editfile)
         else:
-            if yesno('Re-edit?'):
-                return edit(editfile)
+            os.spawnlp(os.P_WAIT, editor, editor, editfile)
+        for test in tests:
+            # match means we think we have the right test,
+            # output is either 'False' or the transformed
+            # input
+            # alternately, a syntax error can be thrown up,
+            # meaning we got far enough that this is probably
+            # the actual error
+            try:
+                matches, output = test(editfile)
+            except (ParserSyntaxError, ParseError) as e:
+                print e
+                break
+            if not matches:
+                continue
+            # do a 'None' check to allow empty files...
+            if output is not None:
+                file(editfile, 'w').write(output)
+                accepted = True
+                break
+            # can't parse the output
+        if not accepted and not yesno("can't parse, retry?"):
+            accepted = True
+        # should we allow a write here?
 
     # should use a list version of popen
     return os.popen('rcsdiff -u -b -q ' + editfile).read()

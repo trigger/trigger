@@ -550,3 +550,32 @@ FAILURE_RECIPIENTS = [
 NOTIFICATION_HANDLERS = [
     'trigger.utils.notifications.handlers.email_handler',
 ]
+
+# extention directories for additional parsing/tests
+# add the configuration directory, at least
+FE_EXT_DIRS = (
+    os.path.dirname(__file__),
+)
+
+# a list of functions to use when running fe - functions
+# are run in order...
+
+import re
+
+# alternative form for plugins - regular expression for the filename,
+# followed by list of parsers.
+# make sure that parser list is iterable, i.e. ('x',) vs ('x') or 'x'
+# regular expression filtered plugins can be mixed with single
+# entries, as shows
+#FE_TESTS = (
+#    (r'^acl\..*$', ('fe_extensions.parse_prefixlist',
+#                    'trigger.acl.fe.acltest')),
+#     'some.other.function',
+#)
+
+# list of parsers, including plugins - trigger.acl.fe.acltest
+# is the test that used to be run by default.
+FE_TESTS = (
+    'fe_extensions.parse_prefixlist',
+    'trigger.acl.fe.acltest'
+)
