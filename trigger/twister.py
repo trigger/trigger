@@ -2,15 +2,9 @@
 
 """
 Login and basic command-line interaction support using the Twisted asynchronous
-I/O framework. The Trigger Twister is just like the Mersenne Twister, except not at all.
+I/O framework. The Trigger Twister is just like the Mersenne Twister, except
+not at all.
 """
-
-__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '1.5.7'
-
 
 import copy
 import fcntl
@@ -25,12 +19,11 @@ from twisted.conch.client.default import SSHUserAuthClient
 from twisted.conch.ssh import channel, common, session, transport
 from twisted.conch.ssh.connection import SSHConnection
 from twisted.conch import telnet
-from twisted.internet import defer, error, protocol, reactor, stdio
+from twisted.internet import defer, protocol, reactor, stdio
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 from twisted.python.usage import Options
-from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder,
-                                   tostring)
+from xml.etree.ElementTree import (Element, ElementTree, XMLTreeBuilder)
 
 from trigger.conf import settings
 from trigger import tacacsrc, exceptions
@@ -39,18 +32,19 @@ from trigger.utils import network, cli
 # Exports
 # TODO (jathan): Setting this prevents everything from showing up in the Sphinx
 # docs; so let's make sure we account for that ;)
-#__all__ = ('connect', 'execute', 'stop_reactor')
+# __all__ = ('connect', 'execute', 'stop_reactor')
 
 
-# Functions
-#==================
-# Helper functions
-#==================
+#  Functions
+# ==================
+#  Helper functions
+# ==================
 def has_junoscript_error(tag):
     """Test whether an Element contains a Junoscript xnm:error."""
     if ElementTree(tag).find('.//{http://xml.juniper.net/xnm/1.1/xnm}error'):
         return True
     return False
+
 
 def has_juniper_error(s):
     """Test whether a string seems to contain an Juniper error."""
@@ -62,16 +56,18 @@ def has_juniper_error(s):
     )
     return any(tests)
 
+
 def has_ioslike_error(s):
     """Test whether a string seems to contain an IOS-like error."""
     tests = (
-        s.startswith('%'),                 # Cisco, Arista
-        '\n%' in s,                        # A10, Aruba, Foundry
-        'syntax error: ' in s.lower(),     # Brocade VDX, F5 BIGIP
-        s.startswith('Invalid input -> '), # Brocade MLX
-        s.endswith('Syntax Error'),        # MRV
+        s.startswith('%'),                  # Cisco, Arista
+        '\n%' in s,                         # A10, Aruba, Foundry
+        'syntax error: ' in s.lower(),      # Brocade VDX, F5 BIGIP
+        s.startswith('Invalid input -> '),  # Brocade MLX
+        s.endswith('Syntax Error'),         # MRV
     )
     return any(tests)
+
 
 def has_netscaler_error(s):
     """Test whether a string seems to contain a NetScaler error."""
@@ -83,6 +79,7 @@ def has_netscaler_error(s):
     )
     return any(tests)
 
+
 def is_awaiting_confirmation(prompt):
     """
     Checks if a prompt is asking for us for confirmation and returns a Boolean.
@@ -93,6 +90,7 @@ def is_awaiting_confirmation(prompt):
     prompt = prompt.lower()
     matchlist = settings.CONTINUE_PROMPTS
     return any(prompt.endswith(match) for match in matchlist)
+
 
 def requires_enable(proto_obj, data):
     """
@@ -114,6 +112,7 @@ def requires_enable(proto_obj, data):
                                                      match.group()))
     return match
 
+
 def send_enable(proto_obj, disconnect_on_fail=True):
     """
     Send 'enable' and enable password to device.
@@ -131,7 +130,7 @@ def send_enable(proto_obj, disconnect_on_fail=True):
     enable_pw = os.getenv('TRIGGER_ENABLEPW') or device_pw
     if enable_pw is not None:
         log.msg('[%s] Enable password detected, sending...' % proto_obj.device)
-        proto_obj.data = '' # Zero out the buffer before sending the password
+        proto_obj.data = ''  # Zero out the buffer before sending the password
         proto_obj.write('enable' + proto_obj.device.delimiter)
         proto_obj.write(enable_pw + proto_obj.device.delimiter)
         proto_obj.enabled = True
@@ -143,6 +142,7 @@ def send_enable(proto_obj, disconnect_on_fail=True):
         if disconnect_on_fail:
             proto_obj.loseConnection()
 
+
 def stop_reactor():
     """Stop the reactor if it's already running."""
     from twisted.internet import reactor
@@ -150,9 +150,11 @@ def stop_reactor():
         log.msg('Stopping reactor')
         reactor.stop()
 
-#==================
-# PTY functions
-#==================
+# ==================
+#  PTY functions
+# ==================
+
+
 def pty_connect(device, action, creds=None, display_banner=None,
                 ping_test=False, init_commands=None):
     """
@@ -194,9 +196,10 @@ def pty_connect(device, action, creds=None, display_banner=None,
 
     # SSH?
     if device.can_ssh_pty():
+        interactive = hasattr(sys, 'ps1')
+        all_tty = all(x.isatty() for x in (sys.stderr, sys.stdin, sys.stdout))
         log.msg('[%s] SSH connection test PASSED' % device)
-        if hasattr(sys, 'ps1') or not sys.stderr.isatty() \
-         or not sys.stdin.isatty() or not sys.stdout.isatty():
+        if interactive or not all_tty:
             # Shell not in interactive mode.
             pass
 
@@ -213,12 +216,16 @@ def pty_connect(device, action, creds=None, display_banner=None,
     elif settings.TELNET_ENABLED:
         log.msg('[%s] SSH connection test FAILED, falling back to telnet' %
                 device)
-        factory = TriggerTelnetClientFactory(d, action, creds,
-                                             init_commands=init_commands, device=device)
+        factory = TriggerTelnetClientFactory(d,
+                                             action,
+                                             creds,
+                                             init_commands=init_commands,
+                                             device=device)
         port = device.nodePort or settings.TELNET_PORT
         log.msg('Trying telnet to %s:%s' % (device, port), debug=True)
     else:
-        log.msg('[%s] SSH connection test FAILED, telnet fallback disabled' % device)
+        log.msg('[%s] SSH connection test FAILED, '
+                'telnet fallback disabled' % device)
         return None
 
     reactor.connectTCP(device.nodeName, port, factory)
@@ -229,6 +236,8 @@ def pty_connect(device, action, creds=None, display_banner=None,
     return d
 
 login_failed = None
+
+
 def handle_login_failure(failure):
     """
     An errback to try detect a login failure
@@ -238,6 +247,7 @@ def handle_login_failure(failure):
     """
     global login_failed
     login_failed = failure
+
 
 def connect(device, init_commands=None, output_logger=None, login_errback=None,
             reconnect_handler=None):
@@ -289,7 +299,7 @@ def connect(device, init_commands=None, output_logger=None, login_errback=None,
     except AttributeError as err:
         log.msg(err)
         sys.stderr.write('Could not connect to %s.\n' % device)
-        return 2 # Bad exit code
+        return 2  # Bad exit code
 
     cli.setup_tty_for_pty(reactor.run)
 
@@ -300,7 +310,7 @@ def connect(device, init_commands=None, output_logger=None, login_errback=None,
     if login_failed is not None:
         stop_reactor()
 
-        #print '\nLogin failed for the following reason:\n'
+        # print '\nLogin failed for the following reason:\n'
         print '\nConnection failed for the following reason:\n'
         print '%s\n' % login_failed.value
 
@@ -309,11 +319,13 @@ def connect(device, init_commands=None, output_logger=None, login_errback=None,
 
         print 'BYE'
 
-    return 0 # Good exit code
+    return 0  # Good exit code
 
-#==================
-# Execute Factory functions
-#==================
+# ==================
+#  Execute Factory functions
+# ==================
+
+
 def _choose_execute(device, force_cli=False):
     """
     Return the appropriate execute_ function for the given ``device`` based on
@@ -340,8 +352,17 @@ def _choose_execute(device, force_cli=False):
 
     return _execute
 
-def execute(device, commands, creds=None, incremental=None, with_errors=False,
-            timeout=settings.DEFAULT_TIMEOUT, command_interval=0, force_cli=False):
+
+def execute(
+        device,
+        commands,
+        creds=None,
+        incremental=None,
+        with_errors=False,
+        timeout=settings.DEFAULT_TIMEOUT,
+        command_interval=0,
+        force_cli=False
+        ):
     """
     Connect to a ``device`` and sequentially execute all the commands in the
     iterable ``commands``.
@@ -360,8 +381,8 @@ def execute(device, commands, creds=None, incremental=None, with_errors=False,
         BEWARE: Your generator cannot block; you must immediately
         decide what next command to execute, if any.
 
-    Any ``None`` in the command sequence will result in a ``None`` being placed in
-    the output sequence, with no command issued to the device.
+    Any ``None`` in the command sequence will result in a ``None`` being placed
+    in the output sequence, with no command issued to the device.
 
     If any command returns an error, the connection is dropped immediately and
     the errback will fire with the failed command. You may set ``with_errors``
@@ -393,8 +414,8 @@ def execute(device, commands, creds=None, incremental=None, with_errors=False,
     :param timeout:
         (Optional) Command response timeout in seconds. Set to ``None`` to
         disable. The default is in ``settings.DEFAULT_TIMEOUT``.
-        `~trigger.exceptions.CommandTimeout` errors will result if a command seems
-        to take longer to return than specified.
+        `~trigger.exceptions.CommandTimeout` errors will result if a command
+        seems to take longer to return than specified.
 
     :param command_interval:
         (Optional) Amount of time in seconds to wait between sending commands.
@@ -408,6 +429,7 @@ def execute(device, commands, creds=None, incremental=None, with_errors=False,
     return execute_func(device=device, commands=commands, creds=creds,
                         incremental=incremental, with_errors=with_errors,
                         timeout=timeout, command_interval=command_interval)
+
 
 def execute_generic_ssh(device, commands, creds=None, incremental=None,
                         with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -441,6 +463,7 @@ def execute_generic_ssh(device, commands, creds=None, incremental=None,
     reactor.connectTCP(device.nodeName, port, factory)
     return d
 
+
 def execute_exec_ssh(device, commands, creds=None, incremental=None,
                      with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                      command_interval=0):
@@ -462,6 +485,7 @@ def execute_exec_ssh(device, commands, creds=None, incremental=None,
                                channel_class, prompt_pattern, method,
                                connection_class)
 
+
 def execute_junoscript(device, commands, creds=None, incremental=None,
                        with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                        command_interval=0):
@@ -482,6 +506,7 @@ def execute_junoscript(device, commands, creds=None, incremental=None,
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
                                channel_class, prompt_pattern, method)
+
 
 def execute_ioslike(device, commands, creds=None, incremental=None,
                     with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -519,6 +544,7 @@ def execute_ioslike(device, commands, creds=None, incremental=None,
         e = exceptions.ConnectionFailure(msg)
         return defer.fail(e)
 
+
 def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
                            with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                            command_interval=0, loginpw=None, enablepw=None):
@@ -540,6 +566,7 @@ def execute_ioslike_telnet(device, commands, creds=None, incremental=None,
     reactor.connectTCP(device.nodeName, port, factory)
     return d
 
+
 def execute_async_pty_ssh(device, commands, creds=None, incremental=None,
                           with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                           command_interval=0, prompt_pattern=None):
@@ -557,6 +584,7 @@ def execute_async_pty_ssh(device, commands, creds=None, incremental=None,
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
                                channel_class, prompt_pattern, method)
+
 
 def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
                         with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -580,6 +608,7 @@ def execute_ioslike_ssh(device, commands, creds=None, incremental=None,
                                    with_errors, timeout, command_interval,
                                    method=method)
 
+
 def execute_netscreen(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
                       command_interval=0):
@@ -599,11 +628,12 @@ def execute_netscreen(device, commands, creds=None, incremental=None,
 
     channel_class = TriggerSSHGenericChannel
     method = 'NetScreen'
-    prompt_pattern = settings.PROMPT_PATTERNS['netscreen'] # This sucks
+    prompt_pattern = settings.PROMPT_PATTERNS['netscreen']  # This sucks
     return execute_generic_ssh(device, commands, creds, incremental,
                                with_errors, timeout, command_interval,
                                channel_class, method=method,
                                prompt_pattern=prompt_pattern)
+
 
 def execute_netscaler(device, commands, creds=None, incremental=None,
                       with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
@@ -622,12 +652,13 @@ def execute_netscaler(device, commands, creds=None, incremental=None,
                                with_errors, timeout, command_interval,
                                channel_class, method=method)
 
+
 def execute_pica8(device, commands, creds=None, incremental=None,
-                      with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
-                      command_interval=0):
+                  with_errors=False, timeout=settings.DEFAULT_TIMEOUT,
+                  command_interval=0):
     """
-    Execute commands on a Pica8 device.  This is only needed to append 
-    '| no-more' to show commands because Pica8 currently (v2.2) lacks 
+    Execute commands on a Pica8 device.  This is only needed to append
+    '| no-more' to show commands because Pica8 currently (v2.2) lacks
     a global command to disable paging.
 
     Please see `~trigger.twister.execute` for a full description of the
@@ -641,10 +672,12 @@ def execute_pica8(device, commands, creds=None, incremental=None,
                                with_errors, timeout, command_interval,
                                channel_class, method=method)
 
-# Classes
-#==================
-# Client Factories
-#==================
+#  Classes
+# ==================
+#  Client Factories
+# ==================
+
+
 class TriggerClientFactory(protocol.ClientFactory, object):
     """
     Factory for all clients. Subclass me.
@@ -657,7 +690,7 @@ class TriggerClientFactory(protocol.ClientFactory, object):
 
         # Setup and run the initial commands
         if init_commands is None:
-            init_commands = [] # We need this to be a list
+            init_commands = []  # We need this to be a list
         self.init_commands = init_commands
         log.msg('INITIAL COMMANDS: %r' % self.init_commands, debug=True)
         self.initialized = False
@@ -672,7 +705,7 @@ class TriggerClientFactory(protocol.ClientFactory, object):
         log.msg('Client connection lost. Reason: %s' % reason)
         if self.err:
             log.msg('Got err: %r' % self.err)
-            #log.err(self.err)
+            # log.err(self.err)
             self.d.errback(self.err)
         else:
             log.msg('Got results: %r' % self.results)
@@ -702,6 +735,7 @@ class TriggerClientFactory(protocol.ClientFactory, object):
         self.conn = conn
         self.transport = transport
         log.msg('Connection information: %s' % self.transport)
+
 
 class TriggerSSHChannelFactory(TriggerClientFactory):
     """
@@ -741,6 +775,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         self.protocol.factory = self
         return self.protocol
 
+
 class TriggerSSHPtyClientFactory(TriggerClientFactory):
     """
     Factory for an interactive SSH connection.
@@ -761,9 +796,11 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
         self.command_interval = 0
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
-#==================
-# SSH Basics
-#==================
+# ==================
+#  SSH Basics
+# ==================
+
+
 class TriggerSSHTransport(transport.SSHClientTransport, object):
     """
     SSH transport with Trigger's defaults.
@@ -777,8 +814,14 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         return defer.succeed(True)
 
     def connectionMade(self):
-        """Once the connection is up, set the ciphers but don't do anything else!"""
-        self.currentEncryptions = transport.SSHCiphers('none', 'none', 'none', 'none')
+        """
+        Once the connection is up, set the ciphers but don't do anything else!
+        """
+        self.currentEncryptions = transport.SSHCiphers(
+                'none',
+                'none',
+                'none',
+                'none')
         self.currentEncryptions.setKeys('', '', '', '', '', '')
 
     def dataReceived(self, data):
@@ -794,8 +837,9 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         options = Options()
         options.identitys = None  # Let it use defaults
         options['noagent'] = None  # Use ssh-agent if SSH_AUTH_SOCK is set
-        ua = TriggerSSHUserAuth(self.factory.creds.username, options,
-                                self.factory.connection_class(self.factory.commands))
+        ua = TriggerSSHUserAuth(
+                self.factory.creds.username, options,
+                self.factory.connection_class(self.factory.commands))
         self.requestService(ua)
 
     def receiveError(self, reason, desc):
@@ -813,7 +857,8 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
-        log.msg('Got disconnect request, reason: %r, desc: %r' % (reason, desc))
+        log.msg('Got disconnect request, reason: '
+                '%r, desc: %r' % (reason, desc))
 
         # Only throw an error if this wasn't user-initiated (reason: 10)
         if reason == transport.DISCONNECT_CONNECTION_LOST:
@@ -825,7 +870,8 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         else:
             # Emulate the most common OpenSSH reason for this to happen
             if reason == transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT:
-                desc = 'ssh_exchange_identification: Connection closed by remote host'
+                desc = ('ssh_exchange_identification: '
+                        'Connection closed by remote host')
             self.factory.err = exceptions.SSHConnectionLost(reason, desc)
 
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
@@ -843,7 +889,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
 
     def getGenericAnswers(self, name, information, prompts):
         """
-        Send along the password when authentication mechanism is not 'password'.
+        Send along the password when authentication mechanism is not 'password'
         This is most commonly the case with 'keyboard-interactive', which even
         when configured within self.preferredOrder, does not work using default
         getPassword() method.
@@ -855,7 +901,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
         # of the prompts list
         response = [''] * len(prompts)
         for idx, prompt_tuple in enumerate(prompts):
-            prompt, echo = prompt_tuple # e.g. [('Password: ', False)]
+            prompt, echo = prompt_tuple  # e.g. [('Password: ', False)]
             if 'assword' in prompt:
                 log.msg("Got password prompt: %r, sending password!" % prompt,
                         debug=True)
@@ -928,7 +974,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
                 'No more authentication methods available.\n'
                 'Tried: %s\n'
                 'If not using ssh-agent w/ public key, make sure '
-                'SSH_AUTH_SOCK is not set and try again.\n' \
+                'SSH_AUTH_SOCK is not set and try again.\n'
                 % (self.preferredOrder,)
             )
             self.transport.factory.err = exceptions.LoginFailure(msg)
@@ -937,6 +983,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
             d = defer.maybeDeferred(self.tryAuth, method)
             d.addCallback(self._cbUserauthFailure, iterator)
             return d
+
 
 class TriggerSSHConnection(SSHConnection, object):
     """
@@ -971,6 +1018,7 @@ class TriggerSSHConnection(SSHConnection, object):
         log.msg('Forcefully closing transport connection!')
         self.transport.loseConnection()
 
+
 class TriggerSSHMultiplexConnection(TriggerSSHConnection):
     """
     Used for multiplexing SSH 'exec' channels on a single connection.
@@ -980,17 +1028,19 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
     """
     def _channelOpener(self):
         log.msg('Multiplex connection started')
-        self.work = list(self.commands) # Make sure this is a list :)
+        self.work = list(self.commands)  # Make sure this is a list :)
         self.send_command()
 
     def channelClosed(self, channel):
-        """Close the channel when we're done. But not the transport connection"""
+        """
+        Close the channel when we're done. But not the transport connection
+        """
         log.msg('CHANNEL %s closed' % channel.id)
         SSHConnection.channelClosed(self, channel)
 
     def send_command(self):
         """
-        Send the next command in the stack once the previous channel has closed.
+        Send the next command in the stack once the previous channel has closed
         """
         try:
             command = self.work.pop(0)
@@ -1017,15 +1067,20 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
         chan = self.channel_class(command, conn=self)
 
         d = defer.Deferred()
-        reactor.callLater(self.command_interval, d.callback, self.openChannel(chan))
+        reactor.callLater(
+                self.command_interval,
+                d.callback,
+                self.openChannel(chan))
         d.addCallback(command_completed, chan)
         d.addErrback(command_failed, chan)
         d.addBoth(log_status)
         return d
 
-#==================
-# SSH PTY Stuff
-#==================
+# ==================
+#  SSH PTY Stuff
+# ==================
+
+
 class Interactor(protocol.Protocol):
     """
     Creates an interactive shell.
@@ -1047,7 +1102,7 @@ class Interactor(protocol.Protocol):
         c = protocol.Protocol()
         c.dataReceived = self.write
         self.stdio = stdio.StandardIO(c)
-        self.device = self.factory.device # Attach the device object
+        self.device = self.factory.device  # Attach the device object
 
     def loseConnection(self):
         """
@@ -1060,24 +1115,31 @@ class Interactor(protocol.Protocol):
     def dataReceived(self, data):
         """And write data to the terminal."""
         # -- Left during debugging. Enable on ASA not fixed here yet -- #
+        # [2015-08-23] Think this isn't needed, keeping for reference?
         # log.msg('[%s] DATA: %r' % (self.device, data))
         # if requires_enable(self, data):
-        #     log.msg('[%s] Device Requires Enable: %s' % (self.device, requires_enable(self, data)))
-        #     log.msg('[%s] Is Device Currently Enabled: %s' % (self.device, self.enabled))
+        #     log.msg('[%s] Device Requires Enable: %s' % (
+        #         self.device,
+        #         requires_enable(self, data)))
+        #     log.msg('[%s] Is Device Currently Enabled: %s' % (
+        #         self.device,
+        #         self.enabled))
 
         # Check whether we need to send an enable password.
         if not self.enabled and requires_enable(self, data):
-            log.msg('[%s] Interactive PTY requires enable commands' % self.device)
-            send_enable(self, disconnect_on_fail=False) # Don't exit on fail
+            log.msg('[%s] '
+                    'Interactive PTY requires enable commands' % self.device)
+            send_enable(self, disconnect_on_fail=False)  # Don't exit on fail
 
         # Setup and run the initial commands, and also assume we're enabled
         if data and not self.initialized:
-            self.enabled = True # Forcefully set enable
+            self.enabled = True  # Forcefully set enable
             self.factory._init_commands(protocol=self)
             self.initialized = True
 
         self._log(data)
         self.stdio.write(data)
+
 
 class TriggerSSHPtyChannel(channel.SSHChannel):
     """
@@ -1116,9 +1178,11 @@ class TriggerSSHPtyChannel(channel.SSHChannel):
         winsz = fcntl.ioctl(stdin_fileno, tty.TIOCGWINSZ, '12345678')
         return struct.unpack('4H', winsz)
 
-#==================
-# SSH Channels
-#==================
+# ==================
+#  SSH Channels
+# ==================
+
+
 class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
     """
     Base class for SSH channels.
@@ -1185,9 +1249,9 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         # Append to the data buffer
         self.data += bytes
         log.msg('[%s] BYTES: %r' % (self.device, bytes))
-        #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
-        #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes),
-        #         len(self.data)))
+        # log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
+        #         (self.remoteWindowLeft, self.localMaxPacket, len(bytes),
+        #          len(self.data)))
 
         # Keep going til you get a prompt match
         m = self.prompt.search(self.data)
@@ -1200,8 +1264,8 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             # Check for confirmation prompts
             # If the prompt confirms set the index to the matched bytes
             if is_awaiting_confirmation(self.data):
-                log.msg('[%s] Got confirmation prompt: %r' % \
-                        (self.device, self.data))
+                log.msg('[%s] Got confirmation prompt: '
+                        '%r' % (self.device, self.data))
                 prompt_idx = self.data.find(bytes)
             else:
                 return None
@@ -1222,7 +1286,8 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
 
         # By default we're checking for IOS-like or Juniper errors because most
         # vendors # fall under this category.
-        if (has_ioslike_error(result) or has_juniper_error(result)) and not self.with_errors:
+        has_errors = (has_ioslike_error(result) or has_juniper_error(result))
+        if has_errors and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))
             self.factory.err = exceptions.CommandFailure(result)
             self.loseConnection()
@@ -1286,12 +1351,14 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         Do this when the connection times out.
         """
         log.msg('[%s] Timed out while sending commands' % self.device)
-        self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
+        self.factory.err = exceptions.CommandTimeout('Timed out while sending '
+                                                     'commands')
         self.loseConnection()
 
     def request_exit_status(self, data):
         status = struct.unpack('>L', data)[0]
         log.msg('[%s] Exit status: %s' % (self.device, status))
+
 
 class TriggerSSHGenericChannel(TriggerSSHChannelBase):
     """
@@ -1302,6 +1369,7 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
 
     Before you create your own subclass, see if you can't use me as-is!
     """
+
 
 class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
     """
@@ -1318,11 +1386,15 @@ class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
         self._setup_channelOpen()
 
         # Request a pty even tho we are not actually using one.
-        pr = session.packRequest_pty_req(os.environ['TERM'], (80, 24, 0, 0), '')
+        pr = session.packRequest_pty_req(
+                os.environ['TERM'],
+                (80, 24, 0, 0),
+                '')
         self.conn.sendRequest(self, 'pty-req', pr)
         d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
         d.addCallback(self._gotResponse)
         d.addErrback(self._ebShellOpen)
+
 
 class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     """
@@ -1362,8 +1434,11 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
 
     def dataReceived(self, bytes):
         self.data += bytes
-        #log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
-        #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+        # log.msg('BYTES INFO: (left: %r, max: %r, bytes: %r, data: %r)' %
+        #         (self.remoteWindowLeft,
+        #          self.localMaxPacket,
+        #          len(bytes),
+        #          len(self.data)))
         log.msg('[%s] BYTES RECV: %r' % (self.device, bytes))
 
     def eofReceived(self):
@@ -1384,7 +1459,8 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
 
     def send_next_command(self):
         """Send the next command in the stack stored on the connection"""
-        log.msg('[%s] CHANNEL %s: sending next command!' % (self.device, self.id))
+        log.msg('[%s] CHANNEL %s: '
+                'sending next command!' % (self.device, self.id))
         self.conn.send_command()
 
     def closeReceived(self):
@@ -1410,6 +1486,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         exitStatus = int(struct.unpack('>L', data)[0])
         log.msg('[%s] Exit status: %s' % (self.device, exitStatus))
 
+
 class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     """
     An SSH channel to execute Junoscript commands on a Juniper device running
@@ -1425,7 +1502,9 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         self.conn.sendRequest(self, 'exec', common.NS('junoscript'))
         _xml = '<?xml version="1.0" encoding="us-ascii"?>\n'
         # TODO (jathan): Make the release version dynamic at some point
-        _xml += '<junoscript version="1.0" hostname="%s" release="7.6R2.9">\n' % socket.getfqdn()
+        _xml += ('<'
+                 'junoscript version="1.0" hostname="%s" release="7.6R2.9"'
+                 '>\n') % socket.getfqdn()
         self.write(_xml)
         self.xmltb = IncrementalXMLTreeBuilder(self._endhandler)
 
@@ -1465,7 +1544,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     def _endhandler(self, tag):
         """Do this when the XML stream ends."""
         if tag.tag != '{http://xml.juniper.net/xnm/1.1/xnm}rpc-reply':
-            return None # hopefully it's interior to an <rpc-reply>
+            return None  # hopefully it's interior to an <rpc-reply>
         self.results.append(tag)
 
         if has_junoscript_error(tag) and not self.with_errors:
@@ -1482,6 +1561,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
                         (self.device, self.command_interval))
             reactor.callLater(self.command_interval, self._send_next)
 
+
 class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
     """
     An SSH channel to interact with Citrix NetScaler hardware.
@@ -1494,8 +1574,11 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         """Do this when we receive data."""
         self.data += bytes
         log.msg('[%s] BYTES: %r' % (self.device, bytes))
-        #log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
-        #        (self.remoteWindowLeft, self.localMaxPacket, len(bytes), len(self.data)))
+        # log.msg('BYTES: (left: %r, max: %r, bytes: %r, data: %r)' %
+        #        (self.remoteWindowLeft,
+        #         self.localMaxPacket,
+        #         len(bytes),
+        #         len(self.data)))
 
         # We have to check for errors first, because a prompt is not returned
         # when an error is received like on other systems.
@@ -1512,11 +1595,11 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
 
         m = self.prompt.search(self.data)
         if not m:
-            #log.msg('STATE: prompt match failure', debug=True)
+            # log.msg('STATE: prompt match failure', debug=True)
             return None
         log.msg('[%s] STATE: prompt %r' % (self.device, m.group()))
 
-        result = self.data[:m.start()] # Strip ' Done\n' from results.
+        result = self.data[:m.start()]  # Strip ' Done\n' from results.
 
         if self.initialized:
             self.results.append(result)
@@ -1527,6 +1610,8 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
         reactor.callLater(self.command_interval, self._send_next)
 
 PICA8_NO_MORE_COMMANDS = ['show']
+
+
 class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
     def _setup_commanditer(self, commands=None):
         """
@@ -1537,23 +1622,25 @@ class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
             commands = self.factory.commands
         new_commands = []
         for command in commands:
-            root = command.split(' ', 1)[0] # get the root command
+            root = command.split(' ', 1)[0]  # get the root command
             if root in PICA8_NO_MORE_COMMANDS:
                 command += ' | no-more'
             new_commands.append(command)
         self.commanditer = iter(new_commands)
- 
+
     def channelOpen(self, data):
         """
         Override channel open, which is where commanditer is setup in the
         base class.
         """
         super(TriggerSSHPica8Channel, self).channelOpen(data)
-        self._setup_commanditer() # Replace self.commanditer with our version
+        self._setup_commanditer()  # Replace self.commanditer with our version
 
-#==================
-# XML Stuff (for Junoscript)
-#==================
+# ==================
+#  XML Stuff (for Junoscript)
+# ==================
+
+
 class IncrementalXMLTreeBuilder(XMLTreeBuilder):
     """
     Version of XMLTreeBuilder that runs a callback on each tag.
@@ -1569,9 +1656,11 @@ class IncrementalXMLTreeBuilder(XMLTreeBuilder):
         """Do this when we're out of XML!"""
         return self._endhandler(XMLTreeBuilder._end(self, tag))
 
-#==================
-# Telnet Channels
-#==================
+# ==================
+#  Telnet Channels
+# ==================
+
+
 class TriggerTelnetClientFactory(TriggerClientFactory):
     """
     Factory for a telnet connection.
@@ -1586,7 +1675,11 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
         self.action.factory = self
         TriggerClientFactory.__init__(self, deferred, creds, init_commands)
 
-class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
+
+class TriggerTelnet(
+        telnet.Telnet,
+        telnet.ProtocolTransportMixin,
+        TimeoutMixin):
     """
     Telnet-based session login state machine. Primarily used by IOS-like type
     devices.
@@ -1594,10 +1687,10 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     def __init__(self, timeout=settings.TELNET_TIMEOUT):
         self.protocol = telnet.TelnetProtocol()
         self.waiting_for = [
-            ('Username: ', self.state_username),                  # Most
-            ('Please Enter Login Name  : ', self.state_username), # OLD Foundry
-            ('User Name:', self.state_username),                  # Dell
-            ('login: ', self.state_username),                     # Arista, Juniper
+            ('Username: ', self.state_username),                   # Most
+            ('Please Enter Login Name  : ', self.state_username),  # OLD Fndry
+            ('User Name:', self.state_username),                   # Dell
+            ('login: ', self.state_username),                      # EOS, JunOs
             ('Password: ', self.state_login_pw),
         ]
         self.data = ''
@@ -1609,11 +1702,11 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     def enableRemote(self, option):
         """
         Allow telnet clients to enable options if for some reason they aren't
-        enabled already (e.g. ECHO). (Ref: http://bit.ly/wkFZFg) For some reason
-        Arista Networks hardware is the only vendor that needs this method
-        right now.
+        enabled already (e.g. ECHO). (Ref: http://bit.ly/wkFZFg) For some
+        reason Arista Networks hardware is the only vendor that needs this
+        method right now.
         """
-        #log.msg('[%s] enableRemote option: %r' % (self.host, option))
+        # log.msg('[%s] enableRemote option: %r' % (self.host, option))
         log.msg('enableRemote option: %r' % option)
         return True
 
@@ -1648,11 +1741,11 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         self.waiting_for = [
             ('#', self.state_logged_in),
             ('>', self.state_enable),
-            ('> ', self.state_logged_in),             # Juniper
+            ('> ', self.state_logged_in),              # Juniper
             ('\n% ', self.state_percent_error),
-            ('# ', self.state_logged_in),             # Dell
-            ('\nUsername: ', self.state_raise_error), # Cisco
-            ('\nlogin: ', self.state_raise_error),    # Arista, Juniper
+            ('# ', self.state_logged_in),              # Dell
+            ('\nUsername: ', self.state_raise_error),  # Cisco
+            ('\nlogin: ', self.state_raise_error),     # Arista, Juniper
         ]
 
     def state_logged_in(self):
@@ -1666,7 +1759,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         del self.waiting_for, self.data
 
         # Run init_commands
-        self.factory._init_commands(protocol=self) # We are the protocol
+        self.factory._init_commands(protocol=self)  # We are the protocol
 
         # Control passed here :)
         action = self.factory.action
@@ -1687,8 +1780,8 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         log.msg("[%s] ENABLE: Sending command: enable" % self.host)
         self.write('enable\n')
         self.waiting_for = [
-            ('Password: ', self.state_enable_pw), # Foundry
-            ('Password:', self.state_enable_pw),  # Dell
+            ('Password: ', self.state_enable_pw),  # Foundry
+            ('Password:', self.state_enable_pw),   # Dell
         ]
 
     def state_login_pw(self):
@@ -1704,7 +1797,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         if pw is None:
             pw = ''
 
-        #log.msg('Sending password %s' % pw)
+        # log.msg('Sending password %s' % pw)
         self.write(pw + '\n')
         self.waiting_for = [('>', self.state_enable),
                             ('#', self.state_logged_in),
@@ -1718,7 +1811,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         else:
             from trigger.netdevices import NetDevices
             pw = NetDevices().find(self.host).enablePW
-        #log.msg('Sending password %s' % pw)
+        # log.msg('Sending password %s' % pw)
         self.write(pw + '\n')
         self.waiting_for = [('#', self.state_logged_in),
                             ('\n% ', self.state_percent_error),
@@ -1740,9 +1833,12 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
 
     def timeoutConnection(self):
         """Do this when we timeout logging in."""
-        log.msg('[%s] Timed out while logging in' % self.transport.connector.host)
-        self.factory.err = exceptions.LoginTimeout('Timed out while logging in')
+        log.msg('[%s] '
+                'Timed out while logging in' % self.transport.connector.host)
+        self.factory.err = exceptions.LoginTimeout('Timed out while '
+                                                   'logging in')
         self.loseConnection()
+
 
 class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     """
@@ -1760,7 +1856,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.with_errors = with_errors
         self.timeout = timeout
         self.command_interval = command_interval
-        self.prompt =  re.compile(settings.IOSLIKE_PROMPT_PAT)
+        self.prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
         self.startup_commands = copy.copy(self.device.startup_commands)
         log.msg('[%s] My initialize commands: %r' % (self.device,
                                                      self.startup_commands))
@@ -1859,5 +1955,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     def timeoutConnection(self):
         """Do this when we timeout."""
         log.msg('[%s] Timed out while sending commands' % self.device)
-        self.factory.err = exceptions.CommandTimeout('Timed out while sending commands')
+        self.factory.err = exceptions.CommandTimeout('Timed out while '
+                                                     'sending commands')
         self.loseConnection()
