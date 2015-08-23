@@ -86,6 +86,7 @@ vendors:
 + Cisco Systems
 
   - All router and switch platforms running IOS
+  - All firewalls running ASA software (NetACLInfo not implemented)
   - All switch platforms running NX-OS
 
 + Dell
