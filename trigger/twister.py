@@ -29,6 +29,12 @@ from trigger.conf import settings
 from trigger import tacacsrc, exceptions
 from trigger.utils import network, cli
 
+__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
+__maintainer__ = 'Jathan McCollum'
+__email__ = 'jathan@gmail.com'
+__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
+__version__ = '1.5.7'
+
 # Exports
 # TODO (jathan): Setting this prevents everything from showing up in the Sphinx
 # docs; so let's make sure we account for that ;)
