@@ -107,8 +107,8 @@ vendors:
 
 + Juniper Networks
 
-  - All router and switch platforms running Junos
-  - NetScreen firewalls running ScreenOS (Junos not yet supported)
+  - All router, switch, and firewall platforms running Junos
+  - NetScreen firewalls running ScreenOS
 
 + MRV Communications
 
