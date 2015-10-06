@@ -64,11 +64,13 @@ def stop_reactor(result):
         reactor.stop()
         return result
 
-if __name__ == '__main__':
+def main():
     nd = NetDevices()
+
+    global device_list
     device_list = []
+    global routers
     routers = {}
-    radiantSites = []
 
     if len(sys.argv) > 1:
         device_list = sys.argv[1:]
@@ -123,3 +125,6 @@ if __name__ == '__main__':
     jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
     data = jsonpickle.encode(routers)
     stateFile.write(data)
+
+if __name__ == '__main__':
+    main()
