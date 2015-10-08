@@ -1,19 +1,12 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python
 
-import os
-import re
 import sys
-import time
-import csv
-import ipdb
 import jsonpickle
-from trigger.netdevices import NetDevices
 from trigger.cmds import ReactorlessCommando
 from twisted.python import log
-from twisted.internet import defer, task, reactor
-from IPy import IP
+from twisted.internet import reactor
 from Router import Router
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class getRouterDetails(ReactorlessCommando):
@@ -66,7 +59,7 @@ def stop_reactor(result):
 
 
 def main():
-    nd = NetDevices()
+    # nd = NetDevices()
 
     global device_list
     device_list = []
@@ -90,7 +83,7 @@ def main():
         stateFile.close()
         routers = jsonpickle.decode(data)
         data = None
-    except Exception as e:
+    except Exception:
         print("Failed to open routerstate.json")
 
     for device in device_list:

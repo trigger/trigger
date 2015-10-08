@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class Router(object):
