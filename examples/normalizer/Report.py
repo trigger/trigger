@@ -43,8 +43,6 @@ class getRouterDetails(ReactorlessCommando):
 
 
 def validateRouterDetails(result):
-    devicesToCorrect = []
-
     for device, results in result.items():
         routers[device].results = results
         routers[device].validate()
