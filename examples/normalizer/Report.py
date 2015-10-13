@@ -10,6 +10,9 @@ from datetime import datetime
 
 
 class getRouterDetails(ReactorlessCommando):
+    """
+    Collection device information
+    """
     commands = Router.showCommands
 
     def select_next_device(self, jobs=None):
@@ -36,6 +39,9 @@ class getRouterDetails(ReactorlessCommando):
             return None
 
     def errback(self, failure, device):
+        """
+        Error Handler for errors in getRouterDetails
+        """
         print "Error in getRouterDetails for device {}\n{}".format(
             device,
             failure.getTraceback()
@@ -43,6 +49,10 @@ class getRouterDetails(ReactorlessCommando):
 
 
 def validateRouterDetails(result):
+    """
+    Runs device validations on each Router object that is returned by
+    getRouterDetails
+    """
     for device, results in result.items():
         routers[device].results = results
         routers[device].validate()
@@ -51,14 +61,18 @@ def validateRouterDetails(result):
 
 
 def stop_reactor(result):
+    """
+    Stop the reactor after execution
+    """
     if reactor.running:
         reactor.stop()
         return result
 
 
 def main():
-    # nd = NetDevices()
-
+    """
+    Collect data from devices and generate the report
+    """
     global device_list
     device_list = []
     global routers

@@ -10,6 +10,10 @@ import jsonpickle
 
 
 class getRouterDetails(ReactorlessCommando):
+    """
+    Collection device information
+    """
+
     commands = Router.showCommands
 
     def select_next_device(self, jobs=None):
@@ -36,6 +40,9 @@ class getRouterDetails(ReactorlessCommando):
             return None
 
     def errback(self, failure, device):
+        """
+        Error Handler for errors in getRouterDetails
+        """
         print "Error in getRouterDetails for device {}\n{}".format(
             device,
             failure.getTraceback()
@@ -43,6 +50,11 @@ class getRouterDetails(ReactorlessCommando):
 
 
 def validateRouterDetails(result):
+    """
+    Runs device validations on each Router object that is returned by
+    getRouterDetails, if a device requires normalization return it for
+    processing by normalizeRouters
+    """
     print "Validating router details"
     devicesToCorrect = []
 
@@ -57,11 +69,11 @@ def validateRouterDetails(result):
 
 
 class normalizeRouters(ReactorlessCommando):
+    """
+    Execute the normalization command list generated for each device
+    """
     def to_cisco(self, dev, commands=None, extra=None):
         dev_commands = routers[dev.nodeName].commands
-        # self.commands = dev_commands
-        # print "Device {}: Executing Commands:\n{}".format(
-        #       dev.nodeName, dev_commands)
         return dev_commands
 
     def from_cisco(self, results, device, commands=None):
@@ -78,7 +90,9 @@ class normalizeRouters(ReactorlessCommando):
 
 
 def initiateRouterNormalization(devices):
-    # log.startLogging(sys.stdout, setStdout=False)
+    """
+    Call normalizeRouters with the devices that require normalization
+    """
     if devices is not None:
         print "Normalizing {} devices ({})".format(
             len(devices),
@@ -95,14 +109,18 @@ def initiateRouterNormalization(devices):
 
 
 def stop_reactor(result):
+    """
+    Stop the reactor after execution
+    """
     if reactor.running:
         reactor.stop()
         return result
 
 
 def main():
-    # nd = NetDevices()
-
+    """
+    Collect data from devices and normalize their configuration if required
+    """
     global device_list
     device_list = []
     global routers

@@ -18,11 +18,18 @@ class Router(object):
         self.lastAccess = None
 
     def validate(self):
+        """
+        Updates the time that the device was last accessed and runs validation
+        scripts to confirm the device state.
+        """
         self.lastAccess = datetime.now()
         self.validateSystem()
         self.validateAcl()
 
     def validateSystem(self):
+        """
+        Valiated system level information for the device
+        """
         for line in self.results["show ver"].splitlines():
             line = line.strip()
             m = re.search("^Cisco IOS Software.*Version (\S+), ", line)
@@ -30,6 +37,9 @@ class Router(object):
                 self.version = m.group(1)
 
     def validateAcl(self):
+        """
+        Validated ACLs on the device
+        """
         self.acls = []
         for line in self.results["show run | i ip access-list"].splitlines():
             line = line.strip()
@@ -38,6 +48,10 @@ class Router(object):
                 self.acls.append(m.group(1))
 
     def normalize(self):
+        """
+        Processes validation results and prepares commands that are required
+        to normalize the device configuration
+        """
         self.commands = []
         self.normalizeRequired = False
         if "trigger-test-1" not in self.acls:
@@ -53,8 +67,3 @@ class Router(object):
         pre_commands = ["conf t"]
         post_commands = ["end", "write mem"]
         self.commands = pre_commands+self.commands+post_commands
-
-        # print "Commands to run on device {} are {}".format(
-        #     device,
-        #     routers[device].commands
-        # )

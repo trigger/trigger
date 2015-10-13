@@ -1,3 +1,8 @@
+Requirements
+============
+
+Both of these scripts depend on the jsonpickle library which can be installed using pip. This tool is used to generate json files are used to store device state information for reporting.
+
 Normalizer
 ==========
 
