@@ -159,7 +159,7 @@ def pretty_time(t):
     2011-07-19 12:40:30.820920-04:00
     >>> print pretty_time(t)
     09:40 PDT
-    >>> t = datetime.datetime(2011,07,20,04,13,tzinfo=localzone)
+    >>> t = localzone.localize(datetime.datetime(2011,07,20,04,13))
     >>> print t
     2011-07-20 04:13:00-05:00
     >>> print pretty_time(t)
@@ -168,13 +168,24 @@ def pretty_time(t):
     from trigger.conf import settings
     localzone = timezone(os.environ.get('TZ', settings.BOUNCE_DEFAULT_TZ))
     t = t.astimezone(localzone)
-    midnight = datetime.datetime.combine(datetime.datetime.now(), datetime.time(tzinfo=localzone))
+    ct = t.replace(tzinfo=None) # convert to naive time
+    # to make the following calculations easier
+    # calculate naive 'now' in local time
+    # passing localzone into datetime.now directly can cause
+    # problems, see the 'pytz' docs if curious
+    now = datetime.datetime.now(pytz.UTC)
+    now = now.astimezone(localzone)
+    now = now.replace(tzinfo=None)
+    # and compute midnight
+    midnight = datetime.datetime.combine(now, datetime.time())
     midnight += datetime.timedelta(1)
-    if t < midnight:
+    tomorrow = midnight + datetime.timedelta(1)
+    thisweek = midnight + datetime.timedelta(6)
+    if ct < midnight:
         return t.strftime('%H:%M %Z')
-    elif t < midnight + datetime.timedelta(1):
+    elif ct < tomorrow:
         return t.strftime('tomorrow %H:%M %Z')
-    elif t < midnight + datetime.timedelta(6):
+    elif ct < thisweek:
         return t.strftime('%A %H:%M %Z')
     else:
         return t.strftime('%Y-%m-%d %H:%M %Z')
