@@ -848,6 +848,7 @@ class NetDevices(DictMixin):
             :param string key: Hostname prefix to find.
             :returns: NetDevice object
             """
+            key = key.lower()
             if key in self:
                 return self[key]
 
