@@ -23,6 +23,13 @@ Enhancements
   have a manufacturer defined (See: :setting:`FALLBACK_MANUFACTURER`) which
   defaults to the value ``UNKNOWN``.
 
+Bug Fixes
+---------
+
++ Fixed a bug where devices w/ mixed case names aren't properly detected by
+  `~trigger.cmds.Commando` subclasses, since
+  `~trigger.netdevices.NetDevices` normalizes the hostname on load.
+
 .. _v1.5.2:
 
 1.5.2

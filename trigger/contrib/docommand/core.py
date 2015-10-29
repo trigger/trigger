@@ -224,7 +224,6 @@ def get_commands_from_opts(opts):
         print 'loaded %s commands' % len(ret)
     return ret
 
-# https://gist.github.com/jathanism/4543974 for a possible solution.
 def do_work(work=None, action_class=None):
     """list results = do_work(list work)"""
     '''
@@ -244,9 +243,11 @@ def do_work(work=None, action_class=None):
         d = job['d']
         c = job['c']
         # **These next 2 lines do all the real work for this tool**
-        # TODO: This will ultimately fail with a ReactorNotRestartable because calling each action class separately. We need to account for this. See
+        # TODO: This will ultimately fail with a ReactorNotRestartable because
+        # calling each action class separately. We need to account for this.
+        # See: https://gist.github.com/jathanism/4543974
         n = action_class(devices=d, files=f, commands=c, verbose=VERBOSE,
-                        debug=DEBUG, timeout=TIMEOUT, production_only=PROD_ONLY)
+                         debug=DEBUG, timeout=TIMEOUT, production_only=PROD_ONLY)
         if PUSH:
             if VERBOSE:
                 print "running Commando"

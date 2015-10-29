@@ -212,7 +212,7 @@ class Commando(object):
 
             # Make sure that devices are actually in netdevices and keep going
             try:
-                devobj = self.nd.find(str(dev))
+                devobj = self.nd.find(str(dev).lower())
             except KeyError:
                 msg = 'Device not found in NetDevices: %s' % dev
                 log.err(msg)
