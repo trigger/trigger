@@ -29,6 +29,9 @@ Bug Fixes
 + Fixed a bug where devices w/ mixed case names aren't properly detected by
   `~trigger.cmds.Commando` subclasses, since
   `~trigger.netdevices.NetDevices` normalizes the hostname on load.
++ :bug:`238` Fixed a bug where sending an enable password to a device in a low
+  latency environment (sub 1 ms) would result in the password being sent before
+  the password prompt is displayed by the device.
 
 .. _v1.5.2:
 

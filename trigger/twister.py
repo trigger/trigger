@@ -138,7 +138,15 @@ def send_enable(proto_obj, disconnect_on_fail=True):
         log.msg('[%s] Enable password detected, sending...' % proto_obj.device)
         proto_obj.data = ''  # Zero out the buffer before sending the password
         proto_obj.write('enable' + proto_obj.device.delimiter)
-        proto_obj.write(enable_pw + proto_obj.device.delimiter)
+
+        # In low latency environments (< 1ms), we might send the password
+        # before the "Password:" prommpt is displayed. Here we wait a split
+        # second for the password prompt to appear before sending the
+        # password. See: https://github.com/trigger/trigger/issues/238
+        from twisted.internet import reactor
+        reactor.callLater(
+             0.1, proto_obj.write, enable_pw + proto_obj.device.delimiter
+        )
         proto_obj.enabled = True
     else:
         log.msg('[%s] Enable password not found, not enabling.' %
