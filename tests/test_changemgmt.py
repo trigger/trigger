@@ -24,8 +24,8 @@ import unittest
 
 
 # Globals
-EST = timezone('US/Eastern')
-PST = timezone('US/Pacific')
+eastern = timezone('US/Eastern')
+pacific = timezone('US/Pacific')
 
 
 class CheckBounceStatus(unittest.TestCase):
@@ -48,31 +48,31 @@ class CheckBounceStatus(unittest.TestCase):
 
 class CheckBounceWindow(unittest.TestCase):
     def setUp(self):
-        self.est = BounceWindow(green='5-7', yellow='8-11')
-        self.pst = BounceWindow(green='2-4', yellow='5-7')
+        self.eastern = BounceWindow(green='5-7', yellow='8-11')
+        self.pacific = BounceWindow(green='2-4', yellow='5-7')
 
     def testStatus(self):
         """Test lookup of bounce window status."""
         # 00:00 UTC, 19:00 EST
         when = datetime(2006, 1, 3, tzinfo=UTC)
-        self.assertEquals(self.est.status(when), 'red')
-        # 06:00 PST, 14:00 UTC
-        then = datetime(2013, 6, 3, tzinfo=PST)
-        self.assertEquals(self.pst.status(then), 'green')
+        self.assertEquals(self.eastern.status(when), 'red')
+        # 03:00 PST, 14:00 UTC
+        then = pacific.localize(datetime(2013, 6, 4))
+        self.assertEquals(self.pacific.status(then), 'green')
 
     def testNextOk(self):
         """Test bounce window next_ok() method."""
         when = datetime(2013, 1, 3, 22, 15, tzinfo=UTC)
-        next_ok = self.pst.next_ok('yellow', when)
+        next_ok = self.pacific.next_ok('yellow', when)
         # Did we get the right answer?  (2 am PST the next morning)
         self.assertEquals(next_ok.tzinfo, UTC)
-        self.assertEquals(next_ok.astimezone(EST).hour, 2)
+        self.assertEquals(next_ok.astimezone(eastern).hour, 2)
         self.assertEquals(next_ok, datetime(2013, 1, 4, 7, 0, tzinfo=UTC))
-        self.assertEquals(self.pst.status(next_ok), 'green')
+        self.assertEquals(self.pacific.status(next_ok), 'green')
         # next_ok() should return current time if already ok.
-        self.assertEquals(self.pst.next_ok('yellow', next_ok), next_ok)
+        self.assertEquals(self.pacific.next_ok('yellow', next_ok), next_ok)
         then = datetime(2013, 1, 3, 22, 15, tzinfo=UTC)
-        self.assertEquals(self.pst.next_ok('red', then), then)
+        self.assertEquals(self.pacific.next_ok('red', then), then)
 
 class CheckWeekend(unittest.TestCase):
     def testWeekend(self):

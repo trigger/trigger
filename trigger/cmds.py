@@ -737,6 +737,8 @@ class NetACLInfo(Commando):
         IOS devices"""
         if dev.is_cisco_asa():
             return ['show running-config | include ^(interface | ip address | nameif | description |access-group|!)']
+        elif dev.is_cisco_nexus():
+            return ['show running-config | include "^(interface |  ip address |  ip access-group |  description |!)"']
         else:
             return ['show configuration | include ^(interface | ip address | ip access-group | description|!)']
 
@@ -983,8 +985,7 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disab
     iface_body = pp.Optional(description) + pp.Optional(acls) + pp.Optional(addrs) + pp.Optional(acls)
     #foundry's body is acl then ip and cisco's is ip then acl
 
-    iface_info = pp.Optional(unwanted) + iface_keyword +  pp.Dict( pp.Group(interface + iface_body) ) + pp.SkipTo(bang)
-    #iface_info = unwanted +  pp.Dict( pp.Group(interface + iface_body) ) + pp.SkipTo(bang)
+    iface_info = pp.Optional(unwanted) + iface_keyword +  pp.Dict( pp.Group(interface + iface_body) ) + pp.Optional( pp.SkipTo(bang) )
 
     interfaces = pp.Dict( pp.ZeroOrMore(iface_info) )
 

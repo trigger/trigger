@@ -2,6 +2,45 @@
 Changelog
 =========
 
+.. _v1.5.3:
+
+1.5.3
+=====
+
+New Features
+------------
+
++ Remote execution on Avocent console servers is now officially supported.
++ Example `normalizer
+  <https://github.com/trigger/trigger/tree/develop/examples/normalizer>`_
+  project added to the ``examples`` directory at the root of the repository.
+
+Enhancements
+------------
+
++ An identity test for `~trigger.netdevices.NetDevice` objects has been added
+  that can be used to check whether a devices is a Cisco Nexus. You may utilize
+  it by calling `.is_cisco_nexus()` on any `NetDevice` object.
++ Support for parsing interfaces on Cisco Nexus devices has been added.
++ A new global setting now defines what to do when a device object does not
+  have a manufacturer defined (See: :setting:`FALLBACK_MANUFACTURER`) which
+  defaults to the value ``UNKNOWN``.
++ :feature:`212` The `~trigger.twister` module is now PEP8-compliant.
+
+Bug Fixes
+---------
+
++ Fixed a bug where devices w/ mixed case names aren't properly detected by
+  `~trigger.cmds.Commando` subclasses, since
+  `~trigger.netdevices.NetDevices` normalizes the hostname on load.
++ :bug:`236` Fixed a bug in `~trigger.changemgmt` so that Trigger can use the
+  current version of ``pytz``.
++ :bug:`238` Fixed a bug where sending an enable password to a device in a low
+  latency environment (sub 1 ms) would result in the password being sent before
+  the password prompt is displayed by the device.
++ :bug:`241` Pin Twisted version to 15.4.0 so that py2.6 unit tests succeed.
+  (Twisted 15.5.0 dropped support for Python 2.6)
+
 .. _v1.5.2:
 
 1.5.2

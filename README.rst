@@ -1,6 +1,14 @@
 What is Trigger?
 ================
 
+.. image:: https://travis-ci.org/trigger/trigger.png
+   :alt: Build Status
+   :target: https://travis-ci.org/trigger/trigger
+   
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/trigger/trigger
+   :target: https://gitter.im/trigger/trigger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 Trigger is a robust network automation toolkit written in Python that was
 designed for interfacing with network devices and managing network
 configuration and security policy. It increases the speed and efficiency of
@@ -13,6 +21,19 @@ has since been expanded to be a full-featured network automation toolkit.
 With the high number of network devices on the AOL network this application is
 invaluable to performance and reliability. We hope you'll find it useful on
 your network and consider participating!
+
+Supported Platforms
+===================
+
+* Cisco IOS, NX-OS, and ASA software
+* Juniper Junos and ScreenOS
+* Force10 router and switch platforms running FTOS
+* Arista Networks 7000-family switches
+* ... and more!
+
+Refer to the `official docs`_ for the full list.
+
+.. _official docs: http://trigger.readthedocs.org/en/latest/#supported-platforms
 
 Key Features
 ============
