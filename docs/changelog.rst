@@ -11,6 +11,9 @@ New Features
 ------------
 
 + Remote execution on Avocent console servers is now officially supported.
++ Example `normalizer
+  <https://github.com/trigger/trigger/tree/develop/examples/normalizer>`_
+  project added to the ``examples`` directory at the root of the repository.
 
 Enhancements
 ------------
@@ -22,6 +25,7 @@ Enhancements
 + A new global setting now defines what to do when a device object does not
   have a manufacturer defined (See: :setting:`FALLBACK_MANUFACTURER`) which
   defaults to the value ``UNKNOWN``.
++ :feature:`212` The `~trigger.twister` module is now PEP8-compliant.
 
 Bug Fixes
 ---------
@@ -29,9 +33,13 @@ Bug Fixes
 + Fixed a bug where devices w/ mixed case names aren't properly detected by
   `~trigger.cmds.Commando` subclasses, since
   `~trigger.netdevices.NetDevices` normalizes the hostname on load.
++ :bug:`236` Fixed a bug in `~trigger.changemgmt` so that Trigger can use the
+  current version of ``pytz``.
 + :bug:`238` Fixed a bug where sending an enable password to a device in a low
   latency environment (sub 1 ms) would result in the password being sent before
   the password prompt is displayed by the device.
++ :bug:`241` Pin Twisted version to 15.4.0 so that py2.6 unit tests succeed.
+  (Twisted 15.5.0 dropped support for Python 2.6)
 
 .. _v1.5.2:
 
