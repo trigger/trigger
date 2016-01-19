@@ -2,6 +2,7 @@
 
 import sys
 import jsonpickle
+import csv
 from trigger.cmds import ReactorlessCommando
 from twisted.python import log
 from twisted.internet import reactor
@@ -110,22 +111,26 @@ def main():
 
     reactor.run()
 
-    with open('report.csv', 'w') as report:
-        report.write("Device,Last Access,Version\n")
 
-        for device in sorted(routers):
-            reportLine = device
-            if routers[device].lastAccess:
-                reportLine += ",{:%Y-%m-%d %H:%M}".format(
-                    routers[device].lastAccess
-                )
-            else:
-                reportLine += ",Never"
-            if routers[device].version:
-                reportLine += "," + routers[device].version
-            else:
-                reportLine += ",Unknown"
-            report.write(reportLine+"\n")
+    with open("report.csv", "w") as f:
+        fieldNames = ["Device", "Last Access", "Version"]
+        writer = csv.DictWriter(f, fieldNames)
+        writer.writeheader()
+    
+        for router in routers.itervalues():
+            try:
+                last_access = "{:%Y-%m-%d %H:%M}".format(router.lastAccess)
+            except AttributeError:
+                last_access = "Never"
+            try:
+                version = router.version
+            except AttributeError:
+                version = "Unknown"
+            writer.writerow({
+                "Device": router.name,
+                "Last Access": last_access,
+                "Version": version
+                })
 
     stateFile = open("routerstate.json", "w")
     jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
