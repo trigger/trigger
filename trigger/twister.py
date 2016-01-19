@@ -145,7 +145,7 @@ def send_enable(proto_obj, disconnect_on_fail=True):
         # password. See: https://github.com/trigger/trigger/issues/238
         from twisted.internet import reactor
         reactor.callLater(
-             0.1, proto_obj.write, enable_pw + proto_obj.device.delimiter
+            0.1, proto_obj.write, enable_pw + proto_obj.device.delimiter
         )
         proto_obj.enabled = True
     else:
@@ -832,10 +832,8 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         Once the connection is up, set the ciphers but don't do anything else!
         """
         self.currentEncryptions = transport.SSHCiphers(
-                'none',
-                'none',
-                'none',
-                'none')
+            'none', 'none', 'none', 'none'
+        )
         self.currentEncryptions.setKeys('', '', '', '', '', '')
 
     def dataReceived(self, data):
@@ -852,8 +850,9 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         options.identitys = None  # Let it use defaults
         options['noagent'] = None  # Use ssh-agent if SSH_AUTH_SOCK is set
         ua = TriggerSSHUserAuth(
-                self.factory.creds.username, options,
-                self.factory.connection_class(self.factory.commands))
+            self.factory.creds.username, options,
+            self.factory.connection_class(self.factory.commands)
+        )
         self.requestService(ua)
 
     def receiveError(self, reason, desc):
@@ -1082,9 +1081,8 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
 
         d = defer.Deferred()
         reactor.callLater(
-                self.command_interval,
-                d.callback,
-                self.openChannel(chan))
+            self.command_interval, d.callback, self.openChannel(chan)
+        )
         d.addCallback(command_completed, chan)
         d.addErrback(command_failed, chan)
         d.addBoth(log_status)
@@ -1401,9 +1399,8 @@ class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
 
         # Request a pty even tho we are not actually using one.
         pr = session.packRequest_pty_req(
-                os.environ['TERM'],
-                (80, 24, 0, 0),
-                '')
+            os.environ['TERM'], (80, 24, 0, 0), ''
+        )
         self.conn.sendRequest(self, 'pty-req', pr)
         d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
         d.addCallback(self._gotResponse)
