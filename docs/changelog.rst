@@ -2,6 +2,20 @@
 Changelog
 =========
 
+.. _v1.5.4:
+
+1.5.4
+=====
+
+Bug Fixes
+---------
+
++ Bugfix when using `~trigger.netdevices.NetDevices.match()` to lookup devices
+  by attribute/value, which will no longer result in a `KeyError` if any device
+  is missing the desired attribute. This means that besides the minimum
+  required attributes, `~trigger.netdevices.NetDevice` objects are no longer
+  required to have uniform attributes.
+
 .. _v1.5.3:
 
 1.5.3

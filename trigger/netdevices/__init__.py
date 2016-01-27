@@ -916,31 +916,14 @@ class NetDevices(DictMixin):
 
             :returns: List of NetDevice objects
             """
-            # Only build the lower-to-regular mapping once per instance and
-            # only on the first time .match() is called.
-            if not hasattr(self, '_device_key_map'):
-                mydev = self.all()[0]
-                dev_data = vars(mydev)
-                key_map = {}
-                for key in dev_data:
-                    key_map[key.lower()] = key
-
-                self._device_key_map = key_map
-
-            def attr(key):
-                """Helper function for the lowercase to regular attribute mapping."""
-                return self._device_key_map[key]
-
             # Here we build a list comprehension and then eval it at the end.
             query_prefix = "[dev for dev in self.all() if "
             query_suffix = "]"
-            template = "'%s'.lower() in getattr(dev, attr('%s')).lower()"
-            list_body = ' and '.join(template % (v,k.lower()) for k,v in kwargs.iteritems())
+            template = "%r.lower() in getattr(dev, %r, '').lower()"
+            list_body = ' and '.join(
+                template % (v, k.lower()) for k, v in kwargs.iteritems()
+            )
             list_comp = query_prefix + list_body + query_suffix
-
-            # This was for the case-sensitive version
-            #template = "'%s' in dev.%s"
-            #list_body = ' and '.join(template % (v,k) for k,v in kwargs.iteritems())
 
             return eval(list_comp)
 
