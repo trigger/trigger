@@ -13,8 +13,10 @@ Bug Fixes
 + Bugfix when using `~trigger.netdevices.NetDevices.match()` to lookup devices
   by attribute/value, which will no longer result in a `KeyError` if any device
   is missing the desired attribute. This means that besides the minimum
-  required attributes, `~trigger.netdevices.NetDevice` objects are no longer
-  required to have uniform attributes.
+  required attributes, `~trigger.netdevices.NetDevice` objects:
+
+  - Are no longer required to have uniform attributes;
+  - If an attribute does it exist it may have a value of ``None``.
 
 .. _v1.5.3:
 
