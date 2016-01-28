@@ -916,16 +916,32 @@ class NetDevices(DictMixin):
 
             :returns: List of NetDevice objects
             """
-            # Here we build a list comprehension and then eval it at the end.
-            query_prefix = "[dev for dev in self.all() if "
-            query_suffix = "]"
-            template = "%r.lower() in getattr(dev, %r, '').lower()"
-            list_body = ' and '.join(
-                template % (v, k.lower()) for k, v in kwargs.iteritems()
-            )
-            list_comp = query_prefix + list_body + query_suffix
+            all_field_names = getattr(self, '_all_field_names', {})
 
-            return eval(list_comp)
+            # Cache the field names the first time .match() is called.
+            if not all_field_names:
+                # Merge in field_names from every NetDevice
+                for dev in self.all():
+                    dev_fields = ((f.lower(), f) for f in dev.__dict__)
+                    all_field_names.update(dev_fields)
+                self._all_field_names = all_field_names
+
+            # An iterator so we can filtering functionally
+            devices = iter(self.all())
+
+            def map_attr(attr):
+                """Helper function for the lower-to-regular attribute mapping."""
+                return self._all_field_names[attr.lower()]
+
+            # Use generators to keep filtering the iterator of devices.
+            for attr, val in kwargs.iteritems():
+                attr = map_attr(attr)
+                val = val.lower()
+                devices = (
+                    d for d in devices if val in getattr(d, attr, '').lower()
+                )
+
+            return list(devices)
 
         def get_devices_by_type(self, devtype):
             """
