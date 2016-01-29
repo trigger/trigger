@@ -930,15 +930,17 @@ class NetDevices(DictMixin):
             devices = iter(self.all())
 
             def map_attr(attr):
-                """Helper function for the lower-to-regular attribute mapping."""
+                """Helper function for lower-to-regular attribute mapping."""
                 return self._all_field_names[attr.lower()]
 
             # Use generators to keep filtering the iterator of devices.
             for attr, val in kwargs.iteritems():
                 attr = map_attr(attr)
-                val = val.lower()
+                val = str(val).lower()
                 devices = (
-                    d for d in devices if val in getattr(d, attr, '').lower()
+                    d for d in devices if (
+                        val in str(getattr(d, attr, '')).lower()
+                    )
                 )
 
             return list(devices)
