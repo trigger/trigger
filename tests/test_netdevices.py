@@ -87,8 +87,23 @@ class TestNetDevicesWithAcls(unittest.TestCase):
         self.assertEqual(expected, self.nd.match(vendor='juniper'))
         self.assertNotEqual(expected, self.nd.match(vendor='cisco'))
 
+    def test_match_with_null_value(self):
+        """Test the match() method when attr value is ``None``."""
+        self.device.site = None  # Zero it out!
+        expected = [self.device]
+
+        # None raw
+        self.assertEqual(expected, self.nd.match(site=None))
+
+        # "None" string
+        self.assertEqual(expected, self.nd.match(site='None'))
+
+        # Case-insensitive attr *and* value
+        self.assertEqual(expected, self.nd.match(SITE='NONE'))
+
     def tearDown(self):
         NetDevices._Singleton = None
+
 
 class TestNetDevicesWithoutAcls(unittest.TestCase):
     """
@@ -110,6 +125,7 @@ class TestNetDevicesWithoutAcls(unittest.TestCase):
 
     def tearDown(self):
         _reset_netdevices()
+
 
 class TestNetDeviceObject(unittest.TestCase):
     """

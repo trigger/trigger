@@ -916,33 +916,34 @@ class NetDevices(DictMixin):
 
             :returns: List of NetDevice objects
             """
-            # Only build the lower-to-regular mapping once per instance and
-            # only on the first time .match() is called.
-            if not hasattr(self, '_device_key_map'):
-                mydev = self.all()[0]
-                dev_data = vars(mydev)
-                key_map = {}
-                for key in dev_data:
-                    key_map[key.lower()] = key
+            all_field_names = getattr(self, '_all_field_names', {})
 
-                self._device_key_map = key_map
+            # Cache the field names the first time .match() is called.
+            if not all_field_names:
+                # Merge in field_names from every NetDevice
+                for dev in self.all():
+                    dev_fields = ((f.lower(), f) for f in dev.__dict__)
+                    all_field_names.update(dev_fields)
+                self._all_field_names = all_field_names
 
-            def attr(key):
-                """Helper function for the lowercase to regular attribute mapping."""
-                return self._device_key_map[key]
+            # An iterator so we can filtering functionally
+            devices = iter(self.all())
 
-            # Here we build a list comprehension and then eval it at the end.
-            query_prefix = "[dev for dev in self.all() if "
-            query_suffix = "]"
-            template = "'%s'.lower() in getattr(dev, attr('%s')).lower()"
-            list_body = ' and '.join(template % (v,k.lower()) for k,v in kwargs.iteritems())
-            list_comp = query_prefix + list_body + query_suffix
+            def map_attr(attr):
+                """Helper function for lower-to-regular attribute mapping."""
+                return self._all_field_names[attr.lower()]
 
-            # This was for the case-sensitive version
-            #template = "'%s' in dev.%s"
-            #list_body = ' and '.join(template % (v,k) for k,v in kwargs.iteritems())
+            # Use generators to keep filtering the iterator of devices.
+            for attr, val in kwargs.iteritems():
+                attr = map_attr(attr)
+                val = str(val).lower()
+                devices = (
+                    d for d in devices if (
+                        val in str(getattr(d, attr, '')).lower()
+                    )
+                )
 
-            return eval(list_comp)
+            return list(devices)
 
         def get_devices_by_type(self, devtype):
             """
