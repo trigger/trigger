@@ -28,6 +28,7 @@ from trigger import changemgmt
 
 # Constants
 DEVICE_NAME = 'test1-abc.net.aol.com'
+DEVICE2_NAME = 'test2-abc.net.aol.com'
 NETDEVICE_DUMP_EXPECTED = \
 '\n\tHostname:          test1-abc.net.aol.com\n\tOwning Org.:       12345678 - Network Engineering\n\tOwning Team:       Data Center\n\tOnCall Team:       Data Center\n\n\tVendor:            Juniper (JUNIPER)\n\tMake:              M40 INTERNET BACKBONE ROUTER\n\tModel:             M40-B-AC\n\tType:              ROUTER\n\tLocation:          LAB CR10 16ZZ\n\n\tProject:           Test Lab\n\tSerial:            987654321\n\tAsset Tag:         0000012345\n\tBudget Code:       1234578 (Data Center)\n\n\tAdmin Status:      PRODUCTION\n\tLifecycle Status:  INSTALLED\n\tOperation Status:  MONITORED\n\tLast Updated:      2010-07-19 19:56:32.0\n\n'
 
@@ -43,13 +44,14 @@ class TestNetDevicesWithAcls(unittest.TestCase):
     """
     def setUp(self):
         self.nd = NetDevices()
-        self.nodename = self.nd.keys()[0]
-        self.device = self.nd.values()[0]
+        self.device = self.nd[DEVICE_NAME]
+        self.device2 = self.nd[DEVICE2_NAME]
+        self.nodename = self.device.nodeName
         self.device.explicit_acls = set(['test1-abc-only'])
 
     def test_basics(self):
         """Basic test of NetDevices functionality."""
-        self.assertEqual(len(self.nd), 1)
+        self.assertEqual(len(self.nd), 2)
         self.assertEqual(self.device.nodeName, self.nodename)
         self.assertEqual(self.device.manufacturer, 'JUNIPER')
 
@@ -70,22 +72,48 @@ class TestNetDevicesWithAcls(unittest.TestCase):
 
     def test_all(self):
         """Test the all() method."""
-        expected = [self.device]
-        self.assertEqual(expected, self.nd.all())
+        expected = [self.device, self.device2]
+        self.assertEqual(sorted(expected), sorted(self.nd.all()))
 
     def test_search(self):
         """Test the search() method."""
         expected = [self.device]
-        self.assertEqual(expected, self.nd.search(self.nodename))
-        self.assertEqual(expected, self.nd.search('17', field='onCallID'))
-        self.assertEqual(expected, self.nd.search('juniper', field='vendor'))
+        self.assertEqual([self.device], self.nd.search(self.nodename))
+        self.assertEqual(self.nd.all(), self.nd.search('17', field='onCallID'))
 
     def test_match(self):
         """Test the match() method."""
+        self.assertEqual([self.device], self.nd.match(nodename=self.nodename))
+        self.assertEqual(self.nd.all(), self.nd.match(vendor='juniper'))
+        self.assertEqual([], self.nd.match(vendor='cisco'))
+
+    def test_multiple_filter_match(self):
+        """Test that passing multiple kwargs filters properly."""
+        # There should be only one Juniper router.
+        self.assertEqual(
+            self.nd.match(nodename='test1-abc'),
+            self.nd.match(vendor='juniper', devicetype='router')
+        )
+
+        # And only one Juniper switch.
+        self.assertEqual(
+            self.nd.match(nodename='test2-abc'),
+            self.nd.match(vendor='juniper', devicetype='switch')
+        )
+
+    def test_match_with_null_value(self):
+        """Test the match() method when attr value is ``None``."""
+        self.device.site = None  # Zero it out!
         expected = [self.device]
-        self.assertEqual(expected, self.nd.match(nodename=self.nodename))
-        self.assertEqual(expected, self.nd.match(vendor='juniper'))
-        self.assertNotEqual(expected, self.nd.match(vendor='cisco'))
+
+        # None raw
+        self.assertEqual(expected, self.nd.match(site=None))
+
+        # "None" string
+        self.assertEqual(expected, self.nd.match(site='None'))
+
+        # Case-insensitive attr *and* value
+        self.assertEqual(expected, self.nd.match(SITE='NONE'))
 
     def test_match_with_null_value(self):
         """Test the match() method when attr value is ``None``."""
@@ -102,7 +130,8 @@ class TestNetDevicesWithAcls(unittest.TestCase):
         self.assertEqual(expected, self.nd.match(SITE='NONE'))
 
     def tearDown(self):
-        NetDevices._Singleton = None
+        _reset_netdevices()
+
 
 
 class TestNetDevicesWithoutAcls(unittest.TestCase):
@@ -133,12 +162,12 @@ class TestNetDeviceObject(unittest.TestCase):
     """
     def setUp(self):
         self.nd = NetDevices()
-        self.nodename = self.nd.keys()[0]
-        self.device = self.nd.values()[0]
+        self.device = self.nd[DEVICE_NAME]
+        self.nodename = self.device.nodeName
 
     def test_stringify(self):
         """Test casting NetDevice to string"""
-        expected = DEVICE_NAME
+        expected = self.nodename
         self.assertEqual(expected, str(self.device))
 
     def test_bounce(self):
@@ -197,6 +226,7 @@ class TestNetDeviceObject(unittest.TestCase):
     def tearDown(self):
         _reset_netdevices()
 
+
 class TestVendorObject(unittest.TestCase):
     """Test Vendor object"""
     def setUp(self):
@@ -234,6 +264,7 @@ class TestVendorObject(unittest.TestCase):
         """Test determine_vendor() method"""
         expected = 'cisco'
         self.assertEqual(expected, self.vendor.determine_vendor(self.mfr))
+
 
 if __name__ == "__main__":
     unittest.main()

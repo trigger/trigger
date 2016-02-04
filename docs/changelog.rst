@@ -2,6 +2,18 @@
 Changelog
 =========
 
+.. _v1.5.5:
+
+1.5.5
+=====
+
+Bug Fixes
+---------
+
++ Bugfix in `~trigger.netdevices.NetDevices.match()` where keyword arguments
+  were not properly filtering out devices that matched, sometimes resulting in
+  a confusing union of matching devices.
+
 .. _v1.5.4:
 
 1.5.4
