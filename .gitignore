@@ -53,3 +53,6 @@ _build
 
 # PyCharm
 .idea
+
+# 3rd party
+vendor/*

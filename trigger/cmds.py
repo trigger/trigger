@@ -28,6 +28,7 @@ from twisted.python import log
 from twisted.internet import defer, task
 
 from trigger.netdevices import NetDevices
+from trigger.utils.templates import load_cmd_template, get_textfsm_object
 from trigger.conf import settings
 from trigger import exceptions
 
@@ -648,6 +649,13 @@ class ReactorlessCommando(Commando):
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)
 
 
+class StructuredOutput(Commando):
+    def from_cisco(self, data, device, commands=None):
+        log.msg(data, device, commands)
+        self.results[device.nodeName] = _parse_cli_from_textfsm_template(data, device, commands)
+        return True
+
+
 class NetACLInfo(Commando):
     """
     Class to fetch and parse interface information. Exposes a config
@@ -870,6 +878,25 @@ class NetACLInfo(Commando):
 
         self.config[device] = dta
         return True
+
+
+def _parse_cli_from_textfsm_template(cli_data, netdevice, commands):
+    """
+    Processes unstructured CLI data into a structured object.
+    Uses TextFSM templates.
+
+    :param cli_data: The unstructured "raw" CLI data from device.
+    :type  cli_data: str
+    :param netdevice: Trigger NetDevice object
+    :type  netdevice: trigger.netdices.NetDevice
+    """
+    rv = {}
+    dev_type = netdevice.vendor
+    for idx, command in enumerate(commands):
+        re_table = load_cmd_template(dev_type, command)
+        fsm = get_textfsm_object(re_table, cli_data[idx])
+        rv[command] = fsm
+    return rv
 
 
 def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disabled=True):
