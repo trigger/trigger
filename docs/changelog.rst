@@ -2,6 +2,23 @@
 Changelog
 =========
 
+.. _v1.5.6:
+
+1.5.6
+=====
+
+Bug Fixes
+---------
+
+* :bug:`153` Added ``-f/--force-cli`` to ``run_cmds`` to allow CLI execution
+  on Juniper devices or any vendor platform where API support is enabled
+  by default, fixing an underlying bug where CLI output would result in a
+  crash.
+* :bug:`193` Multiple commands can now be sent to Juniper devices w/
+  ``run_cmds``.
+* Updated the Juniper CLI prompt pattern to work when a hostname isn't set
+  that would result in a ``CommandTimeout`` causing execution to fail.
+
 .. _v1.5.5:
 
 1.5.5
