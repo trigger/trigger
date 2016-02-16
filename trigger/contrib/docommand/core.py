@@ -40,7 +40,7 @@ __author__ = 'Jathan McCollum, Mike Biancianello'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013-2014, Salesforce.com'
-__version__ = '3.1'
+__version__ = '3.1.1'
 
 
 # Imports
@@ -57,6 +57,7 @@ PROD_ONLY = False
 DEBUG = False
 VERBOSE = False
 PUSH = False
+FORCE_CLI = False
 TIMEOUT = 30
 
 
@@ -242,12 +243,16 @@ def do_work(work=None, action_class=None):
         f = job['f']
         d = job['d']
         c = job['c']
+
         # **These next 2 lines do all the real work for this tool**
         # TODO: This will ultimately fail with a ReactorNotRestartable because
         # calling each action class separately. We need to account for this.
         # See: https://gist.github.com/jathanism/4543974
-        n = action_class(devices=d, files=f, commands=c, verbose=VERBOSE,
-                         debug=DEBUG, timeout=TIMEOUT, production_only=PROD_ONLY)
+        n = action_class(
+            devices=d, files=f, commands=c, verbose=VERBOSE, debug=DEBUG,
+            timeout=TIMEOUT, production_only=PROD_ONLY, force_cli=FORCE_CLI
+        )
+
         if PUSH:
             if VERBOSE:
                 print "running Commando"
@@ -390,6 +395,8 @@ def parse_args(argv, description=None):
                       help="""Time in seconds to wait for each command to
                       complete (default %s).""" % TIMEOUT)
     # Booleans below
+    parser.add_option('-f','--force-cli', action='store_true', default=False,
+                      help='Force CLI execution, skipping the API.')
     parser.add_option('-v','--verbose', action='store_true', default=False,
                       help='verbose output.')
     parser.add_option('-V','--debug', action='store_true', default=False,
@@ -468,8 +475,10 @@ def set_globals_from_opts(opts):
     global VERBOSE
     global PUSH
     global TIMEOUT
+    global FORCE_CLI
     DEBUG = opts.debug
     VERBOSE = opts.verbose
     PUSH = opts.push
     TIMEOUT = opts.timeout
+    FORCE_CLI = opts.force_cli
 

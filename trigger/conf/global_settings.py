@@ -325,7 +325,7 @@ PROMPT_PATTERNS = {
     'avocent': r'\S+[#\$]|->\s?$',
     'citrix': r'\sDone\n$',
     'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
-    'juniper': r'\S+\@\S+(?:\>|#)\s$',
+    'juniper': r'(?:\S+\@)?\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
     'paloalto': r'\r\n\S+(?:\>|#)\s?$',
