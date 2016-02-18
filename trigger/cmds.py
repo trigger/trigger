@@ -417,7 +417,7 @@ class Commando(object):
         # rv = {}
         for idx, command in enumerate(commands):
             try:
-                re_table = load_cmd_template(device_type, command)
+                re_table = load_cmd_template(device_type.vendor, command)
                 fsm = get_textfsm_object(re_table, results[idx])
                 # rv[command] = fsm
                 yield fsm
@@ -425,8 +425,6 @@ class Commando(object):
                 log.msg("Unable to load TextFSM template, updating with unstructured output")
                 # rv[command] = results[idx]
                 yield results[idx]
-
-
 
     def parse(self, results, device, commands=None):
         """
@@ -916,7 +914,7 @@ def _parse_cli_from_textfsm_template(results, device_type, commands):
     :param netdevice: Trigger NetDevice object
     :type  netdevice: trigger.netdices.NetDevice
     """
-    rv = {}
+    # rv = {}
     for idx, command in enumerate(commands):
         try:
             re_table = load_cmd_template(device_type, command)
