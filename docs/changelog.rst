@@ -2,10 +2,29 @@
 Changelog
 =========
 
+.. _v1.5.7:
+
+1.5.7 (2016-02-18)
+==================
+
+Enhancements
+------------
+
++ Added a new prompt pattern to ``settings.CONTINUE_PROMPTS``.
++ New continue prompts no longer need to be lower-cased.
++ Clarified the error text when an enable password is required but not provided
+  when connecting to a device to make it a little more clear on how to proceed.
+
+Bug Fixes
+---------
+
++ Bugfix in `~trigger.contrib.commando.plugins.config_device` causing an
+  unhandled ``NameError``.
+
 .. _v1.5.6:
 
-1.5.6
-=====
+1.5.6 (2016-02-16)
+==================
 
 Bug Fixes
 ---------
@@ -21,8 +40,8 @@ Bug Fixes
 
 .. _v1.5.5:
 
-1.5.5
-=====
+1.5.5 (2016-02-04)
+==================
 
 Bug Fixes
 ---------
@@ -33,8 +52,8 @@ Bug Fixes
 
 .. _v1.5.4:
 
-1.5.4
-=====
+1.5.4 (2016-01-29)
+==================
 
 Bug Fixes
 ---------
@@ -49,8 +68,8 @@ Bug Fixes
 
 .. _v1.5.3:
 
-1.5.3
-=====
+1.5.3 (2016-01-19)
+==================
 
 New Features
 ------------

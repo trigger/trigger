@@ -29,11 +29,13 @@ from trigger.conf import settings
 from trigger import tacacsrc, exceptions
 from trigger.utils import network, cli
 
+
 __author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '1.5.7'
+__version__ = '1.5.8'
+
 
 # Exports
 # TODO (jathan): Setting this prevents everything from showing up in the Sphinx
@@ -90,12 +92,18 @@ def is_awaiting_confirmation(prompt):
     """
     Checks if a prompt is asking for us for confirmation and returns a Boolean.
 
+    New patterns may be added by customizing ``settings.CONTINUE_PROMPTS``.
+
+    >>> from trigger.twister import is_awaiting_confirmation
+    >>> is_awaiting_confirmation('Destination filename [running-config]? ')
+    True
+
     :param prompt:
         The prompt string to check
     """
     prompt = prompt.lower()
     matchlist = settings.CONTINUE_PROMPTS
-    return any(prompt.endswith(match) for match in matchlist)
+    return any(prompt.endswith(match.lower()) for match in matchlist)
 
 
 def requires_enable(proto_obj, data):
@@ -152,7 +160,9 @@ def send_enable(proto_obj, disconnect_on_fail=True):
         log.msg('[%s] Enable password not found, not enabling.' %
                 proto_obj.device)
         proto_obj.factory.err = exceptions.EnablePasswordFailure(
-            'Enable password not set.')
+            'Enable password not set. See documentation on '
+            'settings.TRIGGER_ENABLEPW for help.'
+        )
         if disconnect_on_fail:
             proto_obj.loseConnection()
 
