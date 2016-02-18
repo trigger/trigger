@@ -27,7 +27,7 @@ except ImportError:
 
 
 # Exports
-__all__ = ('load_cmd_template', )
+__all__ = ('load_cmd_template', 'get_textfsm_object')
 
 
 def _template_path(dev_type, cmd):
@@ -65,7 +65,7 @@ def get_textfsm_object(re_table, cli_output):
     values = re_table.ParseText(cli_output)
     l = []
     for item in values:
-        l.extend(zip(keys, item))
+        l.extend(zip(map(lambda x: x.lower(), keys), item))
 
     for k, v in l:
         rv[k].append(v)

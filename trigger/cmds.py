@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """
 This module abstracts the asynchronous execution of commands on multiple
@@ -279,7 +278,10 @@ class Commando(object):
                                    force_cli=self.force_cli,
                                    command_interval=self.command_interval)
 
-            # Add the parser callback for great justice!
+            # Add the template parser callback for great justice!
+            async.addCallback(self.parse_template, device, commands)
+
+            # Add the parser callback for even greater justice!
             async.addCallback(self.parse, device, commands)
 
             # If parse fails, still decrement and track the error
@@ -401,6 +403,30 @@ class Commando(object):
 
         func = self._lookup_method(device, method='generate')
         return func(device, commands, extra)
+
+    def parse_template(self, results, device_type, commands=None):
+        """
+        Generator function that processes unstructured CLI data and yields either
+        a TextFSM based object or generic raw output.
+
+        :param results: The unstructured "raw" CLI data from device.
+        :type  results: str
+        :param netdevice: Trigger NetDevice object
+        :type  netdevice: trigger.netdices.NetDevice
+        """
+        # rv = {}
+        for idx, command in enumerate(commands):
+            try:
+                re_table = load_cmd_template(device_type, command)
+                fsm = get_textfsm_object(re_table, results[idx])
+                # rv[command] = fsm
+                yield fsm
+            except:
+                log.msg("Unable to load TextFSM template, updating with unstructured output")
+                # rv[command] = results[idx]
+                yield results[idx]
+
+
 
     def parse(self, results, device, commands=None):
         """
@@ -880,10 +906,10 @@ class NetACLInfo(Commando):
         return True
 
 
-def _parse_cli_from_textfsm_template(cli_data, netdevice, commands):
+def _parse_cli_from_textfsm_template(results, device_type, commands):
     """
-    Processes unstructured CLI data into a structured object.
-    Uses TextFSM templates.
+    Generator function that processes unstructured CLI data and yields either
+    a TextFSM based object or generic raw output.
 
     :param cli_data: The unstructured "raw" CLI data from device.
     :type  cli_data: str
@@ -891,12 +917,16 @@ def _parse_cli_from_textfsm_template(cli_data, netdevice, commands):
     :type  netdevice: trigger.netdices.NetDevice
     """
     rv = {}
-    dev_type = netdevice.vendor
     for idx, command in enumerate(commands):
-        re_table = load_cmd_template(dev_type, command)
-        fsm = get_textfsm_object(re_table, cli_data[idx])
-        rv[command] = fsm
-    return rv
+        try:
+            re_table = load_cmd_template(device_type, command)
+            fsm = get_textfsm_object(re_table, results[idx])
+            # rv[command] = fsm
+            yield fsm
+        except:
+            log.msg("Unable to load TextFSM template, updating with unstructured output")
+            # rv[command] = results[idx]
+            yield results[idx]
 
 
 def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disabled=True):
