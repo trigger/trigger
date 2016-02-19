@@ -27,7 +27,7 @@ from twisted.python import log
 from twisted.internet import defer, task
 
 from trigger.netdevices import NetDevices
-from trigger.utils.templates import load_cmd_template, get_textfsm_object
+from trigger.utils.templates import load_cmd_template, get_textfsm_object, get_template_path
 from trigger.conf import settings
 from trigger import exceptions
 
@@ -158,6 +158,7 @@ class Commando(object):
         self.command_interval = command_interval
         self.curr_conns = 0
         self.jobs = []
+        self.parsed_results = {}
 
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
@@ -404,23 +405,23 @@ class Commando(object):
         func = self._lookup_method(device, method='generate')
         return func(device, commands, extra)
 
-    def parse_template(self, results, device_type, commands=None):
+    def parse_template(self, results, device, commands=None):
         """
         Generator function that processes unstructured CLI data and yields either
         a TextFSM based object or generic raw output.
 
         :param results: The unstructured "raw" CLI data from device.
         :type  results: str
-        :param netdevice: Trigger NetDevice object
-        :type  netdevice: trigger.netdices.NetDevice
+        :param device:  Trigger NetDevice object
+        :type  device:  trigger.netdices.NetDevice
         """
         # rv = {}
         for idx, command in enumerate(commands):
             try:
-                re_table = load_cmd_template(device_type.vendor, command)
+                re_table = load_cmd_template(command, dev_type=device.vendor)
                 fsm = get_textfsm_object(re_table, results[idx])
                 # rv[command] = fsm
-                yield fsm
+                self.parsed_results[command] = fsm
             except:
                 log.msg("Unable to load TextFSM template, updating with unstructured output")
                 # rv[command] = results[idx]
@@ -673,11 +674,11 @@ class ReactorlessCommando(Commando):
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)
 
 
-class StructuredOutput(Commando):
-    def from_cisco(self, data, device, commands=None):
-        log.msg(data, device, commands)
-        self.results[device.nodeName] = _parse_cli_from_textfsm_template(data, device, commands)
-        return True
+# class StructuredOutput(Commando):
+    # def from_cisco(self, data, device, commands=None):
+        # log.msg(data, device, commands)
+        # self.results[device.nodeName] = _parse_cli_from_textfsm_template(data, device, commands)
+        # return True
 
 
 class NetACLInfo(Commando):
@@ -902,29 +903,6 @@ class NetACLInfo(Commando):
 
         self.config[device] = dta
         return True
-
-
-def _parse_cli_from_textfsm_template(results, device_type, commands):
-    """
-    Generator function that processes unstructured CLI data and yields either
-    a TextFSM based object or generic raw output.
-
-    :param cli_data: The unstructured "raw" CLI data from device.
-    :type  cli_data: str
-    :param netdevice: Trigger NetDevice object
-    :type  netdevice: trigger.netdices.NetDevice
-    """
-    # rv = {}
-    for idx, command in enumerate(commands):
-        try:
-            re_table = load_cmd_template(device_type, command)
-            fsm = get_textfsm_object(re_table, results[idx])
-            # rv[command] = fsm
-            yield fsm
-        except:
-            log.msg("Unable to load TextFSM template, updating with unstructured output")
-            # rv[command] = results[idx]
-            yield results[idx]
 
 
 def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disabled=True):

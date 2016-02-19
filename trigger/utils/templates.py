@@ -27,10 +27,10 @@ except ImportError:
 
 
 # Exports
-__all__ = ('load_cmd_template', 'get_textfsm_object')
+__all__ = ('get_template_path', 'load_cmd_template', 'get_textfsm_object')
 
 
-def _template_path(dev_type, cmd):
+def get_template_path(cmd, dev_type=None):
     """
     Return textfsm templates from the directory pointed to by the TEXTFSM_TEMPLATE_DIR trigger variable.
 
@@ -41,10 +41,10 @@ def _template_path(dev_type, cmd):
     :returns: String template path
     """
     t_dir = settings.TEXTFSM_TEMPLATE_DIR
-    return '{0}/{1}_{2}.template'.format(t_dir, dev_type, cmd.replace(' ', '_'))
+    return '{0}/{1}_{2}.template'.format(t_dir, dev_type, cmd.replace(' ', '_')) or None
 
 
-def load_cmd_template(dev_type, cmd):
+def load_cmd_template(cmd, dev_type=None):
     """
     :param dev_type: Type of device ie cisco_ios, arista_eos
     :type  dev_type: str
@@ -53,7 +53,7 @@ def load_cmd_template(dev_type, cmd):
     :returns: String template path
     """
     if dev_type.lower() == u'cisco':
-        with open(_template_path("cisco_ios", cmd), 'rb') as f:
+        with open(get_template_path(cmd, dev_type="cisco_ios"), 'rb') as f:
             return textfsm.TextFSM(f)
 
 
