@@ -421,11 +421,16 @@ class Commando(object):
                 re_table = load_cmd_template(command, dev_type=device.vendor)
                 fsm = get_textfsm_object(re_table, results[idx])
                 # rv[command] = fsm
-                self.parsed_results[command] = fsm
+                update = {command: fsm}
+                if self.parsed_results.get(device.nodeName):
+                    self.parsed_results[device.nodeName].update(update)
+                else:
+                    self.parsed_results[device.nodeName] = update
+
             except:
                 log.msg("Unable to load TextFSM template, updating with unstructured output")
                 # rv[command] = results[idx]
-                yield results[idx]
+            yield results[idx]
 
     def parse(self, results, device, commands=None):
         """
