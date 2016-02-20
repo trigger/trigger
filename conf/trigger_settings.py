@@ -12,7 +12,7 @@ import socket
 #===============================
 
 # This is where Trigger should look for its files.
-PREFIX = '/Users/tom/Code/python/trigger'
+PREFIX = '/etc/trigger'
 
 # Set to True to enable GPG Authentication
 # Set to False to use the old .tackf encryption method.
@@ -35,7 +35,7 @@ TACACSRC_PASSPHRASE = 'bacon is awesome, son.' # NYI
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc
-DEFAULT_REALM = 'cisco'
+DEFAULT_REALM = 'aol'
 
 # Location of firewall policies
 FIREWALL_DIR = '/data/firewalls'
@@ -261,8 +261,8 @@ AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py')
 # Loader's module, subsequent items are passed to the Loader during
 # initialization.
 NETDEVICES_LOADERS = (
-    'trigger.netdevices.loaders.filesystem.JSONLoader',
     'trigger.netdevices.loaders.filesystem.XMLLoader',
+    'trigger.netdevices.loaders.filesystem.JSONLoader',
     'trigger.netdevices.loaders.filesystem.SQLiteLoader',
     'trigger.netdevices.loaders.filesystem.CSVLoader',
     'trigger.netdevices.loaders.filesystem.RancidLoader',
@@ -274,7 +274,7 @@ NETDEVICES_LOADERS = (
 # A path or URL to netdevices device metadata source data, which is used to
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
-NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.json'))
+NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.xml'))
 
 # Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
 NETDEVICES_FILE = NETDEVICES_SOURCE
