@@ -13,6 +13,7 @@ __copyright__ = 'Copyright 2016 Trigger Org'
 import sys
 import os
 from trigger.conf import settings
+from twisted.python import log
 
 try:
     import textfsm
@@ -52,9 +53,11 @@ def load_cmd_template(cmd, dev_type=None):
     :type  cmd: str
     :returns: String template path
     """
-    if dev_type.lower() == u'cisco':
-        with open(get_template_path(cmd, dev_type="cisco_ios"), 'rb') as f:
+    try:
+        with open(get_template_path(cmd, dev_type=dev_type), 'rb') as f:
             return textfsm.TextFSM(f)
+    except:
+        log.msg("Unable to load template:\n{0} :: {1}".format(cmd, dev_type))
 
 
 def get_textfsm_object(re_table, cli_output):
