@@ -933,17 +933,17 @@ class NetDevices(DictMixin):
                 """Helper function for lower-to-regular attribute mapping."""
                 return self._all_field_names[attr.lower()]
 
-            # Use generators to keep filtering the iterator of devices.
+            # Use list comp. to keep filtering out the devices.
             for attr, val in kwargs.iteritems():
                 attr = map_attr(attr)
                 val = str(val).lower()
-                devices = (
+                devices = [
                     d for d in devices if (
                         val in str(getattr(d, attr, '')).lower()
                     )
-                )
+                ]
 
-            return list(devices)
+            return devices
 
         def get_devices_by_type(self, devtype):
             """

@@ -55,7 +55,7 @@ class ConfigDevice(CommandoApplication):
         cmds = []
         files = self.files
         for fn in files:
-            copytftpcmd = "copy tftp://%s/%s running-config" % (tftp_ip, fn)
+            copytftpcmd = "copy tftp://%s/%s running-config" % (self.tftp_ip, fn)
             cmds.append(copytftpcmd)
         cmds.append('copy running-config startup-config')
         return cmds
@@ -69,7 +69,7 @@ class ConfigDevice(CommandoApplication):
             log.msg('Device Type (%s %s) not supported' % (dev.vendor, dev.make))
             return []
         for fn in files:
-            copytftpcmd = "copy tftp running-config %s %s" % (tftp_ip, fn)
+            copytftpcmd = "copy tftp running-config %s %s" % (self.tftp_ip, fn)
             if action == 'overwrite':
                 copytftpcmd += ' overwrite'
             cmds.append(copytftpcmd)
@@ -83,7 +83,7 @@ class ConfigDevice(CommandoApplication):
             log.msg('Device Type (%s %s) not supported' % (dev.vendor, dev.make))
             return cmds
         for fn in files:
-            copytftpcmd = "copy tftp://%s/%s running-config" % (tftp_ip, fn)
+            copytftpcmd = "copy tftp://%s/%s running-config" % (self.tftp_ip, fn)
             cmds.append(copytftpcmd)
         cmds.append('copy running-config startup-config')
         return cmds

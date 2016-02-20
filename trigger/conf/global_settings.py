@@ -235,7 +235,8 @@ CONTINUE_PROMPTS = [
     '[y/n]:',
     '[confirm]',
     '[yes/no]: ',
-    'overwrite file [startup-config] ?[yes/press any key for no]....'
+    'overwrite file [startup-config] ?[yes/press any key for no]....',
+    'Destination filename [running-config]? ',
 ]
 
 # The file path where .gorc is expected to be found.
@@ -328,7 +329,7 @@ PROMPT_PATTERNS = {
     'avocent': r'\S+[#\$]|->\s?$',
     'citrix': r'\sDone\n$',
     'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
-    'juniper': r'\S+\@\S+(?:\>|#)\s$',
+    'juniper': r'(?:\S+\@)?\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
     'paloalto': r'\r\n\S+(?:\>|#)\s?$',

@@ -38,4 +38,40 @@
       <serialNumber>987654321</serialNumber>
       <site>LAB</site>
    </device>
+   <device nodeName="test2-abc.net.aol.com">
+      <adminStatus>PRODUCTION</adminStatus>
+      <assetID>0000012345</assetID>
+      <authMethod>tacacs</authMethod>
+      <barcode>0101010101</barcode>
+      <budgetCode>1234578</budgetCode>
+      <budgetName>Data Center</budgetName>
+      <coordinate>16ZZ</coordinate>
+      <deviceType>SWITCH</deviceType>
+      <enablePW>boguspassword</enablePW>
+      <lastUpdate>2010-07-19 19:56:32.0</lastUpdate>
+      <layer2>1</layer2>
+      <layer3>1</layer3>
+      <layer4>1</layer4>
+      <lifecycleStatus>INSTALLED</lifecycleStatus>
+      <loginPW></loginPW>
+      <make>EX-SERIES SWITCH</make>
+      <manufacturer>JUNIPER</manufacturer>
+      <model>EX4200-48T</model>
+      <nodeName>test2-abc.net.aol.com</nodeName>
+      <onCallEmail>nobody@aol.net</onCallEmail>
+      <onCallID>17</onCallID>
+      <onCallName>Data Center</onCallName>
+      <owningTeam>Data Center</owningTeam>
+      <OOBTerminalServerConnector>C</OOBTerminalServerConnector>
+      <OOBTerminalServerFQDN>ts1.oob.aol.com</OOBTerminalServerFQDN>
+      <OOBTerminalServerNodeName>ts1</OOBTerminalServerNodeName>
+      <OOBTerminalServerPort>5</OOBTerminalServerPort>
+      <OOBTerminalServerTCPPort>5005</OOBTerminalServerTCPPort>
+      <operationStatus>MONITORED</operationStatus>
+      <owner>12345678 - Network Engineering</owner>
+      <projectName>Test Lab</projectName>
+      <room>CR10</room>
+      <serialNumber>987654321</serialNumber>
+      <site>LAB</site>
+   </device>
 </NetDevices>

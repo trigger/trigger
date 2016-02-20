@@ -12,7 +12,7 @@ __author__ = 'Jathan McCollum, Mike Biancianello'
 __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '3.2'
+__version__ = '3.2.1'
 
 
 # Imports
@@ -146,6 +146,10 @@ class CommandRunner(DoCommandBase):
         return lambda elt, tag: elt.findall('./' + ns + tag)
 
     def from_juniper(self, data, device, commands=None):
+        # If we've set foce_cli, use from_base() instead
+        if self.force_cli:
+            return self.from_base(data, device, commands)
+
         devname = device.nodeName
         ns = '{http://xml.juniper.net/xnm/1.1/xnm}'
         if self.verbose:
@@ -351,9 +355,11 @@ def xml_print(xml, iterations=10):
     tag = tag.replace(ns, '')
     ret.append(tag)
     children = list(xml)
+
     if len(children) < 1:
-        ptxt = tag + " : " + xml.text
+        ptxt = tag + " : " + (xml.text or '')
         return [ptxt]
+
     for child in children:
         ptxts = xml_print(child, iterations - 1)
         for t in ptxts:
