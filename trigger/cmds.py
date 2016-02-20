@@ -1,4 +1,4 @@
--# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 This module abstracts the asynchronous execution of commands on multiple
