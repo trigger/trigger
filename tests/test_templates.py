@@ -1,10 +1,11 @@
 import unittest
 import os
 import mock
-from trigger.utils.templates import _template_path
+from trigger.utils.templates import *
 from trigger.conf import settings
 from contextlib import contextmanager
 from StringIO import StringIO
+import cStringIO
 
 
 try:
@@ -19,6 +20,8 @@ except ImportError:
     """)
 
 
+cli_data = """*02:00:42.743 UTC Sat Feb 20 2016"""
+
 text_fsm_data = """Value TIME (\d+:\d+:\d+\.\d+)
 Value TIMEZONE (\w+)
 Value DAYWEEK (\w+)
@@ -30,24 +33,26 @@ Start
   ^[\*]?${TIME}\s${TIMEZONE}\s${DAYWEEK}\s${MONTH}\s${DAY}\s${YEAR} -> Record
 """
 
-
-class CheckCliData(unittest.TestCase):
+class CheckTemplates(unittest.TestCase):
     """Test structured CLI object data."""
+
+    def setUp(self):
+        data = cStringIO.StringIO(text_fsm_data)
+        self.re_table = textfsm.TextFSM(data)
+        self.assertIsInstance(self.re_table, textfsm.textfsm.TextFSM)
 
     def testTemplatePath(self):
         """Test that template path is correct."""
-        t_path = _template_path("cisco_ios", "show clock")
+        t_path = get_template_path("show clock", dev_type="cisco_ios")
         self.assertIn("vendor/ntc_templates/cisco_ios_show_clock.template", t_path)
 
-    # def testCliToDict(self):
-        # with mock.patch('__builtin__.open') as my_mock:
-            # my_mock.return_value.__enter__ = lambda s: s
-            # my_mock.return_value.__exit__ = mock.Mock()
-            # my_mock.return_value.read.return_value = text_fsm_data
-            # with open('foo') as h:
-                # re_table = textfsm.TextFSM(h)
-                # fsm_results = 
-
+    def testGetTextFsmObject(self):
+        """Test that we get structured data back from cli output"""
+        data = get_textfsm_object(self.re_table, cli_data)
+        self.assertIsInstance(data, dict)
+        keys = ['dayweek', 'time', 'timezone', 'year', 'day', 'month']
+        for key in keys:
+            self.assertTrue(data.has_key(key))
 
 
 if __name__ == "__main__":
