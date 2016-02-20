@@ -47,7 +47,7 @@ class CheckTemplates(unittest.TestCase):
         self.assertIn("vendor/ntc_templates/cisco_ios_show_clock.template", t_path)
 
     def testGetTextFsmObject(self):
-        """Test that we get structured data back from cli output"""
+        """Test that we get structured data back from cli output."""
         data = get_textfsm_object(self.re_table, cli_data)
         self.assertIsInstance(data, dict)
         keys = ['dayweek', 'time', 'timezone', 'year', 'day', 'month']
