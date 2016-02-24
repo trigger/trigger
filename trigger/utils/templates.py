@@ -42,7 +42,7 @@ def get_template_path(cmd, dev_type=None):
     :returns: String template path
     """
     t_dir = settings.TEXTFSM_TEMPLATE_DIR
-    return '{0}/{1}_{2}.template'.format(t_dir, dev_type, cmd.replace(' ', '_')) or None
+    return os.path.join(t_dir, '{1}_{2}.template'.format(t_dir, dev_type, cmd.replace(' ', '_'))) or None
 
 
 def load_cmd_template(cmd, dev_type=None):

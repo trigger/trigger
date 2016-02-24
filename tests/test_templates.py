@@ -39,17 +39,17 @@ class CheckTemplates(unittest.TestCase):
     def setUp(self):
         data = cStringIO.StringIO(text_fsm_data)
         self.re_table = textfsm.TextFSM(data)
-        self.assertIsInstance(self.re_table, textfsm.textfsm.TextFSM)
+        self.assertTrue(isinstance(self.re_table, textfsm.textfsm.TextFSM))
 
     def testTemplatePath(self):
         """Test that template path is correct."""
         t_path = get_template_path("show clock", dev_type="cisco_ios")
-        self.assertIn("vendor/ntc_templates/cisco_ios_show_clock.template", t_path)
+        self.failUnless("vendor/ntc_templates/cisco_ios_show_clock.template" in t_path)
 
     def testGetTextFsmObject(self):
         """Test that we get structured data back from cli output."""
         data = get_textfsm_object(self.re_table, cli_data)
-        self.assertIsInstance(data, dict)
+        self.assertTrue(isinstance(data, dict))
         keys = ['dayweek', 'time', 'timezone', 'year', 'day', 'month']
         for key in keys:
             self.assertTrue(data.has_key(key))

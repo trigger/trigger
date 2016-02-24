@@ -720,12 +720,6 @@ class ReactorlessCommando(Commando):
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)
 
 
-# class StructuredOutput(Commando):
-    # def from_cisco(self, data, device, commands=None):
-        # log.msg(data, device, commands)
-        # self.results[device.nodeName] = _parse_cli_from_textfsm_template(data, device, commands)
-        # return True
-
 
 class NetACLInfo(Commando):
     """
