@@ -168,10 +168,10 @@ Default::
 .. setting:: TEXTFSM_TEMPLATE_DIR
 
 TEXTFSM_TEMPLATE_DIR
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 Default path to TextFSM template directory. It is recommended to pull the Network to Code templates
-from here ``https://github.com/networktocode/ntc-ansible/tree/master/ntc_templates`` and place them inside
+from here `Network to Code templates <github.com/networktocode/ntc-ansible/tree/master/ntc_templates>` and place them inside
 the vendor directory inside the trigger root.
 
 Default::
