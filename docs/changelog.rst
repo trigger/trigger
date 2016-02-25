@@ -20,6 +20,8 @@ Bug Fixes
 
 + Bugfix in `~trigger.contrib.commando.plugins.config_device` causing an
   unhandled ``NameError``.
++ :bug:`250` Bugfix in ``bin/gnng`` that would cause a crash when using
+  ``--sqldb`` or ``--csv`` output flags.
 
 .. _v1.5.6:
 
