@@ -10,6 +10,7 @@ Changelog
 Enhancements
 ------------
 
++ Added TextFSM parser to process unstructured CLI output.
 + Added a new prompt pattern to ``settings.CONTINUE_PROMPTS``.
 + New continue prompts no longer need to be lower-cased.
 + Clarified the error text when an enable password is required but not provided
