@@ -28,6 +28,7 @@ from twisted.python import log
 from twisted.internet import defer, task
 
 from trigger.netdevices import NetDevices
+from trigger.utils.templates import load_cmd_template, get_textfsm_object, get_template_path
 from trigger.conf import settings
 from trigger import exceptions
 
@@ -133,6 +134,9 @@ class Commando(object):
     # How results are stored (defaults to {})
     results = None
 
+    # How parsed results are stored (defaults to {})
+    parsed_results = None
+
     # How errors are stored (defaults to {})
     errors = None
 
@@ -162,6 +166,7 @@ class Commando(object):
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
         self.results = self.results if self.results is not None else {}
+        self.parsed_results = self.parsed_results if self.parsed_results is not None else {}
 
         #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
@@ -278,7 +283,10 @@ class Commando(object):
                                    force_cli=self.force_cli,
                                    command_interval=self.command_interval)
 
-            # Add the parser callback for great justice!
+            # Add the template parser callback for great justice!
+            async.addCallback(self.parse_template, device, commands)
+
+            # Add the parser callback for even greater justice!
             async.addCallback(self.parse, device, commands)
 
             # If parse fails, still decrement and track the error
@@ -401,6 +409,44 @@ class Commando(object):
         func = self._lookup_method(device, method='generate')
         return func(device, commands, extra)
 
+    def parse_template(self, results, device, commands=None):
+        """
+        Generator function that processes unstructured CLI data and yields either
+        a TextFSM based object or generic raw output.
+
+        :param results:
+            The unstructured "raw" CLI data from device.
+        :type  results:
+            str
+        :param device:
+            NetDevice object
+        :type device:
+            `~trigger.netdevices.NetDevice`
+        """
+
+        device_type = ""
+        vendor_mapping = {
+                "cisco": "cisco_ios",
+                "cisco_nexus": "cisco_nexus",
+                "arista": "arista_eos"
+                }
+        if device.model.lower() == 'nexus':
+            device_type = "cisco_nxos"
+        else:
+            try:
+                device_type = vendor_mapping[device.vendor]
+            except:
+                log.msg("Unable to find template for given device")
+
+        for idx, command in enumerate(commands):
+            try:
+                re_table = load_cmd_template(command, dev_type=device_type)
+                fsm = get_textfsm_object(re_table, results[idx])
+                self.append_parsed_results(device, self.map_parsed_results(command, fsm))
+            except:
+                log.msg("Unable to load TextFSM template, updating with unstructured output")
+            yield results[idx]
+
     def parse(self, results, device, commands=None):
         """
         Parse output from a device. Calls to ``self._lookup_method`` to find
@@ -464,6 +510,25 @@ class Commando(object):
         self.errors[devname] = error
         return True
 
+    def append_parsed_results(self, device, results):
+        """
+        A simple method for appending results called by template parser
+        method.
+
+        If you want to customize the default method for storing parsed
+        results, overload this in your subclass.
+
+        :param device:
+            A `~trigger.netdevices.NetDevice` object
+
+        :param results:
+            The results to store. Anything you want really.
+        """
+        devname = str(device)
+        log.msg("Appending results for %r: %r" % (devname, results))
+        self.parsed_results[devname] = results
+        return True
+
     def store_results(self, device, results):
         """
         A simple method for storing results called by all default
@@ -482,6 +547,13 @@ class Commando(object):
         log.msg("Storing results for %r: %r" % (devname, results))
         self.results[devname] = results
         return True
+
+    def map_parsed_results(self, command=None, fsm=None):
+        """Return a dict of ``{command: fsm, ...}``"""
+        if fsm is None:
+            fsm = {}
+
+        return {command: fsm}
 
     def map_results(self, commands=None, results=None):
         """Return a dict of ``{command: result, ...}``"""
@@ -646,6 +718,7 @@ class ReactorlessCommando(Commando):
 
         # Otherwise tell the reactor to call me again after 0.5 seconds.
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)
+
 
 
 class NetACLInfo(Commando):

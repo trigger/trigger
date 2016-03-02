@@ -235,7 +235,8 @@ CONTINUE_PROMPTS = [
     '[y/n]:',
     '[confirm]',
     '[yes/no]: ',
-    'overwrite file [startup-config] ?[yes/press any key for no]....'
+    'overwrite file [startup-config] ?[yes/press any key for no]....',
+    'Destination filename [running-config]? ',
 ]
 
 # The file path where .gorc is expected to be found.
@@ -292,6 +293,9 @@ NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX,
                                                                      'netdevices.xml'))
 # Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
 NETDEVICES_FILE = NETDEVICES_SOURCE
+
+# TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
+TEXTFSM_TEMPLATE_DIR = os.getenv('TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates'))
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.

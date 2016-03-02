@@ -20,6 +20,7 @@ requires = [
     'pyparsing==1.5.7',
     'pytz',
     'SimpleParse',
+    'gtextfsm',
     'redis', # The python interface, not the daemon!
 ]
 
