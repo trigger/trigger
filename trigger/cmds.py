@@ -166,7 +166,7 @@ class Commando(object):
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
         self.results = self.results if self.results is not None else {}
-        self.parsed_results = self.parsed_results if self.parsed_results is not None else collections.defaultdict(list)
+        self.parsed_results = self.parsed_results if self.parsed_results is not None else collections.defaultdict(dict)
 
         #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
@@ -530,7 +530,7 @@ class Commando(object):
         """
         devname = str(device)
         log.msg("Appending results for %r: %r" % (devname, results))
-        self.parsed_results[devname].append(results)
+        self.parsed_results[devname].update(results)
         return True
 
     def store_results(self, device, results):
