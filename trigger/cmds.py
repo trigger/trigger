@@ -166,7 +166,7 @@ class Commando(object):
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
         self.results = self.results if self.results is not None else {}
-        self.parsed_results = self.parsed_results if self.parsed_results is not None else {}
+        self.parsed_results = self.parsed_results if self.parsed_results is not None else collections.defaultdict(list)
 
         #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
@@ -425,6 +425,7 @@ class Commando(object):
         """
 
         device_type = ""
+        ret = []
         vendor_mapping = {
                 "cisco": "cisco_ios",
                 "cisco_nexus": "cisco_nexus",
@@ -445,7 +446,10 @@ class Commando(object):
                 self.append_parsed_results(device, self.map_parsed_results(command, fsm))
             except:
                 log.msg("Unable to load TextFSM template, updating with unstructured output")
-            yield results[idx]
+            ret.append(results[idx])
+
+        self.parsed_results = dict(self.parsed_results)
+        return ret
 
     def parse(self, results, device, commands=None):
         """
@@ -526,7 +530,7 @@ class Commando(object):
         """
         devname = str(device)
         log.msg("Appending results for %r: %r" % (devname, results))
-        self.parsed_results[devname] = results
+        self.parsed_results[devname].append(results)
         return True
 
     def store_results(self, device, results):
