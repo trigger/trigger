@@ -130,7 +130,7 @@ class CheckTemplates(unittest.TestCase):
         commands = ["show version"]
         commando = Commando(devices=[self.device.nodeName])
         data = commando.parse_template(results=[big_cli_data], device=self.device, commands=commands)
-        self.assertGreater(len(data), 0)
+        self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))
         self.assertTrue(isinstance(data[0], str))
         self.assertTrue(isinstance(commando.parsed_results, dict))
@@ -140,7 +140,7 @@ class CheckTemplates(unittest.TestCase):
         commands = ["show run | in cisco"]
         commando = Commando(devices=[self.device.nodeName])
         data = commando.parse_template(results=[no_template_data], device=self.device, commands=commands)
-        self.assertGreater(len(data), 0)
+        self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))
         self.assertTrue(isinstance(data[0], str))
         self.assertEquals(commando.parsed_results, {})
