@@ -2,6 +2,17 @@
 Changelog
 =========
 
+.. _v1.5.8:
+
+1.5.8 (2016-03-08)
+==================
+
+Bug Fixes
+---------
+
++ :bug:`252` - Bugfix in `~trigger.cmds.Commando` related to the addition of
+  TextFSM support for parsing unstructured CLI output.
+
 .. _v1.5.7:
 
 1.5.7 (2016-02-18)
