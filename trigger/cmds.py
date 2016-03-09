@@ -166,7 +166,7 @@ class Commando(object):
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
         self.results = self.results if self.results is not None else {}
-        self.parsed_results = self.parsed_results if self.parsed_results is not None else {}
+        self.parsed_results = self.parsed_results if self.parsed_results is not None else collections.defaultdict(dict)
 
         #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
@@ -424,28 +424,21 @@ class Commando(object):
             `~trigger.netdevices.NetDevice`
         """
 
-        device_type = ""
-        vendor_mapping = {
-                "cisco": "cisco_ios",
-                "cisco_nexus": "cisco_nexus",
-                "arista": "arista_eos"
-                }
-        if device.model.lower() == 'nexus':
-            device_type = "cisco_nxos"
-        else:
-            try:
-                device_type = vendor_mapping[device.vendor]
-            except:
-                log.msg("Unable to find template for given device")
+        device_type = device.os
+        ret = []
 
         for idx, command in enumerate(commands):
-            try:
-                re_table = load_cmd_template(command, dev_type=device_type)
-                fsm = get_textfsm_object(re_table, results[idx])
-                self.append_parsed_results(device, self.map_parsed_results(command, fsm))
-            except:
-                log.msg("Unable to load TextFSM template, updating with unstructured output")
-            yield results[idx]
+            if device_type:
+                try:
+                    re_table = load_cmd_template(command, dev_type=device_type)
+                    fsm = get_textfsm_object(re_table, results[idx])
+                    self.append_parsed_results(device, self.map_parsed_results(command, fsm))
+                except:
+                    log.msg("Unable to load TextFSM template, just updating with unstructured output")
+            ret.append(results[idx])
+
+        self.parsed_results = dict(self.parsed_results)
+        return ret
 
     def parse(self, results, device, commands=None):
         """
@@ -526,7 +519,7 @@ class Commando(object):
         """
         devname = str(device)
         log.msg("Appending results for %r: %r" % (devname, results))
-        self.parsed_results[devname] = results
+        self.parsed_results[devname].update(results)
         return True
 
     def store_results(self, device, results):

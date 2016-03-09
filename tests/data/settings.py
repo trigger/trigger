@@ -26,3 +26,5 @@ NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE',
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE',
                               os.path.join(PREFIX, 'autoacl.py'))
 BOUNCE_FILE = os.environ.get('BOUNCE_FILE', os.path.join(PREFIX, 'bounce.py'))
+
+TEXTFSM_TEMPLATE_DIR = os.getenv('TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates'))

@@ -208,6 +208,14 @@ class TestNetDeviceObject(unittest.TestCase):
         output = out.getvalue()
         self.assertEqual(expected, output)
 
+    def test_os(self):
+        self.nd = NetDevices()
+        self.device = self.nd[DEVICE_NAME]
+        self.device.vendor = "cisco"
+        self.device.operatingSystem = "NXOS"
+        self.nodename = self.device.nodeName
+        self.assertEquals("cisco_nxos", self.device.os)
+
     def tearDown(self):
         _reset_netdevices()
 

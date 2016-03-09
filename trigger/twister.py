@@ -106,7 +106,6 @@ def is_awaiting_confirmation(prompt):
     return any(prompt.endswith(match.lower()) for match in matchlist)
 
 
-
 def requires_enable(proto_obj, data):
     """
     Check if a device requires enable.
