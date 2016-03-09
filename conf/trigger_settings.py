@@ -279,6 +279,12 @@ NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX, 'ne
 # Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
 NETDEVICES_FILE = NETDEVICES_SOURCE
 
+# TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
+TEXTFSM_VENDOR_MAPPINGS = {
+        "cisco": [ "ios", "nxos" ],
+        "arista": [ "eos" ]
+        }
+
 # TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv('TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates'))
 
