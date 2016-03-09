@@ -424,28 +424,17 @@ class Commando(object):
             `~trigger.netdevices.NetDevice`
         """
 
-        device_type = ""
+        device_type = device.os
         ret = []
-        vendor_mapping = {
-                "cisco": "cisco_ios",
-                "cisco_nexus": "cisco_nexus",
-                "arista": "arista_eos"
-                }
-        if device.model.lower() == 'nexus':
-            device_type = "cisco_nxos"
-        else:
-            try:
-                device_type = vendor_mapping[device.vendor]
-            except:
-                log.msg("Unable to find template for given device")
 
         for idx, command in enumerate(commands):
-            try:
-                re_table = load_cmd_template(command, dev_type=device_type)
-                fsm = get_textfsm_object(re_table, results[idx])
-                self.append_parsed_results(device, self.map_parsed_results(command, fsm))
-            except:
-                log.msg("Unable to load TextFSM template, updating with unstructured output")
+            if device_type:
+                try:
+                    re_table = load_cmd_template(command, dev_type=device_type)
+                    fsm = get_textfsm_object(re_table, results[idx])
+                    self.append_parsed_results(device, self.map_parsed_results(command, fsm))
+                except:
+                    log.msg("Unable to load TextFSM template, just updating with unstructured output")
             ret.append(results[idx])
 
         self.parsed_results = dict(self.parsed_results)

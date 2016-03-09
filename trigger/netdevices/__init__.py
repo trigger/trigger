@@ -479,6 +479,19 @@ class NetDevice(object):
     def shortName(self):
         return self.nodeName.split('.', 1)[0]
 
+    @property
+    def os(self):
+        vendor_mapping = settings.TEXTFSM_VENDOR_MAPPINGS
+        try:
+            oss = vendor_mapping[self.vendor]
+            if self.operatingSystem.lower() in oss:
+                return "{0}_{1}".format(self.vendor, self.operatingSystem.lower())
+        except:
+            log.msg("""Unable to find template for given device.
+                    Check to see if your netdevices object has the 'platform' key.
+                    Otherwise template does not exist.""")
+            return None
+
     def allowable(self, action, when=None):
         """
         Return whether it's okay to perform the specified ``action``.
