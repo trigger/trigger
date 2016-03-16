@@ -221,3 +221,146 @@ Which outputs::
             'show clock': '21:56:44.701 UTC Sat Jun 23 2012\n'
         }
     }
+
+Get structured data back using the Commando API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`~trigger.cmds.Commando` The results from each worker are parsed through the TextFSM templating engine, if a matching template file exists within the `~trigger.settings.TEXTFSM_TEMPLATE_DIR` directory.
+
+For this to work you must have an attribute on your netdevices model that specifies the network operating system, ie IOS, NXOS or JUNOS. This will be used to correlate the right template for a given device based on the naming convention used by the TextFSM templates.
+
+Net Devices Object::
+
+    {
+        "adminStatus": "PRODUCTION", 
+        "enablePW": "cisco", 
+        "OOBTerminalServerTCPPort": "5005", 
+        "assetID": "0000012345", 
+        "OOBTerminalServerNodeName": "ts1", 
+        "onCallEmail": "nobody@aol.net", 
+        "onCallID": "17", 
+        "OOBTerminalServerFQDN": "foo1-abc.net.aol.com",
+        "owner": "12345678 - Network Engineering", 
+        "OOBTerminalServerPort": "5", 
+        "onCallName": "Data Center", 
+        "nodeName": "foo1-abc.net.aol.com", 
+        "make": "M40 INTERNET BACKBONE ROUTER", 
+        "budgetCode": "1234578", 
+        "budgetName": "Data Center", 
+        "operationStatus": "MONITORED", 
+        "deviceType": "ROUTER", 
+        "lastUpdate": "2010-07-19 19:56:32.0", 
+        "authMethod": "tacacs", 
+        "projectName": "Test Lab", 
+        "barcode": "0101010101", 
+        "site": "LAB", 
+        "loginPW": "cisco", 
+        "lifecycleStatus": "INSTALLED", 
+        "manufacturer": "CISCO", 
+        "operatingSystem": "IOS", 
+        "layer3": "1", 
+        "layer2": "1", 
+        "room": "CR10", 
+        "layer4": "1", 
+        "serialNumber": "987654321", 
+        "owningTeam": "Data Center", 
+        "coordinate": "16ZZ", 
+        "model": "M40-B-AC", 
+        "OOBTerminalServerConnector": "C"
+    }
+
+Template Naming Convention::
+
+    {VENDOR}_{OS}_{COMMAND}.template
+
+
+Template Directory Structure::
+
+        $ tree vendor
+        vendor
+        └── ntc_templates
+            ├── cisco_ios_show_clock.template
+            ├── cisco_ios_show_inventory.template
+            ├── cisco_ios_show_ip_int_brief.template
+            ├── cisco_ios_show_version.template
+            ├── cisco_nxos_show_clock.template
+            ├── cisco_nxos_show_inventory.template
+            ├── cisco_nxos_show_version.template
+
+TextFSM Commando Implementation::
+
+        class ShowMeTheMoney(Commando):
+            """Execute the following on a list of Cisco devices:
+                'show clock'
+                'show version'
+                'show ip int brief'
+                'show inventory'
+                'show run | in cisco'
+            """
+            vendors = ['cisco']
+            commands = ['show clock', 'show version', 'show ip int brief', 'show inventory', 'show run | in cisco']
+
+        if __name__ == '__main__':
+            device_list = ['foo1-abc.net.aol.com'']
+            showstuff = ShowMeTheMoney(devices=device_list)
+            showstuff.run() # Commando exposes this to start the event loop
+
+            print '\nResults:'
+            pprint(showstuff.results)
+
+            print '\nStruct Results:'
+            pprint(showstuff.parsed_results)
+
+Which outputs::
+
+	Results:
+	{'r1.demo.local': {'show clock': '*06:51:44.460 UTC Tue Mar 15 2016\r\n',
+			   'show inventory': 'NAME: "Chassis", DESCR: "Cisco CSR1000V Chassis"\r\nPID: CSR1000V          , VID: V00, SN: 9G0T83AE5II\r\n\r\nNAME: "module R0", DESCR: "Cisco CSR1000V Route Processor"\r\nPID: CSR1000V          , VID: V00, SN: JAB1303001C\r\n\r\nNAME: "module F0", DESCR: "Cisco CSR1000V Embedded Services Processor"\r\nPID: CSR1000V          , VID:    , SN:            \r\n\r\n\r\n',
+			   'show ip int brief': 'Interface              IP-Address      OK? Method Status                Protocol\r\nGigabitEthernet1       10.20.1.10      YES NVRAM  up                    up      \r\nGigabitEthernet2       unassigned      YES NVRAM  administratively down down    \r\nGigabitEthernet3       unassigned      YES NVRAM  administratively down down    \r\nGigabitEthernet4       unassigned      YES NVRAM  administratively down down    \r\n',
+			   'show run | in cisco': 'username cisco secret 5 $1$zh1E$8GjiAf7YYDFPkLBYWMgpI0\r\n',
+			   'show version': 'Cisco IOS XE Software, Version 03.12.00.S - Standard Support Release\r\nCisco IOS Software, CSR1000V Software (X86_64_LINUX_IOSD-UNIVERSALK9-M), Version 15.4(2)S, RELEASE SOFTWARE (fc2)\r\nTechnical Support: http://www.cisco.com/techsupport\r\nCopyright (c) 1986-2014 by Cisco Systems, Inc.\r\nCompiled Wed 26-Mar-14 21:09 by mcpre\r\n\r\n\r\nCisco IOS-XE software, Copyright (c) 2005-2014 by cisco Systems, Inc.\r\nAll rights reserved.  Certain components of Cisco IOS-XE software are\r\nlicensed under the GNU General Public License ("GPL") Version 2.0.  The\r\nsoftware code licensed under GPL Version 2.0 is free software that comes\r\nwith ABSOLUTELY NO WARRANTY.  You can redistribute and/or modify such\r\nGPL code under the terms of GPL Version 2.0.  For more details, see the\r\ndocumentation or "License Notice" file accompanying the IOS-XE software,\r\nor the applicable URL provided on the flyer accompanying the IOS-XE\r\nsoftware.\r\n\r\n\r\nROM: IOS-XE ROMMON\r\n\r\nR1 uptime is 1 minute\r\nUptime for this control processor is 3 minutes\r\nSystem returned to ROM by reload\r\nSystem image file is "bootflash:packages.conf"\r\nLast reload reason: <NULL>\r\n\r\n\r\n\r\nThis product contains cryptographic features and is subject to United\r\nStates and local country laws governing import, export, transfer and\r\nuse. Delivery of Cisco cryptographic products does not imply\r\nthird-party authority to import, export, distribute or use encryption.\r\nImporters, exporters, distributors and users are responsible for\r\ncompliance with U.S. and local country laws. By using this product you\r\nagree to comply with applicable laws and regulations. If you are unable\r\nto comply with U.S. and local laws, return this product immediately.\r\n\r\nA summary of U.S. laws governing Cisco cryptographic products may be found at:\r\nhttp://www.cisco.com/wwl/export/crypto/tool/stqrg.html\r\n\r\nIf you require further assistance please contact us by sending email to\r\nexport@cisco.com.\r\n\r\nLicense Level: limited\r\nLicense Type: Default. No valid license found.\r\nNext reload license Level: limited\r\n\r\ncisco CSR1000V (VXE) processor with 804580K/6147K bytes of memory.\r\nProcessor board ID 9G0T83AE5II\r\n4 Gigabit Ethernet interfaces\r\n32768K bytes of non-volatile configuration memory.\r\n2097152K bytes of physical memory.\r\n7774207K bytes of virtual hard disk at bootflash:.\r\n\r\nConfiguration register is 0x2102\r\n\r\n'}}
+
+
+        Struct Results:
+        {'foo1-abc.net.aol.com': {'show clock': {'day': ['10'],
+                                          'dayweek': ['Thu'],
+                                          'month': ['Mar'],
+                                          'time': ['23:22:54.994'],
+                                          'timezone': ['UTC'],
+                                          'year': ['2016']},
+                           'show inventory': {'descr': ['Cisco CSR1000V Chassis',
+                                                        'Cisco CSR1000V Route Processor',
+                                                        'Cisco CSR1000V Embedded Services Processor'],
+                                              'name': ['Chassis',
+                                                       'module R0',
+                                                       'module F0'],
+                                              'pid': ['CSR1000V',
+                                                      'CSR1000V',
+                                                      'CSR1000V'],
+                                              'sn': ['9G0T83AE5II',
+                                                     'JAB1303001C',
+                                                     ''],
+                                              'vid': ['V00', 'V00', '']},
+                           'show ip int brief': {'intf': ['GigabitEthernet1',
+                                                          'GigabitEthernet2',
+                                                          'GigabitEthernet3',
+                                                          'GigabitEthernet4'],
+                                                 'ipaddr': ['10.20.1.10',
+                                                            'unassigned',
+                                                            'unassigned',
+                                                            'unassigned'],
+                                                 'proto': ['up',
+                                                           'down',
+                                                           'down',
+                                                           'down'],
+                                                 'status': ['up',
+                                                            'administratively down',
+                                                            'administratively down',
+                                                            'administratively down']},
+                           'show version': {'config_register': ['0x2102'],
+                                            'hardware': ['CSR1000V'],
+                                            'hostname': ['R1'],
+                                            'running_image': ['packages.conf'],
+                                            'serial': [''],
+                                            'uptime': ['37 minutes'],
+                                            'version': ['15.4(2)S']}}}
