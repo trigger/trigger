@@ -223,7 +223,7 @@ Which outputs::
     }
 
 Get structured data back using the Commando API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `~trigger.cmds.Commando` The results from each worker are parsed through the TextFSM templating engine, if a matching template file exists within the `~trigger.settings.TEXTFSM_TEMPLATE_DIR` directory.
 
