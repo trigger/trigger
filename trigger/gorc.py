@@ -13,6 +13,7 @@ be filtered out prior to passing them along to the device.
 The only public interface to this module is `~trigger.gorc.get_init_commands`.
 Given a ``.gorc`` That looks like this::
 
+    [init_commands]
     cisco:
         term mon
         terminal length 0

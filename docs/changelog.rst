@@ -2,6 +2,17 @@
 Changelog
 =========
 
+.. _v1.5.9:
+
+1.5.9 (??)
+==========
+
+Bug Fixes
+---------
+
++ :bug:`259` - Bugfix in `~trigger.utils.core.pretty_time()` where ``pytz`` was
+  being referenced but not imported.
+
 .. _v1.5.8:
 
 1.5.8 (2016-03-08)
