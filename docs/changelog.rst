@@ -12,6 +12,10 @@ Bug Fixes
 
 + :bug:`259` - Bugfix in `~trigger.utils.core.pretty_time()` where ``pytz`` was
   being referenced but not imported.
++ Extended prompt detection for IOS-like devices to include backspace
+  characters (``\b`` or ``\x08``) which is sometimes seen on Cisco NX-OS
+  devices, and would cause asynchronous execution to sometimes hang and result
+  in a `~trigger.exceptions.CommandTimeout` error.
 
 .. _v1.5.8:
 
