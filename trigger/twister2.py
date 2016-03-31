@@ -39,13 +39,43 @@ __version__ = '1.0.0'
 
 
 class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
-    pass
+    """
+    Return object used for establishing an async session rather than executing a single command.
+    """
+    def __init__(self, reactor, hostname, port, username, keys,
+            password, agentEndpoint, knownHosts, ui):
+            self.reactor = reactor
+            self.hostname = hostname
+            self.port = port
+            self.username = username
+            self.keys = keys
+            self.password = password
+            self.agentEndpoint = agentEndpoint
+            if knownHosts is None:
+                knownHosts = self._knownHosts()
+            self.knownHosts = knownHosts
+            self.ui = ui
 
 
-class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint, object):
+
+
+class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     """
     Base class for SSH endpoints.
 
     Subclass me when you want to create a new ssh client.
     """
-    pass
+    @classmethod
+    def newConnection(cls, reactor, username, hostname, port=None,
+            keys=None, password=None, agentEndpoint=None,
+            knownHosts=None, ui=None):
+
+        helper = _NewTriggerConnectionHelperBase(
+                reactor, hostname, port, username, keys, password,
+                agentEndpoint, knownHosts, ui)
+        return cls(helper)
+
+
+    def __init__(self, creator):
+        self._creator = creator
+        self._command = None
