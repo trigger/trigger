@@ -4,8 +4,8 @@ Changelog
 
 .. _v1.5.9:
 
-1.5.9 (??)
-==========
+1.5.9 (2016-04-01)
+==================
 
 Bug Fixes
 ---------
@@ -18,6 +18,21 @@ Bug Fixes
   characters (``\b`` or ``\x08``) which is sometimes seen on Cisco NX-OS
   devices, and would cause asynchronous execution to sometimes hang and result
   in a `~trigger.exceptions.CommandTimeout` error.
+* Improved the internal grouping logic for ``load_acl`` to be more
+  permissive and if grouping fails it will just not group devices.
+* Fixed a bug that would prevent ACL staging from working when using
+  default global settings.
+* Fixed bugs in the default global callables for ``get_current_oncall()``
+  and ``create_tm_ticket()`` that would prevent ``lod_acl`` from working.
+  They now default to a disabled state that does not require
+  customization just to utilize core load_acl functionality.
+* Updated the sample ``settings.py`` (``conf/trigger_settings.py``) to
+  utilize the updated default callables.
+* Fixed a bug in default global callable for ``get_tftp_source()`` to
+  properly perform lookup of :setting:`VIPS`
+* Fixed a bug in default global callable for ``stage_acls()`` to
+  properly perform lookup of :setting:`FIREWALL_DIR` and
+  :setting:`TFTPROOT_DIR`.
 
 .. _v1.5.8:
 
