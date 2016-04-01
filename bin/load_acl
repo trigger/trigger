@@ -459,11 +459,23 @@ def group(dev):
     :param dev:
         The `~trigger.netdevices.NetDevice` object to try to group
     """
+    # TODO(jathan): Make this pattern configurable globally.
     trimmer = re.compile('[0-9]*[a-z]+')   # allow for e.g. "36bit1"
-    x = trimmer.match(dev.nodeName).group()
-    if len(x) >= 4 and x[-1] not in ('i', 'e'):
-        x = x[:-1] + 'X'
-    return (dev.site, x)
+
+    # Try to match on nodeName, and if we don't (such as if it's an IP
+    # address), just skip grouping.
+    match = trimmer.match(dev.nodeName)
+    if not match or not dev.site:
+        return dev.nodeName
+
+    group_key = match.group()
+
+    # FIXME(jathan): This is some hard-coded AOL-specific legacy stuff that
+    # will probably work for most environments, but it's awfully presumptuous.
+    if len(group_key) >= 4 and group_key[-1] not in ('i', 'e'):
+        group_key = group_key[:-1] + 'X'
+
+    return (dev.site, group_key)
 
 def select_next_device(work, active):
     """
@@ -554,7 +566,7 @@ def activate(work, active, failures, jobs, redraw):
         def check_failure(result, dev):
             (acl_contents, tftp_paths, fails) = result
 
-            if fails is not None:
+            if fails:
                 log.msg("STAGING FAILED:", fails)
                 raise exceptions.ACLStagingFailed(fails)
 

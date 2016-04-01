@@ -475,14 +475,17 @@ BULK_MAX_HITS_DEFAULT = 1
 # list of file names, optional log file and boolean for sanitizing
 #
 # return
-# ([<list of string where each string is the entire contents of an acl file to push>],
-#   [<list of the path to files on the tftp server to push>])
-#
+# (
+#    [<list of string of file contents an each file to push>],
+#    [<list of the path to files on the tftp server to push>],
+#    [<list of files that failed to stage>]
+# )
 def _stage_acls(acls, log=None, sanitize_acl=False):
     """stage the new ACL files for load_acl"""
 
     import os, shutil
     from trigger.acl import parse as acl_parse
+    from trigger.conf import settings
 
     acl_contents = []
     tftp_paths = []
@@ -491,32 +494,33 @@ def _stage_acls(acls, log=None, sanitize_acl=False):
 
     for acl in acls:
         nonce = os.urandom(8).encode('hex')
-        source = FIREWALL_DIR + '/%s' % acl
-        dest = TFTPROOT_DIR + '/%s.%s' % (acl, nonce)
+        acl_nonce = '%s.%s' % (acl, nonce)
+        src_file = os.path.join(settings.FIREWALL_DIR, acl)
+        dst_file = os.path.join(settings.TFTPROOT_DIR, acl_nonce)
 
-        if not os.path.exists(dest):
+        if not os.path.exists(dst_file):
             try:
-                shutil.copyfile(source, dest)
-            except:
+                shutil.copyfile(src_file, dst_file)
+            except Exception as err:
                 fails.append("Unable to stage TFTP File %s" % str(acls))
                 continue
             else:
-                os.chmod(dest, 0644)
+                os.chmod(dst_file, 0644)
 
-        file_contents = file(FIREWALL_DIR + '/' + acl).read()
+        with open(src_file, 'r') as src_acl:
+            file_contents = src_acl.read()
         acl_contents.append(file_contents)
 
-        tftp_paths.append("%s.%s" % (acl, nonce))
+        tftp_paths.append(acl_nonce)
 
-        #strip comments if brocade
+        # strip comments if brocade
         if (sanitize_acl):
-            msg = 'Sanitizing ACL {0} as {1}'.format(source, dest)
+            msg = 'Sanitizing ACL {0} as {1}'.format(src_file, dst_file)
             log.msg(msg)
-            with open(source, 'r') as src_acl:
-                acl = acl_parse(src_acl)
-            acl.strip_comments()
-            output = '\n'.join(acl.output(replace=True)) + '\n'
-            with open(dest, 'w') as dst_acl:
+            aclobj = acl_parse(file_contents)
+            aclobj.strip_comments()
+            output = '\n'.join(aclobj.output(replace=True)) + '\n'
+            with open(dst_file, 'w') as dst_acl:
                 dst_acl.write(output)
 
     return acl_contents, tftp_paths, fails
@@ -535,24 +539,24 @@ def _get_tftp_source(dev=None, no_vip=True): #False): #True):
     :param dev:
         A `~trigger.netdevices.NetDevice` object
     """
+    from trigger.conf import settings
     import socket
+
     host = socket.gethostbyname(socket.getfqdn())
+
     if no_vip:
         return host
-    elif host not in VIPS:
+    elif host not in settings.VIPS:
         return host
-    ## hack to make broken routers work (This shouldn't be necessary.)
-    for broken in 'ols', 'rib', 'foldr':
-        if dev.nodeName.startswith(broken):
-            return host
-    return VIPS[host]
+
+    return settings.VIPS[host]
 
 GET_TFTP_SOURCE = _get_tftp_source
 
 #===============================
 # OnCall Engineer Display
 #===============================
-# This variable should be a function that returns data for your on-call engineer, or
+# This should be a callable that returns data for your on-call engineer, or
 # failing that None.  The function should return a dictionary that looks like
 # this:
 #
@@ -560,19 +564,36 @@ GET_TFTP_SOURCE = _get_tftp_source
 #  'name': 'Joe Engineer',
 #  'email': 'joe.engineer@example.notreal'}
 #
-# If you don't want to return this information, have it return None.
-GET_CURRENT_ONCALL = lambda x=None: x
+# If you want to disable it, just have it return a non-False value.
+# If you want to use it and have it block, have it return a False value (such
+# as None)
+#
+# This example is just providing a string that indicates that on-call lookup is
+# disabled.
+#
+# Default: returns 'disabled'
+def _get_current_oncall_stub(*args, **kwargs):
+    return 'disabled'
+
+GET_CURRENT_ONCALL = _get_current_oncall_stub
 
 #===============================
 # CM Ticket Creation
 #===============================
-# This should be a function that creates a CM ticket and returns the ticket
-# number, or None.
-# TODO (jathan): Improve this interface so that it is more intuitive.
-def _create_cm_ticket_stub(**args):
-    return None
+# This should be a callable that creates a CM ticket and returns the ticket
+# number.
+#
+# If you want to disable it, just have it return a non-False value.
+# If you want to use it and have it block, have it return a False value (such
+# as None)
+#
+# This example is just providing a string that indicates that CM ticket
+# creation is disabled.
+#
+# Default: returns ' N/A (CM ticket creation is disabled)'
+def _create_cm_ticket_stub(*args, **kwargs):
+    return ' N/A (CM ticket creation is disabled)'
 
-# If you don't want to use this feature, just have the function return None.
 CREATE_CM_TICKET = _create_cm_ticket_stub
 
 #===============================
