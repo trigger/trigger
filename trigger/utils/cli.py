@@ -14,7 +14,7 @@ import datetime
 from fcntl import ioctl
 import os
 import pwd
-from pytz import timezone
+from pytz import timezone, UTC
 import struct
 import sys
 import termios
@@ -173,7 +173,7 @@ def pretty_time(t):
     # calculate naive 'now' in local time
     # passing localzone into datetime.now directly can cause
     # problems, see the 'pytz' docs if curious
-    now = datetime.datetime.now(pytz.UTC)
+    now = datetime.datetime.now(UTC)
     now = now.astimezone(localzone)
     now = now.replace(tzinfo=None)
     # and compute midnight

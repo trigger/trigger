@@ -1125,6 +1125,7 @@ class Interactor(protocol.Protocol):
         c.dataReceived = self.write
         self.stdio = stdio.StandardIO(c)
         self.device = self.factory.device  # Attach the device object
+        self.prompt = re.compile(self.device.vendor.prompt_pattern)
 
     def loseConnection(self):
         """
@@ -1155,9 +1156,13 @@ class Interactor(protocol.Protocol):
 
         # Setup and run the initial commands, and also assume we're enabled
         if data and not self.initialized:
-            self.enabled = True  # Forcefully set enable
-            self.factory._init_commands(protocol=self)
-            self.initialized = True
+            # Wait for a prompt of some sort to become available before we send
+            # init commands.
+            if self.prompt.search(data):
+                # log.msg('[%s] PROMPT MATCHED: %r' % (self.device, data))
+                self.enabled = True  # Forcefully set enable
+                self.factory._init_commands(protocol=self)
+                self.initialized = True
 
         self._log(data)
         self.stdio.write(data)

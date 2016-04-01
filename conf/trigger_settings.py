@@ -472,53 +472,44 @@ BULK_MAX_HITS_DEFAULT = 1
 #===============================
 # OnCall Engineer Display
 #===============================
-# This variable should be a function that returns data for your on-call engineer, or
+# This should be a callable that returns data for your on-call engineer, or
 # failing that None.  The function should return a dictionary that looks like
 # this:
 #
 # {'username': 'joegineer',
 #  'name': 'Joe Engineer',
 #  'email': 'joe.engineer@example.notreal'}
-def get_current_oncall():
-    """fetch current on-call info"""
-    # from somewhere import get_primary_oncall()
+#
+# If you want to disable it, just have it return a non-False value.
+# If you want to use it and have it block, have it return a False value (such
+# as None)
+#
+# This example is just providing a string that indicates that on-call lookup is
+# disabled.
+#
+# Default: returns 'disabled'
+def _get_current_oncall_stub(*args, **kwargs):
+    return 'disabled'
 
-    try:
-        ret = get_primary_oncall()
-    except:
-        return None
-
-    return ret
-
-# If you don't want to return this information, have it return None.
-GET_CURRENT_ONCALL = lambda x=None: x
-#GET_CURRENT_ONCALL = get_current_oncall
+GET_CURRENT_ONCALL = _get_current_oncall_stub
 
 #===============================
 # CM Ticket Creation
 #===============================
-# This should be a function that creates a CM ticket and returns the ticket
-# number, or None.
-# TODO (jathan): Improve this interface so that it is more intuitive.
-def create_cm_ticket(acls, oncall, service='load_acl'):
-    """Create a CM ticket and return the ticket number or None"""
-    # from somewhere import create_cm_ticket
+# This should be a callable that creates a CM ticket and returns the ticket
+# number.
+#
+# If you want to disable it, just have it return a non-False value.
+# If you want to use it and have it block, have it return a False value (such
+# as None)
+#
+# This example is just providing a string that indicates that CM ticket
+# creation is disabled.
+#
+# Default: returns ' N/A (CM ticket creation is disabled)'
+def _create_cm_ticket_stub(*args, **kwargs):
+    return ' N/A (CM ticket creation is disabled)'
 
-    devlist = ''
-    for dev, aclset in acls.items():
-        a = sorted(aclset)
-        devlist += "%-32s %s\n" % (dev, ' '.join(a))
-
-    oncall['devlist'] = devlist
-    oncall['service'] = service
-
-    return create_ticket(**oncall)
-
-def _create_cm_ticket_stub(**args):
-    return None
-
-# If you don't want to use this feature, just have the function return None.
-#CREATE_CM_TICKET = lambda a=None o, s: None
 CREATE_CM_TICKET = _create_cm_ticket_stub
 
 #===============================
