@@ -10,6 +10,8 @@ Changelog
 Bug Fixes
 ---------
 
++ :bug:`258` - Bugfix in `~trigger.gorc` where init commands would be sent
+  before a prompt was even available on the remote device.
 + :bug:`259` - Bugfix in `~trigger.utils.core.pretty_time()` where ``pytz`` was
   being referenced but not imported.
 + Extended prompt detection for IOS-like devices to include backspace
