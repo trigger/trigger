@@ -329,8 +329,8 @@ PROMPT_PATTERNS = {
 
 # When a pattern is not explicitly defined for a vendor, this is what we'll try
 # next (since most vendors are in fact IOS-like)
-IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?#\s?$'
-IOSLIKE_ENABLE_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?>\s?$'
+IOSLIKE_PROMPT_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*#[\s\b]*$'
+IOSLIKE_ENABLE_PAT = r'\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*>[\s\b]*$'
 
 # Generic prompt to match most vendors. It assumes that you'll be greeted with
 # a "#" prompt.
