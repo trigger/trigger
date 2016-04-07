@@ -2,6 +2,19 @@
 Changelog
 =========
 
+.. _v1.5.10:
+
+1.5.10 (??)
+===========
+
+Bug Fixes
+---------
+
++ Extended prompt detection for IOS-like devices to include interstitial space
+  (``\s``) or carriage return (``\r``) characters which is sometimes seen on
+  Arista EOS devices, and would cause asynchronous execution to sometimes hang
+  and result in a `~trigger.exceptions.CommandTimeout` error.
+
 .. _v1.5.9:
 
 1.5.9 (2016-04-01)
