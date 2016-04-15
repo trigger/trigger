@@ -9,15 +9,11 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013-2014 Salesforce.com'
 
-import commands
+import subprocess
 import re
 import socket
 import telnetlib
 from trigger.conf import settings
-
-
-VALID_HOST_RE = re.compile("^[a-z0-9\-\.]+$")
-
 
 # Exports
 __all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal')
@@ -43,12 +39,10 @@ def ping(host, count=1, timeout=5):
     >>> network.ping('192.168.199.253')
     False
     """
-    # Make the command silent even for bad input
-    if not VALID_HOST_RE.findall(host):
-        return False
 
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
-    status, results = commands.getstatusoutput(ping_command)
+    #status = subprocess.call(["ping", "-q", "-c", count, "-W", timeout, host], stdout=open('/dev/null','w'),stderr=open('/dev/null','w'))
+    status = subprocess.call(["ping", "-q", "-c", str(count), "-W", str(timeout), host], stdout=open('/dev/null','w'),stderr=open('/dev/null','w'))
 
     # Linux RC: 0 = success, 256 = failure, 512 = unknown host
     # Darwin RC: 0 = success, 512 = failure, 17408 = unknown host
