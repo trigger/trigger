@@ -9,7 +9,9 @@ __maintainer__ = 'Jathan McCollum'
 __email__ = 'jathan.mccollum@teamaol.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013-2014 Salesforce.com'
 
+import os
 import subprocess
+import shlex
 import re
 import socket
 import telnetlib
@@ -41,12 +43,17 @@ def ping(host, count=1, timeout=5):
     """
 
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
-    #status = subprocess.call(["ping", "-q", "-c", count, "-W", timeout, host], stdout=open('/dev/null','w'),stderr=open('/dev/null','w'))
-    status = subprocess.call(["ping", "-q", "-c", str(count), "-W", str(timeout), host], stdout=open('/dev/null','w'),stderr=open('/dev/null','w'))
+    DEVNULL = open(os.devnull, 'w')
+    status = subprocess.call(
+        shlex.split(ping_command),
+        stdout=DEVNULL,
+        stderr=DEVNULL,
+        close_fds=True)
 
     # Linux RC: 0 = success, 256 = failure, 512 = unknown host
     # Darwin RC: 0 = success, 512 = failure, 17408 = unknown host
     return status == 0
+
 
 def test_tcp_port(host, port=23, timeout=5, check_result=False,
                   expected_result=''):
@@ -88,6 +95,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False,
     t.close()
     return True
 
+
 def test_ssh(host, port=22, timeout=5, version=('SSH-1.99', 'SSH-2.0')):
     """
     Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
@@ -115,6 +123,7 @@ def test_ssh(host, port=22, timeout=5, version=('SSH-1.99', 'SSH-2.0')):
     """
     return test_tcp_port(host, port, timeout, check_result=True,
                          expected_result=version)
+
 
 def address_is_internal(ip):
     """
