@@ -13,5 +13,6 @@ def test_pretty_time():
     assert 'tomorrow' in pretty
 
 def test_ping():
-    assert ping("localhost") == True
-    assert ping("unresolvable_test_host") == False
+    """Validate network.ping functionality"""
+    assert ping("localhost")
+    assert not ping("unresolvable_test_host")
