@@ -19,6 +19,8 @@ Bug Fixes
   ``AttributeError`` attribute error was raised due to attempting to call
   ``complete`` on ``queue``, which is set to ``None`` when passing
   ``--no-db``.
++ :bug:`271` - Bugfix in `~trigger.utils.network.ping()` where a file
+  descriptor wasn't closed cleanly.
 
 .. _v1.5.9:
 
