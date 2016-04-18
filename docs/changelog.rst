@@ -21,6 +21,9 @@ Bug Fixes
   ``--no-db``.
 + :bug:`271` - Bugfix in `~trigger.utils.network.ping()` where a file
   descriptor wasn't closed cleanly.
++ :bug:`167` - Bugfix in ``bin/gnng`` that printed device names before any
+  tables, resulting in potentially confusing results.  Devices names are now
+  printed with the corresponding table.
 
 .. _v1.5.9:
 

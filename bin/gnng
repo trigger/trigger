@@ -297,9 +297,6 @@ def build_output(main_data, opts, labels=None):
 
     for dev, data in main_data.iteritems():
         rows = []
-        if not opts.csv and not opts.dotty:
-            print "DEVICE: %s" % dev
-
         interfaces = sorted(data)
         for interface in interfaces:
             iface = data[interface]
@@ -370,6 +367,7 @@ def handle_output(all_rows, opts):
         elif opts.sqldb:
             write_sqldb(opts.sqldb, dev, rows)
         else:
+            print 'DEVICE: {}'.format(dev)
             print_table(rows)
 
 def print_table(rows, labels=None, has_header=True, separate_rows=False,
