@@ -44,8 +44,8 @@ def main():
         if not os.path.isfile(file):
             print 'Moving on.  Not a normal file: {}'.format(file)
             continue
-        fd = open(file, 'r')
-        file_contents = fd.read()
+        # Calling `read()` on the fd immediately closes it
+        file_contents = open(file, 'r').read()
 
         try:
             acl_parse(file_contents)
