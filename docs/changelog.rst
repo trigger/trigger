@@ -14,6 +14,11 @@ Bug Fixes
   (``\s``) or carriage return (``\r``) characters which is sometimes seen on
   Arista EOS devices, and would cause asynchronous execution to sometimes hang
   and result in a `~trigger.exceptions.CommandTimeout` error.
++ :bug:`269` - Bugfix in ``bin/load_acl`` that prevents ``queue.complete()``
+  from being called when using the ``--no-db`` flag.  Previously, an
+  ``AttributeError`` attribute error was raised due to attempting to call
+  ``complete`` on ``queue``, which is set to ``None`` when passing
+  ``--no-db``.
 
 .. _v1.5.9:
 
