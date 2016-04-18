@@ -28,6 +28,8 @@ Bug Fixes
 + :bug:`257` - Bugfix in ``bin/gnng`` that allows the ``--filter-on-type``
   to function as expected.
 + Update documentation of ``gnng``'s ``-N``/``--nonprod`` flag.
++ :bug:`89` - Bugfix in ``bin/gnng`` that allows ``gnng`` to fail gracefully
+  when a device isn't found.
 
 .. _v1.5.9:
 
