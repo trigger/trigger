@@ -6,7 +6,7 @@ Functions that perform network-based things like ping, port tests, etc.
 
 __author__ = 'Jathan McCollum, Eileen Watson'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013-2014 Salesforce.com'
 
 import os
