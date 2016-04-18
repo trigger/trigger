@@ -28,7 +28,7 @@ from sqlite3 import dbapi2 as sqlite
 import sys
 from twisted.python import log
 from trigger.cmds import NetACLInfo
-from trigger.netdevices import NetDevices
+from trigger.netdevices import device_match, NetDevices
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
@@ -65,7 +65,8 @@ default. Works on Cisco, Foundry, Juniper, and NetScreen devices.''')
     parser.add_option('-j', '--jobs', type='int', default=MAX_CONNS,
                       help='maximum simultaneous connections to maintain.')
     parser.add_option('-N', '--nonprod', action='store_false', default=True,
-                      help='Look for production and non-production devices.')
+                      help='Include non-production devices from the query or '
+                      '[routers].  Requires a legitimate query.')
     parser.add_option('-s', '--sqldb', type='str',
                       help='output to SQLite DB')
     parser.add_option('', '--dotty', action='store_true',
@@ -77,7 +78,7 @@ default. Works on Cisco, Foundry, Juniper, and NetScreen devices.''')
 
     opts, args = parser.parse_args(argv)
 
-    if len(args) == 1 and not opts.all:
+    if len(args) == 1 and not opts.all and not opts.filter_on_type:
         parser.print_help()
         sys.exit(1)
 
@@ -91,21 +92,19 @@ def fetch_router_list(args):
     blocked_groups = []
     if args:
         for arg in args:
-            if not pass_filters(nd.find(arg)):
+            # Try to find the device, but fail gracefully if it can't be found
+            device = device_match(arg)
+            if not pass_filters(device) or device is None:
                 continue
-            ret.append(nd.find(arg))
+            ret.append(device)
 
     else:
         for entry in nd.itervalues():
             if entry.owningTeam in blocked_groups:
                 continue
-            if entry.vendor in ('cisco', 'foundry', 'juniper'):
-                if 'oob' in entry.shortName:
-                    continue
-
-                if not pass_filters(entry):
-                    continue
-                ret.append(entry)
+            if not pass_filters(entry):
+                continue
+            ret.append(entry)
 
     return sorted(ret, reverse=True)
 
@@ -297,9 +296,6 @@ def build_output(main_data, opts, labels=None):
 
     for dev, data in main_data.iteritems():
         rows = []
-        if not opts.csv and not opts.dotty:
-            print "DEVICE: %s" % dev
-
         interfaces = sorted(data)
         for interface in interfaces:
             iface = data[interface]
@@ -370,6 +366,7 @@ def handle_output(all_rows, opts):
         elif opts.sqldb:
             write_sqldb(opts.sqldb, dev, rows)
         else:
+            print 'DEVICE: {}'.format(dev)
             print_table(rows)
 
 def print_table(rows, labels=None, has_header=True, separate_rows=False,
@@ -438,7 +435,7 @@ def output_dotty(subnet_table, display=True):
 
 def main():
 
-    if opts.all:
+    if opts.all or opts.filter_on_type:
         routers = fetch_router_list(None)
     else:
         routers = fetch_router_list(args[1:])

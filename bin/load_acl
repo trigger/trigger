@@ -548,7 +548,8 @@ def activate(work, active, failures, jobs, redraw):
                 pass
 
         def complete(results, dev, acls):
-            clear_load_queue(dev, acls)
+            if queue:
+                clear_load_queue(dev, acls)
 
         def eb(reason, dev):
             log.msg("GOT ERRBACK", reason)

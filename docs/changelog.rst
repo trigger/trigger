@@ -2,6 +2,39 @@
 Changelog
 =========
 
+.. _v1.5.10:
+
+1.5.10 (??)
+===========
+
+Bug Fixes
+---------
+
++ Extended prompt detection for IOS-like devices to include interstitial space
+  (``\s``) or carriage return (``\r``) characters which is sometimes seen on
+  Arista EOS devices, and would cause asynchronous execution to sometimes hang
+  and result in a `~trigger.exceptions.CommandTimeout` error.
++ :bug:`269` - Bugfix in ``bin/load_acl`` that prevents ``queue.complete()``
+  from being called when using the ``--no-db`` flag.  Previously, an
+  ``AttributeError`` attribute error was raised due to attempting to call
+  ``complete`` on ``queue``, which is set to ``None`` when passing
+  ``--no-db``.
++ :bug:`266` - Cleaned up network.utils.ping, removed hostname validation code
++ :bug:`271` - Bugfix in `~trigger.utils.network.ping()` where a file
+  descriptor wasn't closed cleanly.
++ :bug:`167` - Bugfix in ``bin/gnng`` that printed device names before any
+  tables, resulting in potentially confusing results.  Devices names are now
+  printed with the corresponding table.
++ :bug:`257` - Bugfix in ``bin/gnng`` that allows the ``--filter-on-type``
+  to function as expected.
++ Update documentation of ``gnng``'s ``-N``/``--nonprod`` flag.
++ :bug:`89` - Bugfix in ``bin/gnng`` that allows ``gnng`` to fail gracefully
+  when a device isn't found.
++ Bugfix in ``bin/gnng --all`` that was causing many device vendors to be
+  skipped entirely because the filter was too specific. This vendor filter has
+  been removed and will now fallback to `~trigger.cmds.NetACLInfo()` internal
+  knowledge of supported platforms.
+
 .. _v1.5.9:
 
 1.5.9 (2016-04-01)
