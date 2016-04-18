@@ -19,6 +19,7 @@ Bug Fixes
   ``AttributeError`` attribute error was raised due to attempting to call
   ``complete`` on ``queue``, which is set to ``None`` when passing
   ``--no-db``.
++ :bug:`266` - Cleaned up network.utils.ping, removed hostname validation code
 + :bug:`271` - Bugfix in `~trigger.utils.network.ping()` where a file
   descriptor wasn't closed cleanly.
 + :bug:`167` - Bugfix in ``bin/gnng`` that printed device names before any
