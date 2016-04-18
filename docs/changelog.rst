@@ -30,6 +30,10 @@ Bug Fixes
 + Update documentation of ``gnng``'s ``-N``/``--nonprod`` flag.
 + :bug:`89` - Bugfix in ``bin/gnng`` that allows ``gnng`` to fail gracefully
   when a device isn't found.
++ Bugfix in ``bin/gnng --all`` that was causing many device vendors to be
+  skipped entirely because the filter was too specific. This vendor filter has
+  been removed and will now fallback to `~trigger.cmds.NetACLInfo()` internal
+  knowledge of supported platforms.
 
 .. _v1.5.9:
 

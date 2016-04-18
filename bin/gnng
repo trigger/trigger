@@ -102,13 +102,9 @@ def fetch_router_list(args):
         for entry in nd.itervalues():
             if entry.owningTeam in blocked_groups:
                 continue
-            if entry.vendor in ('cisco', 'foundry', 'juniper'):
-                if 'oob' in entry.shortName:
-                    continue
-
-                if not pass_filters(entry):
-                    continue
-                ret.append(entry)
+            if not pass_filters(entry):
+                continue
+            ret.append(entry)
 
     return sorted(ret, reverse=True)
 
