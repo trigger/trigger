@@ -140,6 +140,7 @@ class TestNetDevicesWithoutAcls(unittest.TestCase):
     def tearDown(self):
         _reset_netdevices()
 
+
 class TestNetDeviceObject(unittest.TestCase):
     """
     Test NetDevice object methods.
