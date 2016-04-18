@@ -43,12 +43,13 @@ def ping(host, count=1, timeout=5):
     """
 
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
-    DEVNULL = open(os.devnull, 'w')
-    status = subprocess.call(
-        shlex.split(ping_command),
-        stdout=DEVNULL,
-        stderr=DEVNULL,
-        close_fds=True)
+    status = None
+    with open(os.devnull, 'w') as devnull_fd:
+        status = subprocess.call(
+            shlex.split(ping_command),
+            stdout=devnull_fd,
+            stderr=devnull_fd,
+            close_fds=True)
 
     # Linux RC: 0 = success, 256 = failure, 512 = unknown host
     # Darwin RC: 0 = success, 512 = failure, 17408 = unknown host
