@@ -65,7 +65,8 @@ default. Works on Cisco, Foundry, Juniper, and NetScreen devices.''')
     parser.add_option('-j', '--jobs', type='int', default=MAX_CONNS,
                       help='maximum simultaneous connections to maintain.')
     parser.add_option('-N', '--nonprod', action='store_false', default=True,
-                      help='Look for production and non-production devices.')
+                      help='Include non-production devices from the query or '
+                      '[routers].  Requires a legitimate query.')
     parser.add_option('-s', '--sqldb', type='str',
                       help='output to SQLite DB')
     parser.add_option('', '--dotty', action='store_true',
