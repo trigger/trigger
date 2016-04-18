@@ -26,6 +26,7 @@ Bug Fixes
   printed with the corresponding table.
 + :bug:`257` - Bugfix in ``bin/gnng`` that allows the ``--filter-on-type``
   to function as expected.
++ Update documentation of ``gnng``'s ``-N``/``--nonprod`` flag.
 
 .. _v1.5.9:
 
