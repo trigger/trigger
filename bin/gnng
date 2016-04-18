@@ -77,7 +77,7 @@ default. Works on Cisco, Foundry, Juniper, and NetScreen devices.''')
 
     opts, args = parser.parse_args(argv)
 
-    if len(args) == 1 and not opts.all:
+    if len(args) == 1 and not opts.all and not opts.filter_on_type:
         parser.print_help()
         sys.exit(1)
 
@@ -436,7 +436,7 @@ def output_dotty(subnet_table, display=True):
 
 def main():
 
-    if opts.all:
+    if opts.all or opts.filter_on_type:
         routers = fetch_router_list(None)
     else:
         routers = fetch_router_list(args[1:])

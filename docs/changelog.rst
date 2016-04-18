@@ -24,6 +24,8 @@ Bug Fixes
 + :bug:`167` - Bugfix in ``bin/gnng`` that printed device names before any
   tables, resulting in potentially confusing results.  Devices names are now
   printed with the corresponding table.
++ :bug:`257` - Bugfix in ``bin/gnng`` that allows the ``--filter-on-type``
+  to function as expected.
 
 .. _v1.5.9:
 
