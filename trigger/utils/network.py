@@ -6,18 +6,16 @@ Functions that perform network-based things like ping, port tests, etc.
 
 __author__ = 'Jathan McCollum, Eileen Watson'
 __maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
+__email__ = 'jathan@gmail.com'
 __copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013-2014 Salesforce.com'
 
-import commands
+import os
+import subprocess
+import shlex
 import re
 import socket
 import telnetlib
 from trigger.conf import settings
-
-
-VALID_HOST_RE = re.compile("^[a-z0-9\-\.]+$")
-
 
 # Exports
 __all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal')
@@ -43,16 +41,20 @@ def ping(host, count=1, timeout=5):
     >>> network.ping('192.168.199.253')
     False
     """
-    # Make the command silent even for bad input
-    if not VALID_HOST_RE.findall(host):
-        return False
 
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
-    status, results = commands.getstatusoutput(ping_command)
+    status = None
+    with open(os.devnull, 'w') as devnull_fd:
+        status = subprocess.call(
+            shlex.split(ping_command),
+            stdout=devnull_fd,
+            stderr=devnull_fd,
+            close_fds=True)
 
     # Linux RC: 0 = success, 256 = failure, 512 = unknown host
     # Darwin RC: 0 = success, 512 = failure, 17408 = unknown host
     return status == 0
+
 
 def test_tcp_port(host, port=23, timeout=5, check_result=False,
                   expected_result=''):
@@ -94,6 +96,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False,
     t.close()
     return True
 
+
 def test_ssh(host, port=22, timeout=5, version=('SSH-1.99', 'SSH-2.0')):
     """
     Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
@@ -121,6 +124,7 @@ def test_ssh(host, port=22, timeout=5, version=('SSH-1.99', 'SSH-2.0')):
     """
     return test_tcp_port(host, port, timeout, check_result=True,
                          expected_result=version)
+
 
 def address_is_internal(ip):
     """
