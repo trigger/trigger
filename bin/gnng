@@ -28,7 +28,7 @@ from sqlite3 import dbapi2 as sqlite
 import sys
 from twisted.python import log
 from trigger.cmds import NetACLInfo
-from trigger.netdevices import NetDevices
+from trigger.netdevices import device_match, NetDevices
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
@@ -92,9 +92,11 @@ def fetch_router_list(args):
     blocked_groups = []
     if args:
         for arg in args:
-            if not pass_filters(nd.find(arg)):
+            # Try to find the device, but fail gracefully if it can't be found
+            device = device_match(arg)
+            if not pass_filters(device) or device is None:
                 continue
-            ret.append(nd.find(arg))
+            ret.append(device)
 
     else:
         for entry in nd.itervalues():
