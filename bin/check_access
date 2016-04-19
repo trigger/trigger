@@ -20,7 +20,9 @@ from trigger.acl.tools import check_access, create_trigger_term
 
 optp = optparse.OptionParser(description='''\
 Determine whether access is permitted by a given ACL.  Exits 0 if permitted,
-1 if edits are needed. Lists the terms that apply and what edits are needed.''',
+1 if edits are needed. Lists the terms that apply and what edits are needed.
+Note that in order for the suggested edits feature to work, your policy must
+end with an explicit deny.''',
     usage='%prog [opts] file source dest [protocol [port]]')
 optp.add_option('-q', '--quiet', action='store_true', help='suppress output')
 (opts, args) = optp.parse_args()
