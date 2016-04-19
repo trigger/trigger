@@ -82,4 +82,6 @@ if permitted and not opts.quiet:
 if permitted:
     sys.exit(0)
 else:
+    print 'Not permitted.  Consider the following edit:'
+    print '\n'.join(new_term.output(acl.format))
     sys.exit(1)
