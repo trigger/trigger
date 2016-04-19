@@ -1,18 +1,11 @@
-=======================
+#######################
 aclconv - ACL Converter
-=======================
-
-.. contents::
-    :local:
-    :depth: 2
+#######################
 
 About
 =====
 
-**aclconv** Convert an ACL on stdin, or a list of ACLs, from one format to another.  Input
-format is determined automatically.  Output format can be given with -f or
-with one of -i/-o/-j/-x.  The name of the output ACL is determined
-automatically, or it can be specified with -n.
+**aclconv** Convert an ACL on stdin, or a list of ACLs, from one format to another.  Input format is determined automatically.  Output format can be given with ``-f`` or with one of ``-i``/``-o``/``-j``/``-x``.  The name of the output ACL is determined automatically, or it can be specified with ``-n``.
 
 Usage
 =====
@@ -31,4 +24,35 @@ Here is the usage output::
 Examples
 ========
 
-Coming Soon™.
+Let's start with a simple Cisco ACL:
+
+.. code-block:: bash
+
+   $ cat http.acl
+   access-list 123 permit tcp any host 10.20.30.40 eq 80
+
+And convert it to Juniper format:
+
+.. code-block:: bash
+
+   $ aclconv -j http.acl
+   firewall {
+   replace:
+       filter 123j {
+           term T1 {
+               from {
+                   destination-address {
+                       10.20.30.40/32;
+                   }
+                   protocol tcp;
+                   destination-port 80;
+               }
+               then {
+                   accept;
+                   count T1;
+               }
+           }
+       }
+   }
+
+Neat, huh?

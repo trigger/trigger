@@ -1,10 +1,6 @@
-=====================
-go - Device connector
-=====================
-
-.. contents::
-    :local:
-    :depth: 2
+#######################
+gong - Device connector
+#######################
 
 About
 =====

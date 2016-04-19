@@ -1,20 +1,19 @@
-.. Trigger documentation master file, created by
-   sphinx-quickstart on Wed Jul  6 15:17:22 2011.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+##############
+Usage Examples
+##############
 
 To illustrate how Trigger works, here are some basic examples of leveraging the
 API.
 
-For these examples to work you must have already :ref:`installed
-<install-docs>` and :ref:`configured <config-docs>` Trigger, so if you haven't
-already please do that first!
+For these examples to work you must have already :doc:`installed
+<installation>` and :doc:`configured <configuration>` Trigger, so if you
+haven't already please do that first!
 
 Simple Examples
----------------
+===============
 
 Working with metadata
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 Get a count of all your devices::
 
@@ -34,7 +33,7 @@ Get a count of all your devices::
     True
 
 Get an interactive shell
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Since this device has SSH, let's connect to it::
 
@@ -47,7 +46,7 @@ Since this device has SSH, let's connect to it::
     jathan@edge1-abc>
 
 Work with access-lists
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 Let's start with a simple Cisco ACL::
 
@@ -78,7 +77,7 @@ And convert it to Juniper format::
     }
 
 Cache your login credentials
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 Trigger will encrypt and store your credentials in a file called ``.tacacsrc``
 in your home directory. We already had them cached in the previous examples, so
@@ -101,7 +100,7 @@ using a shared key. A more secure experimental GPG-encrypted method is in the
 works.
 
 Login to a device using the ``gong`` script
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
 
 Trigger includes a simple tool for end-users to connect to devices called
 ``gong``. (It should be just ``go`` but we're in the future, so...)::
@@ -130,10 +129,10 @@ Partial hostnames are supported, too::
     foo1-xyz#
 
 Slightly Advanced Examples
---------------------------
+==========================
 
 Execute commands asynchronously using Twisted
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------
 
 This is a little more advanced... so we saved it for last.
 
@@ -179,7 +178,7 @@ Which outputs::
 Observe, however, that this only communicated with a single device.
 
 Execute commands asynchronously using the Commando API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------------
 
 `~trigger.cmds.Commando` tries to hide Twisted's implementation details so you
 don't have to deal with callbacks, while also implementing a worker pool so
@@ -223,7 +222,7 @@ Which outputs::
     }
 
 Get structured data back using the Commando API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------------
 
 `~trigger.cmds.Commando` The results from each worker are parsed through the TextFSM templating engine, if a matching template file exists within the `~trigger.settings.TEXTFSM_TEMPLATE_DIR` directory.
 

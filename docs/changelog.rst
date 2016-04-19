@@ -2,6 +2,19 @@
 Changelog
 =========
 
+.. _v1.6:
+
+1.6 (??)
+========
+
+Backwards-incompatible changes
+------------------------------
+
++ The default NetDevices loader is now
+  `~trigger.netdevices.loaders.filesystem.JSONLoader`.
++ ACL support is now disabled by default. This means that ``WITH_ACLS = False``
+  is now the global default.
+
 .. _v1.5.10:
 
 1.5.10 (2016-04-18)

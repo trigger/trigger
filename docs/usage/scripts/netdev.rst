@@ -1,15 +1,12 @@
-==================================
+##################################
 netdev - CLI search for NetDevices
-==================================
-
-.. contents::
-    :local:
-    :depth: 2
+##################################
 
 About
 =====
 
-**netdev** is a command-line search interface for :class:`~trigger.netdevices.NetDevices` metadata.
+**netdev** is a command-line search interface for
+:class:`~trigger.netdevices.NetDevices` metadata.
 
 Usage
 =====

@@ -5,10 +5,6 @@ Overview
 This document is a high-level overview of Trigger's features and a little
 history about why it exists in the first place.
 
-.. contents::
-    :local:
-    :depth: 2
-
 About
 =====
 

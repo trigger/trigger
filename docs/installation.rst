@@ -6,10 +6,6 @@ This is a work in progress. Please bear with us as we expand and improve this
 documentation. If you have any feedback, please don't hesitate to `contact us
 <http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!!
 
-.. contents::
-    :local:
-    :depth: 2
-
 Dependencies
 ============
 
@@ -82,6 +78,8 @@ Used by:
 
 * :mod:`trigger.cmds`
 * :mod:`trigger.twister`
+
+.. _redis-install:
 
 Redis
 -----
@@ -207,7 +205,7 @@ That's it! Now you're ready to configure Trigger.
 Basic Configuration
 ===================
 
-.. note::
+.. warning::
     For these steps you'll need to download the `Trigger tarball
     <https://github.com/trigger/trigger/tarball/develop>`_, expand it, and then
     navigate to the root directory (the same directory in which you'll find
@@ -291,7 +289,7 @@ location of ``bounce.py``!
 Verifying Functionality
 =======================
 
-.. note::
+.. warning::
     For these steps you'll still need to be at the root directory of the
     `Trigger tarball <https://github.com/trigger/trigger/tarball/develop>`_. If
     you haven't already, download it,  expand it, and then navigate to the root
@@ -324,6 +322,11 @@ within the Trigger distribution)::
 
 ACL Database
 ------------
+
+.. warning::
+    This WILL NOT work without :ref:`redis-install` installed and
+    :setting:`WITH_ACLS` set to ``True``. If you have ACL support disabled, just
+    skip this section.
 
 Try loading the AclsDB to inspect automatic associations. First directly from autoacl::
 

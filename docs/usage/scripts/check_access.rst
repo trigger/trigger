@@ -1,10 +1,6 @@
-=================================
+#################################
 check_access - ACL Access Checker
-=================================
-
-.. contents::
-    :local:
-    :depth: 2
+#################################
 
 About
 =====
@@ -65,4 +61,5 @@ would tell you something different::
     No edits needed.
 
 It adds a comment that says ``"check_access: PERMITTED HERE"``, followed by the
-policy that matches the flow. Additionally at the end it also reports ``"No edits needed"``.
+policy that matches the flow. Additionally at the end it also reports ``"No
+edits needed"``.

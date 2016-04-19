@@ -266,9 +266,10 @@ GORC_ALLOWED_COMMANDS = (
 # NetDevices
 #===============================
 
-# Change this to False to skip the loading of ACLs globally
-# (not recommended)
-WITH_ACLS = True
+# Globally toggle whether to load ACL associations from the Redis database. If
+# you don't have Redis or aren't using Trigger to manage ACLs set this to
+# False.
+WITH_ACLS = False
 
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
@@ -279,8 +280,8 @@ AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py')
 # Loader's module, subsequent items are passed to the Loader during
 # initialization.
 NETDEVICES_LOADERS = (
-    'trigger.netdevices.loaders.filesystem.XMLLoader',
     'trigger.netdevices.loaders.filesystem.JSONLoader',
+    'trigger.netdevices.loaders.filesystem.XMLLoader',
     'trigger.netdevices.loaders.filesystem.SQLiteLoader',
     'trigger.netdevices.loaders.filesystem.RancidLoader',
     'trigger.netdevices.loaders.filesystem.CSVLoader',
@@ -289,26 +290,29 @@ NETDEVICES_LOADERS = (
 # A path or URL to netdevices device metadata source data, which is used to
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
-NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX,
-                                                                     'netdevices.xml'))
-# Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
-NETDEVICES_FILE = NETDEVICES_SOURCE
+NETDEVICES_SOURCE = os.environ.get(
+    'NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.json')
+)
 
-# TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
+# TextFSM Vendor Mappings. Override this if you have defined your own TextFSM
+# templates.
 TEXTFSM_VENDOR_MAPPINGS = {
         "cisco": [ "ios", "nxos" ],
         "arista": [ "eos" ]
         }
 
-# TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
-TEXTFSM_TEMPLATE_DIR = os.getenv('TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates'))
+# TextFSM Template Path. Commando will attempt to match a given show command
+# with a template within this folder.
+TEXTFSM_TEMPLATE_DIR = os.getenv(
+    'TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates')
+)
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.
 RANCID_RECURSE_SUBDIRS = os.environ.get('RANCID_RECURSE_SUBDIRS', False)
 
-# Valid owning teams (e.g. device.owningTeam) go here. These are examples and should be
-# changed to match your environment.
+# Valid owning teams (e.g. device.owningTeam) go here. These are examples and
+# should be changed to match your environment.
 VALID_OWNERS = (
     #'Data Center',
     #'Backbone Engineering',

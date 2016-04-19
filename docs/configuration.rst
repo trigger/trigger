@@ -1,18 +1,12 @@
-.. _configuration:
-
-==========================
-Configuration and defaults
-==========================
+#############
+Configuration
+#############
 
 This document describes the configuration options available for Trigger.
 
 If you're using the default loader, you must create or copy the provided
 :file:`trigger_settings.py` module and make sure it is in
 ``/etc/trigger/settings.py`` on the local system.
-
-.. contents::
-    :local:
-    :depth: 2
 
 A Word about Defaults
 =====================
@@ -571,7 +565,7 @@ you don't have Redis or aren't using Trigger to manage ACLs set this to
 
 Default::
 
-    True
+    False
 
 .. setting:: AUTOACL_FILE
 

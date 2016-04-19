@@ -1,9 +1,19 @@
-===================
-Trigger Development
-===================
+###########
+Development
+###########
 
 The Trigger developement team is currently a one-man operation led by `Jathan
 McCollum <http://about.me/jathanism>`_, aka ``jathanism``.
+
+.. _roadmap:
+
+Road Map
+========
+
+We are using `milestones <https://github.com/trigger/trigger/issues/milestones>`_
+to track Trigger's development path 30 to 90 days out. This is where we map
+outstanding issues to upcoming releases and is the best way to see what's
+coming!
 
 .. _contributing:
 
