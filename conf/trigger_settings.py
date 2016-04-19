@@ -252,6 +252,11 @@ GORC_ALLOWED_COMMANDS = (
 # NetDevices
 #===============================
 
+# Globally toggle whether to load ACL associations from the Redis database. If
+# you don’t have Redis or aren’t using Trigger to manage ACLs set this to
+# False.
+WITH_ACLS = False
+
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))

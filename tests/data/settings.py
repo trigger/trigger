@@ -19,6 +19,8 @@ LONGPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'longpw_tacacsrc'))
 BROKENPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'brokenpw_tacacsrc'))
 EMPTYPW_TACACSRC = os.getenv('TACACSRC', os.path.join(PREFIX, 'emptypw_tacacsrc'))
 
+# Enable ACL support
+WITH_ACLS = True
 
 # Configs
 NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE',
@@ -28,3 +30,4 @@ AUTOACL_FILE = os.environ.get('AUTOACL_FILE',
 BOUNCE_FILE = os.environ.get('BOUNCE_FILE', os.path.join(PREFIX, 'bounce.py'))
 
 TEXTFSM_TEMPLATE_DIR = os.getenv('TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates'))
+
