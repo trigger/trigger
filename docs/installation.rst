@@ -343,13 +343,7 @@ And then inherited from autoacl by AclsDB::
     set(['juniper-router.policer', 'juniper-router-protect'])
 
 Now that you've properly installed Trigger, you might want to know how to use it.
-Please have a look at the usage documentation!
-
-.. toctree::
-    :maxdepth: 1
-    :glob:
-
-    usage/*
+Please have a look at the :doc:`usage/index`.
 
 Integrated Load Queue
 =====================

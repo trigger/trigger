@@ -1,14 +1,10 @@
-=======================
+#######################
 Working with NetDevices
-=======================
+#######################
 
-`~trigger.netdevices.NetDevices` is the core of Trigger's device interaction. Anything that
-communicates with devices relies on the metadata stored within `~trigger.netdevices.NetDevice`
-objects.
-
-.. contents::
-    :local:
-    :depth: 2
+`~trigger.netdevices.NetDevices` is the core of Trigger's device interaction.
+Anything that communicates with devices relies on the metadata stored within
+`~trigger.netdevices.NetDevice` objects.
 
 Your Source Data
 ================
@@ -21,14 +17,15 @@ same name as the configuration options.
 Please see :doc:`configuration` for more information on how to do this. There
 are two configuration options that facilitate this:
 
-::setting:`NETDEVICES_SOURCE`:
+:setting:`NETDEVICES_SOURCE`
     A URL or file path from which the metadata may be obtained. This defaults to
-    `/etc/trigger/netdevices.xml`, but can be any URL with variables.
+    `/etc/trigger/netdevices.json`, but can be any URL with variables.
 
-::setting:`NETDEVICES_LOADERS`:
+:setting:`NETDEVICES_LOADERS`
     (Advanced) A tuple of data loader classes, specified as strings. This is an
     advanced setting that you may use to create custom loaders if any of the
-    default loaders do not meet your needs. More on this later.
+    default loaders do not meet your needs. The primary default loader is the
+    `~trigger.netdevices.loaders.filesystem.JSONLoader`.
 
 A Brief Overview
 ----------------
@@ -37,51 +34,66 @@ When you instantiate `~trigger.netdevices.NetDevices` the location specified
 :setting:`NETDEVICES_SOURCE` is passed onto the :setting:`NETDEVICES_LOADERS`
 to try to parse and return device metadata.
 
-Trigger 1.3 changed the way that `~trigger.netdevices.NetDevices` are
-populated, greatly simplifying the whole thing. You no longer have to tell
-Trigger what the format of your metadata source is. It tries to determine it
-automatically based on whether one of the pre-defined loaders successfully
-returns data without throwing an error.
+Using the loaders, you don't have to tell Trigger what the format of your
+metadata source is. It tries to determine it automatically based on whether one
+of the pre-defined loaders successfully returns data without throwing an error.
+
+Anatomy of a Device
+===================
+
+Trigger's `~trigger.netdevices.NetDevice` objects represent everything Trigger
+needs to know about each device under its care. These objects are pretty
+complicated, but all you really need to know right now are the bare minimum set
+of fields that Trigger needs to know about your devices.These fields are used
+to control the behaviors and select the correct driver for each platform.
+
+The minimum required fields are:
+
+nodeName
+    The device hostname or IP address. You may also specify a port here (e.g.
+    ``hostname:2222``) . We'll cover that in more detail later.
+
+manufacturer
+    The representative name of the hardware vendor. This is also used to
+    dynamically populate the ``vendor`` attribute on the device object. For
+    Trigger's list of supported vendors, please see
+    :setting:`SUPPORTED_VENDORS`.
+
+deviceType
+    (Recommended) The type of device (e.g. router, switch, etc.). For the list
+    of supported device types, please see :setting:`SUPPORTED_TYPES`. If you do
+    NOT specify ``deviceType``, Trigger will fallback to the type specified in
+    :setting:`FALLBACK_TYPE`.
+
+Quick Start
+===========
+
+To get started quickly managing real devices, try this:
+
+1. Create a :ref:`csv-format` file. 
+2. Tell Trigger where to find your file by setting the locatoin of the file in
+   :setting:`NETDEVICES_SOURCE` in your ``settings.py``.
+
+Importing from RANCID
+---------------------
+
+Do you have RANCID? Try using that instead! To learn more please visit the
+section on working with the :ref:`rancid-format` format.
+
+Supported Formats
+=================
 
 Trigger currently comes with loaders that support the following formats:
 
-+ CSV
-+ JSON
-+ RANCID
-+ SQLite
-+ XML
+.. contents::
+    :local:
+    :depth: 1
 
 Except when using CSV or RANCID as a data source, the contents of your source
 data should be a dump of relevant metadata fields from your CMDB. 
 
 If you don't have a CMDB, then you're going to have to populate this file
-manually. But you're a Python programmer, right? So you can come up with
-something spiffy!
-
-But first, let's start simple.
-
-Quick Start
------------
-
-To get started quickly, we recommend you start by creating a simple :ref:`CSV
-file <csv-format>`. This will be used to illustrate how easily you can get
-going with Trigger.
-
-Importing from RANCID
----------------------
-
-.. versionadded:: 1.2
-
-Basic support for using a `RANCID <http://www.shrubbery.net/rancid/>`_
-repository to populate your metadata is now working. We say it's experimental
-because it is not yet complete. Currently all it does for you is populates the
-bare minimum set of fields required for basic functionality.
-
-To learn more please visit the section on working with the :ref:`RANCID format
-<rancid-format>`.
-
-Supported Formats
-=================
+manually.
 
 .. _csv-format:
 
@@ -232,30 +244,15 @@ a full example.
 RANCID
 ------
 
-This is the easiest method to get running assuming you've already got a RANCID
-instance to leverage. At this time, however, the metadata available from RANCID
-is very limited and populates only the following fields for each
+If you've already got a RANCID instance in your environment, this is the
+easiest method to get running. At this time, however, the metadata available
+from RANCID is very limited and populates only the following fields for each
 `~trigger.netdevices.Netdevice` object:
 
-:nodeName:
-    The device hostname.
-
-:manufacturer:
-    The representative name of the hardware manufacturer. This is also used to
-    dynamically populate the ``vendor`` attribute on the device object
-
-:vendor:
-    The canonical vendor name used internally by Trigger. This will always be a
-    single, lowercased word, and is automatically set when a device object is
-    created.
-
-:deviceType:
-    One of ('SWITCH', 'ROUTER', 'FIREWALL'). This is currently a hard-coded
-    value for each manufacturer.
-
-:adminStatus:
-    If RANCID says the device is ``'up'``, then this is set to
-    ``'PRODUCTION'``; otherwise it's set to ``'NON-PRODUCTION'``.
+* nodeName
+* manufacturer
+* deviceType
+* adminStatus
 
 The support for RANCID comes in two forms: single or multiple instance.
 
@@ -326,8 +323,8 @@ source distribution at ``conf/netdevices.sql``. You will need to populate the
 database full of rows with the columns above and set
 :setting:`NETDEVICES_SOURCE` the absolute path of the database file.
 
-Getting Started
-===============
+Developing with NetDevices
+==========================
 
 First things first, you must instantiate `~trigger.netdevices.NetDevices`.  It
 has three things it requires before you can properly do this:
@@ -347,7 +344,6 @@ has three things it requires before you can properly do this:
 3. The path to ``autoacl.py`` must be valid, and must properly parse (you
    may skip this if you just want to ignore the warnings for now).
 
-
 How it works
 ------------
 
@@ -366,14 +362,13 @@ Upon startup, each device object/element/row found within
 `~trigger.netdevices.NetDevice` object. This object pulls in ACL associations
 from `~trigger.acl.db.AclsDB`.
 
-
 .. _Singleton: http://en.wikipedia.org/wiki/Singleton_pattern
 
 The Singleton Pattern
 ~~~~~~~~~~~~~~~~~~~~~
 
-The NetDevices module object has a ``_Singleton`` attribute that defaults to ``None``.
-Upon creating an instance, this is populated with the
+The NetDevices module object has a ``_Singleton`` attribute that defaults to
+``None``. Upon creating an instance, this is populated with the
 `~trigger.netdevices.NetDevices._actual` instance::
 
     >>> nd = NetDevices()
@@ -398,10 +393,10 @@ If you need to do this, set the value to ``None``::
 
     >>> NetDevices._Singleton = None
 
-Then the next call to `~trigger.netdevices.NetDevices()` will start from scratch. Keep in mind
-because of this pattern it is not easy to have more than one instance (there are
-ways but we're not going to list them here!). All existing instances will
-inherit the value of ``NetDevices._Singleton``::
+Then the next call to `~trigger.netdevices.NetDevices()` will start from
+scratch. Keep in mind because of this pattern it is not easy to have more than
+one instance (there are ways but we're not going to list them here!). All
+existing instances will inherit the value of ``NetDevices._Singleton``::
 
     >>> third_nd = NetDevices(production_only=False)
     >>> third_nd._Singleton
@@ -412,7 +407,7 @@ inherit the value of ``NetDevices._Singleton``::
     True
 
 Instantiating NetDevices
-========================
+------------------------
 
 Throughout the Trigger code, the convention when instantiating and referencing a
 `~trigger.netdevices.NetDevices` instance, is to assign it to the variable
@@ -439,7 +434,7 @@ The included sample metadata files contains one device that is marked as
 .. _netdevice-info:
 
 What's in a NetDevice?
-======================
+----------------------
 
 A `~trigger.netdevices.NetDevice` object has a number of attributes you can use
 creatively to correlate
@@ -513,10 +508,10 @@ later)::
     red
 
 Searching for devices
-=====================
+---------------------
 
 Like a dictionary
------------------
+~~~~~~~~~~~~~~~~~
 
 Since the object is like a dictionary, you may reference devices as keys by
 their hostnames::
@@ -533,7 +528,7 @@ You may also perform any other operations to iterate devices as you would with
 a dictionary (``.keys()``, ``.itervalues()``, etc.).
 
 Special methods
----------------
+~~~~~~~~~~~~~~~
 
 There are a number of ways you can search for devices. In all cases, you are
 returned a list.
@@ -584,7 +579,7 @@ Perform a case-INsenstive search on any number of fields as keyword arguments::
     [<NetDevice: fw1-xyz.net.aol.com>]
 
 Helper function
----------------
+~~~~~~~~~~~~~~~
 
 Another nifty tool within the module is `~trigger.netdevices.device_match`,
 which returns a NetDevice object::

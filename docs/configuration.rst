@@ -272,8 +272,24 @@ unless you know what you're doing!
 
 Default::
 
-    ('a10', 'arista', 'brocade', 'cisco', 'citrix', 'dell', 'foundry',
-    'juniper', 'netscreen')
+    (
+        'a10',
+        'arista',
+        'aruba',
+        'avocent',
+        'brocade',
+        'cisco',
+        'citrix',
+        'dell',
+        'f5',
+        'force10',
+        'foundry',
+        'juniper',
+        'mrv',
+        'netscreen',
+        'paloalto',
+        'pica8',
+    )
 
 .. setting:: SUPPORTED_TYPES
 
@@ -285,7 +301,7 @@ unless you know what you’re doing!
 
 Default::
 
-    ('FIREWALL', 'ROUTER', 'SWITCH')
+    ('CONSOLE', 'DWDM', 'FIREWALL', 'LOAD_BALANCER', 'ROUTER', 'SWITCH')
 
 .. setting:: DEFAULT_TYPES
 
