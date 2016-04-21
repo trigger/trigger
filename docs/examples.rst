@@ -224,7 +224,8 @@ Which outputs::
 Get structured data back using the Commando API
 -----------------------------------------------
 
-`~trigger.cmds.Commando` The results from each worker are parsed through the TextFSM templating engine, if a matching template file exists within the `~trigger.settings.TEXTFSM_TEMPLATE_DIR` directory.
+`~trigger.cmds.Commando` will attempt to parse the raw command output into a nested dict.
+The results from each worker are parsed through the TextFSM templating engine, if a matching template file exists within the `~trigger.settings.TEXTFSM_TEMPLATE_DIR` directory.
 
 For this to work you must have an attribute on your netdevices model that specifies the network operating system, ie IOS, NXOS or JUNOS. This will be used to correlate the right template for a given device based on the naming convention used by the TextFSM templates.
 
