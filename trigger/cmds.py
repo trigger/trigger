@@ -818,7 +818,7 @@ class NetACLInfo(Commando):
              generate_ios_cmd
 
         """
-        return ['show running-config | include (^interface | ip address | ip acces-group | description |!)']
+        return ['show running-config | include (^interface | ip address | ip access-group | description |!)']
 
     def to_force10(self, dev, commands=None, extra=None):
         """
@@ -843,8 +843,8 @@ class NetACLInfo(Commando):
             self.config[device] = _parse_ios_interfaces(alld, skip_disabled=self.skip_disabled)
         else:
             self.config[device] = {
-                    "unsupported": "ASA ACL parsing unsupported this release"
-                    }
+                "unsupported": "ASA ACL parsing unsupported this release"
+            }
 
         return True
 
@@ -1012,7 +1012,8 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disab
     #foundry matches on cidr and cisco matches on netmask
     #netmask converted to cidr in cleanup
     ip_tuple = pp.Group(address + (cidr ^ netmask)).setResultsName('addr', listAllMatches=True)
-    ip_address = ipaddr_keyword + ip_tuple + pp.Optional(secondary)
+    negotiated = pp.Literal('negotiated')  # Seen on Cisco 886
+    ip_address = ipaddr_keyword + (negotiated ^ ip_tuple) + pp.Optional(secondary)
 
     addrs = pp.ZeroOrMore(ip_address)
 

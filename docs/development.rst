@@ -10,7 +10,7 @@ McCollum <http://about.me/jathanism>`_, aka ``jathanism``.
 Road Map
 ========
 
-We are using `milestones <https://github.com/trigger/trigger/issues/milestones>`_
+We are using `milestones <https://github.com/trigger/trigger/milestones>`_
 to track Trigger's development path 30 to 90 days out. This is where we map
 outstanding issues to upcoming releases and is the best way to see what's
 coming!
