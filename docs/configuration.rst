@@ -583,6 +583,24 @@ Default::
 
     False
 
+.. setting:: DEFAULT_ADMIN_STATUS
+
+DEFAULT_ADMIN_STATUS
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.6
+
+When the administrative status is not defined using the ``adminStatus`` field
+on a `~trigger.netdevices.NetDevice` object, the default administrative status
+will be used.
+
+By default Trigger only operates on devices set to ``PRODUCTION``. This is
+covered in more detail under :ref:`instantiating-netdevices`.
+
+Default::
+
+    'PRODUCTION'
+
 .. setting:: AUTOACL_FILE
 
 AUTOACL_FILE
@@ -596,51 +614,6 @@ Default::
     '/etc/trigger/autoacl.py'
 
 .. setting:: NETDEVICES_FORMAT
-
-NETDEVICES_FORMAT
-~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 1.3
-   Replaced by the :setting:`NETDEVICES_LOADERS` plugin system. This variable
-   is no longer used in Trigger 1.3 and will be ignored.
-
-One of ``json``, ``rancid``, ``sqlite``, ``xml``. This MUST match the actual
-format of :setting:`NETDEVICES_FILE` or it won't work for obvious reasons.
-
-Please note that RANCID support is experimental. If you use it you must specify
-the path to the RANCID directory.
-
-You may override this location by setting the ``NETDEVICES_FORMAT`` environment
-variable to the format of the file.
-
-Default::
-
-    'xml'
-
-.. setting:: NETDEVICES_FILE
-
-NETDEVICES_FILE
-~~~~~~~~~~~~~~~
-
-.. deprecated:: 1.3
-   Replaced by :setting:`NETDEVICES_SOURCE`. If you are using Trigger 1.3 or
-   later, please do not define this variable.
-
-Path to netdevices device metadata source file, which is used to populate
-`~trigger.netdevices.NetDevices`. This may be JSON, RANCID, a SQLite3 database,
-or XML. You must set :setting:`NETDEVICES_FORMAT` to match the type of data.
-
-Please note that RANCID support is experimental. If you use it you must specify
-the path to the RANCID directory.
-
-You may override this location by setting the ``NETDEVICES_FILE`` environment
-variable to the path of the file.
-
-Default::
-
-    '/etc/trigger/netdevices.xml'
-
-.. setting:: NETDEVICES_LOADERS
 
 NETDEVICES_LOADERS
 ~~~~~~~~~~~~~~~~~~
