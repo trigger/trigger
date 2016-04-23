@@ -216,7 +216,7 @@ Copy settings.py
 
 Trigger expects ``settings.py`` to be in ``/etc/trigger``::
 
-    sudo cp conf/trigger_settings.py /etc/trigger/settings.py
+    sudo cp configs/trigger_settings.py /etc/trigger/settings.py
 
 If you really don't like this, you may override the default location by setting
 the environment variable ``TRIGGER_SETTINGS`` to the desired location. If you
@@ -233,7 +233,7 @@ communicates with devices relies on the metadata stored within this file.
 
 For the purpose of basic config, we'll just use the sample ``netdevices.json`` file::
 
-    sudo cp conf/netdevices.json /etc/trigger/netdevices.json
+    sudo cp configs/netdevices.json /etc/trigger/netdevices.json
 
 For more information on how Trigger uses the netdevices file please see
 :doc:`usage/netdevices`.
@@ -265,7 +265,7 @@ network devices.
 
 ::
 
-    sudo cp conf/autoacl.py /etc/trigger/autoacl.py
+    sudo cp configs/autoacl.py /etc/trigger/autoacl.py
 
 If you're using a non-standard location, be sure to update the
 :setting:`AUTOACL_FILE` configuration variable within ``settings.py`` with the
@@ -280,7 +280,7 @@ maintenance or "bounce") windows get auto-applied to network devices.
 
 ::
 
-    sudo cp conf/bounce.py /etc/trigger/bounce.py
+    sudo cp configs/bounce.py /etc/trigger/bounce.py
 
 If you're using a non-standard location, be sure to update the
 :setting:`BOUNCE_FILE` configuration variable within ``settings.py`` with the

@@ -44,10 +44,30 @@ Anatomy of a Device
 Trigger's `~trigger.netdevices.NetDevice` objects represent everything Trigger
 needs to know about each device under its care. These objects are pretty
 complicated, but all you really need to know right now are the bare minimum set
-of fields that Trigger needs to know about your devices.These fields are used
+of fields that Trigger needs to know about your devices. These fields are used
 to control the behaviors and select the correct driver for each platform.
 
-The minimum required fields are:
+Field Values
+------------
+
+Field values are expected to be strings. They are normalized prior to
+evaluation, so case-sensitivity can be left up to you based on how you choose
+to manage your data in your environment.
+
+You may also specify custom fields not used or required by Trigger that you may
+use for your own purposes, such as writing custom utilities.
+
+Minium Required Fields
+----------------------
+
+These are the bare minimum required fields for basic operations of Trigger on
+most device platforms. Due to distinct differences across device platforms by
+vendor, hardware, and operating system versions, not all device platforms can
+be supported with the minimum felds.
+
+.. important::
+    Support for certain device platforms, such as the Cisco Nexus, require
+    specifying other fields as detailed in the next section.
 
 nodeName
     The device hostname or IP address. You may also specify a port here (e.g.
@@ -59,11 +79,43 @@ manufacturer
     Trigger's list of supported vendors, please see
     :setting:`SUPPORTED_VENDORS`.
 
+adminStatus
+    (Recommended) The administrative status of the device. One of ``PRODUCTION`` or
+    ``NON-PRODUCTION``. By default, Trigger will only work with devices that
+    are in ``PRODUCTION`` status. This is covered in more detail under
+    :ref:`instantiating-netdevices`. If you do NOT specifiy ``adminStatus``,
+    Trigger will fallback to the default value specified in
+    :setting:`DEFAULT_ADMIN_STATUS`.
+
 deviceType
     (Recommended) The type of device (e.g. router, switch, etc.). For the list
     of supported device types, please see :setting:`SUPPORTED_TYPES`. If you do
     NOT specify ``deviceType``, Trigger will fallback to the type specified in
     :setting:`FALLBACK_TYPE`.
+
+Common Fields
+-------------
+
+Some vendors, such as Cisco for example, have a wide array of hardware types
+with many different operating systems. For this reason, not all devices can be
+supported with just vendor and device type. To identify these platforms,
+we also make use of the ``make`` and ``model`` fields.
+
+The following fields are required for full support of all officially supported
+vendor platforms. 
+
+make
+    The device platform such as ``Cisco Nexus`` or just ``Nexus``.
+
+model 
+    The specific device model as it appears on the network device, such as
+    ``N9K`` or ``NEXUS 9000``.
+
+Other Fields
+------------
+
+There are a ton of other default fields that Trigger utilizes for other
+purposes.
 
 Quick Start
 ===========
@@ -175,7 +227,7 @@ source code looks like:
         ...
     </NetDevices>
 
-Please see ``conf/netdevices.xml`` within the Trigger source distribution for a
+Please see ``configs/netdevices.xml`` within the Trigger source distribution for a
 full example.
 
 .. _json-format:
@@ -236,7 +288,7 @@ source code looks like (pretty-printed for readabilty):
 To use JSON, create your :setting:`NETDEVICES_SOURCE` file full of objects that
 look like the one above.
 
-Please see ``conf/netdevices.json`` within the Trigger source distribution for
+Please see ``configs/netdevices.json`` within the Trigger source distribution for
 a full example.
 
 .. _rancid-format:
@@ -315,11 +367,11 @@ SQLite is somewhere between JSON and XML as far as performance, but also comes
 with the added benefit that support is built into Python, and you get a real
 database file you can leverage in other ways outside of Trigger.
 
-.. literalinclude:: ../../conf/netdevices.sql
+.. literalinclude:: ../../configs/netdevices.sql
     :language: sql
 
 To use SQLite, create a database using the schema provided within Trigger
-source distribution at ``conf/netdevices.sql``. You will need to populate the
+source distribution at ``configs/netdevices.sql``. You will need to populate the
 database full of rows with the columns above and set
 :setting:`NETDEVICES_SOURCE` the absolute path of the database file.
 
@@ -405,6 +457,8 @@ existing instances will inherit the value of ``NetDevices._Singleton``::
     <trigger.netdevices._actual object at 0x2ae3dcf506d0>
     >>> third_nd._Singleton is nd._Singleton
     True
+
+.. _instantiating-netdevices:
 
 Instantiating NetDevices
 ------------------------

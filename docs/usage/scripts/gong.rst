@@ -154,7 +154,7 @@ specified by the vendor name. Here is an example::
     brocade:
         show clock
 
-(You may also find this file at ``conf/gorc.example`` within the Trigger source
+(You may also find this file at ``configs/gorc.example`` within the Trigger source
 tree.)
 
 Notice for **Juniper** one of the commands specified is ``request system

@@ -97,8 +97,10 @@ def _populate(netdevices, data_source, production_only, with_acls):
 
         # Only return devices with adminStatus of 'PRODUCTION' unless
         # `production_only` is True
-        if dev.adminStatus != 'PRODUCTION' and production_only:
-            #log.msg('DEVICE NOT PRODUCTION')
+        if dev.adminStatus.upper() != 'PRODUCTION' and production_only:
+            log.msg(
+                '[%s] Skipping: adminStatus not PRODUCTION' % dev.nodeName
+            )
             continue
 
         # These checks should be done on generation of netdevices.xml.
@@ -194,7 +196,7 @@ class NetDevice(object):
         self.serialNumber = None
 
         # Administrivia
-        self.adminStatus = None
+        self.adminStatus = settings.DEFAULT_ADMIN_STATUS
         self.assetID = None
         self.budgetCode = None
         self.budgetName = None

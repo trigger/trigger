@@ -257,6 +257,10 @@ GORC_ALLOWED_COMMANDS = (
 # False.
 WITH_ACLS = False
 
+# The default administrative status (production vs. non-production) of new
+# devices.
+DEFAULT_ADMIN_STATUS = 'PRODUCTION'
+
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
@@ -282,9 +286,6 @@ NETDEVICES_LOADERS = (
 NETDEVICES_SOURCE = os.environ.get(
     'NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.json')
 )
-
-# Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
-NETDEVICES_FILE = NETDEVICES_SOURCE
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
 TEXTFSM_VENDOR_MAPPINGS = {

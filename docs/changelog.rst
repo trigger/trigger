@@ -14,6 +14,17 @@ Backwards-incompatible changes
   `~trigger.netdevices.loaders.filesystem.JSONLoader`.
 + ACL support is now disabled by default. This means that ``WITH_ACLS = False``
   is now the global default.
++ The ``conf`` directory at the repository root containing sample
+  configurations has been renamed to ``configs`` to avoid confusiong with the
+  `~trigger.conf` library.
+
+Enhancements
+------------
+
++ A new configuration setting :setting:`DEFAULT_ADMIN_STATUS` has been added
+  that defaults to ``PRODUCTION`` that is used to popoulate the ``adminStatus``
+  field on `~trigger.netdevices.NetDevice` objects that do not have that field
+  populated.
 
 .. _v1.5.10:
 
@@ -72,7 +83,7 @@ Bug Fixes
   and ``create_tm_ticket()`` that would prevent ``lod_acl`` from working.
   They now default to a disabled state that does not require
   customization just to utilize core load_acl functionality.
-* Updated the sample ``settings.py`` (``conf/trigger_settings.py``) to
+* Updated the sample ``settings.py`` (``configs/trigger_settings.py``) to
   utilize the updated default callables.
 * Fixed a bug in default global callable for ``get_tftp_source()`` to
   properly perform lookup of :setting:`VIPS`
@@ -794,7 +805,7 @@ trigger.utils
    + Add ``NETDEVICES_SOURCE = NETDEVICES_FILE`` to your ``settings.py``. This
      variable has replaced :setting:`NETDEVICES_FILE`.
    + Create your Bounce window mappings in ``bounce.py`` and put it in
-     ``/etc/trigger/bounce.py``. See ``conf/bounce.py`` in the source
+     ``/etc/trigger/bounce.py``. See ``configs/bounce.py`` in the source
      distribution for an example.
 
 + General changes
@@ -817,7 +828,7 @@ trigger.utils
     ``bounce.py`` and specified using :setting:`BOUNCE_FILE`. The interface for
     creating `~trigger.changemgmt.BounceWindow` objects was greatly simplified
     to improve readability and usage.
-   - Added sample ``bounce.py`` to ``conf/bounce.py`` in the Trigger source
+   - Added sample ``bounce.py`` to ``configs/bounce.py`` in the Trigger source
      distribution.
    - New setting variables in ``settings.py``:
 
@@ -845,7 +856,7 @@ trigger.utils
     :setting:`NETDEVICES_FORMAT` have been deprecated.
   - The configuration setting :setting:`NETDEVICES_SOURCE` has replaced
     :setting:`NETDEVICES_FILE`.
-  - The sample ``settings.py`` (found at ``conf/trigger_settings.py`` in the
+  - The sample ``settings.py`` (found at ``configs/trigger_settings.py`` in the
     source distribution) illustrates how one may use
     :setting:`NETDEVICES_SOURCE` and :setting:`NETDEVICES_LOADERS` to replace
     the deprecated settings :setting:`NETDEVICES_FORMAT` and
@@ -1268,7 +1279,7 @@ trigger.utils
 1.0.0.80
 ========
 
-- Typo fix in sample conf/trigger_settings.py
+- Typo fix in sample configs/trigger_settings.py
 - Explicit imports from trigger.acl and a little docstring cleanup in bin/optimizer
 - trigger.acl.autoacl.autoacl() now takes optional explicit_acls as 2nd
   argument, a set of ACL names, so that we can reference explicit_acls within
@@ -1276,7 +1287,7 @@ trigger.utils
 - trigger.acl.db.AclsDB.get_acl_set() modified to populate explicit_acls before
   implicit_acls. autoacl() is now called with these explicit_acls as the 2nd
   argument.
-- Sample autoacl.py in conf/autoacl.py updated to support explicit_acls and a
+- Sample autoacl.py in configs/autoacl.py updated to support explicit_acls and a
   simple example of how it could be used.
 - Added support for Juniper "family inet" filters in trigger.acl.parser.
 - ACL objects now have a family attribute to support this when constructed or
@@ -1292,14 +1303,14 @@ trigger.utils
 
 - New nd2json.py nad nd2sqlite.py tools for use in converting existing
   netdevices.xml implementations
-- Added sample netdevices.json in conf/netdevices.json
-- Added SQLite database schema for netdevices in conf/netdevices.sql
+- Added sample netdevices.json in configs/netdevices.json
+- Added SQLite database schema for netdevices in configs/netdevices.sql
 
 1.0.0.50
 ========
 
 - New NetDevices device metadata source file support for JSON, XML, or SQLite3
-- Companion changes made to conf/trigger_settings.py
+- Companion changes made to configs/trigger_settings.py
 - trigger.netdevice.NetDevice objects can now be created on their own and have
   the minimum set of attributes defaulted to None upon instantiation
 
