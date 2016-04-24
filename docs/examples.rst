@@ -15,7 +15,9 @@ Simple Examples
 Working with metadata
 ---------------------
 
-Get a count of all your devices::
+Get a count of all your devices:
+
+.. code-block:: python
 
     >>> from trigger.netdevices import NetDevices
     >>> nd = NetDevices()
@@ -24,7 +26,7 @@ Get a count of all your devices::
 
 (Whoa! That's a lot!) Let's look up a device.
 
-::
+.. code-block:: python
 
     >>> dev = nd.find('edge1-abc')
     >>> dev.vendor, dev.deviceType
@@ -35,7 +37,9 @@ Get a count of all your devices::
 Get an interactive shell
 ------------------------
 
-Since this device has SSH, let's connect to it::
+Since this device has SSH, let's connect to it:
+
+.. code-block:: python
 
     >>> dev = nd.find('edge1-abc')
     >>> dev.connect()
@@ -48,16 +52,20 @@ Since this device has SSH, let's connect to it::
 Work with access-lists
 ----------------------
 
-Let's start with a simple Cisco ACL::
+Let's start with a simple Cisco ACL:
+
+.. code-block:: python
 
     >>> from trigger.acl import parse
-    >>> aclobj = parse("""access-list 123 permit tcp any host 10.20.30.40 eq 80""")
+    >>> aclobj = parse('access-list 123 permit tcp any host 10.20.30.40 eq 80')
     >>> aclobj.terms
     [<Term: None>]
 
-And convert it to Juniper format::
+And convert it to Juniper format:
 
-    >>> aclobj.name_terms() # Juniper policy terms must have names
+.. code-block:: python
+
+    >>> aclobj.name_terms()  # Juniper policy terms must have names
     >>> aclobj.terms
     [<Term: T1>]
     >>> print '\n'.join(aclobj.output(format='junos'))
@@ -79,9 +87,11 @@ And convert it to Juniper format::
 Cache your login credentials
 ----------------------------
 
-Trigger will encrypt and store your credentials in a file called ``.tacacsrc``
-in your home directory. We already had them cached in the previous examples, so
-I removed it and then::
+Trigger will encrypt and store your credentials in a file called :ref:`.tacacsrc
+<tacacsrc>` in your home directory. We already had them cached in the previous
+examples, so I removed it and then:
+
+.. code-block:: python
 
     >>> from trigger.tacacsrc import Tacacsrc
     >>> tcrc = Tacacsrc()
@@ -103,7 +113,9 @@ Login to a device using the ``gong`` script
 -------------------------------------------
 
 Trigger includes a simple tool for end-users to connect to devices called
-``gong``. (It should be just ``go`` but we're in the future, so...)::
+:ref:`gong <gong>`:
+
+.. code-block:: bash
 
     $ gong foo1-cisco
     Connecting to foo1-cisco.net.aol.com.  Use ^X to exit.
@@ -114,7 +126,9 @@ Trigger includes a simple tool for end-users to connect to devices called
     20:52:05.777 UTC Sat Jun 23 2012
     foo1-cisco#
 
-Partial hostnames are supported, too::
+Partial hostnames are supported, too:
+
+.. code-block:: bash
 
     $ gong foo1
     2 possible matches found for 'foo1':
@@ -174,11 +188,12 @@ might be accomplished:
 
 Which outputs:
 
+.. code-block:: bash
+
     Result: ['21:27:46.435 UTC Sat Jun 23 2012\n']
     Stopping reactor
 
 Observe, however, that this only communicated with a single device.
-
 
 Execute commands asynchronously using the Commando API
 ------------------------------------------------------
@@ -189,8 +204,10 @@ that you may easily communicate with multiple devices in parallel.
 
 This is a base class that is intended to be extended to perform the operations
 you desire. Here is a basic example of how we might perform the same example
-above using ``Commando`` instead, but also communicating with a second device
-in parallel::
+above using `~trigger.cmds.Commando` instead, but also communicating with a
+second device in parallel:
+
+.. code-block:: python
 
     from trigger.cmds import Commando
 
@@ -234,7 +251,7 @@ templating engine, if a matching template file exists within the
 :setting:`TEXTFSM_TEMPLATE_DIR` directory.
 
 For this to work you must have an attribute on your netdevices model that
-specifies the network operating system, ie IOS, NXOS or JUNOS. This will be
+specifies the network operating system, e.g. IOS, NX-OS or JUNOS. This will be
 used to correlate the right template for a given device based on the naming
 convention used by the TextFSM templates. 
 
