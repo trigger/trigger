@@ -65,6 +65,7 @@ use Trigger's major functionality.
     configuration
     usage/index
     examples
+    api/index
     development
     license
     support

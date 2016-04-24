@@ -70,8 +70,11 @@ be supported with the minimum felds.
     specifying other fields as detailed in the next section.
 
 nodeName
-    The device hostname or IP address. You may also specify a port here (e.g.
-    ``hostname:2222``) . We'll cover that in more detail later.
+    The device hostname or IP address. Trigger does not validate this value for
+    you, so it must be able to be to be reconciled by the host system on which
+    Trigger is running. You may also specify a port here by separating the
+    hostname and port by a colon (e.g. ``hostname:2222``) . We'll cover that in
+    more detail later.
 
 manufacturer
     The representative name of the hardware vendor. This is also used to
@@ -92,6 +95,18 @@ deviceType
     of supported device types, please see :setting:`SUPPORTED_TYPES`. If you do
     NOT specify ``deviceType``, Trigger will fallback to the type specified in
     :setting:`FALLBACK_TYPE`.
+
+For example the minimum required fields for a device using JSON might be:
+
+.. code-block:: javascript
+
+    {
+        "nodeName": "n9k1",
+        "deviceType": "SWITCH",
+        "manufacturer": "CISCO",
+        "model": "NEXUS",
+        "adminStatus": "PRODUCTION"
+    }
 
 Common Fields
 -------------
