@@ -131,6 +131,55 @@ Partial hostnames are supported, too::
 Slightly Advanced Examples
 ==========================
 
+Execute commands asynchronously using Twisted
+---------------------------------------------
+
+This is a little more advanced... so we saved it for last.
+
+Trigger uses Twisted, which is a callback-based event loop. Wherever possible
+Twisted's implementation details are abstracted away, but the power is there
+for those who choose to wield it. Here's a super simplified example of how this
+might be accomplished:
+
+.. code-block:: python
+
+    from trigger.netdevices import NetDevices
+    from twisted.internet import reactor
+
+    nd = NetDevices()
+    dev = nd.find('foo1-abc')
+
+    def print_result(data):
+        """Display results from a command"""
+        print 'Result:', data
+
+    def stop_reactor(data):
+        """Stop the event loop"""
+        print 'Stopping reactor'
+        if reactor.running:
+            reactor.stop()
+
+    # Create an event chain that will execute a given list of commands on this
+    # device
+    async = dev.execute(['show clock'])
+
+    # When we get results from the commands executed, call this
+    async.addCallback(print_result)
+
+    # Once we're out of commands, or we an encounter an error, call this
+    async.addBoth(stop_reactor)
+
+    # Start the event loop
+    reactor.run()
+
+Which outputs:
+
+    Result: ['21:27:46.435 UTC Sat Jun 23 2012\n']
+    Stopping reactor
+
+Observe, however, that this only communicated with a single device.
+
+
 Execute commands asynchronously using the Commando API
 ------------------------------------------------------
 
@@ -405,53 +454,3 @@ Which outputs:
             }
         }
     }
-
-Execute commands asynchronously using Twisted
----------------------------------------------
-
-This is a little more advanced... so we saved it for last.
-
-Trigger uses Twisted, which is a callback-based event loop. Wherever possible
-Twisted's implementation details are abstracted away, but the power is there
-for those who choose to wield it. Here's a super simplified example of how this
-might be accomplished:
-
-
-.. code-block:: python
-
-    from trigger.netdevices import NetDevices
-    from twisted.internet import reactor
-
-    nd = NetDevices()
-    dev = nd.find('foo1-abc')
-
-    def print_result(data):
-        """Display results from a command"""
-        print 'Result:', data
-
-    def stop_reactor(data):
-        """Stop the event loop"""
-        print 'Stopping reactor'
-        if reactor.running:
-            reactor.stop()
-
-    # Create an event chain that will execute a given list of commands on this
-    # device
-    async = dev.execute(['show clock'])
-
-    # When we get results from the commands executed, call this
-    async.addCallback(print_result)
-
-    # Once we're out of commands, or we an encounter an error, call this
-    async.addBoth(stop_reactor)
-
-    # Start the event loop
-    reactor.run()
-
-Which outputs:
-
-    Result: ['21:27:46.435 UTC Sat Jun 23 2012\n']
-    Stopping reactor
-
-Observe, however, that this only communicated with a single device.
-
