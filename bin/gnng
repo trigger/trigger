@@ -311,6 +311,7 @@ def print_table(rows, labels=None):
         output_table.add_row(row)
 
     print output_table
+    print ''
 
 def output_dotty(subnet_table, display=True):
     """
