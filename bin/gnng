@@ -26,7 +26,7 @@ import os
 import re
 from sqlite3 import dbapi2 as sqlite
 import sys
-from prettytable import PrettyTable
+import prettytable
 from twisted.python import log
 from trigger.cmds import NetACLInfo
 from trigger.netdevices import device_match, NetDevices
@@ -300,11 +300,14 @@ def print_table(rows, labels=None):
     if labels is None:
         labels = ROW_LABELS
 
-    output_table = PrettyTable()
+    output_table = prettytable.PrettyTable()
     output_table.field_names = labels
+    output_table.align = 'l'
+    output_table.vrules = prettytable.prettytable.ALL
+    output_table.hrules = prettytable.prettytable.HEADER
 
     for row in rows:
-        row = [ x.strip() for x in row]
+        row = [x.strip() for x in row]
         output_table.add_row(row)
 
     print output_table
