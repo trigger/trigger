@@ -4,7 +4,7 @@ Adding New Vendors to Trigger
 
 This is a work in progress. Please bear with us as we expand and improve this
 documentation. If you have any feedback, please don't hesitate to `contact us
-<http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!!
+<http://trigger.readthedocs.io/en/latest/index.html#getting-help>`_!!
 
 .. contents::
     :local:

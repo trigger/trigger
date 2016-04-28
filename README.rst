@@ -33,7 +33,7 @@ Supported Platforms
 
 Refer to the `official docs`_ for the full list.
 
-.. _official docs: http://trigger.readthedocs.org/en/latest/#supported-platforms
+.. _official docs: http://trigger.readthedocs.io/en/latest/#supported-platforms
 
 Key Features
 ============
@@ -67,8 +67,8 @@ Getting Started
 ===============
 
 The best way to get started is to read the documentation hosted by `Read the
-Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.org
-<http://trigger.readthedocs.org>`_. There you will find everything you need to
+Docs <http://readthedocs.org>`_ at `http://trigger.readthedocs.io
+<http://trigger.readthedocs.io>`_. There you will find everything you need to
 get going including usage examples, installation and configuration
 instructions, and more!
 
@@ -91,7 +91,7 @@ Get in touch!
 -------------
 
 If you run into any snags, have questions, feedback, or just want to talk shop:
-`contact us <http://trigger.readthedocs.org/en/latest/#getting-help>`_!
+`contact us <http://trigger.readthedocs.io/en/latest/#getting-help>`_!
 
 **Pro tip**: Find us on IRC at ``#trigger`` on Freenode
 (`irc://irc.freenode.net/trigger <irc://irc.freenode.net/trigger>`_).
