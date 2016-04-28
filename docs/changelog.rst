@@ -25,6 +25,7 @@ Enhancements
   that defaults to ``PRODUCTION`` that is used to popoulate the ``adminStatus``
   field on `~trigger.netdevices.NetDevice` objects that do not have that field
   populated.
++ CLI-tool ``gnng`` now uses PTable instead of the old indent function.
 
 .. _v1.5.10:
 

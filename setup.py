@@ -22,6 +22,7 @@ requires = [
     'SimpleParse',
     'gtextfsm',
     'redis', # The python interface, not the daemon!
+    'PTable',
 ]
 
 class CleanCommand(Command):
