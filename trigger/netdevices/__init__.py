@@ -513,41 +513,51 @@ class NetDevice(object):
         factory.protocol = IoslikeSendExpect
         # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
         prompt = re.compile('R1>')
+        self._connected = True
         return endpoint.connect(factory, prompt_pattern=prompt)
         
     def open(self):
+        def inject_net_device_into_protocol(proto):
+            proto.net_device = self
+            return proto
+
         self._endpoint = self._get_endpoint()
+        self.d = self._endpoint.addCallback(
+                inject_net_device_into_protocol
+                )
         return 
 
     def close(self):
         def disconnect(proto):
-            proto.disconnect = True
-            proto.transport.loseConnection()
+            proto.loseConnection()
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
-        self._endpoint.addCallback(lambda proto: proto.finished)
+        # self._endpoint.addCallback(lambda proto: proto.finished)
         self._endpoint.addCallback(
                 disconnect
                 )
+        self._connected = False
         reactor.stop()
         return
 
     def get_results(self):
         self._results = []
-        while True:
+        while len(self._results) != len(self.commands):
             pass
+        return self._results
 
     def run_commands(self, commands):
-        def inject_net_device_into_protocol(proto):
-            proto.net_device = self
+        def inject_commands_into_protocol(proto):
+            proto.add_commands(commands)
+            proto._send_next()
+            return proto
 
-        if self.commands:
-            self.commands.append(commands)
-        else:
-            self.commands = [self.commands + commands]
-        return self._endpoint.addCallback(
-                inject_net_device_into_protocol
+        # self.commands = self.commands + commands
+
+        self.d.addCallback(
+                inject_commands_into_protocol
                 )
+        return
 
     @property
     def connected(self):
