@@ -13,6 +13,8 @@ import signal
 import struct
 import sys
 import tty
+from collections import deque
+from copy import copy
 from twisted.conch.ssh import session
 from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import SSHCommandClientEndpoint, _NewConnectionHelper, _CommandTransport, TCP4ClientEndpoint, connectProtocol
@@ -24,6 +26,7 @@ from trigger.conf import settings
 from trigger import tacacsrc, exceptions
 from trigger.twister import is_awaiting_confirmation, has_ioslike_error
 from trigger import tacacsrc
+from trigger.utils import hash_list
 from crochet import wait_for, run_in_reactor, setup, EventLoop
 setup()
 
@@ -278,6 +281,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.commands = []
         self.remaining_commands = []
         self.commands_entered = []
+        self.commands_epoch = deque()
         self.commanditer = iter(self.commands)
         self.connected = False
         self.disconnect = False
@@ -300,6 +304,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.finished = defer.Deferred()
         self.setTimeout(self.timeout)
         self.results = self.factory.results = []
+        self.results_map = {}
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
         # self.factory._init_commands(self)
@@ -314,6 +319,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # will kick off initialization.
 
     def add_commands(self, commands):
+        self._init_results_map(commands)
+        # self.commands_entered = self.commands_entered + commands
         self.remaining_commands = commands[len(self.commands_entered):]
         if len(self.remaining_commands) > 0:
             self.commanditer = iter(self.remaining_commands)
@@ -321,6 +328,24 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self.commands = commands
             self.commanditer = iter(commands)
         return True
+
+    def _init_results_map(self, commands):
+        self._results_lock = defer.DeferredLock()
+        self.commands_epoch.append(commands)
+        self._results_lock.acquire()
+        self.results_map[hash_list(commands)] = {tuple(commands): None}
+        self._results_lock.release()
+
+    def set_results_map(self, results, commands):
+        self._results_lock.acquire()
+        self.results_map[hash_list(commands)][tuple(commands)] = copy(results)
+        self._results_lock.release()
+
+    def get_results_map(self, commands):
+        self._results_lock.acquire()
+        rv = self.results_map.get(hash_list(commands))
+        self._results_lock.release()
+        return rv
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
@@ -352,10 +377,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         result = result[result.find('\n')+1:]
         log.msg('[%s] result AFTER: %r' % (self.device, result))
 
-        if self.initialized:
+        if self.initialized and result != '':
             self.results.append(result)
-
-        self.net_device._results.append(result)
+            self.set_results_map(result, self.commands_epoch.popleft())
 
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))

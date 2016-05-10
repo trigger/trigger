@@ -181,10 +181,6 @@ class NetDevice(object):
     Users usually won't create these objects directly! Rely instead upon
     `~trigger.netdevice.NetDevices` to do this for you.
     """
-    @classmethod
-    def run(cls):
-        if not reactor.running:
-            reactor.run()
 
     def __init__(self, data=None, with_acls=None):
         # Here comes all of the bare minimum set of attributes a NetDevice
@@ -525,14 +521,13 @@ class NetDevice(object):
         self.d = self._endpoint.addCallback(
                 inject_net_device_into_protocol
                 )
-        return 
+        return True
 
     def close(self):
         def disconnect(proto):
             proto.loseConnection()
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
-        # self._endpoint.addCallback(lambda proto: proto.finished)
         self._endpoint.addCallback(
                 disconnect
                 )
@@ -552,16 +547,11 @@ class NetDevice(object):
             proto._send_next()
             return proto
 
-        # self.commands = self.commands + commands
-
-        self.d.addCallback(
+        d = self.d.addCallback(
                 inject_commands_into_protocol
                 )
-        return
-
-    @property
-    def connected(self):
-        pass
+        results = Results(d, commands)
+        return results
 
     def allowable(self, action, when=None):
         """
@@ -1070,3 +1060,20 @@ class NetDevices(DictMixin):
 
     def __setattr__(self, attr, value):
         return setattr(self.__class__._Singleton, attr, value)
+
+
+class Results(object):
+    """Results object returned by persistant shell commands"""
+
+    def __init__(self, d, commands):
+        self._d = d
+        self._commands = commands
+
+    @property
+    def results(self):
+        try:
+            # Unknown whether this is threadsafe
+            getter = getattr(self._d.result, 'get_results_map')
+            return getter(self._commands)
+        except Exception as e:
+            pass
