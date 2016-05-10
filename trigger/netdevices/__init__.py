@@ -36,11 +36,15 @@ import re
 import sys
 import time
 from twisted.python import log
+from twisted.internet.protocol import Factory
+from twisted.internet import reactor
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
+from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
 from trigger import changemgmt, exceptions, rancid
 from UserDict import DictMixin
+from crochet import setup, run_in_reactor, wait_for
 import xml.etree.cElementTree as ET
 from . import loader
 try:
@@ -179,6 +183,7 @@ class NetDevice(object):
     Users usually won't create these objects directly! Rely instead upon
     `~trigger.netdevice.NetDevices` to do this for you.
     """
+
     def __init__(self, data=None, with_acls=None):
         # Here comes all of the bare minimum set of attributes a NetDevice
         # object needs for basic functionality within the existing suite.
@@ -252,6 +257,11 @@ class NetDevice(object):
 
         # Set the correct line-ending per vendor
         self.delimiter = self._set_delimiter()
+
+        # Set initial endpoint state
+        self._connected = False
+        self._endpoint = None
+        self.commands = []
 
     def _populate_data(self, data):
         """
@@ -493,6 +503,57 @@ class NetDevice(object):
                     Check to see if your netdevices object has the 'platform' key.
                     Otherwise template does not exist.""")
             return None
+
+    def _get_endpoint(self, *args):
+        endpoint = generate_endpoint(self).wait()
+        # factory = Factory()
+        factory = TriggerEndpointClientFactory()
+        factory.protocol = IoslikeSendExpect
+        # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
+        prompt = re.compile('R1>')
+        self._connected = True
+        return endpoint.connect(factory, prompt_pattern=prompt)
+        
+    def open(self):
+        def inject_net_device_into_protocol(proto):
+            proto.net_device = self
+            return proto
+
+        self._endpoint = self._get_endpoint()
+        self.d = self._endpoint.addCallback(
+                inject_net_device_into_protocol
+                )
+        return True
+
+    def close(self):
+        def disconnect(proto):
+            proto.loseConnection()
+        if self._endpoint is None:
+            raise ValueError("Endpoint has not been instantiated.")
+        self._endpoint.addCallback(
+                disconnect
+                )
+        self._connected = False
+        reactor.stop()
+        return
+
+    def get_results(self):
+        self._results = []
+        while len(self._results) != len(self.commands):
+            pass
+        return self._results
+
+    def run_commands(self, commands):
+        def inject_commands_into_protocol(proto):
+            proto.add_commands(commands)
+            proto._send_next()
+            return proto
+
+        d = self.d.addCallback(
+                inject_commands_into_protocol
+                )
+        results = Results(d, commands)
+        return results
 
     def allowable(self, action, when=None):
         """
@@ -1001,3 +1062,20 @@ class NetDevices(DictMixin):
 
     def __setattr__(self, attr, value):
         return setattr(self.__class__._Singleton, attr, value)
+
+
+class Results(object):
+    """Results object returned by persistant shell commands"""
+
+    def __init__(self, d, commands):
+        self._d = d
+        self._commands = commands
+
+    @property
+    def results(self):
+        try:
+            # Unknown whether this is threadsafe
+            getter = getattr(self._d.result, 'get_results_map')
+            return getter(self._commands)
+        except Exception as e:
+            pass

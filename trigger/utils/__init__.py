@@ -11,6 +11,7 @@ __copyright__ = 'Copyright 2008-2013, AOL Inc.'
 
 from collections import namedtuple
 import re
+import ctypes
 from .cli import get_user
 
 def crypt_md5(passwd):
@@ -76,3 +77,8 @@ def parse_node_port(nodeport, delimiter=':'):
         port = None
 
     return NodePort(str(node), port)
+
+
+def hash_list(list_object):
+    # return hex(ctypes.c_size_t(hash(tuple(list_object))).value)
+    return id(list_object)
