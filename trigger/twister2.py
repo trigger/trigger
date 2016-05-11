@@ -378,6 +378,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         log.msg('[%s] result AFTER: %r' % (self.device, result))
 
         if self.initialized and result != '':
+            if not self.commands_epoch:
+                log.msg('>>> WAITING FOR COMMANDS_EPOCH <<')
+                return None
             self.results.append(result)
             self.set_results_map(result, self.commands_epoch.popleft())
 
