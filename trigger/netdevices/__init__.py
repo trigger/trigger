@@ -507,8 +507,8 @@ class NetDevice(object):
         # factory = Factory()
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
-        # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
-        prompt = re.compile(r'R1.$')
+        prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
+        # prompt = re.compile(r'R1.$')
         self._connected = True
         return endpoint.connect(factory, prompt_pattern=prompt)
         
