@@ -509,8 +509,8 @@ class NetDevice(object):
         # factory = Factory()
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
-        # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
-        prompt = re.compile('R1>')
+        prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
+        # prompt = re.compile(r'R1.$')
         self._connected = True
         return endpoint.connect(factory, prompt_pattern=prompt)
         
@@ -523,18 +523,20 @@ class NetDevice(object):
         self.d = self._endpoint.addCallback(
                 inject_net_device_into_protocol
                 )
+        # This should be validated somehow
+        self_connected = True
         return True
 
     def close(self):
         def disconnect(proto):
-            proto.loseConnection()
+            proto.transport.loseConnection()
+            return proto
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
         self._endpoint.addCallback(
                 disconnect
                 )
         self._connected = False
-        reactor.stop()
         return
 
     def get_results(self):
@@ -554,6 +556,11 @@ class NetDevice(object):
                 )
         results = Results(d, commands)
         return results
+
+    @property
+    def connected(self):
+        if self_connected == True:
+            return True
 
     def allowable(self, action, when=None):
         """
@@ -1070,12 +1077,22 @@ class Results(object):
     def __init__(self, d, commands):
         self._d = d
         self._commands = commands
+        self._ready = False
+        self._getter = None
+
+    @property
+    def ready(self):
+        try:
+            # Unknown whether this is threadsafe
+            self._getter = getattr(self._d.result, 'get_results_map')
+            self._ready = True
+        except Exception as e:
+            log.msg(">>> RESULTS NOT READY YET << ")
+
+        return self._ready
 
     @property
     def results(self):
-        try:
-            # Unknown whether this is threadsafe
-            getter = getattr(self._d.result, 'get_results_map')
-            return getter(self._commands)
-        except Exception as e:
-            pass
+        if self.ready:
+            self._results = self._getter(self._commands)
+            return self._getter(self._commands)

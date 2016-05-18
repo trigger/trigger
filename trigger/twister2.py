@@ -13,7 +13,7 @@ import signal
 import struct
 import sys
 import tty
-from collections import deque
+from collections import deque, defaultdict
 from copy import copy
 from twisted.conch.ssh import session
 from twisted.conch.ssh.channel import SSHChannel
@@ -304,7 +304,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.finished = defer.Deferred()
         self.setTimeout(self.timeout)
         self.results = self.factory.results = []
-        self.results_map = {}
+        self.results_map = defaultdict(list)
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
         # self.factory._init_commands(self)
@@ -333,12 +333,12 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self._results_lock = defer.DeferredLock()
         self.commands_epoch.append(commands)
         self._results_lock.acquire()
-        self.results_map[hash_list(commands)] = {tuple(commands): None}
+        # self.results_map[hash_list(commands)]((tuple(commands), None))
         self._results_lock.release()
 
     def set_results_map(self, results, commands):
         self._results_lock.acquire()
-        self.results_map[hash_list(commands)][tuple(commands)] = copy(results)
+        self.results_map[hash_list(commands)].append(copy(results))
         self._results_lock.release()
 
     def get_results_map(self, commands):
@@ -378,6 +378,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         log.msg('[%s] result AFTER: %r' % (self.device, result))
 
         if self.initialized and result != '':
+            if not self.commands_epoch:
+                log.msg('>>> WAITING FOR COMMANDS_EPOCH <<')
+                return None
             self.results.append(result)
             self.set_results_map(result, self.commands_epoch.popleft())
 
