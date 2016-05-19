@@ -27,6 +27,7 @@ from trigger import tacacsrc, exceptions
 from trigger.twister import is_awaiting_confirmation, has_ioslike_error
 from trigger import tacacsrc
 from trigger.utils import hash_list
+from twisted.internet import reactor
 from crochet import wait_for, run_in_reactor, setup, EventLoop
 setup()
 
@@ -279,6 +280,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     def __init__(self):
         self.net_device = None
         self.commands = []
+        self.deferreds = defaultdict(list)
+        self.last_command = None
+        self.command_counter = 0
         self.remaining_commands = []
         self.commands_entered = []
         self.commands_epoch = deque()
@@ -331,6 +335,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
     def _init_results_map(self, commands):
         self._results_lock = defer.DeferredLock()
+        self.deferreds[tuple(commands)].append(defer.Deferred())
         self.commands_epoch.append(commands)
         self._results_lock.acquire()
         # self.results_map[hash_list(commands)]((tuple(commands), None))
@@ -382,7 +387,25 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg('>>> WAITING FOR COMMANDS_EPOCH <<')
                 return None
             self.results.append(result)
-            self.set_results_map(result, self.commands_epoch.popleft())
+
+
+            if self.command_counter == 0 and self.last_command is None: # Init state
+                self.last_command = self.commands_epoch[0] # last_command is tip of queue
+                self.command_counter = len(self.last_command) # Init counter that tracks where we are at
+
+            if self.command_counter == 1: # Nearly Finished appending commands
+                self.last_command = self.commands_epoch.popleft()
+
+            if self.command_counter == 0: # Finished appending commands in a set. Time to fire!:
+                payload = self.deferreds[tuple(self.last_command)]
+                payload[0].addCallback(lambda payload: payload)
+                reactor.callInThread(payload[0], payload[1:])
+                self.last_command = self.commands_epoch[0]
+                self.command_counter = len(self.last_command) + 1
+
+            self.command_counter -= 1 # We've pushed this result. Decrement counter.
+            self.deferreds[tuple(self.last_command)].append(result)
+            # self.set_results_map(result, self.commands_epoch.popleft())
 
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))

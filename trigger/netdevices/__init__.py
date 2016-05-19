@@ -38,6 +38,7 @@ import time
 from twisted.python import log
 from twisted.internet.protocol import Factory
 from twisted.internet import reactor
+from twisted.internet import defer
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
@@ -546,7 +547,9 @@ class NetDevice(object):
         return self._results
 
     def run_commands(self, commands):
+        # resultsd = generate_deferred()
         def inject_commands_into_protocol(proto):
+            # proto.deferreds[tuple(commands)].append(resultsd)
             proto.add_commands(commands)
             proto._send_next()
             return proto
@@ -554,7 +557,9 @@ class NetDevice(object):
         d = self.d.addCallback(
                 inject_commands_into_protocol
                 )
-        results = Results(d, commands)
+        # results = Results(d, commands)
+        results = Results2(d, commands)
+        # results = Results2(resultsd, commands)
         return results
 
     @property
@@ -1071,28 +1076,57 @@ class NetDevices(DictMixin):
         return setattr(self.__class__._Singleton, attr, value)
 
 
-class Results(object):
+class Results2(object):
     """Results object returned by persistant shell commands"""
 
     def __init__(self, d, commands):
         self._d = d
         self._commands = commands
         self._ready = False
-        self._getter = None
 
     @property
     def ready(self):
         try:
-            # Unknown whether this is threadsafe
-            self._getter = getattr(self._d.result, 'get_results_map')
-            self._ready = True
-        except Exception as e:
-            log.msg(">>> RESULTS NOT READY YET << ")
-
-        return self._ready
+            if self._d.result is not None:
+                return True
+        except AttributeError:
+            return None
 
     @property
     def results(self):
         if self.ready:
-            self._results = self._getter(self._commands)
-            return self._getter(self._commands)
+            defs =  self._d.result.deferreds
+            while True:
+                for k, v in defs.items():
+                    print k
+                    for i in v:
+                        print i
+            return self._d.result
+
+# class Results(object):
+    # """Results object returned by persistant shell commands"""
+
+    # def __init__(self, d, dd, commands):
+        # self._d = d
+        # self._dd = dd
+        # self._commands = commands
+        # self._ready = False
+        # self._getter = None
+
+    # @property
+    # def ready(self):
+        # try:
+            # # Unknown whether this is threadsafe
+            # # self._getter = getattr(self._d.result, 'get_results_map')
+            # self._getter = getattr(self._d.result, 'get_results')
+            # self._ready = True
+        # except Exception as e:
+            # log.msg(">>> RESULTS NOT READY YET << ")
+
+        # return self._ready
+
+    # @property
+    # def results(self):
+        # if self.ready:
+            # self._results = self._getter(self._commands, self._dd)
+            # return self._getter(self._commands)
