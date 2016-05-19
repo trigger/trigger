@@ -18,7 +18,7 @@ from copy import copy
 from twisted.conch.ssh import session
 from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import SSHCommandClientEndpoint, _NewConnectionHelper, _CommandTransport, TCP4ClientEndpoint, connectProtocol
-from twisted.internet import defer, protocol, reactor
+from twisted.internet import defer, protocol, reactor, threads
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 
@@ -324,7 +324,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
     def add_commands(self, commands):
         self._init_results_map(commands)
-        # self.commands_entered = self.commands_entered + commands
         self.remaining_commands = commands[len(self.commands_entered):]
         if len(self.remaining_commands) > 0:
             self.commanditer = iter(self.remaining_commands)
@@ -334,12 +333,12 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         return True
 
     def _init_results_map(self, commands):
-        self._results_lock = defer.DeferredLock()
-        self.deferreds[tuple(commands)].append(defer.Deferred())
+        # self._results_lock = defer.DeferredLock()
+        # self.deferreds[tuple(commands)].append(defer.Deferred())
         self.commands_epoch.append(commands)
-        self._results_lock.acquire()
+        # self._results_lock.acquire()
         # self.results_map[hash_list(commands)]((tuple(commands), None))
-        self._results_lock.release()
+        # self._results_lock.release()
 
     def set_results_map(self, results, commands):
         self._results_lock.acquire()
@@ -388,7 +387,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 return None
             self.results.append(result)
 
-
             if self.command_counter == 0 and self.last_command is None: # Init state
                 self.last_command = self.commands_epoch[0] # last_command is tip of queue
                 self.command_counter = len(self.last_command) # Init counter that tracks where we are at
@@ -398,8 +396,10 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
             if self.command_counter == 0: # Finished appending commands in a set. Time to fire!:
                 payload = self.deferreds[tuple(self.last_command)]
+                # reactor.callInThread(payload[0].callback, payload[1:])
+                # reactor.callFromThread(payload[0].callback, payload[1:])
+                reactor.callLater(1, payload[0].callback, payload[1:])
                 payload[0].addCallback(lambda payload: payload)
-                reactor.callInThread(payload[0], payload[1:])
                 self.last_command = self.commands_epoch[0]
                 self.command_counter = len(self.last_command) + 1
 
@@ -418,7 +418,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
             # if self.commands != self.net_device.commands:
                 # self.commands = self.net_device.commands
-                reactor.callLater(self.command_interval, self._send_next)
+                # reactor.callLater(self.command_interval, self._send_next)
+                reactor.callLater(1, self._send_next)
                 # self.commanditer = iter(self.net_device.commands.pop())
 
             # reactor.callLater(self.command_interval, self._send_next)

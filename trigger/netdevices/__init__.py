@@ -508,8 +508,8 @@ class NetDevice(object):
         # factory = Factory()
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
-        prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
-        # prompt = re.compile(r'R1.$')
+        # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
+        prompt = re.compile(r'\r\nR1#')
         self._connected = True
         return endpoint.connect(factory, prompt_pattern=prompt)
         
@@ -545,10 +545,11 @@ class NetDevice(object):
         return self._results
 
     def run_commands(self, commands):
-        # resultsd = generate_deferred()
+        resultsd = defer.Deferred()
+        # def inject_commands_into_protocol(proto, resultsd):
         def inject_commands_into_protocol(proto):
-            # proto.deferreds[tuple(commands)].append(resultsd)
             proto.add_commands(commands)
+            proto.deferreds[tuple(commands)].append(resultsd)
             proto._send_next()
             return proto
 
@@ -556,8 +557,7 @@ class NetDevice(object):
                 inject_commands_into_protocol
                 )
         # results = Results(d, commands)
-        results = Results2(d, commands)
-        # results = Results2(resultsd, commands)
+        results = Results2(resultsd, commands)
         return results
 
     @property
@@ -1093,12 +1093,6 @@ class Results2(object):
     @property
     def results(self):
         if self.ready:
-            defs =  self._d.result.deferreds
-            while True:
-                for k, v in defs.items():
-                    print k
-                    for i in v:
-                        print i
             return self._d.result
 
 # class Results(object):
