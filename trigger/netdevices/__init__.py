@@ -509,7 +509,7 @@ class NetDevice(object):
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
         # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
-        prompt = re.compile(r'\r\nR1#')
+        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
         self._connected = True
         return endpoint.connect(factory, prompt_pattern=prompt)
         
@@ -545,11 +545,10 @@ class NetDevice(object):
         return self._results
 
     def run_commands(self, commands):
-        resultsd = defer.Deferred()
-        # def inject_commands_into_protocol(proto, resultsd):
         def inject_commands_into_protocol(proto):
+            d = defer.Deferred()
             proto.add_commands(commands)
-            proto.deferreds[tuple(commands)].append(resultsd)
+            proto.deferreds[tuple(commands)].append(d)
             proto._send_next()
             return proto
 
@@ -557,7 +556,7 @@ class NetDevice(object):
                 inject_commands_into_protocol
                 )
         # results = Results(d, commands)
-        results = Results2(resultsd, commands)
+        results = Results2(d, commands)
         return results
 
     @property
@@ -1083,17 +1082,9 @@ class Results2(object):
         self._ready = False
 
     @property
-    def ready(self):
-        try:
-            if self._d.result is not None:
-                return True
-        except AttributeError:
-            return None
-
-    @property
     def results(self):
-        if self.ready:
-            return self._d.result
+        if self._d.result:
+            return self._d.result.deferreds[tuple(self._commands)]
 
 # class Results(object):
     # """Results object returned by persistant shell commands"""

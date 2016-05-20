@@ -360,6 +360,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # for more input (like a [y/n]) prompt), and continue, otherwise return
         # None
         m = self.prompt.search(self.data)
+        m2 = self.prompt.search(bytes)
         if not m:
             # If the prompt confirms set the index to the matched bytes,
             if is_awaiting_confirmation(self.data):
@@ -371,8 +372,10 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         else:
             # Or just use the matched regex object...
             prompt_idx = m.start()
+            prompt_idx2 = m2.start()
 
         result = self.data[:prompt_idx]
+        result2 = bytes[:prompt_idx2]
         # Trim off the echoed-back command.  This should *not* be necessary
         # since the telnet session is in WONT ECHO.  This is confirmed with
         # a packet trace, and running self.transport.dont(ECHO) from
@@ -396,10 +399,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
             if self.command_counter == 0: # Finished appending commands in a set. Time to fire!:
                 payload = self.deferreds[tuple(self.last_command)]
-                # reactor.callInThread(payload[0].callback, payload[1:])
-                # reactor.callFromThread(payload[0].callback, payload[1:])
-                reactor.callLater(1, payload[0].callback, payload[1:])
                 payload[0].addCallback(lambda payload: payload)
+                # reactor.callInThread(payload[0].callback, payload[1:])
+                reactor.callFromThread(payload[0].callback, payload[1:])
                 self.last_command = self.commands_epoch[0]
                 self.command_counter = len(self.last_command) + 1
 
@@ -419,7 +421,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             # if self.commands != self.net_device.commands:
                 # self.commands = self.net_device.commands
                 # reactor.callLater(self.command_interval, self._send_next)
-                reactor.callLater(1, self._send_next)
+                reactor.callLater(5, self._send_next)
                 # self.commanditer = iter(self.net_device.commands.pop())
 
             # reactor.callLater(self.command_interval, self._send_next)
