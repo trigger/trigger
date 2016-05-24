@@ -13,11 +13,14 @@ import signal
 import struct
 import sys
 import tty
-from collections import deque, defaultdict
 from copy import copy
 from twisted.conch.ssh import session
 from twisted.conch.ssh.channel import SSHChannel
-from twisted.conch.endpoints import SSHCommandClientEndpoint, _NewConnectionHelper, _CommandTransport, TCP4ClientEndpoint, connectProtocol
+from twisted.conch.endpoints import (SSHCommandClientEndpoint,
+                                     _NewConnectionHelper,
+                                     _ExistingConnectionHelper,
+                                     _CommandTransport, TCP4ClientEndpoint,
+                                     connectProtocol)
 from twisted.internet import defer, protocol, reactor, threads
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
@@ -36,8 +39,8 @@ setup()
 def generate_endpoint(device):
     creds = tacacsrc.get_device_password(device.nodeName)
     return TriggerSSHShellClientEndpointBase.newConnection(
-            reactor, creds.username, device.nodeName, password=creds.password
-            )
+        reactor, creds.username, device, password=creds.password
+    )
 
 class SSHSessionAddress(object):
     def __init__(self, server, username, command):
@@ -64,23 +67,22 @@ class _TriggerShellChannel(SSHChannel):
         self._reason = None
 
     def openFailed(self, reason):
-	"""
-	"""
-	self._commandConnected.errback(reason)
+        """
+        """
+        self._commandConnected.errback(reason)
 
 
     def channelOpen(self, ignored):
-	"""
-	"""
+        """
+        """
         pr = session.packRequest_pty_req(os.environ['TERM'],
                                          self._get_window_size(), '')
-
         self.conn.sendRequest(self, 'pty-req', pr)
 
-	command = self.conn.sendRequest(
-	    self, 'shell', '', wantReply=True)
+        command = self.conn.sendRequest(
+            self, 'shell', '', wantReply=True)
         # signal.signal(signal.SIGWINCH, self._window_resized)
-	command.addCallbacks(self._execSuccess, self._execFailure)
+        command.addCallbacks(self._execSuccess, self._execFailure)
 
     def _window_resized(self, *args):
         """Triggered when the terminal is rezied."""
@@ -96,15 +98,15 @@ class _TriggerShellChannel(SSHChannel):
         return struct.unpack('4H', winsz)
 
     def _execFailure(self, reason):
-	"""
-	"""
-	self._commandConnected.errback(reason)
+        """
+        """
+        self._commandConnected.errback(reason)
 
 
     def _execSuccess(self, ignored):
-	"""
-	"""
-	self._protocol = self._protocolFactory.buildProtocol(
+        """
+        """
+        self._protocol = self._protocolFactory.buildProtocol(
                 SSHSessionAddress(
                     self.conn.transport.transport.getPeer(),
                     self.conn.transport.creator.username,
@@ -112,10 +114,17 @@ class _TriggerShellChannel(SSHChannel):
                     ))
         self._bind_protocol_data()
         self._protocol.makeConnection(self)
-	self._commandConnected.callback(self._protocol)
+        self._commandConnected.callback(self._protocol)
 
     def _bind_protocol_data(self):
-        self._protocol.device = self.conn.transport.creator.hostname or None
+        # This was a string before, now it's a NetDevice.
+        self._protocol.device = self.conn.transport.creator.device or None
+
+        # FIXME(jathan): Is this potentially non-thread-safe?
+        self._protocol.startup_commands = copy(
+            self._protocol.device.startup_commands
+        )
+
         self._protocol.incremental = self.incremental or None
         self._protocol.prompt = self.prompt or None
         self._protocol.with_errors = self.with_errors or None
@@ -131,20 +140,21 @@ class _TriggerSessionTransport(_CommandTransport):
     def verifyHostKey(self, hostKey, fingerprint):
         hostname = self.creator.hostname
         ip = self.transport.getPeer().host
- 
+
         self._state = b'SECURING'
         return defer.succeed(1)
 
 
-
 class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
     """
-    Return object used for establishing an async session rather than executing a single command.
+    Return object used for establishing an async session rather than executing
+    a single command.
     """
-    def __init__(self, reactor, hostname, port, username, keys, password,
+    def __init__(self, reactor, device, port, username, keys, password,
             agentEndpoint, knownHosts, ui):
         self.reactor = reactor
-        self.hostname = str(hostname)
+        self.device = device
+        self.hostname = device.nodeName
         self.port = port
         self.username = username
         self.keys = keys
@@ -158,9 +168,9 @@ class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
     def secureConnection(self):
          protocol = _TriggerSessionTransport(self)
          ready = protocol.connectionReady
- 
+
          sshClient = TCP4ClientEndpoint(self.reactor, self.hostname, self.port)
- 
+
          d = connectProtocol(sshClient, protocol)
          d.addCallback(lambda ignored: ready)
          return d
@@ -231,14 +241,20 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     Subclass me when you want to create a new ssh client.
     """
     @classmethod
-    def newConnection(cls, reactor, username, hostname, keys=None, password=None,
-            port=22, agentEndpoint=None, knownHosts=None, ui=None):
+    def newConnection(cls, reactor, username, device, keys=None, password=None,
+                      port=22, agentEndpoint=None, knownHosts=None, ui=None):
 
         helper = _NewTriggerConnectionHelperBase(
-                reactor, hostname, port, username, keys, password,
-                agentEndpoint, knownHosts, ui)
+            reactor, device, port, username, keys, password, agentEndpoint,
+            knownHosts, ui
+        )
         return cls(helper)
 
+    @classmethod
+    def existingConnection(cls, connection):
+        """Overload stock existinConnection to not require ``commands``."""
+        helper = _ExistingConnectionHelper(connection)
+        return cls(helper)
 
     def __init__(self, creator):
         self._creator = creator
@@ -278,14 +294,12 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     one errors. Wait for a prompt after each.
     """
     def __init__(self):
-        self.net_device = None
+        # self.net_device = None
+        self.device = None
         self.commands = []
-        self.deferreds = defaultdict(list)
         self.last_command = None
         self.command_counter = 0
-        self.remaining_commands = []
         self.commands_entered = []
-        self.commands_epoch = deque()
         self.commanditer = iter(self.commands)
         self.connected = False
         self.disconnect = False
@@ -308,7 +322,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.finished = defer.Deferred()
         self.setTimeout(self.timeout)
         self.results = self.factory.results = []
-        self.results_map = defaultdict(list)
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
         # self.factory._init_commands(self)
@@ -323,33 +336,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # will kick off initialization.
 
     def add_commands(self, commands):
-        self._init_results_map(commands)
-        self.remaining_commands = commands[len(self.commands_entered):]
-        if len(self.remaining_commands) > 0:
-            self.commanditer = iter(self.remaining_commands)
-        else:
-            self.commands = commands
-            self.commanditer = iter(commands)
+        self.commands = commands
+        self.commanditer = iter(commands)
         return True
-
-    def _init_results_map(self, commands):
-        # self._results_lock = defer.DeferredLock()
-        # self.deferreds[tuple(commands)].append(defer.Deferred())
-        self.commands_epoch.append(commands)
-        # self._results_lock.acquire()
-        # self.results_map[hash_list(commands)]((tuple(commands), None))
-        # self._results_lock.release()
-
-    def set_results_map(self, results, commands):
-        self._results_lock.acquire()
-        self.results_map[hash_list(commands)].append(copy(results))
-        self._results_lock.release()
-
-    def get_results_map(self, commands):
-        self._results_lock.acquire()
-        rv = self.results_map.get(hash_list(commands))
-        self._results_lock.release()
-        return rv
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
@@ -375,7 +364,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             prompt_idx2 = m2.start()
 
         result = self.data[:prompt_idx]
-        result2 = bytes[:prompt_idx2]
         # Trim off the echoed-back command.  This should *not* be necessary
         # since the telnet session is in WONT ECHO.  This is confirmed with
         # a packet trace, and running self.transport.dont(ECHO) from
@@ -384,30 +372,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         result = result[result.find('\n')+1:]
         log.msg('[%s] result AFTER: %r' % (self.device, result))
 
-        if self.initialized and result != '':
-            if not self.commands_epoch:
-                log.msg('>>> WAITING FOR COMMANDS_EPOCH <<')
-                return None
+        if self.initialized:
             self.results.append(result)
-
-            if self.command_counter == 0 and self.last_command is None: # Init state
-                self.last_command = self.commands_epoch[0] # last_command is tip of queue
-                self.command_counter = len(self.last_command) # Init counter that tracks where we are at
-
-            if self.command_counter == 1: # Nearly Finished appending commands
-                self.last_command = self.commands_epoch.popleft()
-
-            if self.command_counter == 0: # Finished appending commands in a set. Time to fire!:
-                payload = self.deferreds[tuple(self.last_command)]
-                payload[0].addCallback(lambda payload: payload)
-                # reactor.callInThread(payload[0].callback, payload[1:])
-                reactor.callFromThread(payload[0].callback, payload[1:])
-                self.last_command = self.commands_epoch[0]
-                self.command_counter = len(self.last_command) + 1
-
-            self.command_counter -= 1 # We've pushed this result. Decrement counter.
-            self.deferreds[tuple(self.last_command)].append(result)
-            # self.set_results_map(result, self.commands_epoch.popleft())
 
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))
@@ -418,19 +384,12 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg('[%s] Waiting %s seconds before sending next command' %
                         (self.device, self.command_interval))
 
-            # if self.commands != self.net_device.commands:
-                # self.commands = self.net_device.commands
-                # reactor.callLater(self.command_interval, self._send_next)
-                reactor.callLater(5, self._send_next)
-                # self.commanditer = iter(self.net_device.commands.pop())
-
-            # reactor.callLater(self.command_interval, self._send_next)
-            # self._send_next()
+            reactor.callLater(self.command_interval, self._send_next)
 
     def _send_next(self):
         """Send the next command in the stack."""
         self.data = ''
-        # self.resetTimeout()
+        self.resetTimeout()
 
         if not self.initialized:
             log.msg('[%s] Not initialized, sending startup commands' %
@@ -451,20 +410,19 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
         try:
             next_command = self.commanditer.next()
-            if next_command is None:
-                self.results.append(None)
-                self._send_next()
-            else:
-                log.msg('[%s] Sending command %r' % (self.device, next_command))
-                self.transport.write(next_command + '\n')
-                self.commands_entered.append(next_command)
         except StopIteration:
             log.msg('[%s] No more commands to send, moving on...' %
                     self.device)
-            return
-            # if len(self.net_device.commands) > 0:
-                # self.commanditer = iter(self.net_device.commands.pop())
+            return None
             # self.transport.loseConnection()
+
+        if next_command is None:
+            self.results.append(None)
+            self._send_next()
+        else:
+            log.msg('[%s] Sending command %r' % (self.device, next_command))
+            self.transport.write(next_command + '\n')
+            self.commands_entered.append(next_command)
 
     def timeoutConnection(self):
         """Do this when we timeout."""

@@ -566,22 +566,23 @@ class Commando(object):
 
     def _stop(self):
         """Stop the reactor event loop"""
-        log.msg('stopping reactor')
+        log.msg('stopping reactor... except not really.')
         if self.verbose:
-            print 'stopping reactor'
+            print 'stopping reactor... except not really.'
 
-        from twisted.internet import reactor
-        reactor.stop()
+        # from twisted.internet import reactor
+        # reactor.stop()
 
     def _start(self):
         """Start the reactor event loop"""
-        log.msg('starting reactor')
+        log.msg('starting reactor. maybe.')
         if self.verbose:
-            print 'starting reactor'
+            print 'starting reactor. maybe.'
 
         if self.curr_conns:
             from twisted.internet import reactor
-            reactor.run()
+            if not reactor.running:
+                reactor.run()
         else:
             msg = "Won't start reactor with no work to do!"
             log.msg(msg)

@@ -507,36 +507,48 @@ class NetDevice(object):
 
     def _get_endpoint(self, *args):
         endpoint = generate_endpoint(self).wait()
-        # factory = Factory()
+
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
-        # prompt = re.compile(settings.DEFAULT_PROMPT_PAT)
+
+        self._factory = factory  # Track this for later?
+
+        # FIXME(jathan): prompt_pattern could move back to protocol?
         prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        self._connected = True
-        return endpoint.connect(factory, prompt_pattern=prompt)
-        
+        proto = endpoint.connect(factory, prompt_pattern=prompt)
+        self._proto = proto  # Track this for later, too.
+
+        return proto
+
     def open(self):
         def inject_net_device_into_protocol(proto):
-            proto.net_device = self
+            """Now we're only injecting connection for use later."""
+            self._conn = proto.transport.conn
+            # proto.net_device = self
+            # proto.startup_commands = copy.copy(self.startup_commands)
             return proto
 
         self._endpoint = self._get_endpoint()
         self.d = self._endpoint.addCallback(
-                inject_net_device_into_protocol
-                )
+            inject_net_device_into_protocol
+        )
+
         # This should be validated somehow
-        self_connected = True
+        self._connected = True
         return True
 
     def close(self):
         def disconnect(proto):
             proto.transport.loseConnection()
             return proto
+
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
+
         self._endpoint.addCallback(
-                disconnect
-                )
+            disconnect
+        )
+
         self._connected = False
         return
 
@@ -547,24 +559,34 @@ class NetDevice(object):
         return self._results
 
     def run_commands(self, commands):
+        from trigger.twister2 import TriggerSSHShellClientEndpointBase
+
+        factory = TriggerEndpointClientFactory()
+        factory.protocol = IoslikeSendExpect
+
+        # Here's where we're using self._connect injected on .open()
+        ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
+
+        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        proto = ep.connect(factory, prompt_pattern=prompt)
+
         def inject_commands_into_protocol(proto):
-            d = defer.Deferred()
             proto.add_commands(commands)
-            proto.deferreds[tuple(commands)].append(d)
             proto._send_next()
             return proto
 
-        d = self.d.addCallback(
-                inject_commands_into_protocol
-                )
+        proto.addCallback(
+            inject_commands_into_protocol
+        )
+
         # results = Results(d, commands)
-        results = Results2(d, commands)
+        # results = Results2(d, commands)
+        results = Results2(proto, commands)
         return results
 
     @property
     def connected(self):
-        if self_connected == True:
-            return True
+        return self._connected
 
     def allowable(self, action, when=None):
         """
@@ -1080,13 +1102,16 @@ class Results2(object):
 
     def __init__(self, d, commands):
         self._d = d
-        self._commands = commands
+        self.commands = commands
         self._ready = False
 
     @property
     def results(self):
         if self._d.result:
-            return self._d.result.deferreds[tuple(self._commands)]
+            return self._d.result.results
+
+    def __repr__(self):
+        return '<Result: %r>' % self.results
 
 # class Results(object):
     # """Results object returned by persistant shell commands"""
