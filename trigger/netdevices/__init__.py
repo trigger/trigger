@@ -552,6 +552,13 @@ class NetDevice(object):
         self._connected = False
         return
 
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
     def get_results(self):
         self._results = []
         while len(self._results) != len(self.commands):
