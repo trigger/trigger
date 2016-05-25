@@ -294,27 +294,15 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     one errors. Wait for a prompt after each.
     """
     def __init__(self):
-        # self.net_device = None
         self.device = None
         self.commands = []
-        self.last_command = None
-        self.command_counter = 0
-        self.commands_entered = []
         self.commanditer = iter(self.commands)
         self.connected = False
         self.disconnect = False
         self.initialized = False
         self.startup_commands = []
+        # FIXME(tom) This sux and should be set by trigger settings
         self.timeout = 10
-
-    # @property
-    # def commands(self):
-        # return self._commands
-
-    # @commands.setter
-    # def commands(self, value):
-        # self._commands = self._commands + value
-        # self._commanditer = iter(value)
 
     def connectionMade(self):
         """Do this when we connect."""
@@ -325,8 +313,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
         # self.factory._init_commands(self)
-        # self._send_next()
-
 
     def connectionLost(self, reason):
         self.finished.callback(None)
@@ -349,7 +335,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # for more input (like a [y/n]) prompt), and continue, otherwise return
         # None
         m = self.prompt.search(self.data)
-        m2 = self.prompt.search(bytes)
         if not m:
             # If the prompt confirms set the index to the matched bytes,
             if is_awaiting_confirmation(self.data):
@@ -361,7 +346,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         else:
             # Or just use the matched regex object...
             prompt_idx = m.start()
-            prompt_idx2 = m2.start()
 
         result = self.data[:prompt_idx]
         # Trim off the echoed-back command.  This should *not* be necessary
@@ -414,7 +398,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             log.msg('[%s] No more commands to send, moving on...' %
                     self.device)
             return None
-            # self.transport.loseConnection()
 
         if next_command is None:
             self.results.append(None)
