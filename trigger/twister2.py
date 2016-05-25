@@ -405,7 +405,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         else:
             log.msg('[%s] Sending command %r' % (self.device, next_command))
             self.transport.write(next_command + '\n')
-            self.commands_entered.append(next_command)
 
     def timeoutConnection(self):
         """Do this when we timeout."""
