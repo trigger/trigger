@@ -262,7 +262,7 @@ class NetDevice(object):
         # Set initial endpoint state
         self._connected = False
         self._endpoint = None
-        self.commands = []
+        self.results = Results2()
 
     def _populate_data(self, data):
         """
@@ -572,24 +572,25 @@ class NetDevice(object):
         factory.protocol = IoslikeSendExpect
 
         # Here's where we're using self._connect injected on .open()
-        ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
+        # ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
+        proto = self._proto
 
-        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        proto = ep.connect(factory, prompt_pattern=prompt)
+        # prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        # proto = ep.connect(factory, prompt_pattern=prompt)
 
         def inject_commands_into_protocol(proto):
             proto.add_commands(commands)
-            proto._send_next()
+            proto.todo.append(defer.Deferred())
             return proto
 
-        proto.addCallback(
+        proto = proto.addCallback(
             inject_commands_into_protocol
         )
 
         # results = Results(d, commands)
         # results = Results2(d, commands)
-        results = Results2(proto, commands)
-        return results
+        func = self.results.add(proto, commands)
+        return func
 
     @property
     def connected(self):
@@ -1105,17 +1106,65 @@ class NetDevices(DictMixin):
 
 
 class Results2(object):
+    """Container object for ND `result` objects."""
+
+    def __init__(self):
+        self._proto = None
+        self._commands = []
+
+    def _generate_new_result(self):
+        return Result()
+
+    def result(self, results=None, commands=None):
+        """This property is meant to be overloaded as a partial function
+        that returns the correct dissection of self._results.
+        """
+        try:
+            clen = len(commands)
+            rv = results[0:clen]
+            rv.reverse()
+            return (commands, rv)
+        except:
+            return None
+
+
+    def add(self, d, commands):
+        from functools import partial
+        from copy import copy
+        self._proto = d.result
+        self._commands = self._commands + commands
+
+        # We need to block here to give the protocol time for the first deferred.
+        while self._proto.done == []:
+            pass
+
+        # Get first results state.
+        d = self._proto.done.pop(0)
+        results = copy(d.result)
+
+        # Return a partial function state at the time results was newest.
+        func = partial(self.result,
+                results=list(reversed(results)),
+                commands=commands)
+        return func
+
+
+class Result(object):
     """Results object returned by persistant shell commands"""
 
-    def __init__(self, d, commands):
+    def __init__(self, proto, commands):
         self._d = d
-        self.commands = commands
-        self._ready = False
+        self._commands = commands
+        self._result = None
 
     @property
     def results(self):
-        if self._d.result:
-            return self._d.result.results
+        try:
+            if self._d.result:
+                self._result = self._d.result.results
+                return self._result
+        except:
+            pass
 
     def __repr__(self):
         return '<Result: %r>' % self.results

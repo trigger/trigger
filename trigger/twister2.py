@@ -22,6 +22,7 @@ from twisted.conch.endpoints import (SSHCommandClientEndpoint,
                                      _CommandTransport, TCP4ClientEndpoint,
                                      connectProtocol)
 from twisted.internet import defer, protocol, reactor, threads
+from twisted.internet.task import LoopingCall
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 
@@ -233,7 +234,6 @@ class TriggerEndpointClientFactory(protocol.Factory):
         self.transport = transport
         log.msg('Connection information: %s' % self.transport)
 
-
 class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     """
     Base class for SSH endpoints.
@@ -259,7 +259,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     def __init__(self, creator):
         self._creator = creator
 
-    def _executeCommand(self, connection, command, protocolFactory, incremental,
+    def _executeCommand(self, connection, protocolFactory, command, incremental,
             with_errors, prompt_pattern, timeout, command_interval):
         commandConnected = defer.Deferred()
         def disconnectOnFailure(passthrough):
@@ -271,7 +271,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
         commandConnected.addErrback(disconnectOnFailure)
 
         channel = _TriggerShellChannel(
-                self._creator, protocolFactory, command, commandConnected, incremental,
+                self._creator, command, protocolFactory, commandConnected, incremental,
                 with_errors, prompt_pattern, timeout, command_interval)
         connection.openChannel(channel)
         self.connected = True
@@ -300,9 +300,12 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.connected = False
         self.disconnect = False
         self.initialized = False
+        self.locked = False
         self.startup_commands = []
         # FIXME(tom) This sux and should be set by trigger settings
         self.timeout = 10
+        self.todo = []
+        self.done = []
 
     def connectionMade(self):
         """Do this when we connect."""
@@ -322,8 +325,12 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # will kick off initialization.
 
     def add_commands(self, commands):
+        while self.locked is True:
+            pass
         self.commands = commands
         self.commanditer = iter(commands)
+        self.locked = True
+        self._send_next()
         return True
 
     def dataReceived(self, bytes):
@@ -392,11 +399,19 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         if self.incremental:
             self.incremental(self.results)
 
+
         try:
             next_command = self.commanditer.next()
         except StopIteration:
             log.msg('[%s] No more commands to send, moving on...' %
                     self.device)
+
+            if self.todo:
+                d = self.todo.pop(0)
+                d.addCallback(lambda none: self.results)
+                d.callback(None)
+                self.done.append(d)
+            self.locked = False
             return None
 
         if next_command is None:
