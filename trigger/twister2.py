@@ -407,8 +407,10 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                     self.device)
 
             if self.todo:
+                payload = list(reversed(self.results))[:len(self.commands)]
                 d = self.todo.pop(0)
-                d.addCallback(lambda none: self.results)
+                # d.addCallback(lambda none: self.results)
+                d.addCallback(lambda none: payload)
                 d.callback(None)
                 self.done.append(d)
             self.locked = False

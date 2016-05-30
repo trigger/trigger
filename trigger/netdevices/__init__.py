@@ -1143,10 +1143,11 @@ class Results2(object):
         results = copy(d.result)
 
         # Return a partial function state at the time results was newest.
-        func = partial(self.result,
-                results=list(reversed(results)),
-                commands=commands)
-        return func
+        # func = partial(self.result,
+                # results=list(reversed(results)),
+                # commands=commands)
+        # return func
+        return d
 
 
 class Result(object):
