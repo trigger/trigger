@@ -300,7 +300,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.connected = False
         self.disconnect = False
         self.initialized = False
-        self.locked = False
         self.startup_commands = []
         # FIXME(tom) This sux and should be set by trigger settings
         self.timeout = 10
@@ -325,12 +324,13 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # will kick off initialization.
 
     def add_commands(self, commands):
-        while self.locked is True:
-            pass
-        self.commands = commands
-        self.commanditer = iter(commands)
-        self.locked = True
-        self._send_next()
+        def schedule_commands():
+            self.commands = commands
+            self.commanditer = iter(commands)
+            self._send_next()
+            return
+
+        reactor.callLater(0, schedule_commands)
         return True
 
     def dataReceived(self, bytes):
@@ -408,12 +408,11 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
             if self.todo:
                 payload = list(reversed(self.results))[:len(self.commands)]
+                payload.reverse()
                 d = self.todo.pop(0)
-                # d.addCallback(lambda none: self.results)
                 d.addCallback(lambda none: payload)
                 d.callback(None)
                 self.done.append(d)
-            self.locked = False
             return None
 
         if next_command is None:
