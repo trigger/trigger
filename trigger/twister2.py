@@ -14,6 +14,7 @@ import struct
 import sys
 import tty
 from copy import copy
+from collections import deque
 from twisted.conch.ssh import session
 from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import (SSHCommandClientEndpoint,
@@ -303,14 +304,14 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.startup_commands = []
         # FIXME(tom) This sux and should be set by trigger settings
         self.timeout = 10
-        self.todo = []
-        self.done = []
+        self.todo = deque()
+        self.done = None
+        self.doneLock = defer.DeferredLock()
 
     def connectionMade(self):
         """Do this when we connect."""
         self.connected = True
         self.finished = defer.Deferred()
-        self.setTimeout(self.timeout)
         self.results = self.factory.results = []
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
@@ -323,22 +324,47 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # Don't call _send_next, since we expect to see a prompt, which
         # will kick off initialization.
 
-    def add_commands(self, commands):
-        def schedule_commands():
+    def _schedule_commands(self, results, commands):
+        d = defer.Deferred()
+        d.addCallback(lambda payload: payload)
+        self.todo.append(d)
+        
+
+        # Schedule next command to run after the previous
+        # has finished.
+        if self.done and self.done.called is False:
+            self.done.addCallback(
+                    self._schedule_commands,
+                    commands
+                    )
+            self.done = d
+            return d
+
+        # First iteration, setup the previous results deferred.
+        if results is False and self.done is None:
+            self.done = defer.Deferred() 
+            self.done.callback(None)
+
+        # Either initial state or we are ready to execute more commands.
+        if results or self.done is None or self.done.called:
+            log.msg("SCHEDULING THE FOLLOWING {0} :: {1} WAS PREVIOUS RESULTS".format( commands, self.done))
             self.commands = commands
             self.commanditer = iter(commands)
             self._send_next()
-            return
+            self.done = d
 
-        reactor.callLater(0, schedule_commands)
-        return True
+        # Each call must return a deferred
+        return d
+
+    def add_commands(self, commands):
+        # d = self.doneLock.run(self._schedule_commands(None, commands))
+        d = self.doneLock.run(self._schedule_commands, None, commands)
+        return d
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
         log.msg('[%s] BYTES: %r' % (self.device, bytes))
-        self.data += bytes
-
-        # See if the prompt matches, and if it doesn't, see if it is waiting
+        self.data += bytes # See if the prompt matches, and if it doesn't, see if it is waiting
         # for more input (like a [y/n]) prompt), and continue, otherwise return
         # None
         m = self.prompt.search(self.data)
@@ -377,7 +403,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
             reactor.callLater(self.command_interval, self._send_next)
 
-    def _send_next(self):
+    def _send_next(self, *results):
         """Send the next command in the stack."""
         self.data = ''
         self.resetTimeout()
@@ -399,7 +425,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         if self.incremental:
             self.incremental(self.results)
 
-
         try:
             next_command = self.commanditer.next()
         except StopIteration:
@@ -409,11 +434,13 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             if self.todo:
                 payload = list(reversed(self.results))[:len(self.commands)]
                 payload.reverse()
-                d = self.todo.pop(0)
-                d.addCallback(lambda none: payload)
-                d.callback(None)
-                self.done.append(d)
-            return None
+                d = self.todo.pop()
+                d.callback(payload)
+                # self.deferred.addCallback(lambda none: payload)
+                # self.deferred.callback(None)
+                # d.addCallbacks(self.done[-1], lambda none: payload)
+                # return None
+                return d
 
         if next_command is None:
             self.results.append(None)

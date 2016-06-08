@@ -262,7 +262,9 @@ class NetDevice(object):
         # Set initial endpoint state
         self._connected = False
         self._endpoint = None
-        self.results = Results2()
+        # self.results2 = Results2()
+        self.results2 = []
+        self.results = {}
 
     def _populate_data(self, data):
         """
@@ -565,32 +567,35 @@ class NetDevice(object):
             pass
         return self._results
 
-    def run_commands(self, commands):
+    def run_commands(self, commands, with_channel=False):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
 
-        # Here's where we're using self._connect injected on .open()
-        # ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
-        proto = self._proto
-
-        # prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        # proto = ep.connect(factory, prompt_pattern=prompt)
+        if with_channel:
+            # Here's where we're using self._connect injected on .open()
+            ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
+            prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+            proto = ep.connect(factory, prompt_pattern=prompt)
+        else:
+            proto = self._proto
 
         def inject_commands_into_protocol(proto):
-            proto.add_commands(commands)
-            proto.todo.append(defer.Deferred())
+            result = proto.add_commands(commands)
+            self.results[tuple(commands)] = result
+            self.results2.append(result)
             return proto
 
-        proto = proto.addCallback(
+        self.results[tuple(commands)] = None
+        proto = proto.addCallbacks(
             inject_commands_into_protocol
         )
 
         # results = Results(d, commands)
         # results = Results2(d, commands)
-        func = self.results.add(proto, commands)
-        return func
+        # func = self.results2.add(proto, commands)
+        return self.results[tuple(commands)]
 
     @property
     def connected(self):
