@@ -15,13 +15,15 @@ import sys
 import tty
 from copy import copy
 from collections import deque
-from twisted.conch.ssh import session
+from twisted.conch.ssh import session, common
 from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import (SSHCommandClientEndpoint,
                                      _NewConnectionHelper,
                                      _ExistingConnectionHelper,
                                      _CommandTransport, TCP4ClientEndpoint,
-                                     connectProtocol)
+                                     connectProtocol,
+                                     _UserAuth,
+                                     _ConnectionReady)
 from twisted.internet import defer, protocol, reactor, threads
 from twisted.internet.task import LoopingCall
 from twisted.protocols.policies import TimeoutMixin
@@ -29,7 +31,7 @@ from twisted.python import log
 
 from trigger.conf import settings
 from trigger import tacacsrc, exceptions
-from trigger.twister import is_awaiting_confirmation, has_ioslike_error
+from trigger.twister import is_awaiting_confirmation, has_ioslike_error, TriggerSSHUserAuth
 from trigger import tacacsrc
 from trigger.utils import hash_list
 from twisted.internet import reactor
@@ -138,7 +140,129 @@ class _TriggerShellChannel(SSHChannel):
         # SSHChannel.dataReceived(self, data)
 
 
-class _TriggerSessionTransport(_CommandTransport):
+class _TriggerUserAuth(_UserAuth):
+    """Perform user authentication over SSH."""
+    # The preferred order in which SSH authentication methods are tried.
+    preferredOrder = settings.SSH_AUTHENTICATION_ORDER
+
+    def getPassword(self, prompt=None):
+        """Send along the password."""
+        log.msg('Performing password authentication', debug=True)
+        return defer.succeed(self.transport.factory.creds.password)
+
+    def getGenericAnswers(self, name, information, prompts):
+        """
+        Send along the password when authentication mechanism is not 'password'
+        This is most commonly the case with 'keyboard-interactive', which even
+        when configured within self.preferredOrder, does not work using default
+        getPassword() method.
+        """
+        log.msg('Performing interactive authentication', debug=True)
+        log.msg('Prompts: %r' % prompts, debug=True)
+
+        # The response must always a sequence, and the length must match that
+        # of the prompts list
+        response = [''] * len(prompts)
+        for idx, prompt_tuple in enumerate(prompts):
+            prompt, echo = prompt_tuple  # e.g. [('Password: ', False)]
+            if 'assword' in prompt:
+                log.msg("Got password prompt: %r, sending password!" % prompt,
+                        debug=True)
+                response[idx] = self.password
+
+        return defer.succeed(response)
+
+    def ssh_USERAUTH_FAILURE(self, packet):
+        """
+        An almost exact duplicate of SSHUserAuthClient.ssh_USERAUTH_FAILURE
+        modified to forcefully disconnect. If we receive authentication
+        failures, instead of looping until the server boots us and performing a
+        sendDisconnect(), we raise a `~trigger.exceptions.LoginFailure` and
+        call loseConnection().
+        See the base docstring for the method signature.
+        """
+        canContinue, partial = common.getNS(packet)
+        partial = ord(partial)
+        log.msg('Previous method: %r ' % self.lastAuth, debug=True)
+
+        # If the last method succeeded, track it. If network devices ever start
+        # doing second-factor authentication this might be useful.
+        if partial:
+            self.authenticatedWith.append(self.lastAuth)
+        # If it failed, track that too...
+        else:
+            log.msg('Previous method failed, skipping it...', debug=True)
+            self.authenticatedWith.append(self.lastAuth)
+
+        def orderByPreference(meth):
+            """
+            Invoked once per authentication method in order to extract a
+            comparison key which is then used for sorting.
+            @param meth: the authentication method.
+            @type meth: C{str}
+            @return: the comparison key for C{meth}.
+            @rtype: C{int}
+            """
+            if meth in self.preferredOrder:
+                return self.preferredOrder.index(meth)
+            else:
+                # put the element at the end of the list.
+                return len(self.preferredOrder)
+
+        canContinue = sorted([meth for meth in canContinue.split(',')
+                              if meth not in self.authenticatedWith],
+                             key=orderByPreference)
+
+        log.msg('Can continue with: %s' % canContinue)
+        log.msg('Already tried: %s' % self.authenticatedWith, debug=True)
+        return self._cbUserauthFailure(None, iter(canContinue))
+
+    def _cbUserauthFailure(self, result, iterator):
+        """Callback for ssh_USERAUTH_FAILURE"""
+        if result:
+            return
+        try:
+            method = iterator.next()
+        except StopIteration:
+            msg = (
+                'No more authentication methods available.\n'
+                'Tried: %s\n'
+                'If not using ssh-agent w/ public key, make sure '
+                'SSH_AUTH_SOCK is not set and try again.\n'
+                % (self.preferredOrder,)
+            )
+            self.transport.factory.err = exceptions.LoginFailure(msg)
+            self.transport.loseConnection()
+        else:
+            d = defer.maybeDeferred(self.tryAuth, method)
+            d.addCallback(self._cbUserauthFailure, iterator)
+            return d
+
+class _TriggerCommandTransport(_CommandTransport):
+    def connectionSecure(self):
+        """
+        When the connection is secure, start the authentication process.
+        """
+        self._state = b'AUTHENTICATING'
+
+        command = _ConnectionReady(self.connectionReady)
+
+        self._userauth = _TriggerUserAuth(self.creator.username, command)
+        self._userauth.password = self.creator.password
+        if self.creator.keys:
+            self._userauth.keys = list(self.creator.keys)
+
+        if self.creator.agentEndpoint is not None:
+            d = self._userauth.connectToAgent(self.creator.agentEndpoint)
+        else:
+            d = defer.succeed(None)
+
+        def maybeGotAgent(ignored):
+            self.requestService(self._userauth)
+        d.addBoth(maybeGotAgent)
+
+
+class _TriggerSessionTransport(_TriggerCommandTransport):
     def verifyHostKey(self, hostKey, fingerprint):
         hostname = self.creator.hostname
         ip = self.transport.getPeer().host
@@ -329,7 +453,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         d.addCallback(lambda payload: payload)
         self.todo.append(d)
         
-
         # Schedule next command to run after the previous
         # has finished.
         if self.done and self.done.called is False:
@@ -353,11 +476,10 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self._send_next()
             self.done = d
 
-        # Each call must return a deferred
+        # Each call must return a deferred.
         return d
 
     def add_commands(self, commands):
-        # d = self.doneLock.run(self._schedule_commands(None, commands))
         d = self.doneLock.run(self._schedule_commands, None, commands)
         return d
 
@@ -403,7 +525,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
             reactor.callLater(self.command_interval, self._send_next)
 
-    def _send_next(self, *results):
+    def _send_next(self):
         """Send the next command in the stack."""
         self.data = ''
         self.resetTimeout()
@@ -436,11 +558,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 payload.reverse()
                 d = self.todo.pop()
                 d.callback(payload)
-                # self.deferred.addCallback(lambda none: payload)
-                # self.deferred.callback(None)
-                # d.addCallbacks(self.done[-1], lambda none: payload)
-                # return None
                 return d
+            else:
+                return
 
         if next_command is None:
             self.results.append(None)
