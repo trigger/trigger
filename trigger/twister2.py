@@ -463,7 +463,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             return d
 
         # First iteration, setup the previous results deferred.
-        if results is False and self.done is None:
+        if not results and self.done is None:
             self.done = defer.Deferred() 
             self.done.callback(None)
 
