@@ -148,7 +148,7 @@ class _TriggerUserAuth(_UserAuth):
     def getPassword(self, prompt=None):
         """Send along the password."""
         log.msg('Performing password authentication', debug=True)
-        return defer.succeed(self.transport.factory.creds.password)
+        return defer.succeed(self.password)
 
     def getGenericAnswers(self, name, information, prompts):
         """
