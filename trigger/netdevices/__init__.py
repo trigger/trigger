@@ -262,9 +262,6 @@ class NetDevice(object):
         # Set initial endpoint state
         self._connected = False
         self._endpoint = None
-        from collections import deque
-        self.results2 = deque()
-        self.results = {}
 
     def _populate_data(self, data):
         """
