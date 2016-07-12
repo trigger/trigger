@@ -450,7 +450,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
     def _schedule_commands(self, results, commands):
         d = defer.Deferred()
-        d.addCallback(lambda payload: payload)
         self.todo.append(d)
         
         # Schedule next command to run after the previous

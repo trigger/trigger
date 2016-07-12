@@ -262,8 +262,8 @@ class NetDevice(object):
         # Set initial endpoint state
         self._connected = False
         self._endpoint = None
-        # self.results2 = Results2()
-        self.results2 = []
+        from collections import deque
+        self.results2 = deque()
         self.results = {}
 
     def _populate_data(self, data):
@@ -472,6 +472,10 @@ class NetDevice(object):
         self.implicit_acls = acls_dict['implicit']
         self.acls = acls_dict['all']
 
+    def _is_connected(self):
+        """TODO: Validate really connected to endpoint"""
+        self._connected = True
+
     def __str__(self):
         return self.nodeName
 
@@ -526,18 +530,19 @@ class NetDevice(object):
         def inject_net_device_into_protocol(proto):
             """Now we're only injecting connection for use later."""
             self._conn = proto.transport.conn
-            # proto.net_device = self
-            # proto.startup_commands = copy.copy(self.startup_commands)
             return proto
 
         self._endpoint = self._get_endpoint()
+
+        if self._endpoint is None:
+            raise ValueError("Endpoint has not been instantiated.")
+
         self.d = self._endpoint.addCallback(
             inject_net_device_into_protocol
         )
 
-        # This should be validated somehow
-        self._connected = True
-        return True
+        self._connected = self._is_connected()
+        return self._connected
 
     def close(self):
         def disconnect(proto):
@@ -567,35 +572,50 @@ class NetDevice(object):
             pass
         return self._results
 
-    def run_commands(self, commands, with_channel=False):
+    def run_channeled_commands(self, commands):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
 
-        if with_channel:
-            # Here's where we're using self._connect injected on .open()
-            ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
-            prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-            proto = ep.connect(factory, prompt_pattern=prompt)
-        else:
-            proto = self._proto
+        # Here's where we're using self._connect injected on .open()
+        ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
+        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        proto = ep.connect(factory, prompt_pattern=prompt)
+
+        d = defer.Deferred()
 
         def inject_commands_into_protocol(proto):
             result = proto.add_commands(commands)
-            self.results[tuple(commands)] = result
-            self.results2.append(result)
+            result.addCallback(lambda results: d.callback(results))
             return proto
 
-        self.results[tuple(commands)] = None
         proto = proto.addCallbacks(
             inject_commands_into_protocol
         )
 
-        # results = Results(d, commands)
-        # results = Results2(d, commands)
-        # func = self.results2.add(proto, commands)
-        return self.results[tuple(commands)]
+        return d
+
+    def run_commands(self, commands):
+        from trigger.twister2 import TriggerSSHShellClientEndpointBase
+
+        factory = TriggerEndpointClientFactory()
+        factory.protocol = IoslikeSendExpect
+
+        proto = self._proto
+
+        d = defer.Deferred()
+
+        def inject_commands_into_protocol(proto):
+            result = proto.add_commands(commands)
+            result.addCallback(lambda results: d.callback(results))
+            return proto
+
+        proto = proto.addCallbacks(
+            inject_commands_into_protocol
+        )
+
+        return d
 
     @property
     def connected(self):
@@ -1108,97 +1128,3 @@ class NetDevices(DictMixin):
 
     def __setattr__(self, attr, value):
         return setattr(self.__class__._Singleton, attr, value)
-
-
-class Results2(object):
-    """Container object for ND `result` objects."""
-
-    def __init__(self):
-        self._proto = None
-        self._commands = []
-
-    def _generate_new_result(self):
-        return Result()
-
-    def result(self, results=None, commands=None):
-        """This property is meant to be overloaded as a partial function
-        that returns the correct dissection of self._results.
-        """
-        try:
-            clen = len(commands)
-            rv = results[0:clen]
-            rv.reverse()
-            return (commands, rv)
-        except:
-            return None
-
-
-    def add(self, d, commands):
-        from functools import partial
-        from copy import copy
-        self._proto = d.result
-        self._commands = self._commands + commands
-
-        # We need to block here to give the protocol time for the first deferred.
-        while self._proto.done == []:
-            pass
-
-        # Get first results state.
-        d = self._proto.done.pop(0)
-        results = copy(d.result)
-
-        # Return a partial function state at the time results was newest.
-        # func = partial(self.result,
-                # results=list(reversed(results)),
-                # commands=commands)
-        # return func
-        return d
-
-
-class Result(object):
-    """Results object returned by persistant shell commands"""
-
-    def __init__(self, proto, commands):
-        self._d = d
-        self._commands = commands
-        self._result = None
-
-    @property
-    def results(self):
-        try:
-            if self._d.result:
-                self._result = self._d.result.results
-                return self._result
-        except:
-            pass
-
-    def __repr__(self):
-        return '<Result: %r>' % self.results
-
-# class Results(object):
-    # """Results object returned by persistant shell commands"""
-
-    # def __init__(self, d, dd, commands):
-        # self._d = d
-        # self._dd = dd
-        # self._commands = commands
-        # self._ready = False
-        # self._getter = None
-
-    # @property
-    # def ready(self):
-        # try:
-            # # Unknown whether this is threadsafe
-            # # self._getter = getattr(self._d.result, 'get_results_map')
-            # self._getter = getattr(self._d.result, 'get_results')
-            # self._ready = True
-        # except Exception as e:
-            # log.msg(">>> RESULTS NOT READY YET << ")
-
-        # return self._ready
-
-    # @property
-    # def results(self):
-        # if self.ready:
-            # self._results = self._getter(self._commands, self._dd)
-            # return self._getter(self._commands)
