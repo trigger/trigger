@@ -569,7 +569,7 @@ class NetDevice(object):
             pass
         return self._results
 
-    def run_channeled_commands(self, commands):
+    def run_channeled_commands(self, commands, on_error=lambda x: x):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
 
         factory = TriggerEndpointClientFactory()
@@ -583,7 +583,7 @@ class NetDevice(object):
         d = defer.Deferred()
 
         def inject_commands_into_protocol(proto):
-            result = proto.add_commands(commands)
+            result = proto.add_commands(commands, on_error)
             result.addCallback(lambda results: d.callback(results))
             return proto
 
@@ -593,7 +593,7 @@ class NetDevice(object):
 
         return d
 
-    def run_commands(self, commands):
+    def run_commands(self, commands, on_error=lambda x: x):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
 
         factory = TriggerEndpointClientFactory()
@@ -604,7 +604,7 @@ class NetDevice(object):
         d = defer.Deferred()
 
         def inject_commands_into_protocol(proto):
-            result = proto.add_commands(commands)
+            result = proto.add_commands(commands, on_error)
             result.addCallback(lambda results: d.callback(results))
             return proto
 

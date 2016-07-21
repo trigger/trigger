@@ -428,6 +428,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.startup_commands = []
         # FIXME(tom) This sux and should be set by trigger settings
         self.timeout = 10
+        self.on_error = defer.Deferred()
         self.todo = deque()
         self.done = None
         self.doneLock = defer.DeferredLock()
@@ -478,7 +479,9 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # Each call must return a deferred.
         return d
 
-    def add_commands(self, commands):
+    def add_commands(self, commands, on_error):
+        # Exception handler to be used in case device throws invalid command warning.
+        self.on_error.addCallback(on_error)
         d = self.doneLock.run(self._schedule_commands, None, commands)
         return d
 
@@ -515,8 +518,8 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))
-            self.factory.err = exceptions.IoslikeCommandFailure(result)
-            self.transport.loseConnection()
+            # self.factory.err = exceptions.IoslikeCommandFailure(result)
+            self.on_error.callback((self, exceptions.IoslikeCommandFailure(result)))
         else:
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
