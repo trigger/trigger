@@ -260,6 +260,7 @@ class NetDevice(object):
         self.delimiter = self._set_delimiter()
 
         # Set initial endpoint state
+        self.factories = {}
         self._connected = False
         self._endpoint = None
 
@@ -514,7 +515,7 @@ class NetDevice(object):
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
 
-        self._factory = factory  # Track this for later?
+        self.factories["base"] = factory
 
         # FIXME(jathan): prompt_pattern could move back to protocol?
         prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
@@ -574,6 +575,7 @@ class NetDevice(object):
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
+        self.factories["channeled"] = factory
 
         # Here's where we're using self._connect injected on .open()
         ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
@@ -585,6 +587,7 @@ class NetDevice(object):
         def inject_commands_into_protocol(proto):
             result = proto.add_commands(commands, on_error)
             result.addCallback(lambda results: d.callback(results))
+            result.addBoth(on_error)
             return proto
 
         proto = proto.addCallbacks(
@@ -606,6 +609,7 @@ class NetDevice(object):
         def inject_commands_into_protocol(proto):
             result = proto.add_commands(commands, on_error)
             result.addCallback(lambda results: d.callback(results))
+            result.addBoth(on_error)
             return proto
 
         proto = proto.addCallbacks(

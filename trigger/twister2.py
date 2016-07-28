@@ -518,8 +518,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
         if has_ioslike_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.device, result))
-            # self.factory.err = exceptions.IoslikeCommandFailure(result)
-            self.on_error.callback((self, exceptions.IoslikeCommandFailure(result)))
+            self.factory.err = exceptions.IoslikeCommandFailure(result)
         else:
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
