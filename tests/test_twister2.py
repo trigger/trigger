@@ -20,19 +20,4 @@ import unittest
 
 # Now we can import from Trigger
 # from trigger.netdevices import NetDevices, NetDevice, Vendor
-from trigger.twister2 import TriggerSSHShellClientEndpointBase
-
-
-class TestTriggerSSHShellClientEndpointBase(unittest.TestCase):
-    """
-    Test TriggerSSHShellClientEndpoint with defaults.
-    """
-    def setUp(self):
-        self.endpoint = TriggerSSHShellClientEndpointBase
-
-    def testInit(self):
-       self.assertTrue(self.endpoint)
-
-
-class Test_NewConnectionHelper(unittest.TestCase):
-    pass
+# TODO: see http://twistedmatrix.com/trac/wiki/TwistedTrial
