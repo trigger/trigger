@@ -602,8 +602,8 @@ class NetDevice(object):
     def run_commands(self, commands, on_error=None):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
 
-         if on_error is None:
-             on_error = lambda x: x
+        if on_error is None:
+            on_error = lambda x: x
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
