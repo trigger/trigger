@@ -570,8 +570,11 @@ class NetDevice(object):
             pass
         return self._results
 
-    def run_channeled_commands(self, commands, on_error=lambda x: x):
+    def run_channeled_commands(self, commands, on_error=None):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
+
+        if on_error is None:
+            on_error = lambda x: x
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
@@ -596,8 +599,11 @@ class NetDevice(object):
 
         return d
 
-    def run_commands(self, commands, on_error=lambda x: x):
+    def run_commands(self, commands, on_error=None):
         from trigger.twister2 import TriggerSSHShellClientEndpointBase
+
+         if on_error is None:
+             on_error = lambda x: x
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
