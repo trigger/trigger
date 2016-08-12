@@ -36,6 +36,9 @@ TACACSRC_PASSPHRASE = ''
 # general use within the .tacacsrc
 DEFAULT_REALM = 'aol'
 
+# Default terminal type of xterm if TERM isn't set
+TERM_TYPE = os.getenv('TERM', 'xterm')
+
 # List of plugins allowed to be importd by Commando. Plugins should be listed as
 # strings depicting the absolute paths.
 #

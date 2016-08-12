@@ -1176,7 +1176,7 @@ class TriggerSSHPtyChannel(channel.SSHChannel):
 
     def channelOpen(self, data):
         """Setup the terminal when the channel opens."""
-        pr = session.packRequest_pty_req(os.environ['TERM'],
+        pr = session.packRequest_pty_req(settings.TERM_TYPE,
                                          self._get_window_size(), '')
         self.conn.sendRequest(self, 'pty-req', pr)
         self.conn.sendRequest(self, 'shell', '')
@@ -1414,7 +1414,7 @@ class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
 
         # Request a pty even tho we are not actually using one.
         pr = session.packRequest_pty_req(
-            os.environ['TERM'], (80, 24, 0, 0), ''
+            settings.TERM_TYPE, (80, 24, 0, 0), ''
         )
         self.conn.sendRequest(self, 'pty-req', pr)
         d = self.conn.sendRequest(self, 'shell', '', wantReply=True)
