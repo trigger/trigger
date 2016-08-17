@@ -14,11 +14,11 @@ from trigger import release as __version__
 # Names of required packages
 requires = [
     'IPy>=0.73',
+    'cryptography==1.4',
     'Twisted>=15.4.0,<16.3.0',
     'crochet==1.5.0',
     'mock==2.0.0',
     'pyasn1', # Twisted conch needs this, but doesn't say so
-    'pycrypto==1.4',
     'pyparsing==1.5.7',
     'pytz',
     'SimpleParse',
