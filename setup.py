@@ -14,7 +14,10 @@ from trigger import release as __version__
 # Names of required packages
 requires = [
     'IPy>=0.73',
-    'Twisted<=15.4.0',
+    'cryptography==1.4',
+    'Twisted>=15.4.0,<16.3.0',
+    'crochet==1.5.0',
+    'mock==2.0.0',
     'pyasn1', # Twisted conch needs this, but doesn't say so
     'pycrypto',
     'pyparsing==1.5.7',
@@ -145,7 +148,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',

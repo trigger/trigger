@@ -36,11 +36,16 @@ import re
 import sys
 import time
 from twisted.python import log
+from twisted.internet.protocol import Factory
+from twisted.internet import reactor
+from twisted.internet import defer
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
+from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
 from trigger import changemgmt, exceptions, rancid
 from UserDict import DictMixin
+from crochet import setup, run_in_reactor, wait_for
 import xml.etree.cElementTree as ET
 from . import loader
 try:
@@ -179,6 +184,7 @@ class NetDevice(object):
     Users usually won't create these objects directly! Rely instead upon
     `~trigger.netdevice.NetDevices` to do this for you.
     """
+
     def __init__(self, data=None, with_acls=None):
         # Here comes all of the bare minimum set of attributes a NetDevice
         # object needs for basic functionality within the existing suite.
@@ -252,6 +258,11 @@ class NetDevice(object):
 
         # Set the correct line-ending per vendor
         self.delimiter = self._set_delimiter()
+
+        # Set initial endpoint state
+        self.factories = {}
+        self._connected = False
+        self._endpoint = None
 
     def _populate_data(self, data):
         """
@@ -459,6 +470,10 @@ class NetDevice(object):
         self.implicit_acls = acls_dict['implicit']
         self.acls = acls_dict['all']
 
+    def _is_connected(self):
+        """TODO: Validate really connected to endpoint"""
+        self._connected = True
+
     def __str__(self):
         return self.nodeName
 
@@ -493,6 +508,125 @@ class NetDevice(object):
                     Check to see if your netdevices object has the 'platform' key.
                     Otherwise template does not exist.""")
             return None
+
+    def _get_endpoint(self, *args):
+        endpoint = generate_endpoint(self).wait()
+
+        factory = TriggerEndpointClientFactory()
+        factory.protocol = IoslikeSendExpect
+
+        self.factories["base"] = factory
+
+        # FIXME(jathan): prompt_pattern could move back to protocol?
+        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        proto = endpoint.connect(factory, prompt_pattern=prompt)
+        self._proto = proto  # Track this for later, too.
+
+        return proto
+
+    def open(self):
+        def inject_net_device_into_protocol(proto):
+            """Now we're only injecting connection for use later."""
+            self._conn = proto.transport.conn
+            return proto
+
+        self._endpoint = self._get_endpoint()
+
+        if self._endpoint is None:
+            raise ValueError("Endpoint has not been instantiated.")
+
+        self.d = self._endpoint.addCallback(
+            inject_net_device_into_protocol
+        )
+
+        self._connected = self._is_connected()
+        return self._connected
+
+    def close(self):
+        def disconnect(proto):
+            proto.transport.loseConnection()
+            return proto
+
+        if self._endpoint is None:
+            raise ValueError("Endpoint has not been instantiated.")
+
+        self._endpoint.addCallback(
+            disconnect
+        )
+
+        self._connected = False
+        return
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def get_results(self):
+        self._results = []
+        while len(self._results) != len(self.commands):
+            pass
+        return self._results
+
+    def run_channeled_commands(self, commands, on_error=None):
+        from trigger.twister2 import TriggerSSHShellClientEndpointBase
+
+        if on_error is None:
+            on_error = lambda x: x
+
+        factory = TriggerEndpointClientFactory()
+        factory.protocol = IoslikeSendExpect
+        self.factories["channeled"] = factory
+
+        # Here's where we're using self._connect injected on .open()
+        ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
+        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        proto = ep.connect(factory, prompt_pattern=prompt)
+
+        d = defer.Deferred()
+
+        def inject_commands_into_protocol(proto):
+            result = proto.add_commands(commands, on_error)
+            result.addCallback(lambda results: d.callback(results))
+            result.addBoth(on_error)
+            return proto
+
+        proto = proto.addCallbacks(
+            inject_commands_into_protocol
+        )
+
+        return d
+
+    def run_commands(self, commands, on_error=None):
+        from trigger.twister2 import TriggerSSHShellClientEndpointBase
+
+        if on_error is None:
+            on_error = lambda x: x
+
+        factory = TriggerEndpointClientFactory()
+        factory.protocol = IoslikeSendExpect
+
+        proto = self._proto
+
+        d = defer.Deferred()
+
+        def inject_commands_into_protocol(proto):
+            result = proto.add_commands(commands, on_error)
+            result.addCallback(lambda results: d.callback(results))
+            result.addBoth(on_error)
+            return proto
+
+        proto = proto.addCallbacks(
+            inject_commands_into_protocol
+        )
+
+        return d
+
+    @property
+    def connected(self):
+        return self._connected
 
     def allowable(self, action, when=None):
         """
