@@ -42,7 +42,6 @@ from twisted.internet import defer
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
-from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
 from trigger import changemgmt, exceptions, rancid
 from UserDict import DictMixin
 from crochet import setup, run_in_reactor, wait_for
@@ -510,6 +509,7 @@ class NetDevice(object):
             return None
 
     def _get_endpoint(self, *args):
+        from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
         endpoint = generate_endpoint(self).wait()
 
         factory = TriggerEndpointClientFactory()
@@ -571,7 +571,7 @@ class NetDevice(object):
         return self._results
 
     def run_channeled_commands(self, commands, on_error=None):
-        from trigger.twister2 import TriggerSSHShellClientEndpointBase
+        from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
 
         if on_error is None:
             on_error = lambda x: x
@@ -600,7 +600,7 @@ class NetDevice(object):
         return d
 
     def run_commands(self, commands, on_error=None):
-        from trigger.twister2 import TriggerSSHShellClientEndpointBase
+        from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
 
         if on_error is None:
             on_error = lambda x: x
