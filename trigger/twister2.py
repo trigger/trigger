@@ -15,6 +15,10 @@ import sys
 import tty
 from copy import copy
 from collections import deque
+from crochet import wait_for, run_in_reactor, setup, EventLoop
+
+setup()
+
 from twisted.conch.ssh import session, common
 from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import (SSHCommandClientEndpoint,
@@ -34,8 +38,6 @@ from trigger import tacacsrc, exceptions
 from trigger.twister import is_awaiting_confirmation, has_ioslike_error, TriggerSSHUserAuth
 from trigger import tacacsrc
 from twisted.internet import reactor
-from crochet import wait_for, run_in_reactor, setup, EventLoop
-setup()
 
 
 @run_in_reactor
