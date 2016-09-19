@@ -509,6 +509,7 @@ class NetDevice(object):
             return None
 
     def _get_endpoint(self, *args):
+        """Private method used for generating an endpoint for `~trigger.netdevices.NetDevice`."""
         from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
         endpoint = generate_endpoint(self).wait()
 
@@ -525,6 +526,14 @@ class NetDevice(object):
         return proto
 
     def open(self):
+        """Open new session with `~trigger.netdevices.NetDevice`.
+        
+        Example:
+            >>> nd = NetDevices()
+            >>> dev = nd.find('arista-sw1.demo.local')
+            >>> dev.open()
+
+        """
         def inject_net_device_into_protocol(proto):
             """Now we're only injecting connection for use later."""
             self._conn = proto.transport.conn
@@ -543,6 +552,7 @@ class NetDevice(object):
         return self._connected
 
     def close(self):
+        """Close an open `~trigger.netdevices.NetDevice` object."""
         def disconnect(proto):
             proto.transport.loseConnection()
             return proto
@@ -571,6 +581,22 @@ class NetDevice(object):
         return self._results
 
     def run_channeled_commands(self, commands, on_error=None):
+        """Public method for scheduling commands onto device.
+
+        This variant allows for efficient multiplexing of commands across multiple vty
+        lines where supported ie Arista and Cumulus.
+
+        :param commands: List containing commands to schedule onto device loop.
+        :type commands: list
+        :param on_error: Error handler
+        :type  on_error: func
+
+        :Example:
+        >>> ...
+        >>> dev.open()
+        >>> dev.run_channeled_commands(['show ip int brief', 'show version'], on_error=lambda x: handle(x))
+
+        """
         from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
 
         if on_error is None:
@@ -600,6 +626,22 @@ class NetDevice(object):
         return d
 
     def run_commands(self, commands, on_error=None):
+        """Public method for scheduling commands onto device.
+
+        Default implementation that schedules commands onto a Device loop.
+        This implementation ensures commands are executed sequentially.
+
+        :param commands: List containing commands to schedule onto device loop.
+        :type commands: list
+        :param on_error: Error handler
+        :type  on_error: func
+
+        :Example:
+        >>> ...
+        >>> dev.open()
+        >>> dev.run_commands(['show ip int brief', 'show version'], on_error=lambda x: handle(x))
+
+        """
         from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
 
         if on_error is None:
