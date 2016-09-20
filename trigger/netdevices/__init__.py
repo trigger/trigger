@@ -325,10 +325,12 @@ class NetDevice(object):
     def _set_requires_async_pty(self):
         """
         Set whether a device requires an async pty (see:
-            `~trigger.twister.TriggerSSHAsyncPtyChannel`).
+        `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in ('a10', 'arista', 'aruba', 'cisco', 'force10'),
+            self.vendor in (
+                'a10', 'arista', 'aruba', 'cisco', 'cumulus', 'force10'
+            ),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -349,43 +351,19 @@ class NetDevice(object):
         Set the commands to run at startup. For now they are just ones to
         disable pagination.
         """
-        def disable_paging_brocade():
-            """Brocade commands differ by platform."""
+        def get_vendor_name():
+            """Return the vendor name for startup commands lookup."""
             if self.is_brocade_vdx():
-                return ['terminal length 0']
+                return 'brocade_vdx'
+            elif self.is_cisco_asa():
+                return 'cisco_asa'
+            elif self.is_netscreen():
+                return 'netscreen'
             else:
-                return ['skip-page-display']
+                return self.vendor.name
 
-        def disable_paging_cisco():
-            """Cisco ASA commands differ from IOS"""
-            if self.is_cisco_asa():
-                return ['terminal pager 0']
-            else:
-                return default
-
-        # Commands used to disable paging.
-        default = ['terminal length 0']
-        paging_map = {
-            'a10': default,
-            'arista': default,
-            'aruba': ['no paging'], # v6.2.x this is not necessary
-            'brocade': disable_paging_brocade(), # See comments above
-            'cisco': disable_paging_cisco(),
-            'citrix': ['set cli mode page off'],
-            'dell': ['terminal datadump'],
-            'f5': ['modify cli preference pager disabled'],
-            'force10': default,
-            'foundry': ['skip-page-display'],
-            'juniper': ['set cli screen-length 0'],
-            'mrv': ['no pause'],
-            'netscreen': ['set console page 0'],
-            'paloalto': ['set cli scripting-mode on', 'set cli pager off'],
-        }
-
-        cmds = paging_map.get(self.vendor.name)
-
-        if self.is_netscreen():
-            cmds = paging_map['netscreen']
+        paging_map = settings.STARTUP_COMMANDS_MAP
+        cmds = paging_map.get(get_vendor_name())
 
         if cmds is not None:
             return cmds
@@ -707,6 +685,12 @@ class NetDevice(object):
         Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
+
+    def is_cumulus(self):
+        """
+        Am I running Cumulus?
+        """
+        return self.vendor == 'cumulus'
 
     def is_brocade_vdx(self):
         """
