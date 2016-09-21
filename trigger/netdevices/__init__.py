@@ -447,10 +447,6 @@ class NetDevice(object):
         self.implicit_acls = acls_dict['implicit']
         self.acls = acls_dict['all']
 
-    def _is_connected(self):
-        """TODO: Validate really connected to endpoint"""
-        self._connected = True
-
     def __str__(self):
         return self.nodeName
 
@@ -517,7 +513,7 @@ class NetDevice(object):
             inject_net_device_into_protocol
         )
 
-        self._connected = self._is_connected()
+        self._connected = True
         return self._connected
 
     def close(self):
