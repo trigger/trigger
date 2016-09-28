@@ -15,7 +15,7 @@ from trigger import release as __version__
 requires = [
     'IPy>=0.73',
     'cryptography==1.4',
-    'Twisted>=15.4.0,<17.0.0',
+    'Twisted>=15.5.0,<17.0.0',
     'crochet==1.5.0',
     'mock==2.0.0',
     'pyasn1', # Twisted conch needs this, but doesn't say so
