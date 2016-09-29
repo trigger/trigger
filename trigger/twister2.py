@@ -92,7 +92,7 @@ class _TriggerShellChannel(SSHChannel):
         self._reason = None
 
     def openFailed(self, reason):
-        "Channel failed handler."
+        """Channel failed handler."""
         self._commandConnected.errback(reason)
 
 
