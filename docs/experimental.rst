@@ -2,7 +2,7 @@
 Experimental
 ############
 
-This document describes experimental currently in development as part of the Trigger re-architecture.
+This document describes experimental features currently in development as part of the Trigger re-architecture.
 
 Asynchronous Endpoint Feature
 =============================
@@ -17,7 +17,7 @@ Preamble
 
 The code below defines two functions.
 
-1. `StringProducer` is an ADT for the data that will be POST'd by the Twisted http client.
+1. `StringProducer` is an interface for the data that will be POST'd by the Twisted http client.
 2. `update_cmdb` is a callback function that will be fired upon the return of `show version` on the remote endpoint.
    The purpose of this function is to POST the current IOS version into a CMDB system.
 
@@ -107,7 +107,6 @@ As you can be observed, we can continue to make asynchronous calls without havin
 is not running on our minimum baseline version. This could be achieved like so:
 
 :: 
-
 
         # Open connection to device.
         print "Begin example. Please wait while we extract the OS version from {name}'s show version output.".format(name=dev.nodeName)
