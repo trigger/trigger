@@ -103,7 +103,7 @@ Below details the code needed to actually run the command on the device and proc
         r10.addBoth(dev.close)
 
 
-As you can be observed, we can continue to make asynchronous calls without having to restart the running process. With this in mind we could perform an action if the device
+We can continue to make asynchronous calls without having to restart the running process. With this in mind we could perform an action if the device
 is not running on our minimum baseline version. This could be achieved like so:
 
 :: 
@@ -132,4 +132,4 @@ is not running on our minimum baseline version. This could be achieved like so:
         r10.addBoth(dev.close)
 
 
-This is a contrived example, if doing something like this in product it is recommended to take the output of the md5 hash and compare it to a pre-compiled value associated with the file sitting on the tftp server.
+This is a contrived example. If doing something like this in product it is recommended to take the output of the md5 hash and compare it to a pre-compiled value associated with the file sitting on the tftp server.
