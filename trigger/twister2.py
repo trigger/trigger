@@ -36,7 +36,6 @@ from twisted.python import log
 from trigger.conf import settings
 from trigger import tacacsrc, exceptions
 from trigger.twister import is_awaiting_confirmation, has_ioslike_error, TriggerSSHUserAuth
-from trigger import tacacsrc
 from twisted.internet import reactor
 
 

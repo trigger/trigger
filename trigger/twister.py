@@ -1345,6 +1345,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 log.msg('[%s] Successfully initialized for command execution' %
                         self.device)
                 self.initialized = True
+                self.enabled = True  # Disable further enable checks.
 
         if self.incremental:
             self.incremental(self.results)

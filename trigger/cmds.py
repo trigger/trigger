@@ -115,6 +115,10 @@ class Commando(object):
 
     :param command_interval:
          (Optional) Amount of time in seconds to wait between sending commands.
+
+    :param stop_reactor:
+         Whether to stop the reactor loop when all results have returned.
+         (Default: ``True``)
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -140,11 +144,14 @@ class Commando(object):
     # How errors are stored (defaults to {})
     errors = None
 
+    # Whether to stop the reactor when all results have returned.
+    stop_reactor = None
+
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
                  allow_fallback=True, with_errors=True, force_cli=False,
-                 with_acls=False, command_interval=0):
+                 with_acls=False, command_interval=0, stop_reactor=True):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -160,6 +167,7 @@ class Commando(object):
         self.with_errors = with_errors
         self.force_cli = force_cli
         self.command_interval = command_interval
+        self.stop_reactor = self.stop_reactor or stop_reactor
         self.curr_conns = 0
         self.jobs = []
 
@@ -435,6 +443,7 @@ class Commando(object):
                     self.append_parsed_results(device, self.map_parsed_results(command, fsm))
                 except:
                     log.msg("Unable to load TextFSM template, just updating with unstructured output")
+
             ret.append(results[idx])
 
         self.parsed_results = dict(self.parsed_results)
@@ -566,12 +575,16 @@ class Commando(object):
 
     def _stop(self):
         """Stop the reactor event loop"""
-        log.msg('stopping reactor... except not really.')
-        if self.verbose:
-            print 'stopping reactor... except not really.'
 
-        # from twisted.internet import reactor
-        # reactor.stop()
+        if self.stop_reactor:
+            log.msg('Stop reactor enabled: stopping reactor...')
+            from twisted.internet import reactor
+            if reactor.running:
+                reactor.stop()
+        else:
+            log.msg('stopping reactor... except not really.')
+            if self.verbose:
+                print 'stopping reactor... except not really.'
 
     def _start(self):
         """Start the reactor event loop"""

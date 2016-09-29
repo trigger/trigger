@@ -22,12 +22,6 @@ Example::
 
 """
 
-__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '2.3.2'
-
 # Imports
 import copy
 import itertools
@@ -35,18 +29,23 @@ import os
 import re
 import sys
 import time
+from UserDict import DictMixin
+import xml.etree.cElementTree as ET
+
 from twisted.python import log
 from twisted.internet.protocol import Factory
 from twisted.internet import reactor
 from twisted.internet import defer
+
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
-from UserDict import DictMixin
+
 from crochet import setup, run_in_reactor, wait_for
-import xml.etree.cElementTree as ET
+
 from . import loader
+
 try:
     from trigger.acl.db import AclsDB
 except ImportError:
@@ -77,6 +76,7 @@ def _munge_source_data(data_source=settings.NETDEVICES_SOURCE):
     path = kwargs.pop('path')
     return loader.load_metadata(path, **kwargs)
 
+
 def _populate(netdevices, data_source, production_only, with_acls):
     """
     Populates the NetDevices with NetDevice objects.
@@ -85,7 +85,8 @@ def _populate(netdevices, data_source, production_only, with_acls):
     objects.
     """
     #start = time.time()
-    device_data = _munge_source_data(data_source=data_source)
+    loader, device_data = _munge_source_data(data_source=data_source)
+    netdevices.set_loader(loader)
 
     # Populate AclsDB if `with_acls` is set
     if with_acls:
@@ -97,7 +98,11 @@ def _populate(netdevices, data_source, production_only, with_acls):
 
     # Populate `netdevices` dictionary with `NetDevice` objects!
     for obj in device_data:
-        dev = NetDevice(data=obj, with_acls=aclsdb)
+        # Don't process it if it's already a NetDevice
+        if isinstance(obj, NetDevice):
+            dev = obj
+        else:
+            dev = NetDevice(data=obj, with_acls=aclsdb)
 
         # Only return devices with adminStatus of 'PRODUCTION' unless
         # `production_only` is True
@@ -113,10 +118,11 @@ def _populate(netdevices, data_source, production_only, with_acls):
             continue
 
         # Add to dict
-        netdevices[dev.nodeName] = dev
+        netdevices.add_device(dev)
 
     #end = time.time()
     #print 'Took %f seconds' % (end - start)
+
 
 def device_match(name, production_only=True):
     """
@@ -325,10 +331,12 @@ class NetDevice(object):
     def _set_requires_async_pty(self):
         """
         Set whether a device requires an async pty (see:
-            `~trigger.twister.TriggerSSHAsyncPtyChannel`).
+        `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in ('a10', 'arista', 'aruba', 'cisco', 'force10'),
+            self.vendor in (
+                'a10', 'arista', 'aruba', 'cisco', 'cumulus', 'force10'
+            ),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -349,43 +357,19 @@ class NetDevice(object):
         Set the commands to run at startup. For now they are just ones to
         disable pagination.
         """
-        def disable_paging_brocade():
-            """Brocade commands differ by platform."""
+        def get_vendor_name():
+            """Return the vendor name for startup commands lookup."""
             if self.is_brocade_vdx():
-                return ['terminal length 0']
+                return 'brocade_vdx'
+            elif self.is_cisco_asa():
+                return 'cisco_asa'
+            elif self.is_netscreen():
+                return 'netscreen'
             else:
-                return ['skip-page-display']
+                return self.vendor.name
 
-        def disable_paging_cisco():
-            """Cisco ASA commands differ from IOS"""
-            if self.is_cisco_asa():
-                return ['terminal pager 0']
-            else:
-                return default
-
-        # Commands used to disable paging.
-        default = ['terminal length 0']
-        paging_map = {
-            'a10': default,
-            'arista': default,
-            'aruba': ['no paging'], # v6.2.x this is not necessary
-            'brocade': disable_paging_brocade(), # See comments above
-            'cisco': disable_paging_cisco(),
-            'citrix': ['set cli mode page off'],
-            'dell': ['terminal datadump'],
-            'f5': ['modify cli preference pager disabled'],
-            'force10': default,
-            'foundry': ['skip-page-display'],
-            'juniper': ['set cli screen-length 0'],
-            'mrv': ['no pause'],
-            'netscreen': ['set console page 0'],
-            'paloalto': ['set cli scripting-mode on', 'set cli pager off'],
-        }
-
-        cmds = paging_map.get(self.vendor.name)
-
-        if self.is_netscreen():
-            cmds = paging_map['netscreen']
+        paging_map = settings.STARTUP_COMMANDS_MAP
+        cmds = paging_map.get(get_vendor_name())
 
         if cmds is not None:
             return cmds
@@ -469,10 +453,6 @@ class NetDevice(object):
         self.implicit_acls = acls_dict['implicit']
         self.acls = acls_dict['all']
 
-    def _is_connected(self):
-        """TODO: Validate really connected to endpoint"""
-        self._connected = True
-
     def __str__(self):
         return self.nodeName
 
@@ -548,7 +528,7 @@ class NetDevice(object):
             inject_net_device_into_protocol
         )
 
-        self._connected = self._is_connected()
+        self._connected = True
         return self._connected
 
     def close(self):
@@ -749,6 +729,12 @@ class NetDevice(object):
         Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
+
+    def is_cumulus(self):
+        """
+        Am I running Cumulus?
+        """
+        return self.vendor == 'cumulus'
 
     def is_brocade_vdx(self):
         """
@@ -1011,11 +997,46 @@ class NetDevices(DictMixin):
             TypeError: unbound method match() must be called with _actual
             instance as first argument (got str instance instead)
         """
-        def __init__(self, production_only, with_acls):
-            self._dict = {}
-            _populate(netdevices=self._dict,
+        def __init__(self, production_only=True, with_acls=None):
+            self.loader = None
+            self.__dict = {}
+
+            _populate(netdevices=self,
                       data_source=settings.NETDEVICES_SOURCE,
                       production_only=production_only, with_acls=with_acls)
+
+        def set_loader(self, loader):
+            """
+            Set the NetDevices loader and initialize internal dictionary.
+
+            :param loader:
+                A `~trigger.netdevices.loader.BaseLoader` plugin instance
+            """
+            self.loader = loader
+
+            if hasattr(loader, '_dict'):
+                log.msg('Installing NetDevices._dict from loader plugin!')
+            else:
+                log.msg('Installing NetDevice._dict internally!')
+
+        @property
+        def _dict(self):
+            """
+            If the loader has an inner _dict, store objects on that instead.
+            """
+            if hasattr(self.loader, '_dict'):
+                return self.loader._dict
+            else:
+                return self.__dict
+
+        def add_device(self, device):
+            """
+            Add a device object to the store.
+
+            :param device:
+                `~trigger.netdevices.NetDevice` object
+            """
+            self._dict[device.nodeName] = device
 
         def __getitem__(self, key):
             return self._dict[key]
@@ -1036,11 +1057,20 @@ class NetDevices(DictMixin):
             then any of find('test1-abc') or find('test1-abc.net') or
             find('test1-abc.net.aol.com') will match, but not find('test1').
 
+            This method can be overloaded in NetDevices loader plugins to
+            customize the behavior as dictated by the plugin.
+
             :param string key: Hostname prefix to find.
             :returns: NetDevice object
             """
             key = key.lower()
-            if key in self:
+
+            # Try to use the loader plugin first.
+            if hasattr(self.loader, 'find'):
+                return self.loader.find(key)
+
+            # Or if there's a key, return that.
+            elif key in self:
                 return self[key]
 
             matches = [x for x in self.keys() if x.startswith(key + '.')]
@@ -1050,7 +1080,14 @@ class NetDevices(DictMixin):
             raise KeyError(key)
 
         def all(self):
-            """Returns all NetDevice objects."""
+            """
+            Returns all NetDevice objects.
+
+            This method can be overloaded in NetDevices loader plugins to
+            customize the behavior as dictated by the plugin.
+            """
+            if hasattr(self.loader, 'all'):
+                return self.loader.all()
             return self.values()
 
         def search(self, token, field='nodeName'):
@@ -1095,6 +1132,10 @@ class NetDevices(DictMixin):
             Keys and values are case IN-senstitive. Matches against non-string
             values will FAIL.
 
+            This method can be overloaded in NetDevices loader plugins to
+            customize the behavior as dictated by the plugin. If
+            ``skip_loader=True`` the built-in method will be used instead.
+
             Example by reference::
 
                 >>> nd = NetDevices()
@@ -1107,18 +1148,24 @@ class NetDevices(DictMixin):
 
             :returns: List of NetDevice objects
             """
+            skip_loader = kwargs.pop('skip_loader', False)
+            if skip_loader:
+                log.msg('Skipping loader.match()')
+
+            if not skip_loader and hasattr(self.loader, 'match'):
+                log.msg('Calling loader.match()')
+                return self.loader.match(**kwargs)
+
             all_field_names = getattr(self, '_all_field_names', {})
+            devices = self.all()
 
             # Cache the field names the first time .match() is called.
             if not all_field_names:
                 # Merge in field_names from every NetDevice
-                for dev in self.all():
+                for dev in devices:
                     dev_fields = ((f.lower(), f) for f in dev.__dict__)
                     all_field_names.update(dev_fields)
                 self._all_field_names = all_field_names
-
-            # An iterator so we can filtering functionally
-            devices = iter(self.all())
 
             def map_attr(attr):
                 """Helper function for lower-to-regular attribute mapping."""
@@ -1142,7 +1189,7 @@ class NetDevices(DictMixin):
 
             Known deviceTypes: ['FIREWALL', 'ROUTER', 'SWITCH']
             """
-            return [x for x in self._dict.values() if x.deviceType == devtype]
+            return [x for x in self.values() if x.deviceType == devtype]
 
         def list_switches(self):
             """Returns a list of NetDevice objects with deviceType of SWITCH"""
@@ -1177,3 +1224,9 @@ class NetDevices(DictMixin):
 
     def __setattr__(self, attr, value):
         return setattr(self.__class__._Singleton, attr, value)
+
+    def reload(self, **kwargs):
+        """Reload NetDevices metadata."""
+        log.msg('Reloading NetDevices.')
+        classobj = self.__class__
+        classobj._Singleton = classobj._actual(**kwargs)
