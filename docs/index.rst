@@ -69,6 +69,7 @@ use Trigger's major functionality.
     development
     license
     support
+    experimental
     changelog
 
 Indices and tables

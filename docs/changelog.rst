@@ -17,6 +17,8 @@ Backwards-incompatible changes
 + The ``conf`` directory at the repository root containing sample
   configurations has been renamed to ``configs`` to avoid confusiong with the
   `~trigger.conf` library.
++ Documentation created for experimental features.
++ Docstrings created for endpoint code.
 
 Enhancements
 ------------

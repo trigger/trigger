@@ -41,12 +41,30 @@ from twisted.internet import reactor
 
 @run_in_reactor
 def generate_endpoint(device):
-    creds = tacacsrc.validate_credentials()
+    """Generate Trigger endpoint for a given device.
+
+    The purpose of this function is to generate endpoint clients for use by a `~trigger.netdevices.NetDevice` object.
+
+    :param device: `~trigger.netdevices.NetDevice` object
+    """
+    creds = tacacsrc.get_device_password(device.nodeName)
     return TriggerSSHShellClientEndpointBase.newConnection(
         reactor, creds.username, device, password=creds.password
     )
 
 class SSHSessionAddress(object):
+    """This object represents an endpoint's session details.
+
+    This object would typically be loaded as follows:
+
+    :Example:
+        >>> sess = SSHSessionAddress()
+        >>> sess.server = "1.2.3.4"
+        >>> sess.username = "cisco"
+        >>> sess.command = ""
+    
+    We load command with a null string as Cisco device's typically do not support bash!
+    """
     def __init__(self, server, username, command):
         self.server = server
         self.username = username
@@ -54,6 +72,8 @@ class SSHSessionAddress(object):
 
 
 class _TriggerShellChannel(SSHChannel):
+    """This is the Trigger subclassed Channel object.
+    """
     name = b'session'
 
     def __init__(self, creator, command, protocolFactory, commandConnected, incremental,
@@ -71,13 +91,15 @@ class _TriggerShellChannel(SSHChannel):
         self._reason = None
 
     def openFailed(self, reason):
-        """
-        """
+        """Channel failed handler."""
         self._commandConnected.errback(reason)
 
 
     def channelOpen(self, ignored):
-        """
+        """Channel opened handler.
+        
+        Once channel is opened, setup the terminal environment and signal
+        endpoint to load the shell subsystem.
         """
         pr = session.packRequest_pty_req(os.environ['TERM'],
                                          self._get_window_size(), '')
@@ -102,13 +124,13 @@ class _TriggerShellChannel(SSHChannel):
         return struct.unpack('4H', winsz)
 
     def _execFailure(self, reason):
-        """
+        """Callback for when the exec command fails.
         """
         self._commandConnected.errback(reason)
 
 
     def _execSuccess(self, ignored):
-        """
+        """Callback for when the exec command succees.
         """
         self._protocol = self._protocolFactory.buildProtocol(
                 SSHSessionAddress(
@@ -121,6 +143,8 @@ class _TriggerShellChannel(SSHChannel):
         self._commandConnected.callback(self._protocol)
 
     def _bind_protocol_data(self):
+        """Helper method to bind protocol related attributes to the channel.
+        """
         # This was a string before, now it's a NetDevice.
         self._protocol.device = self.conn.transport.creator.device or None
 
@@ -136,6 +160,10 @@ class _TriggerShellChannel(SSHChannel):
         self._protocol.command_interval = self.command_interval or None
 
     def dataReceived(self, data):
+        """Callback for when data is received.
+
+        Once data is received in the channel we defer to the protocol level dataReceived method.
+        """
         self._protocol.dataReceived(data)
         # SSHChannel.dataReceived(self, data)
 
@@ -386,6 +414,10 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
 
     def _executeCommand(self, connection, protocolFactory, command, incremental,
             with_errors, prompt_pattern, timeout, command_interval):
+        """Establish the session on a given endpoint.
+
+        For IOS like devices this is normally just a null string.
+        """
         commandConnected = defer.Deferred()
         def disconnectOnFailure(passthrough):
             # Close the connection immediately in case of cancellation, since
@@ -405,6 +437,11 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     def connect(self, factory, command='', incremental=None,
             with_errors=None, prompt_pattern=None, timeout=0,
             command_interval=1):
+        """Method to initiate SSH connection to device.
+
+        :param factory: Trigger factory responsible for setting up connection
+        :type factory: `~trigger.twister2.TriggerEndpointClientFactory`
+        """
         d = self._creator.secureConnection()
         d.addCallback(self._executeCommand, factory, command, incremental,
                 with_errors, prompt_pattern, timeout, command_interval)
@@ -450,6 +487,15 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # will kick off initialization.
 
     def _schedule_commands(self, results, commands):
+        """Schedule commands onto device loop.
+
+        This is the actual routine to schedule a set of commands onto a device.
+
+        :param results: Typical twisted results deferred
+        :type  results: twisted.internet.defer
+        :param commands: List containing commands to schedule onto device loop.
+        :type commands: list
+        """
         d = defer.Deferred()
         self.todo.append(d)
         
@@ -480,6 +526,16 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         return d
 
     def add_commands(self, commands, on_error):
+        """Add commands to abstract list of outstanding commands to execute
+
+        The public method for `~trigger.netdevices.NetDevice` to use for appending more commands
+        onto the device loop.
+
+        :param commands: A list of commands to schedule onto device"
+        :type  commands: list
+        :param on_error: Error handler
+        :type  on_error: func
+        """
         # Exception handler to be used in case device throws invalid command warning.
         self.on_error.addCallback(on_error)
         d = self.doneLock.run(self._schedule_commands, None, commands)
