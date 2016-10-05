@@ -4,28 +4,25 @@
 # trigger_xmlrpc.py - Twisted twistd server plugin for Trigger
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2012-2013, AOL Inc.'
+import warnings
 
-from zope.interface import implements
 from twisted.application.internet import TCPServer, SSLServer
 from twisted.application.service import IServiceMaker, MultiService
 from twisted.conch.manhole_tap import makeService as makeConsoleService
 from twisted.plugin import IPlugin
 from twisted.python.rebuild import rebuild
-from twisted.python import usage, log
+from twisted.python import usage
 from twisted.web import server, xmlrpc
-import warnings
-
 try:
     from twisted.internet import ssl
 except ImportError:
     # If no ssl, complain loudly.
-    warnings.warn('SSL support disabled for Trigger XMLRPC Server: PyOpenSSL required.',
-                  RuntimeWarning)
+    warnings.warn(
+        'SSL support disabled for Trigger XMLRPC Server: PyOpenSSL required.',
+        RuntimeWarning
+    )
     ssl = None
+from zope.interface import implements
 
 from trigger.contrib.xmlrpc.server import TriggerXMLRPCServer
 
@@ -36,6 +33,9 @@ SSH_PORT = 8001
 SSH_USERS = 'users.txt'
 SSL_KEYFILE = 'server.key'
 SSL_CERTFILE = 'cacert.pem'
+SSH_KEYDIR = '.'
+SSH_KEYNAME = 'ssh_host_key'
+SSH_KEYSIZE = 4096
 
 
 class Options(usage.Options):
@@ -48,7 +48,14 @@ class Options(usage.Options):
          'Path to a file containing a private key'],
         ['ssl-certfile', 'c', SSL_CERTFILE,
          'Path to a file containing a CA certificate'],
+        ['ssh-keydir', 'd', SSH_KEYDIR,
+         'The folder that the SSH server key will be kept'],
+        ['ssh-keyname', 'n', SSH_KEYNAME,
+         'The filename of the key.'],
+        ['ssh-keysize', 'z', SSH_KEYSIZE,
+         'The size of the key, in bits.'],
     ]
+
 
 class TriggerXMLRPCServiceMaker(object):
     implements(IServiceMaker, IPlugin)
@@ -74,6 +81,9 @@ class TriggerXMLRPCServiceMaker(object):
         console_service = makeConsoleService(
             {
                 'sshPort': 'tcp:%s' % options['ssh-port'],
+                'sshKeyDir': options['ssh-keydir'],
+                'sshKeyName': options['ssh-keyname'],
+                'sshKeySize': options['ssh-keysize'],
                 'telnetPort': None,
                 'passwd': options['ssh-users'],
                 'namespace': {
@@ -88,5 +98,4 @@ class TriggerXMLRPCServiceMaker(object):
         xmlrpc_service.setServiceParent(svc)
         console_service.setServiceParent(svc)
         return svc
-
 serviceMaker = TriggerXMLRPCServiceMaker()
