@@ -4,21 +4,26 @@
 Functions that perform network-based things like ping, port tests, etc.
 """
 
-__author__ = 'Jathan McCollum, Eileen Watson'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2009-2013, AOL Inc.; 2013-2014 Salesforce.com'
-
 import os
 import subprocess
 import shlex
-import re
 import socket
 import telnetlib
+
 from trigger.conf import settings
+
 
 # Exports
 __all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal')
+
+
+# Constants
+# SSH version strings used to validate SSH banners.
+SSH_VERSION_STRINGS = (
+    'SSH-1.99',
+    'SSH-2.0',
+    'dcos_sshd run in non-FIPS mode',  # Cisco Nexus not in FIPS mode
+)
 
 
 # Functions
@@ -97,7 +102,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False,
     return True
 
 
-def test_ssh(host, port=22, timeout=5, version=('SSH-1.99', 'SSH-2.0')):
+def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):
     """
     Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
 

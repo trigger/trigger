@@ -837,21 +837,26 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """Verify host key, but don't actually verify. Awesome."""
         return defer.succeed(True)
 
-    def connectionMade(self):
-        """
-        Once the connection is up, set the ciphers but don't do anything else!
-        """
-        self.currentEncryptions = transport.SSHCiphers(
-            'none', 'none', 'none', 'none'
-        )
-        self.currentEncryptions.setKeys('', '', '', '', '', '')
-
+    # FIXME(jathan): Make sure that this isn't causing a regression to:
+    # https://github.com/trigger/trigger/pull/198
     def dataReceived(self, data):
-        """Convert data into packets"""
-        prev_gotVersion = self.gotVersion
+        """
+        Explicity override version detection for edge cases where "SSH-"
+        isn't on the first line of incoming data.
+        """
+        # Store incoming data in a local buffer until we've detected the
+        # presence of 'SSH-', then handover to default .dataReceived() for
+        # version banner processing.
+        if not hasattr(self, 'my_buf'):
+            self.my_buf = ''
+        self.my_buf = self.my_buf + data
+
+        # One extra loop should be enough to get the banner to come through.
+        if not self.gotVersion and b'SSH-' not in self.my_buf:
+            return
+
+        # This call should populate the SSH version and carry on as usual.
         transport.SSHClientTransport.dataReceived(self, data)
-        if self.gotVersion and not prev_gotVersion:
-            transport.SSHClientTransport.connectionMade(self)
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""
