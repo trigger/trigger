@@ -1,6 +1,7 @@
 import unittest
 import os
 import mock
+from collections import defaultdict
 from trigger.netdevices import NetDevices
 from trigger.cmds import Commando
 from trigger.utils.templates import *
@@ -133,7 +134,7 @@ class CheckTemplates(unittest.TestCase):
         self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))
         self.assertTrue(isinstance(data[0], str))
-        self.assertTrue(isinstance(commando.parsed_results, dict))
+        self.assertTrue(isinstance(commando.parsed_results, defaultdict))
         self.assertEquals(commando.parsed_results.popitem()[1]["show version"]["hardware"], ['CSR1000V'])
 
     def testCommandoResultsBad(self):
