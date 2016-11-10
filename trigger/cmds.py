@@ -528,7 +528,7 @@ class Commando(object):
         """
         devname = str(device)
         log.msg("Appending results for %r: %r" % (devname, results))
-        self.parsed_results[devname].update(results)
+        self.parsed_results[devname] = results
         return True
 
     def store_results(self, device, results):
