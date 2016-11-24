@@ -837,6 +837,15 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """Verify host key, but don't actually verify. Awesome."""
         return defer.succeed(True)
 
+    def connectionMade(self):
+        """
+        Once the connection is up, set the ciphers but don't do anything else!
+        """
+        self.currentEncryptions = transport.SSHCiphers(
+            'none', 'none', 'none', 'none'
+        )
+        self.currentEncryptions.setKeys('', '', '', '', '', '')
+
     # FIXME(jathan): Make sure that this isn't causing a regression to:
     # https://github.com/trigger/trigger/pull/198
     def dataReceived(self, data):
@@ -850,6 +859,11 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         if not hasattr(self, 'my_buf'):
             self.my_buf = ''
         self.my_buf = self.my_buf + data
+
+        # This is needed to accommodate less than average ssh server
+        # implementations.
+        if b'SSH-' in self.my_buf:
+            self.sendKexInit()
 
         # One extra loop should be enough to get the banner to come through.
         if not self.gotVersion and b'SSH-' not in self.my_buf:
