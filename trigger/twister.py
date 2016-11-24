@@ -860,10 +860,7 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
             self.my_buf = ''
         self.my_buf = self.my_buf + data
 
-        # This is needed to accommodate less than average ssh server
-        # implementations.
-        if b'SSH-' in self.my_buf:
-            self.sendKexInit()
+        preVersion = self.gotVersion
 
         # One extra loop should be enough to get the banner to come through.
         if not self.gotVersion and b'SSH-' not in self.my_buf:
@@ -871,6 +868,11 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
         # This call should populate the SSH version and carry on as usual.
         transport.SSHClientTransport.dataReceived(self, data)
+
+        # We have now seen the SSH version in the banner.
+        # signal that the connection has been made successfully.
+        if self.gotVersion and not preVersion:
+            transport.SSHClientTransport.connectionMade(self)
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""
