@@ -446,7 +446,7 @@ class Commando(object):
 
             ret.append(results[idx])
 
-        self.parsed_results = dict(self.parsed_results)
+        self.parsed_results[device.nodeName] = dict(self.parsed_results)
         return ret
 
     def parse(self, results, device, commands=None):
