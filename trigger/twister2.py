@@ -19,9 +19,8 @@ from crochet import wait_for, run_in_reactor, setup, EventLoop
 
 setup()
 
-from twisted.conch.ssh import session, common
+from twisted.conch.ssh import session, common, transport
 from twisted.conch.ssh.channel import SSHChannel
-from twisted.conch.ssh.transport import SSHCiphers
 from twisted.conch.endpoints import (SSHCommandClientEndpoint,
                                      _NewConnectionHelper,
                                      _ExistingConnectionHelper,
