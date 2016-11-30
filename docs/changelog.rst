@@ -19,6 +19,8 @@ Backwards-incompatible changes
   `~trigger.conf` library.
 + Documentation created for experimental features.
 + Docstrings created for endpoint code.
++ Bugfixes for handling esoteric ssh server implementations
++ Bugfixes for the TextFSM parsed results bucket
 
 Enhancements
 ------------

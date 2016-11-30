@@ -1,4 +1,4 @@
-__version__ = (1, 6, 'rc5')
+__version__ = (1, 6, 'rc6')
 
 full_version = '.'.join(str(x) for x in __version__[0:3]) + \
                ''.join(__version__[3:])

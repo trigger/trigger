@@ -837,6 +837,15 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         """Verify host key, but don't actually verify. Awesome."""
         return defer.succeed(True)
 
+    def connectionMade(self):
+        """
+        Once the connection is up, set the ciphers but don't do anything else!
+        """
+        self.currentEncryptions = transport.SSHCiphers(
+            'none', 'none', 'none', 'none'
+        )
+        self.currentEncryptions.setKeys('', '', '', '', '', '')
+
     # FIXME(jathan): Make sure that this isn't causing a regression to:
     # https://github.com/trigger/trigger/pull/198
     def dataReceived(self, data):
@@ -851,12 +860,19 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
             self.my_buf = ''
         self.my_buf = self.my_buf + data
 
+        preVersion = self.gotVersion
+
         # One extra loop should be enough to get the banner to come through.
         if not self.gotVersion and b'SSH-' not in self.my_buf:
             return
 
         # This call should populate the SSH version and carry on as usual.
         transport.SSHClientTransport.dataReceived(self, data)
+
+        # We have now seen the SSH version in the banner.
+        # signal that the connection has been made successfully.
+        if self.gotVersion and not preVersion:
+            transport.SSHClientTransport.connectionMade(self)
 
     def connectionSecure(self):
         """Once we're secure, authenticate."""

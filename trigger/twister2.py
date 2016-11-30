@@ -19,7 +19,7 @@ from crochet import wait_for, run_in_reactor, setup, EventLoop
 
 setup()
 
-from twisted.conch.ssh import session, common
+from twisted.conch.ssh import session, common, transport
 from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import (SSHCommandClientEndpoint,
                                      _NewConnectionHelper,
@@ -29,6 +29,7 @@ from twisted.conch.endpoints import (SSHCommandClientEndpoint,
                                      _UserAuth,
                                      _ConnectionReady)
 from twisted.internet import defer, protocol, reactor, threads
+from twisted.internet.defer import CancelledError
 from twisted.internet.task import LoopingCall
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
@@ -267,6 +268,43 @@ class _TriggerUserAuth(_UserAuth):
             return d
 
 class _TriggerCommandTransport(_CommandTransport):
+    def connectionMade(self):
+        """
+        Once the connection is up, set the ciphers but don't do anything else!
+        """
+        self.currentEncryptions = transport.SSHCiphers(
+            'none', 'none', 'none', 'none'
+        )
+        self.currentEncryptions.setKeys('', '', '', '', '', '')
+
+    # FIXME(jathan): Make sure that this isn't causing a regression to:
+    # https://github.com/trigger/trigger/pull/198
+    def dataReceived(self, data):
+        """
+        Explicity override version detection for edge cases where "SSH-"
+        isn't on the first line of incoming data.
+        """
+        # Store incoming data in a local buffer until we've detected the
+        # presence of 'SSH-', then handover to default .dataReceived() for
+        # version banner processing.
+        if not hasattr(self, 'my_buf'):
+            self.my_buf = ''
+        self.my_buf = self.my_buf + data
+
+        preVersion = self.gotVersion
+
+        # One extra loop should be enough to get the banner to come through.
+        if not self.gotVersion and b'SSH-' not in self.my_buf:
+            return
+
+        # This call should populate the SSH version and carry on as usual.
+        _CommandTransport.dataReceived(self, data)
+
+        # We have now seen the SSH version in the banner.
+        # signal that the connection has been made successfully.
+        if self.gotVersion and not preVersion:
+            _CommandTransport.connectionMade(self)
+
     def connectionSecure(self):
         """
         When the connection is secure, start the authentication process.
