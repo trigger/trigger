@@ -17,14 +17,17 @@ Backwards-incompatible changes
 + The ``conf`` directory at the repository root containing sample
   configurations has been renamed to ``configs`` to avoid confusiong with the
   `~trigger.conf` library.
-+ Documentation created for experimental features.
-+ Docstrings created for endpoint code.
-+ Bugfixes for handling esoteric ssh server implementations
-+ Bugfixes for the TextFSM parsed results bucket
+
+Bug Fixes
+---------
+
++ Bugfixes for handling esoteric SSH server implementations.
++ Bugfixes for the TextFSM parsed results bucket.
++ Fixed a bug on Arista EOS devices that would sometimes cause the prompt to be
+  included in the results from commands with no output.
 
 Enhancements
 ------------
-
 + A new configuration setting :setting:`DEFAULT_ADMIN_STATUS` has been added
   that defaults to ``PRODUCTION`` that is used to popoulate the ``adminStatus``
   field on `~trigger.netdevices.NetDevice` objects that do not have that field

@@ -223,7 +223,7 @@ STARTUP_COMMANDS_DEFAULT = ['terminal length 0']
 # 'cisco_asa'). The platform-specific lookups are still done in code for now.
 STARTUP_COMMANDS_MAP = {
     'a10': STARTUP_COMMANDS_DEFAULT,
-    'arista': STARTUP_COMMANDS_DEFAULT,
+    'arista': STARTUP_COMMANDS_DEFAULT + ['terminal width 999'],
     'aruba': ['no paging'], # v6.2.x this is not necessary
     'brocade': ['skip-page-display'],
     'brocade_vdx': STARTUP_COMMANDS_DEFAULT,
