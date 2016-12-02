@@ -17,7 +17,7 @@ pieces of software:
 * the Redis key-value server (and companion Python interface);
 * the ``IPy`` IP address parsing library;
 * the PyASN1 library;
-* the PyCrypto cryptography library;
+* the Python cryptography library;
 * and the Twisted event-driven networking engine.
 
 Trigger has a tricky set of dependencies. If you want to take full advantage of
@@ -56,14 +56,11 @@ which implements Abstract Syntax Notation One (`ASN.1
 <http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_1x>`_) and is used to
 encode/decode public & private OpenSSH keys.
 
-PyCrypto
---------
+cryptography
+------------
 
-`PyCrypto <http://www.amk.ca/python/code/crypto.html>`_ is a dependency of
-Twisted Conch which provides the low-level (C-based) encryption algorithms used to
-run SSH. There are a couple gotchas associated with installing PyCrypto: its
-compatibility with Python's package tools, and the fact that it is a C-based
-extension.
+`cryptography <https://cryptography.io>`_ provides the low-level (C-based)
+encryption primitives.
 
 Twisted
 -------

@@ -19,7 +19,6 @@ requires = [
     'crochet==1.5.0',
     'mock==2.0.0',
     'pyasn1', # Twisted conch needs this, but doesn't say so
-    'pycrypto',
     'pyparsing==1.5.7',
     'pytz',
     'SimpleParse',
