@@ -7,6 +7,16 @@ Changelog
 1.6 (??)
 ========
 
+Enhancements
+------------
++ Remote execution on devices running Cumulus Linux is now officially
+  supported.
++ A new configuration setting :setting:`DEFAULT_ADMIN_STATUS` has been added
+  that defaults to ``PRODUCTION`` that is used to popoulate the ``adminStatus``
+  field on `~trigger.netdevices.NetDevice` objects that do not have that field
+  populated.
++ CLI-tool ``gnng`` now uses PTable instead of the old indent function.
+
 Backwards-incompatible changes
 ------------------------------
 
@@ -25,14 +35,6 @@ Bug Fixes
 + Bugfixes for the TextFSM parsed results bucket.
 + Fixed a bug on Arista EOS devices that would sometimes cause the prompt to be
   included in the results from commands with no output.
-
-Enhancements
-------------
-+ A new configuration setting :setting:`DEFAULT_ADMIN_STATUS` has been added
-  that defaults to ``PRODUCTION`` that is used to popoulate the ``adminStatus``
-  field on `~trigger.netdevices.NetDevice` objects that do not have that field
-  populated.
-+ CLI-tool ``gnng`` now uses PTable instead of the old indent function.
 
 .. _v1.5.10:
 

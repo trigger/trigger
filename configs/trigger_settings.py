@@ -215,7 +215,7 @@ STARTUP_COMMANDS_MAP = {
     'cisco': STARTUP_COMMANDS_DEFAULT,
     'cisco_asa': ['terminal pager 0'],
     'citrix': ['set cli mode page off'],
-    'cumulus': ['sudo vtysh'] + STARTUP_COMMANDS_DEFAULT,
+    'cumulus': [],  # No startup commands for Cumulus by default!
     'dell': ['terminal datadump'],
     'f5': ['modify cli preference pager disabled'],
     'force10': STARTUP_COMMANDS_DEFAULT,
@@ -344,10 +344,9 @@ PROMPT_PATTERNS = {
     #'aruba': r'\S+(?: \(\S+\))?\s?#\s$', # ArubaOS 6.2
     'avocent': r'\S+[#\$]|->\s?$',
     'citrix': r'\sDone\n$',
-    # 'cumulus': r'\S+(?:\$|#)\s?$',  # Used to run 'sudo vtysh' only.
     # This pattern is a regex "or" combination of the Cumulus bash login prompt
-    # and IOSLIKE_PROMPT_PAT
-    'cumulus': r'(?:\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*#[\s\b]*$)|(?:\S+(?:\$|#)\s?$)',
+    # and IOSLIKE_PROMPT_PAT (for vtysh support)
+    'cumulus': r'(?:\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*#[\s\b]*$)|(?:.*(?:\$|#)\s?$)',
     'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
     'juniper': r'(?:\S+\@)?\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
