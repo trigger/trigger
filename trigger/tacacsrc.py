@@ -14,7 +14,6 @@ __copyright__ = 'Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com'
 
 from base64 import decodestring, encodestring
 from collections import namedtuple
-from Crypto.Cipher import DES3
 from distutils.version import LooseVersion
 import getpass
 from time import strftime, localtime
@@ -23,6 +22,9 @@ import pwd
 import sys
 from twisted.python import log
 from trigger.conf import settings
+
+from cryptography.hazmat.backends.openssl import backend as openssl_backend
+from cryptography.hazmat.primitives import ciphers
 
 # Exports
 __all__ = ('get_device_password', 'prompt_credentials', 'convert_tacacsrc',
@@ -392,21 +394,28 @@ class Tacacsrc(object):
 
     def _encrypt_old(self, s):
         """Encodes using the old method. Adds a newline for you."""
-        cryptobj = DES3.new(self.key, DES3.MODE_ECB)
+        des = ciphers.algorithms.TripleDES(self.key)
+        cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
+        encryptor = cipher.encryptor()
+
         # Crypt::TripleDES pads with *spaces*!  How 1960. Pad it so the
         # length is a multiple of 8.
         padding = len(s) % 8 and ' ' * (8 - len(s) % 8) or ''
 
+        cipher_text = encryptor.update(s + padding) + encryptor.finalize()
+
         # We need to return a newline if a field is empty so as not to break
         # .tacacsrc parsing (trust me, this is easier)
-        return (encodestring(cryptobj.encrypt(s + padding)).replace('\n', '') or '' ) + '\n'
+        return (encodestring(cipher_text).replace('\n', '') or '' ) + '\n'
 
     def _decrypt_old(self, s):
         """Decodes using the old method. Strips newline for you."""
-        cryptobj = DES3.new(self.key, DES3.MODE_ECB)
+        des = ciphers.algorithms.TripleDES(self.key)
+        cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
+        decryptor = cipher.decryptor()
         # rstrip() to undo space-padding; unfortunately this means that
         # passwords cannot end in spaces.
-        return cryptobj.decrypt(decodestring(s)).rstrip(' ')
+        return decryptor.update(decodestring(s)).rstrip(' ') + decryptor.finalize()
 
     def _read_file_old(self):
         """Read old style file and return the raw data."""
