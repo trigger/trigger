@@ -20,6 +20,8 @@ Enhancements
 Backwards-incompatible changes
 ------------------------------
 
++ PyCrypto has been replaced with the `cryptography <https://cryptography.io>`_
+  library.
 + The default NetDevices loader is now
   `~trigger.netdevices.loaders.filesystem.JSONLoader`.
 + ACL support is now disabled by default. This means that ``WITH_ACLS = False``
