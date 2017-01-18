@@ -34,7 +34,7 @@ Async factory methods for remote execution
 + What is the prompt pattern?
 + What is the command to disable paging?
 
-  - add 'vendor_name': 'disable paging command\n' to trigger.netdevices.NetDevice._set_startup_commands.paging_map dictionary.
+  - add 'vendor_name': 'disable paging command\\n' to trigger.netdevices.NetDevice._set_startup_commands.paging_map dictionary.
 
 + What is the command to commit/write to memory?
 
