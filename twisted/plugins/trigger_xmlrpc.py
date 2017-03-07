@@ -36,10 +36,12 @@ SSL_CERTFILE = 'cacert.pem'
 SSH_KEYDIR = '.'
 SSH_KEYNAME = 'ssh_host_key'
 SSH_KEYSIZE = 4096
+LISTEN_ADDRESS = '0.0.0.0'
 
 
 class Options(usage.Options):
     optParameters = [
+        ['listen-address', 'a', LISTEN_ADDRESS, 'Address to listen on'],
         ['port', 'p', XML_PORT, 'Listening port for XMLRPC'],
         ['ssh-port', 's', SSH_PORT, 'Listening port for SSH manhole'],
         ['ssh-users', 'u', SSH_USERS,
@@ -72,15 +74,18 @@ class TriggerXMLRPCServiceMaker(object):
         if ssl is not None:
             ctx = ssl.DefaultOpenSSLContextFactory(options['ssl-keyfile'],
                                                    options['ssl-certfile'])
-            xmlrpc_service = SSLServer(int(options['port']), site_factory, ctx)
+            xmlrpc_service = SSLServer(int(options['port']), site_factory, ctx,
+                                       interface=options['listen-address'])
         # Or fallback to clear-text =(
         else:
-            xmlrpc_service = TCPServer(int(options['port']), site_factory)
+            xmlrpc_service = TCPServer(int(options['port']), site_factory,
+                                       interface=options['listen-address'])
 
         # SSH Manhole service
         console_service = makeConsoleService(
             {
-                'sshPort': 'tcp:%s' % options['ssh-port'],
+                'sshPort': 'tcp:%s:interface=%s' % (options['ssh-port'],
+                                                    options['listen-address']),
                 'sshKeyDir': options['ssh-keydir'],
                 'sshKeyName': options['ssh-keyname'],
                 'sshKeySize': options['ssh-keysize'],
