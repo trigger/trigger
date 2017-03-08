@@ -13,7 +13,7 @@ class BaseDriver(object):
         self.device = device
 
         if creds is None:
-            creds = tacacsrc.get_device_password(device.nodeName)
+            creds = tacacsrc.validate_credentials()
         self.creds = creds
 
         self._connected = False

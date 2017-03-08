@@ -25,7 +25,7 @@ facts = driver.get_facts()
 from __future__ import absolute_import
 
 import napalm
-from twisted.internet import defer
+from twisted.internet import defer, threads
 
 from trigger.netdevices.drivers.base import BaseDriver
 
@@ -33,6 +33,7 @@ from trigger.netdevices.drivers.base import BaseDriver
 DRIVER_MAP = {
     'cisco': 'ios',
     'arista': 'eos',
+    'juniper': 'junos',
 }
 
 
@@ -69,4 +70,11 @@ class NapalmDriver(BaseDriver):
             https://github.com/trigger/trigger/wiki/Trigger-2.0-Benchmarks#code-1
         """
         result = yield self.napalm_device.get_facts()
+        defer.returnValue(result)
+
+    @defer.inlineCallbacks
+    def execute(self, commands=None):
+        self.open()
+        result = yield threads.deferToThread(self.napalm_device.device.run_commands, commands,
+                             encoding='text')
         defer.returnValue(result)

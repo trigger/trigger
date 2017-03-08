@@ -178,3 +178,10 @@ class TriggerEndpointDriver(BaseDriver):
         )
 
         return d
+
+    def execute(self, commands):
+       self.open()
+       result = self.run_commands(commands)
+       #self.close()
+
+       return result
