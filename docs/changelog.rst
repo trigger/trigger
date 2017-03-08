@@ -2,10 +2,10 @@
 Changelog
 =========
 
-.. _v1.6:
+.. _v1.6.0:
 
-1.6 (??)
-========
+1.6.0 (2017-03-08)
+==================
 
 Enhancements
 ------------
@@ -16,6 +16,9 @@ Enhancements
   field on `~trigger.netdevices.NetDevice` objects that do not have that field
   populated.
 + CLI-tool ``gnng`` now uses PTable instead of the old indent function.
++ :feature:`312` Added -a/--listen-address option to the XMLRPC Server
+  Twisted's default of 0.0.0.0 has been preserved, but now if you supply -a to
+  twistd you can have it listen on a different address.
 
 Backwards-incompatible changes
 ------------------------------
@@ -33,10 +36,18 @@ Backwards-incompatible changes
 Bug Fixes
 ---------
 
++ Fixed a bug in Cumulus Linux prompt patterns.
+
+  - Also disabled execution of `sudo vtysh` by default on Cumulus. It
+    will now be left up to operators to do this for themselves.
+    Cumulus Linux.
+
 + Bugfixes for handling esoteric SSH server implementations.
 + Bugfixes for the TextFSM parsed results bucket.
 + Fixed a bug on Arista EOS devices that would sometimes cause the prompt to be
   included in the results from commands with no output.
++ :bug:`313` Use pyparsing~=2.2.0 for compat w/ setuptools>=34.0.0 which was
+  causing install to fail 
 
 .. _v1.5.10:
 
