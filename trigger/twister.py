@@ -846,11 +846,32 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         )
         self.currentEncryptions.setKeys('', '', '', '', '', '')
 
+    # FIXME(jathan): Make sure that this isn't causing a regression to:
+    # https://github.com/trigger/trigger/pull/198
     def dataReceived(self, data):
-        """Convert data into packets"""
-        prev_gotVersion = self.gotVersion
+        """
+        Explicity override version detection for edge cases where "SSH-"
+        isn't on the first line of incoming data.
+        """
+        # Store incoming data in a local buffer until we've detected the
+        # presence of 'SSH-', then handover to default .dataReceived() for
+        # version banner processing.
+        if not hasattr(self, 'my_buf'):
+            self.my_buf = ''
+        self.my_buf = self.my_buf + data
+
+        preVersion = self.gotVersion
+
+        # One extra loop should be enough to get the banner to come through.
+        if not self.gotVersion and b'SSH-' not in self.my_buf:
+            return
+
+        # This call should populate the SSH version and carry on as usual.
         transport.SSHClientTransport.dataReceived(self, data)
-        if self.gotVersion and not prev_gotVersion:
+
+        # We have now seen the SSH version in the banner.
+        # signal that the connection has been made successfully.
+        if self.gotVersion and not preVersion:
             transport.SSHClientTransport.connectionMade(self)
 
     def connectionSecure(self):
@@ -1176,7 +1197,7 @@ class TriggerSSHPtyChannel(channel.SSHChannel):
 
     def channelOpen(self, data):
         """Setup the terminal when the channel opens."""
-        pr = session.packRequest_pty_req(os.environ['TERM'],
+        pr = session.packRequest_pty_req(settings.TERM_TYPE,
                                          self._get_window_size(), '')
         self.conn.sendRequest(self, 'pty-req', pr)
         self.conn.sendRequest(self, 'shell', '')
@@ -1345,6 +1366,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
                 log.msg('[%s] Successfully initialized for command execution' %
                         self.device)
                 self.initialized = True
+                self.enabled = True  # Disable further enable checks.
 
         if self.incremental:
             self.incremental(self.results)
@@ -1414,7 +1436,7 @@ class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
 
         # Request a pty even tho we are not actually using one.
         pr = session.packRequest_pty_req(
-            os.environ['TERM'], (80, 24, 0, 0), ''
+            settings.TERM_TYPE, (80, 24, 0, 0), ''
         )
         self.conn.sendRequest(self, 'pty-req', pr)
         d = self.conn.sendRequest(self, 'shell', '', wantReply=True)

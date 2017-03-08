@@ -4,11 +4,7 @@ Installation
 
 This is a work in progress. Please bear with us as we expand and improve this
 documentation. If you have any feedback, please don't hesitate to `contact us
-<http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!!
-
-.. contents::
-    :local:
-    :depth: 2
+<http://trigger.readthedocs.io/en/latest/index.html#getting-help>`_!!
 
 Dependencies
 ============
@@ -21,7 +17,7 @@ pieces of software:
 * the Redis key-value server (and companion Python interface);
 * the ``IPy`` IP address parsing library;
 * the PyASN1 library;
-* the PyCrypto cryptography library;
+* the Python cryptography library;
 * and the Twisted event-driven networking engine.
 
 Trigger has a tricky set of dependencies. If you want to take full advantage of
@@ -60,14 +56,11 @@ which implements Abstract Syntax Notation One (`ASN.1
 <http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_1x>`_) and is used to
 encode/decode public & private OpenSSH keys.
 
-PyCrypto
---------
+cryptography
+------------
 
-`PyCrypto <http://www.amk.ca/python/code/crypto.html>`_ is a dependency of
-Twisted Conch which provides the low-level (C-based) encryption algorithms used to
-run SSH. There are a couple gotchas associated with installing PyCrypto: its
-compatibility with Python's package tools, and the fact that it is a C-based
-extension.
+`cryptography <https://cryptography.io>`_ provides the low-level (C-based)
+encryption primitives.
 
 Twisted
 -------
@@ -82,6 +75,8 @@ Used by:
 
 * :mod:`trigger.cmds`
 * :mod:`trigger.twister`
+
+.. _redis-install:
 
 Redis
 -----
@@ -180,7 +175,7 @@ Installing Trigger
 The following steps will get you the very basic functionality and will be
 improved over time. As mentioned at the top of this document, if you have any
 feedback or questions, please get `get in touch
-<http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!
+<http://trigger.readthedocs.io/en/latest/index.html#getting-help>`_!
 
 Install Trigger package
 -----------------------
@@ -207,7 +202,7 @@ That's it! Now you're ready to configure Trigger.
 Basic Configuration
 ===================
 
-.. note::
+.. warning::
     For these steps you'll need to download the `Trigger tarball
     <https://github.com/trigger/trigger/tarball/develop>`_, expand it, and then
     navigate to the root directory (the same directory in which you'll find
@@ -218,7 +213,7 @@ Copy settings.py
 
 Trigger expects ``settings.py`` to be in ``/etc/trigger``::
 
-    sudo cp conf/trigger_settings.py /etc/trigger/settings.py
+    sudo cp configs/trigger_settings.py /etc/trigger/settings.py
 
 If you really don't like this, you may override the default location by setting
 the environment variable ``TRIGGER_SETTINGS`` to the desired location. If you
@@ -235,7 +230,7 @@ communicates with devices relies on the metadata stored within this file.
 
 For the purpose of basic config, we'll just use the sample ``netdevices.json`` file::
 
-    sudo cp conf/netdevices.json /etc/trigger/netdevices.json
+    sudo cp configs/netdevices.json /etc/trigger/netdevices.json
 
 For more information on how Trigger uses the netdevices file please see
 :doc:`usage/netdevices`.
@@ -267,7 +262,7 @@ network devices.
 
 ::
 
-    sudo cp conf/autoacl.py /etc/trigger/autoacl.py
+    sudo cp configs/autoacl.py /etc/trigger/autoacl.py
 
 If you're using a non-standard location, be sure to update the
 :setting:`AUTOACL_FILE` configuration variable within ``settings.py`` with the
@@ -282,7 +277,7 @@ maintenance or "bounce") windows get auto-applied to network devices.
 
 ::
 
-    sudo cp conf/bounce.py /etc/trigger/bounce.py
+    sudo cp configs/bounce.py /etc/trigger/bounce.py
 
 If you're using a non-standard location, be sure to update the
 :setting:`BOUNCE_FILE` configuration variable within ``settings.py`` with the
@@ -291,7 +286,7 @@ location of ``bounce.py``!
 Verifying Functionality
 =======================
 
-.. note::
+.. warning::
     For these steps you'll still need to be at the root directory of the
     `Trigger tarball <https://github.com/trigger/trigger/tarball/develop>`_. If
     you haven't already, download it,  expand it, and then navigate to the root
@@ -325,6 +320,11 @@ within the Trigger distribution)::
 ACL Database
 ------------
 
+.. warning::
+    This WILL NOT work without :ref:`redis-install` installed and
+    :setting:`WITH_ACLS` set to ``True``. If you have ACL support disabled, just
+    skip this section.
+
 Try loading the AclsDB to inspect automatic associations. First directly from autoacl::
 
     >>> from trigger.acl.autoacl import autoacl
@@ -340,13 +340,7 @@ And then inherited from autoacl by AclsDB::
     set(['juniper-router.policer', 'juniper-router-protect'])
 
 Now that you've properly installed Trigger, you might want to know how to use it.
-Please have a look at the usage documentation!
-
-.. toctree::
-    :maxdepth: 1
-    :glob:
-
-    usage/*
+Please have a look at the :doc:`usage/index`.
 
 Integrated Load Queue
 =====================

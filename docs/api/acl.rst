@@ -1,6 +1,12 @@
 :mod:`trigger.acl` --- ACL parsing library
 ==========================================
 
+.. warning::
+    Much of the functionality in this library WILL NOT work without
+    :ref:`redis-install` installed and :setting:`WITH_ACLS` set to ``True`` in
+    your ``settings.py``. If you have ACL support disabled, proceed at your own
+    risk!
+
 .. automodule:: trigger.acl
    :members:
 

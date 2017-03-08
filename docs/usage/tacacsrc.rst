@@ -1,6 +1,8 @@
-===================================
+.. _tacacsrc:
+
+###################################
 Managing Credentials with .tacacsrc
-===================================
+###################################
 
 .. _tacacsrc:
 
@@ -18,7 +20,8 @@ How it works
 The `~trigger.tacacsrc.Tacacsrc` class is the core interface for encrypting
 credentials when they are stored, and decrypting the credentials when they are
 retrieved. A unique ``.tacacsrc`` file is stored in each user's home directory,
-and is forcefully set to be readable only (permissions: ``0600``) by the owning user.
+and is forcefully set to be readable only (permissions: ``0600``) by the owning
+user.
 
 There are two implementations, the first of which is the only one that is
 officially supported at this time, and which is properly documented.

@@ -51,26 +51,31 @@ INTERNAL_NETWORKS = [
     IPy.IP("192.168.0.0/16"),
 ]
 
-# The tuple of supported vendors derived from the values of VENDOR_MAP
-SUPPORTED_VENDORS = (
-    'a10',
-    'arista',
-    'aruba',
-    'avocent',
-    'brocade',
-    'cisco',
-    'citrix',
-    'dell',
-    'f5',
-    'force10',
-    'foundry',
-    'juniper',
-    'mrv',
-    'netscreen',
-    'paloalto',
-    'pica8',
-)
-VALID_VENDORS = SUPPORTED_VENDORS # For backwards compatibility
+# A dictionary keyed by manufacturer name containing a list of the device types
+# for each that is officially supported by Trigger.
+SUPPORTED_PLATFORMS = {
+    'a10': ['SWITCH'],
+    'arista': ['SWITCH'],                         # Your "Cloud" network vendor
+    'aruba': ['SWITCH'],                          # Aruba Wi-Fi controllers
+    'avocent': ['CONSOLE'],
+    'brocade': ['ROUTER', 'SWITCH'],
+    'cisco': ['ROUTER', 'SWITCH', 'FIREWALL'],
+    'citrix': ['SWITCH'],                         # Assumed to be NetScalers
+    'cumulus': ['SWITCH'],  # Any white-label hardware running Cumulus Linux
+    'dell': ['SWITCH'],
+    'f5': ['LOAD_BALANCER', 'SWITCH'],
+    'force10': ['ROUTER', 'SWITCH'],
+    'foundry': ['ROUTER', 'SWITCH'],
+    'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
+    'mrv': ['CONSOLE', 'SWITCH'],
+    'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
+    'paloalto': ['FIREWALL'],
+    'pica8': ['ROUTER', 'SWITCH'],
+}
+
+# List of supported vendor names derived from SUPPORTED_PLATFORMS
+SUPPORTED_VENDORS = list(SUPPORTED_PLATFORMS)
+VALID_VENDORS = SUPPORTED_VENDORS  # For backwards compatibility
 
 # A mapping of manufacturer attribute values to canonical vendor name used by
 # Trigger. These single-word, lowercased canonical names are used throughout
@@ -84,8 +89,10 @@ VENDOR_MAP = {
     'ARUBA NETWORKS': 'aruba',
     'AVOCENT': 'avocent',
     'BROCADE': 'brocade',
+    'CELESTICA': 'cumulus',
     'CISCO SYSTEMS': 'cisco',
     'CITRIX': 'citrix',
+    'CUMULUS': 'cumulus',
     'DELL': 'dell',
     'F5 NETWORKS': 'f5',
     'FORCE10': 'force10',
@@ -93,29 +100,7 @@ VENDOR_MAP = {
     'JUNIPER': 'juniper',
     'MRV': 'mrv',
     'NETSCREEN TECHNOLOGIES': 'netscreen',
-    'PALO ALTO NETWORKS': 'paloalto',
     'PICA8': 'pica8',
-}
-
-# A dictionary keyed by manufacturer name containing a list of the device types
-# for each that is officially supported by Trigger.
-SUPPORTED_PLATFORMS = {
-    'a10': ['SWITCH'],
-    'arista': ['SWITCH'],                         # Your "Cloud" network vendor
-    'aruba': ['SWITCH'],                          # Wireless Controllers
-    'avocent': ['CONSOLE'],
-    'brocade': ['ROUTER', 'SWITCH'],
-    'cisco': ['FIREWALL', 'ROUTER', 'SWITCH'],
-    'citrix': ['SWITCH'],                         # Assumed to be NetScalers
-    'dell': ['SWITCH'],
-    'f5': ['LOAD_BALANCER', 'SWITCH'],
-    'force10': ['ROUTER', 'SWITCH'],
-    'foundry': ['ROUTER', 'SWITCH'],
-    'juniper': ['FIREWALL', 'ROUTER', 'SWITCH'],  # Any devices running Junos
-    'mrv': ['CONSOLE', 'SWITCH'],
-    'netscreen': ['FIREWALL'],                    # Pre-Juniper NetScreens
-    'paloalto': ['FIREWALL'],
-    'pica8': ['ROUTER', 'SWITCH'],
 }
 
 # The tuple of support device types
@@ -139,6 +124,7 @@ DEFAULT_TYPES = {
     'brocade': 'SWITCH',
     'citrix': 'SWITCH',
     'cisco': 'ROUTER',
+    'cumulus': 'SWITCH',
     'dell': 'SWITCH',
     'f5': 'LOAD_BALANCER',
     'force10': 'ROUTER',
@@ -204,10 +190,41 @@ IOSLIKE_VENDORS = (
     'aruba',
     'brocade',
     'cisco',
+    'cumulus',
     'dell',
     'force10',
     'foundry',
 )
+
+
+# Commands executed on devices by default.
+STARTUP_COMMANDS_DEFAULT = ['terminal length 0']
+
+# Startup commands are executed upon login to setup the terminal session for
+# automated execution. Typically these are just to disable pagination or other
+# settings related to capturing output asynchronously. Each vendor is mapped by
+# name. Vendor platforms with differing startup commands based on their device
+# type are now mapped with an underscore separation (e.g. 'Cisco ASA' becomes
+# 'cisco_asa'). The platform-specific lookups are still done in code for now.
+STARTUP_COMMANDS_MAP = {
+    'a10': STARTUP_COMMANDS_DEFAULT,
+    'arista': STARTUP_COMMANDS_DEFAULT,
+    'aruba': ['no paging'], # v6.2.x this is not necessary
+    'brocade': ['skip-page-display'],
+    'brocade_vdx': STARTUP_COMMANDS_DEFAULT,
+    'cisco': STARTUP_COMMANDS_DEFAULT,
+    'cisco_asa': ['terminal pager 0'],
+    'citrix': ['set cli mode page off'],
+    'cumulus': [],  # No startup commands for Cumulus by default!
+    'dell': ['terminal datadump'],
+    'f5': ['modify cli preference pager disabled'],
+    'force10': STARTUP_COMMANDS_DEFAULT,
+    'foundry': ['skip-page-display'],
+    'juniper': ['set cli screen-length 0'],
+    'mrv': ['no pause'],
+    'netscreen': ['set console page 0'],
+    'paloalto': ['set cli scripting-mode on', 'set cli pager off'],
+}
 
 # Prompts sent by devices that indicate the device is awaiting user
 # confirmation when interacting with the device. If a continue prompt is
@@ -252,6 +269,15 @@ GORC_ALLOWED_COMMANDS = (
 # NetDevices
 #===============================
 
+# Globally toggle whether to load ACL associations from the Redis database. If
+# you don’t have Redis or aren’t using Trigger to manage ACLs set this to
+# False.
+WITH_ACLS = False
+
+# The default administrative status (production vs. non-production) of new
+# devices.
+DEFAULT_ADMIN_STATUS = 'PRODUCTION'
+
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
 AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py'))
@@ -261,8 +287,8 @@ AUTOACL_FILE = os.environ.get('AUTOACL_FILE', os.path.join(PREFIX, 'autoacl.py')
 # Loader's module, subsequent items are passed to the Loader during
 # initialization.
 NETDEVICES_LOADERS = (
-    'trigger.netdevices.loaders.filesystem.XMLLoader',
     'trigger.netdevices.loaders.filesystem.JSONLoader',
+    'trigger.netdevices.loaders.filesystem.XMLLoader',
     'trigger.netdevices.loaders.filesystem.SQLiteLoader',
     'trigger.netdevices.loaders.filesystem.CSVLoader',
     'trigger.netdevices.loaders.filesystem.RancidLoader',
@@ -274,10 +300,18 @@ NETDEVICES_LOADERS = (
 # A path or URL to netdevices device metadata source data, which is used to
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
-NETDEVICES_SOURCE = os.environ.get('NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.xml'))
+NETDEVICES_SOURCE = os.environ.get(
+    'NETDEVICES_SOURCE', os.path.join(PREFIX, 'netdevices.json')
+)
 
-# Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
-NETDEVICES_FILE = NETDEVICES_SOURCE
+# TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
+TEXTFSM_VENDOR_MAPPINGS = {
+        "cisco": [ "ios", "nxos" ],
+        "arista": [ "eos" ]
+        }
+
+# TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
+TEXTFSM_TEMPLATE_DIR = os.getenv('TEXTFSM_TEMPLATE_DIR', os.path.join(PREFIX, 'vendor/ntc_templates'))
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
 TEXTFSM_VENDOR_MAPPINGS = {
@@ -319,8 +353,11 @@ PROMPT_PATTERNS = {
     #'aruba': r'\S+(?: \(\S+\))?\s?#\s$', # ArubaOS 6.2
     'avocent': r'\S+[#\$]|->\s?$',
     'citrix': r'\sDone\n$',
+    # This pattern is a regex "or" combination of the Cumulus bash login prompt
+    # and IOSLIKE_PROMPT_PAT (for vtysh support)
+    'cumulus': r'(?:\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*#[\s\b]*$)|(?:.*(?:\$|#)\s?$)',
     'f5': r'.*\(tmos\).*?#\s{1,2}\r?$',
-    'juniper': r'\S+\@\S+(?:\>|#)\s$',
+    'juniper': r'(?:\S+\@)?\S+(?:\>|#)\s$',
     'mrv': r'\r\n?.*(?:\:\d{1})?\s\>\>?$',
     'netscreen': r'(\w+?:|)[\w().-]*\(?([\w.-])?\)?\s*->\s*$',
     'paloalto': r'\r\n\S+(?:\>|#)\s?$',

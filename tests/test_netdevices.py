@@ -115,6 +115,12 @@ class TestNetDevicesWithAcls(unittest.TestCase):
         # Case-insensitive attr *and* value
         self.assertEqual(expected, self.nd.match(SITE='NONE'))
 
+    def test_reload(self):
+        """Test the .reload() method."""
+        nd = self.nd
+        nd.reload()
+        self.assertEqual(nd, self.nd)
+
     def tearDown(self):
         _reset_netdevices()
 

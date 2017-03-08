@@ -1,18 +1,12 @@
-.. _configuration:
-
-==========================
-Configuration and defaults
-==========================
+#############
+Configuration
+#############
 
 This document describes the configuration options available for Trigger.
 
 If you're using the default loader, you must create or copy the provided
 :file:`trigger_settings.py` module and make sure it is in
 ``/etc/trigger/settings.py`` on the local system.
-
-.. contents::
-    :local:
-    :depth: 2
 
 A Word about Defaults
 =====================
@@ -278,8 +272,24 @@ unless you know what you're doing!
 
 Default::
 
-    ('a10', 'arista', 'brocade', 'cisco', 'citrix', 'dell', 'foundry',
-    'juniper', 'netscreen')
+    (
+        'a10',
+        'arista',
+        'aruba',
+        'avocent',
+        'brocade',
+        'cisco',
+        'citrix',
+        'dell',
+        'f5',
+        'force10',
+        'foundry',
+        'juniper',
+        'mrv',
+        'netscreen',
+        'paloalto',
+        'pica8',
+    )
 
 .. setting:: SUPPORTED_TYPES
 
@@ -291,7 +301,7 @@ unless you know what you’re doing!
 
 Default::
 
-    ('FIREWALL', 'ROUTER', 'SWITCH')
+    ('CONSOLE', 'DWDM', 'FIREWALL', 'LOAD_BALANCER', 'ROUTER', 'SWITCH')
 
 .. setting:: DEFAULT_TYPES
 
@@ -571,7 +581,25 @@ you don't have Redis or aren't using Trigger to manage ACLs set this to
 
 Default::
 
-    True
+    False
+
+.. setting:: DEFAULT_ADMIN_STATUS
+
+DEFAULT_ADMIN_STATUS
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.6
+
+When the administrative status is not defined using the ``adminStatus`` field
+on a `~trigger.netdevices.NetDevice` object, the default administrative status
+will be used.
+
+By default Trigger only operates on devices set to ``PRODUCTION``. This is
+covered in more detail under :ref:`instantiating-netdevices`.
+
+Default::
+
+    'PRODUCTION'
 
 .. setting:: AUTOACL_FILE
 
@@ -586,51 +614,6 @@ Default::
     '/etc/trigger/autoacl.py'
 
 .. setting:: NETDEVICES_FORMAT
-
-NETDEVICES_FORMAT
-~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 1.3
-   Replaced by the :setting:`NETDEVICES_LOADERS` plugin system. This variable
-   is no longer used in Trigger 1.3 and will be ignored.
-
-One of ``json``, ``rancid``, ``sqlite``, ``xml``. This MUST match the actual
-format of :setting:`NETDEVICES_FILE` or it won't work for obvious reasons.
-
-Please note that RANCID support is experimental. If you use it you must specify
-the path to the RANCID directory.
-
-You may override this location by setting the ``NETDEVICES_FORMAT`` environment
-variable to the format of the file.
-
-Default::
-
-    'xml'
-
-.. setting:: NETDEVICES_FILE
-
-NETDEVICES_FILE
-~~~~~~~~~~~~~~~
-
-.. deprecated:: 1.3
-   Replaced by :setting:`NETDEVICES_SOURCE`. If you are using Trigger 1.3 or
-   later, please do not define this variable.
-
-Path to netdevices device metadata source file, which is used to populate
-`~trigger.netdevices.NetDevices`. This may be JSON, RANCID, a SQLite3 database,
-or XML. You must set :setting:`NETDEVICES_FORMAT` to match the type of data.
-
-Please note that RANCID support is experimental. If you use it you must specify
-the path to the RANCID directory.
-
-You may override this location by setting the ``NETDEVICES_FILE`` environment
-variable to the path of the file.
-
-Default::
-
-    '/etc/trigger/netdevices.xml'
-
-.. setting:: NETDEVICES_LOADERS
 
 NETDEVICES_LOADERS
 ~~~~~~~~~~~~~~~~~~

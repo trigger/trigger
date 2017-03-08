@@ -1,10 +1,6 @@
-=================================
+#################################
 check_access - ACL Access Checker
-=================================
-
-.. contents::
-    :local:
-    :depth: 2
+#################################
 
 About
 =====
@@ -51,6 +47,10 @@ any source to the destination ``10.20.30.40`` in the policy ``acl.abc123``::
 It adds a comment that says ``"check_access: ADD THIS TERM"``, followed by the
 policy one would need to add, and where (above the explicit deny).
 
+.. note::
+    In order for the suggested edits feature to work, the policy must end
+    with an explicit deny.
+
 Now if it were permitted, say if we chose ``10.17.18.19`` as the source, it
 would tell you something different::
 
@@ -65,4 +65,5 @@ would tell you something different::
     No edits needed.
 
 It adds a comment that says ``"check_access: PERMITTED HERE"``, followed by the
-policy that matches the flow. Additionally at the end it also reports ``"No edits needed"``.
+policy that matches the flow. Additionally at the end it also reports ``"No
+edits needed"``.

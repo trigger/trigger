@@ -4,7 +4,7 @@ Adding New Vendors to Trigger
 
 This is a work in progress. Please bear with us as we expand and improve this
 documentation. If you have any feedback, please don't hesitate to `contact us
-<http://trigger.readthedocs.org/en/latest/index.html#getting-help>`_!!
+<http://trigger.readthedocs.io/en/latest/index.html#getting-help>`_!!
 
 .. contents::
     :local:
@@ -34,7 +34,7 @@ Async factory methods for remote execution
 + What is the prompt pattern?
 + What is the command to disable paging?
 
-  - add 'vendor_name': 'disable paging command\n' to trigger.netdevices.NetDevice._set_startup_commands.paging_map dictionary.
+  - add 'vendor_name': 'disable paging command\\n' to trigger.netdevices.NetDevice._set_startup_commands.paging_map dictionary.
 
 + What is the command to commit/write to memory?
 

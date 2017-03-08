@@ -20,16 +20,13 @@ loader is responsible for setting this when it is initialized.
 This code is based on Django's template loader code: http://bit.ly/WWOLU3
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2013, AOL Inc.'
-__version__ = '1.0'
+from collections import namedtuple
+
+from twisted.python import log
 
 from trigger.exceptions import ImproperlyConfigured, LoaderFailed
 from trigger.utils.importlib import import_module
 from trigger.conf import settings
-from twisted.python import log
 
 
 # Exports
@@ -118,6 +115,11 @@ def find_data_loader(loader):
     else:
         raise ImproperlyConfigured('Loader does not define a "load_data" callable data source loader.')
 
+
+#: Namedtuple that holds loader instance and device metadata
+LoaderMetadata = namedtuple('LoaderMetadata', 'loader metadata')
+
+
 def load_metadata(data_source, **kwargs):
     """
     Iterate thru data loaders to load metadata.
@@ -131,6 +133,9 @@ def load_metadata(data_source, **kwargs):
 
     :param kwargs:
         Optional keyword arguments you wish to pass to the Loader.
+
+    :returns:
+        `~trigger.netdevices.loader.LoaderMetadata` instance
     """
     # Iterate and build a loader callables, call them, stop when we get data.
     tried = []
@@ -154,7 +159,7 @@ def load_metadata(data_source, **kwargs):
             # Successfully parsed (we hope)
             if data is not None:
                 log.msg('LOADERS TRIED: %r' % tried)
-                return data
+                return LoaderMetadata(loader, data)
             else:
                 tried.append(loader)
                 continue

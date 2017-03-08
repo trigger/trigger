@@ -115,6 +115,10 @@ class Commando(object):
 
     :param command_interval:
          (Optional) Amount of time in seconds to wait between sending commands.
+
+    :param stop_reactor:
+         Whether to stop the reactor loop when all results have returned.
+         (Default: ``True``)
     """
     # Defaults to all supported vendors
     vendors = settings.SUPPORTED_VENDORS
@@ -140,11 +144,14 @@ class Commando(object):
     # How errors are stored (defaults to {})
     errors = None
 
+    # Whether to stop the reactor when all results have returned.
+    stop_reactor = None
+
     def __init__(self, devices=None, commands=None, creds=None,
                  incremental=None, max_conns=10, verbose=False,
                  timeout=DEFAULT_TIMEOUT, production_only=True,
                  allow_fallback=True, with_errors=True, force_cli=False,
-                 with_acls=False, command_interval=0):
+                 with_acls=False, command_interval=0, stop_reactor=True):
         if devices is None:
             raise exceptions.ImproperlyConfigured('You must specify some `devices` to interact with!')
 
@@ -160,13 +167,14 @@ class Commando(object):
         self.with_errors = with_errors
         self.force_cli = force_cli
         self.command_interval = command_interval
+        self.stop_reactor = self.stop_reactor or stop_reactor
         self.curr_conns = 0
         self.jobs = []
 
         # Always fallback to {} for these
         self.errors = self.errors if self.errors is not None else {}
         self.results = self.results if self.results is not None else {}
-        self.parsed_results = self.parsed_results if self.parsed_results is not None else collections.defaultdict(dict)
+        self.parsed_results = self.parsed_results if self.parsed_results is not None else {}
 
         #self.deferrals = []
         self.supported_platforms = self._validate_platforms()
@@ -435,9 +443,9 @@ class Commando(object):
                     self.append_parsed_results(device, self.map_parsed_results(command, fsm))
                 except:
                     log.msg("Unable to load TextFSM template, just updating with unstructured output")
+
             ret.append(results[idx])
 
-        self.parsed_results = dict(self.parsed_results)
         return ret
 
     def parse(self, results, device, commands=None):
@@ -519,7 +527,10 @@ class Commando(object):
         """
         devname = str(device)
         log.msg("Appending results for %r: %r" % (devname, results))
-        self.parsed_results[devname].update(results)
+        if self.parsed_results.get(devname):
+            self.parsed_results[devname].update(results)
+        else:
+            self.parsed_results[devname] = results
         return True
 
     def store_results(self, device, results):
@@ -566,22 +577,27 @@ class Commando(object):
 
     def _stop(self):
         """Stop the reactor event loop"""
-        log.msg('stopping reactor')
-        if self.verbose:
-            print 'stopping reactor'
 
-        from twisted.internet import reactor
-        reactor.stop()
+        if self.stop_reactor:
+            log.msg('Stop reactor enabled: stopping reactor...')
+            from twisted.internet import reactor
+            if reactor.running:
+                reactor.stop()
+        else:
+            log.msg('stopping reactor... except not really.')
+            if self.verbose:
+                print 'stopping reactor... except not really.'
 
     def _start(self):
         """Start the reactor event loop"""
-        log.msg('starting reactor')
+        log.msg('starting reactor. maybe.')
         if self.verbose:
-            print 'starting reactor'
+            print 'starting reactor. maybe.'
 
         if self.curr_conns:
             from twisted.internet import reactor
-            reactor.run()
+            if not reactor.running:
+                reactor.run()
         else:
             msg = "Won't start reactor with no work to do!"
             log.msg(msg)
@@ -818,7 +834,7 @@ class NetACLInfo(Commando):
              generate_ios_cmd
 
         """
-        return ['show running-config | include (^interface | ip address | ip acces-group | description |!)']
+        return ['show running-config | include (^interface | ip address | ip access-group | description |!)']
 
     def to_force10(self, dev, commands=None, extra=None):
         """
@@ -843,8 +859,8 @@ class NetACLInfo(Commando):
             self.config[device] = _parse_ios_interfaces(alld, skip_disabled=self.skip_disabled)
         else:
             self.config[device] = {
-                    "unsupported": "ASA ACL parsing unsupported this release"
-                    }
+                "unsupported": "ASA ACL parsing unsupported this release"
+            }
 
         return True
 
@@ -1012,7 +1028,8 @@ def _parse_ios_interfaces(data, acls_as_list=True, auto_cleanup=True, skip_disab
     #foundry matches on cidr and cisco matches on netmask
     #netmask converted to cidr in cleanup
     ip_tuple = pp.Group(address + (cidr ^ netmask)).setResultsName('addr', listAllMatches=True)
-    ip_address = ipaddr_keyword + ip_tuple + pp.Optional(secondary)
+    negotiated = pp.Literal('negotiated')  # Seen on Cisco 886
+    ip_address = ipaddr_keyword + (negotiated ^ ip_tuple) + pp.Optional(secondary)
 
     addrs = pp.ZeroOrMore(ip_address)
 

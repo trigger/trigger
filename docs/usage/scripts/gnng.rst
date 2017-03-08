@@ -1,10 +1,6 @@
-====================================
+####################################
 gnng - Display interface information
-====================================
-
-.. contents::
-    :local:
-    :depth: 2
+####################################
 
 About
 =====
@@ -17,9 +13,11 @@ interfaces by default. Works on Cisco, Foundry, Juniper, and NetScreen devices.
 Usage
 =====
 
-Here is the usage output::
+Here is the usage output:
 
-    % gnng -h
+.. code-block:: bash
+
+    $ gnng -h
     Usage: gnng [options] [routers]
 
     GetNets-NG  Fetches interface information from routing and firewall devices.
@@ -52,9 +50,11 @@ Examples
 Displaying interfaces for a device
 ----------------------------------
 
-To fetch interface information for a device, just provide its hostname as an argument::
+To fetch interface information for a device, just provide its hostname as an argument:
 
-    % gnng test1-abc.net.aol.com
+.. code-block:: bash
+
+    $ gnng test1-abc.net.aol.com
     DEVICE: test1-abc.net.aol.com
     Interface  | Addresses     | Subnets        | ACLs IN | ACLs OUT    | Description                                       
     -------------------------------------------------------------------------------------------
