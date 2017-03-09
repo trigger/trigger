@@ -1,5 +1,5 @@
 """
-Built-in drivers.
+Built-in handlers.
 
 Try me with:
 
@@ -8,18 +8,18 @@ Try me with:
 import sys
 
 from twisted.python import log
-log.startLogging(open('/tmp/driver_test.log', 'a+'), setStdout=False)
+log.startLogging(open('/tmp/handler_test.log', 'a+'), setStdout=False)
 
-from trigger.netdevices.drivers import core
+from trigger.netdevices.handlers import core
 from trigger.netdevices import NetDevices
 
 nd = NetDevices()
 device = nd.find('arista-sw1')
 
-driver = core.TriggerEndpointDriver(device)
-driver.open()
+handler = core.TriggerEndpointHandler(device)
+handler.open()
 
-r = driver.run_commands(['show clock', 'show version'])
+r = handler.run_commands(['show clock', 'show version'])
 """
 
 import re
@@ -27,17 +27,19 @@ import re
 from twisted.internet import defer
 
 from trigger.conf import settings
-from trigger.netdevices.drivers.base import BaseDriver
+from trigger.netdevices.handlers.base import BaseHandler
+from trigger.netdevices.drivers.base import registry as driver_registry
 
 
-class TriggerEndpointDriver(BaseDriver):
+class TriggerEndpointHandler(BaseHandler):
     name = 'trigger_ssh'
 
     def post_init(self):
         # self.nodeName is currently hard-coded in trigger.twister2
         self.nodeName = self.device.nodeName
 
-        self.prompt = re.compile(self.device.vendor.prompt_pattern)
+        self.driver = driver_registry.drivers.get(self.device.vendor.name)
+        self.prompt = re.compile(self.driver.prompt_pattern)
 
         # Set initial endpoint state.
         self.factories = {}
@@ -54,8 +56,6 @@ class TriggerEndpointDriver(BaseDriver):
         self.factories["base"] = factory
 
         # FIXME(jathan): prompt_pattern could move back to protocol?
-        # prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        # proto = endpoint.connect(factory, prompt_pattern=prompt)
         proto = endpoint.connect(factory, prompt_pattern=self.prompt)
         self._proto = proto  # Track this for later, too.
 
@@ -120,8 +120,7 @@ class TriggerEndpointDriver(BaseDriver):
 
         # Here's where we're using self._connect injected on .open()
         ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
-        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        proto = ep.connect(factory, prompt_pattern=prompt)
+        proto = ep.connect(factory, prompt_pattern=self.prompt)
 
         d = defer.Deferred()
 

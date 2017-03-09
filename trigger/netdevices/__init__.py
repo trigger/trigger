@@ -41,8 +41,8 @@ from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
-from trigger.netdevices.drivers.core import TriggerEndpointDriver
-from trigger.netdevices.drivers.napalm import NapalmDriver
+from trigger.netdevices.handlers.core import TriggerEndpointHandler
+from trigger.netdevices.handlers.napalm import NapalmHandler
 
 from crochet import setup, run_in_reactor, wait_for
 
@@ -241,6 +241,9 @@ class NetDevice(object):
         if self.manufacturer is not None:
             self.vendor = vendor_factory(self.manufacturer)
 
+        # Establish the correct handler/driver for this device.
+        self.handler = self._get_handler()
+
         # Use the vendor to populate the deviceType if it's not set already
         if self.deviceType is None:
             self._populate_deviceType()
@@ -266,9 +269,15 @@ class NetDevice(object):
         # Set the correct line-ending per vendor
         self.delimiter = self._set_delimiter()
 
-        # Set initial endpoint state
-        self.driver = TriggerEndpointDriver(self)
-        # self.driver = NapalmDriver(self)
+    def _get_handler(self, handler_name='trigger'):
+        HANDLER_MAP = {
+            'trigger': TriggerEndpointHandler,
+            'napalm': NapalmHandler,
+        }
+
+        handler_class = HANDLER_MAP.get(handler_name)
+        handler = handler_class(self)
+        return handler
 
     def _populate_data(self, data):
         """
@@ -342,6 +351,7 @@ class NetDevice(object):
         )
         return any(RULES)
 
+    '''
     def _set_delimiter(self):
         """
         Set the delimiter to use for line-endings.
@@ -352,7 +362,11 @@ class NetDevice(object):
         }
         delimiter = delimiter_map.get(self.vendor.name, default)
         return delimiter
+    '''
+    def _set_delimiter(self):
+        return self.handler.driver.delimiter
 
+    '''
     def _set_startup_commands(self):
         """
         Set the commands to run at startup. For now they are just ones to
@@ -376,7 +390,11 @@ class NetDevice(object):
             return cmds
 
         return []
+    '''
+    def _set_startup_commands(self):
+        return self.handler.driver.startup_commands
 
+    '''
     def _set_commit_commands(self):
         """
         Return the proper "commit" command. (e.g. write mem, etc.)
@@ -425,6 +443,9 @@ class NetDevice(object):
 
         # Or it's a "commit-configuration full"
         return [JUNIPER_COMMIT_FULL]
+    '''
+    def _set_commit_commands(self):
+        return self.handler.driver.commit_commands
 
     def _bind_dynamic_methods(self):
         """
@@ -706,6 +727,7 @@ class NetDevice(object):
         print '\tLast Updated:     ', dev.lastUpdate
         print
 
+
 class Vendor(object):
     """
     Map a manufacturer name to Trigger's canonical name.
@@ -789,6 +811,7 @@ class Vendor(object):
 
     def lower(self):
         return self.normalized
+
 
 _vendor_registry = {}
 def vendor_factory(vendor_name):

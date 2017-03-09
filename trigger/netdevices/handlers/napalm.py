@@ -1,5 +1,5 @@
 """
-Napalm driver.
+Napalm handler.
 
 Try me with:
 
@@ -8,16 +8,16 @@ Try me with:
 import sys
 
 from twisted.python import log
-log.startLogging(open('/tmp/napalm_driver_test.log', 'a+'), setStdout=False)
+log.startLogging(open('/tmp/napalm_handler_test.log', 'a+'), setStdout=False)
 
 from trigger.netdevices import NetDevices
-from trigger.netdevices.drivers import napalm
+from trigger.netdevices.handlers import napalm
 
 nd = NetDevices()
 device = nd.find('arista-sw1')
 
-driver = napalm.NapalmDriver(device)
-driver.open()
+handler = napalm.NapalmHandler(device)
+handler.open()
 
 facts = driver.get_facts()
 """
@@ -27,9 +27,10 @@ from __future__ import absolute_import
 import napalm
 from twisted.internet import defer, threads
 
-from trigger.netdevices.drivers.base import BaseDriver
+from trigger.netdevices.handlers.base import BaseHandler
 
 
+# Mapping of Trigger driver name => Napalm driver name
 DRIVER_MAP = {
     'cisco': 'ios',
     'arista': 'eos',
@@ -37,12 +38,12 @@ DRIVER_MAP = {
 }
 
 
-class NapalmDriver(BaseDriver):
+class NapalmHandler(BaseHandler):
     name = 'napalm'
 
     def post_init(self):
-        self.napalm_driver = self._get_driver_for_netdevice(self.device)
-        self.napalm_device = self.napalm_driver(
+        self.driver = self._get_driver_for_netdevice(self.device)
+        self.napalm_device = self.driver(
             self.device.nodeName, self.creds.username, self.creds.password
         )
 
@@ -75,6 +76,10 @@ class NapalmDriver(BaseDriver):
     @defer.inlineCallbacks
     def execute(self, commands=None):
         self.open()
-        result = yield threads.deferToThread(self.napalm_device.device.run_commands, commands,
-                             encoding='text')
+
+        # This is just a simple proof-of-concept for executing commands directly
+        # on an Arista EOS device using Napalm.
+        result = yield threads.deferToThread(
+            self.napalm_device.device.run_commands, commands, encoding='text'
+        )
         defer.returnValue(result)
