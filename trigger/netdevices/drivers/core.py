@@ -1,54 +1,37 @@
 """
-Built-in handlers.
 
-Try me with:
-
-#!/usr/bin/env python
-
-import sys
-
-from twisted.python import log
-log.startLogging(open('/tmp/handler_test.log', 'a+'), setStdout=False)
-
-from trigger.netdevices.handlers import core
-from trigger.netdevices import NetDevices
-
-nd = NetDevices()
-device = nd.find('arista-sw1')
-
-handler = core.TriggerEndpointHandler(device)
-handler.open()
-
-r = handler.run_commands(['show clock', 'show version'])
 """
 
 import re
 
 from twisted.internet import defer
 
+
 from trigger.conf import settings
-from trigger.netdevices.handlers.base import BaseHandler
-from trigger.netdevices.drivers.base import registry as driver_registry
+from trigger.netdevices.drivers.base import BaseDriver
 
 
-class TriggerEndpointHandler(BaseHandler):
-    name = 'trigger_ssh'
+class TriggerDriver(BaseDriver):
+    name = 'trigger_driver'
 
     def post_init(self):
         # self.nodeName is currently hard-coded in trigger.twister2
-        self.nodeName = self.device.nodeName
+        # self.nodeName = self.device.nodeName
+        self.nodeName = self.hostname
 
-        self.driver = driver_registry.drivers.get(self.device.vendor.name)
-        self.prompt = re.compile(self.driver.prompt_pattern)
+        self.prompt = re.compile(self.prompt_pattern)
 
         # Set initial endpoint state.
         self.factories = {}
         self._endpoint = None
 
     def _get_endpoint(self, *args):
-        """Private method used for generating an endpoint for `~trigger.netdevices.NetDevice`."""
+        """
+        Private method used for generating an endpoint for
+        `~trigger.netdevices.NetDevice`.
+        """
         from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
-        endpoint = generate_endpoint(self.device).wait()
+        endpoint = generate_endpoint(self.device).wait()  # FIXME: self.device
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
@@ -181,6 +164,5 @@ class TriggerEndpointHandler(BaseHandler):
     def execute(self, commands):
        self.open()
        result = self.run_commands(commands)
-       #self.close()
 
        return result

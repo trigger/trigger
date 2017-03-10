@@ -41,8 +41,8 @@ from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
-from trigger.netdevices.handlers.core import TriggerEndpointHandler
-from trigger.netdevices.handlers.napalm import NapalmHandler
+from trigger.netdevices.dispatchers.core import TriggerEndpointDispatcher
+from trigger.netdevices.dispatchers.napalm import NapalmDispatcher
 
 from crochet import setup, run_in_reactor, wait_for
 
@@ -241,8 +241,8 @@ class NetDevice(object):
         if self.manufacturer is not None:
             self.vendor = vendor_factory(self.manufacturer)
 
-        # Establish the correct handler/driver for this device.
-        self.handler = self._get_handler()
+        # Establish the correct dispatcher for this device.
+        self.dispatcher = None
 
         # Use the vendor to populate the deviceType if it's not set already
         if self.deviceType is None:
@@ -258,26 +258,16 @@ class NetDevice(object):
         self._bind_dynamic_methods()
 
         # Set the correct command(s) to run on startup based on deviceType
-        self.startup_commands = self._set_startup_commands()
+        # self.startup_commands = self._set_startup_commands()
 
         # Assign the configuration commit commands (e.g. 'write memory')
-        self.commit_commands = self._set_commit_commands()
+        # self.commit_commands = self._set_commit_commands()
 
         # Determine whether we require an async pty SSH channel
         self.requires_async_pty = self._set_requires_async_pty()
 
         # Set the correct line-ending per vendor
-        self.delimiter = self._set_delimiter()
-
-    def _get_handler(self, handler_name='trigger'):
-        HANDLER_MAP = {
-            'trigger': TriggerEndpointHandler,
-            'napalm': NapalmHandler,
-        }
-
-        handler_class = HANDLER_MAP.get(handler_name)
-        handler = handler_class(self)
-        return handler
+        # self.delimiter = self._set_delimiter()
 
     def _populate_data(self, data):
         """
@@ -350,6 +340,54 @@ class NetDevice(object):
             self.is_brocade_vdx(),
         )
         return any(RULES)
+
+    def _get_dispatcher(self, dispatcher_name='trigger'):
+        # FIXME(jathan): Move this mapping into a utility function or something.
+        # It shouldn't be hard-coded here.
+        DISPATCHER_MAP = {
+            'trigger': TriggerEndpointDispatcher,
+            'napalm': NapalmDispatcher,
+        }
+
+        dispatcher_class = DISPATCHER_MAP.get(dispatcher_name)
+        dispatcher = dispatcher_class(self)
+        return dispatcher
+
+    def open(self, dispatcher='trigger', *args, **kwargs):
+        if self.dispatcher is None:
+            self.dispatcher = self._get_dispatcher(dispatcher)
+        else:
+            raise RuntimeError(
+                'Dispatcher %s already exists' % self.dispatcher
+            )
+
+        # FIXME(jathan): This is just hard-coded for prototyping right now and
+        # should be moved to Trigger SSH protocol internals.
+        if dispatcher == 'trigger':
+            # Set the correct command(s) to run on startup based on deviceType
+            self.startup_commands = self.dispatcher.driver.startup_commands
+
+            # Assign the configuration commit commands (e.g. 'write memory')
+            self.commit_commands = self.dispatcher.driver.commit_commands
+
+            # Set the correct line-ending per vendor
+            self.delimiter = self.dispatcher.driver.delimiter
+
+        self.dispatch('open', *args, **kwargs)
+
+    def close(self, *args, **kwargs):
+        self.dispatch('close', *args, **kwargs)
+        self.dispatcher = None
+
+    def dispatch(self, method, *args, **kwargs):
+        return self.dispatcher.dispatch(method, *args, **kwargs)
+
+    @property
+    def connected(self):
+        try:
+            return self.dispatcher.driver_connected()
+        except AttributeError:
+            return False
 
     '''
     def _set_delimiter(self):

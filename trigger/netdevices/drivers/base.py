@@ -26,8 +26,7 @@ class DriverRegistry(object):
                 'The driver %s is already registered' % driver.__name__
             )
 
-        driver_obj = driver()
-        self._registry[driver.name] = driver_obj
+        self._registry[driver.name] = driver
 
     def is_registered(self, driver):
         return driver.name in self._registry
@@ -50,15 +49,15 @@ class BaseDriver(object):
 
     delimiter = '\n'
 
-    def __init__(self):
+    def __init__(self, hostname, username, password, port=None):
+        self.hostname = hostname
+        self.port = port
+        self.username = username
+        self.password = password
         self.post_init()
-        self.title = self.name.title()
-        self.post_init()
-
-        # registry.register(self.__class__)
 
     def __repr__(self):
-        return '<%s>' % self.__class__.__name__
+        return '<%s: %s>' % (self.__class__.__name__, self.hostname)
 
     @abstractmethod
     def post_init(self):
@@ -70,6 +69,10 @@ class BaseDriver(object):
     @abstractproperty
     def name(self):
         pass
+
+    @property
+    def title(self):
+        return self.name.title()
 
     @abstractproperty
     def prompt_pattern(self):
@@ -90,6 +93,28 @@ class BaseDriver(object):
     @abstractproperty
     def supported_types(self):
         pass
+
+    def open(self, *args, **kwargs):
+        self.perform_open(*args, **kwargs)
+        self._connected = True
+        return self._connected
+
+    @abstractmethod
+    def perform_open(self, *args, **kwargs):
+        pass
+
+    def close(self):
+        self.perform_close()
+        self._connected = False
+        return
+
+    @abstractmethod
+    def perform_close(self):
+        pass
+
+    @property
+    def connected(self):
+        return self._connected
 
 
 registry = DriverRegistry()

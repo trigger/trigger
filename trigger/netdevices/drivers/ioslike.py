@@ -2,10 +2,10 @@
 Base drivers for IOS-like device platforms.
 """
 
-from trigger.netdevices.drivers.base import BaseDriver
+from trigger.netdevices.drivers.core import TriggerDriver
 
 
-class IOSlikeDriver(BaseDriver):
+class IOSlikeDriver(TriggerDriver):
     name = 'ioslike'
 
     startup_commands = ['terminal length 0']
@@ -16,6 +16,3 @@ class IOSlikeDriver(BaseDriver):
 
     prompt_pattern = r'\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*#[\s\b]*$'
     enable_pattern = r'\S+(\(config(-[a-z:1-9]+)?\))?[\r\s]*>[\s\b]*$'
-
-    def post_init(self):
-        pass
