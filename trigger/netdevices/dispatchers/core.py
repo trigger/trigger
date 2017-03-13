@@ -34,7 +34,7 @@ from trigger.netdevices.drivers.base import registry as driver_registry
 class TriggerEndpointDispatcher(BaseDispatcher):
 
     def driver_connected(self):
-        conn = self.driver._conn
+        conn = self.driver._endpoint.transport.conn
         return bool(conn.channels)
 
     def get_driver(self):
@@ -45,9 +45,5 @@ class TriggerEndpointDispatcher(BaseDispatcher):
             username=self.creds.username,
             password=self.creds.password,
         )
-
-        # Bind device to driver for now because trigger.twister2 has
-        # some-hardcoded assumptions
-        driver.device = self.device
 
         return driver

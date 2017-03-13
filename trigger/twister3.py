@@ -18,7 +18,7 @@ from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 
 from trigger.conf import settings
-from trigger import tacacsrc, exceptions
+from trigger import exceptions
 
 from twisted.conch.client.direct import SSHClientFactory
 from twisted.conch.ssh import userauth
@@ -28,7 +28,8 @@ from crochet import run_in_reactor, setup
 setup()
 
 
-def generate_endpoint(device, prompt):
+def generate_endpoint(hostname, port, creds, prompt, has_error, delimiter,
+                      options=None, verifyHostKey=None):
     """Generate Trigger endpoint for a given device.
 
     The purpose of this function is to generate endpoint clients for use by a `~trigger.netdevices.NetDevice` object.
@@ -36,30 +37,37 @@ def generate_endpoint(device, prompt):
     :param device: A string representing the devices' hostname.
     :param prompt: The prompt regexp used to synchronise the CLI session i/o.
     """
-    creds = tacacsrc.get_device_password(device)
-    return connect(device, 22, {'reconnect': False}, None, creds, prompt).wait()
+    if options is None:
+        options = {'reconnect': False}
+
+    return connect(hostname, port, options, verifyHostKey, creds, prompt,
+                   has_error, delimiter).wait()
 
 
 @run_in_reactor
-def connect(host, port, options, verifyHostKey, creds, prompt):
+def connect(hostname, port, options, verifyHostKey, creds, prompt, has_error,
+            delimiter):
     """A generic connect function that runs within the crochet reactor."""
     d = defer.Deferred()
-    factory = ClientFactory(d, host, options, verifyHostKey, creds, prompt)
-    reactor.connectTCP(host, port, factory)
+    factory = ClientFactory(d, hostname, options, verifyHostKey, creds, prompt,
+                            has_error, delimiter)
+    reactor.connectTCP(hostname, port, factory)
     return d
 
 
 class ClientFactory(SSHClientFactory):
     """Client factory responsible for standing up an SSH session.
     """
-    def __init__(self, d, device, options, verifyHostKey,
-                 creds, prompt):
+    def __init__(self, d, hostname, options, verifyHostKey,
+                 creds, prompt, has_error, delimiter):
         self.d = d
         self.options = options
         self.verifyHostKey = verifyHostKey
         self.creds = creds
-        self.device = device
+        self.hostname = hostname
         self.prompt = prompt
+        self.has_error = has_error
+        self.delimiter = delimiter
 
     def buildProtocol(self, addr):
         trans = ClientTransport(self)
@@ -99,19 +107,20 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         """Do this when we connect."""
         self.factory = self.transport.conn.transport.factory
         self.prompt = self.factory.prompt
-        self.device = self.factory.device
+        self.hostname = self.factory.hostname
+        self.has_error = self.factory.has_error
+        self.delimiter = self.factory.delimiter
         self.commands = []
         self.commanditer = iter(self.commands)
         self.connected = True
         self.finished = defer.Deferred()
         self.results = self.factory.results = []
         self.data = ''
-        log.msg('[%s] connectionMade, data: %r' % (self.device, self.data))
+        log.msg('[%s] connectionMade, data: %r' % (self.hostname, self.data))
         # self.factory._init_commands(self)
 
     def connectionLost(self, reason):
         self.finished.callback(None)
-
 
         # Don't call _send_next, since we expect to see a prompt, which
         # will kick off initialization.
@@ -128,7 +137,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         """
         d = defer.Deferred()
         self.todo.append(d)
-        
+
         # Schedule next command to run after the previous
         # has finished.
         if self.done and self.done.called is False:
@@ -173,7 +182,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
-        log.msg('[%s] BYTES: %r' % (self.device, bytes))
+        log.msg('[%s] BYTES: %r' % (self.hostname, bytes))
         self.data += bytes # See if the prompt matches, and if it doesn't, see if it is waiting
         # for more input (like a [y/n]) prompt), and continue, otherwise return
         # None
@@ -184,7 +193,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 pass
 
             if is_awaiting_confirmation(self.data):
-                log.msg('[%s] Got confirmation prompt: %r' % (self.device,
+                log.msg('[%s] Got confirmation prompt: %r' % (self.hostname,
                                                               self.data))
                 prompt_idx = self.data.find(bytes)
             else:
@@ -198,23 +207,20 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         # since the telnet session is in WONT ECHO.  This is confirmed with
         # a packet trace, and running self.transport.dont(ECHO) from
         # connectionMade() returns an AlreadyDisabled error.  What's up?
-        log.msg('[%s] result BEFORE: %r' % (self.device, result))
+        log.msg('[%s] result BEFORE: %r' % (self.hostname, result))
         result = result[result.find('\n')+1:]
-        log.msg('[%s] result AFTER: %r' % (self.device, result))
+        log.msg('[%s] result AFTER: %r' % (self.hostname, result))
 
         if self.initialized:
             self.results.append(result)
 
-        def has_ioslike_error(r):
-            pass
-
-        if has_ioslike_error(result) and not self.with_errors:
-            log.msg('[%s] Command failed: %r' % (self.device, result))
-            self.factory.err = exceptions.IoslikeCommandFailure(result)
+        if self.has_error(result) and not self.with_errors:
+            log.msg('[%s] Command failed: %r' % (self.hostname, result))
+            self.factory.err = exceptions.CommandFailure(result)
         else:
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
-                        (self.device, self.command_interval))
+                        (self.hostname, self.command_interval))
 
             reactor.callLater(self.command_interval, self._send_next)
 
@@ -225,16 +231,16 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
 
         if not self.initialized:
             log.msg('[%s] Not initialized, sending startup commands' %
-                    self.device)
+                    self.hostname)
             if self.startup_commands:
                 next_init = self.startup_commands.pop(0)
-                log.msg('[%s] Sending initialize command: %r' % (self.device,
+                log.msg('[%s] Sending initialize command: %r' % (self.hostname,
                                                                  next_init))
-                self.transport.write(next_init.strip() + self.device.delimiter)
+                self.transport.write(next_init.strip() + self.delimiter)
                 return None
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
-                        self.device)
+                        self.hostname)
                 self.initialized = True
 
         if self.incremental:
@@ -244,7 +250,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
             next_command = self.commanditer.next()
         except StopIteration:
             log.msg('[%s] No more commands to send, moving on...' %
-                    self.device)
+                    self.hostname)
 
             if self.todo:
                 payload = list(reversed(self.results))[:len(self.commands)]
@@ -259,14 +265,17 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
             self.results.append(None)
             self._send_next()
         else:
-            log.msg('[%s] Sending command %r' % (self.device, next_command))
+            log.msg('[%s] Sending command %r' % (self.hostname, next_command))
             self.transport.write(next_command + '\n')
 
     def timeoutConnection(self):
         """Do this when we timeout."""
-        log.msg('[%s] Timed out while sending commands' % self.device)
+        log.msg('[%s] Timed out while sending commands' % self.hostname)
         self.factory.err = exceptions.CommandTimeout('Timed out while '
                                                      'sending commands')
+        self.transport.loseConnection()
+
+    def close(self):
         self.transport.loseConnection()
 
 

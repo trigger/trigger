@@ -17,4 +17,15 @@ class JuniperJunosDriver(TriggerDriver):
 
     prompt_pattern = r'(?:\S+\@)?\S+(?:\>|#)\s$'
     enable_pattern = None
+
+    @staticmethod
+    def has_error(s):
+        """Test whether a string seems to contain an Juniper error."""
+        tests = (
+            'unknown command.' in s,
+            'syntax error, ' in s,
+            'invalid value.' in s,
+            'missing argument.' in s,
+        )
+        return any(tests)
 registry.register(JuniperJunosDriver)

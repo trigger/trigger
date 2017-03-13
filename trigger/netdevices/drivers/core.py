@@ -4,10 +4,10 @@
 
 import re
 
-from twisted.internet import defer, reactor, task
-
+from twisted.internet import defer, reactor
 
 from trigger.conf import settings
+from trigger import tacacsrc
 from trigger.netdevices.drivers.base import BaseDriver
 
 
@@ -15,14 +15,11 @@ class TriggerDriver(BaseDriver):
     name = 'trigger_driver'
 
     def post_init(self):
-        # self.nodeName is currently hard-coded in trigger.twister2
-        # self.nodeName = self.device.nodeName
-        self.nodeName = self.hostname
-
+        # TODO(jathan): Should the TriggerEndpointDispatcher just pass along the
+        # creds directly to the TriggerDriver so we don't have to unroll/re-roll
+        # them like this?
+        self.creds = tacacsrc.Credentials(self.username, self.password, 'foo')
         self.prompt = re.compile(self.prompt_pattern)
-
-        # Set initial endpoint state.
-        self.factories = {}
         self._endpoint = None
 
     def _get_endpoint(self):
@@ -32,8 +29,12 @@ class TriggerDriver(BaseDriver):
         """
         from trigger.twister3 import generate_endpoint
         proto = generate_endpoint(
-            self.nodeName,
-            self.prompt
+            hostname=self.hostname,
+            port=self.port,
+            creds=self.creds,
+            prompt=self.prompt,
+            has_error=self.has_error,
+            delimiter=self.delimiter,
         )
         return proto
 
@@ -51,7 +52,8 @@ class TriggerDriver(BaseDriver):
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
 
-        self._endpoint.transport.loseConnection()
+        # self._endpoint.transport.loseConnection()
+        self._endpoint.close()
 
     def run_commands(self, commands, on_error=None):
         """

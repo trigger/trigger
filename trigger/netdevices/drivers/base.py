@@ -94,6 +94,10 @@ class BaseDriver(object):
     def supported_types(self):
         pass
 
+    @abstractmethod
+    def has_error(self):
+        pass
+
     def open(self, *args, **kwargs):
         self.perform_open(*args, **kwargs)
         self._connected = True
