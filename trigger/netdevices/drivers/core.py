@@ -9,10 +9,12 @@ from twisted.internet import defer, reactor
 from trigger.conf import settings
 from trigger import tacacsrc
 from trigger.netdevices.drivers.base import BaseDriver
+from trigger.twister3 import ClientTransport, connect
 
 
 class TriggerDriver(BaseDriver):
     name = 'trigger_driver'
+    transport_class = ClientTransport
 
     def post_init(self):
         # TODO(jathan): Should the TriggerEndpointDispatcher just pass along the
@@ -22,27 +24,38 @@ class TriggerDriver(BaseDriver):
         self.prompt = re.compile(self.prompt_pattern)
         self._endpoint = None
 
-    def _get_endpoint(self):
+    def generate_endpoint(self, options=None, verifyHostKey=None):
         """
-        Private method used for generating an endpoint for
-        `~trigger.netdevices.NetDevice`.
+        Generating an endpoint for `~trigger.netdevices.NetDevice`.
+
+        The purpose of this function is to generate endpoint clients for use by
+        a `~trigger.netdevices.NetDevice` object.
+
+        :param options: askldfjdkl
+        :param verifyHostKey: lskdjfaskld
         """
-        from trigger.twister3 import generate_endpoint
-        proto = generate_endpoint(
+        if options is None:
+            options = {'reconnect': False}
+
+        proto = connect(
             hostname=self.hostname,
             port=self.port,
             creds=self.creds,
             prompt=self.prompt,
             has_error=self.has_error,
             delimiter=self.delimiter,
+            startup_commands=self.startup_commands,
+            transport_class=self.transport_class,
+            options=options,
+            verifyHostKey=verifyHostKey,
         )
-        return proto
+        return proto.wait()
 
     def perform_open(self):
         """
         Open new session with `~trigger.netdevices.NetDevice`.
         """
-        self._endpoint = self._get_endpoint()
+        self._endpoint = self.generate_endpoint()
 
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")

@@ -7,12 +7,18 @@ not at all.
 """
 
 from __future__ import absolute_import
+from collections import deque
+import copy
 import fcntl
 import struct
 import sys
 import tty
-from collections import deque
+
+from crochet import run_in_reactor, setup
 from twisted.conch.ssh import channel, common, session, transport
+from twisted.conch.client.direct import SSHClientFactory
+from twisted.conch.ssh import userauth
+from twisted.conch.ssh import connection
 from twisted.internet import defer, protocol, reactor
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
@@ -20,37 +26,19 @@ from twisted.python import log
 from trigger.conf import settings
 from trigger import exceptions
 
-from twisted.conch.client.direct import SSHClientFactory
-from twisted.conch.ssh import userauth
-from twisted.conch.ssh import connection
-from crochet import run_in_reactor, setup
 
+# Initialize Crochet to "Start the reactor!" --Cuato
 setup()
-
-
-def generate_endpoint(hostname, port, creds, prompt, has_error, delimiter,
-                      options=None, verifyHostKey=None):
-    """Generate Trigger endpoint for a given device.
-
-    The purpose of this function is to generate endpoint clients for use by a `~trigger.netdevices.NetDevice` object.
-
-    :param device: A string representing the devices' hostname.
-    :param prompt: The prompt regexp used to synchronise the CLI session i/o.
-    """
-    if options is None:
-        options = {'reconnect': False}
-
-    return connect(hostname, port, options, verifyHostKey, creds, prompt,
-                   has_error, delimiter).wait()
 
 
 @run_in_reactor
 def connect(hostname, port, options, verifyHostKey, creds, prompt, has_error,
-            delimiter):
+            delimiter, startup_commands, transport_class):
     """A generic connect function that runs within the crochet reactor."""
     d = defer.Deferred()
     factory = ClientFactory(d, hostname, options, verifyHostKey, creds, prompt,
-                            has_error, delimiter)
+                            has_error, delimiter, startup_commands,
+                            transport_class)
     reactor.connectTCP(hostname, port, factory)
     return d
 
@@ -59,7 +47,8 @@ class ClientFactory(SSHClientFactory):
     """Client factory responsible for standing up an SSH session.
     """
     def __init__(self, d, hostname, options, verifyHostKey,
-                 creds, prompt, has_error, delimiter):
+                 creds, prompt, has_error, delimiter, startup_commands,
+                 transport_class):
         self.d = d
         self.options = options
         self.verifyHostKey = verifyHostKey
@@ -68,9 +57,11 @@ class ClientFactory(SSHClientFactory):
         self.prompt = prompt
         self.has_error = has_error
         self.delimiter = delimiter
+        self.startup_commands = startup_commands
+        self.transport_class = transport_class
 
     def buildProtocol(self, addr):
-        trans = ClientTransport(self)
+        trans = self.transport_class(self)
         # if self.options['ciphers']:
             # trans.supportedCiphers = self.options['ciphers']
         # if self.options['macs']:
@@ -110,6 +101,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         self.hostname = self.factory.hostname
         self.has_error = self.factory.has_error
         self.delimiter = self.factory.delimiter
+        self.startup_commands = copy.copy(self.factory.startup_commands)
         self.commands = []
         self.commanditer = iter(self.commands)
         self.connected = True
@@ -141,16 +133,13 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         # Schedule next command to run after the previous
         # has finished.
         if self.done and self.done.called is False:
-            self.done.addCallback(
-                    self._schedule_commands,
-                    commands
-                    )
+            self.done.addCallback(self._schedule_commands, commands)
             self.done = d
             return d
 
         # First iteration, setup the previous results deferred.
         if not results and self.done is None:
-            self.done = defer.Deferred() 
+            self.done = defer.Deferred()
             self.done.callback(None)
 
         # Either initial state or we are ready to execute more commands.
@@ -175,6 +164,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         :param on_error: Error handler
         :type  on_error: func
         """
+
         # Exception handler to be used in case device throws invalid command warning.
         self.on_error.addCallback(on_error)
         d = self.doneLock.run(self._schedule_commands, None, commands)
@@ -257,8 +247,10 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 payload.reverse()
                 d = self.todo.pop()
                 d.callback(payload)
+
                 return d
             else:
+                # Loop again.
                 return
 
         if next_command is None:
@@ -480,27 +472,3 @@ class ClientTransport(transport.SSHClientTransport):
                                            self.factory.creds.password,
                                            ClientConnection()
                                            ))
-
-    # def connectionMade(self):
-        # """
-        # Once the connection is up, set the ciphers but don't do anything else!
-        # """
-        # self.currentEncryptions = transport.SSHCiphers(
-            # 'none', 'none', 'none', 'none'
-        # )
-        # self.currentEncryptions.setKeys('', '', '', '', '', '')
-
-    # def dataReceived(self, data):
-        # """
-        # Explicity override version detection for edge cases where "SSH-"
-        # isn't on the first line of incoming data.
-        # """
-        # preVersion = self.gotVersion
-
-        # # This call should populate the SSH version and carry on as usual.
-        # transport.SSHClientTransport.dataReceived(self, data)
-
-        # # We have now seen the SSH version in the banner.
-        # # signal that the connection has been made successfully.
-        # if self.gotVersion and not preVersion:
-            # transport.SSHClientTransport.connectionMade(self)
