@@ -51,7 +51,7 @@ class TriggerDriver(BaseDriver):
         )
         return proto.wait()
 
-    def perform_open(self):
+    def perform_open(self, *args, **kwargs):
         """
         Open new session with `~trigger.netdevices.NetDevice`.
         """

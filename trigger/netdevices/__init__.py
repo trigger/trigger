@@ -257,17 +257,8 @@ class NetDevice(object):
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
 
-        # Set the correct command(s) to run on startup based on deviceType
-        # self.startup_commands = self._set_startup_commands()
-
-        # Assign the configuration commit commands (e.g. 'write memory')
-        # self.commit_commands = self._set_commit_commands()
-
         # Determine whether we require an async pty SSH channel
         self.requires_async_pty = self._set_requires_async_pty()
-
-        # Set the correct line-ending per vendor
-        # self.delimiter = self._set_delimiter()
 
     def _populate_data(self, data):
         """
@@ -341,7 +332,7 @@ class NetDevice(object):
         )
         return any(RULES)
 
-    def _get_dispatcher(self, dispatcher_name='trigger'):
+    def _get_dispatcher(self, dispatcher_name='trigger', *args, **kwargs):
         # FIXME(jathan): Move this mapping into a utility function or something.
         # It shouldn't be hard-coded here.
         DISPATCHER_MAP = {
@@ -350,28 +341,16 @@ class NetDevice(object):
         }
 
         dispatcher_class = DISPATCHER_MAP.get(dispatcher_name)
-        dispatcher = dispatcher_class(self)
+        dispatcher = dispatcher_class(self, *args, **kwargs)
         return dispatcher
 
     def open(self, dispatcher='trigger', *args, **kwargs):
         if self.dispatcher is None:
-            self.dispatcher = self._get_dispatcher(dispatcher)
+            self.dispatcher = self._get_dispatcher(dispatcher, *args, **kwargs)
         else:
             raise RuntimeError(
                 'Dispatcher %s already exists' % self.dispatcher
             )
-
-        # FIXME(jathan): This is just hard-coded for prototyping right now and
-        # should be moved to Trigger SSH protocol internals.
-        if dispatcher == 'trigger':
-            # Set the correct command(s) to run on startup based on deviceType
-            self.startup_commands = self.dispatcher.driver.startup_commands
-
-            # Assign the configuration commit commands (e.g. 'write memory')
-            self.commit_commands = self.dispatcher.driver.commit_commands
-
-            # Set the correct line-ending per vendor
-            self.delimiter = self.dispatcher.driver.delimiter
 
         self.dispatch('open', *args, **kwargs)
 
@@ -388,102 +367,6 @@ class NetDevice(object):
             return self.dispatcher.driver_connected()
         except AttributeError:
             return False
-
-    '''
-    def _set_delimiter(self):
-        """
-        Set the delimiter to use for line-endings.
-        """
-        default = '\n'
-        delimiter_map = {
-            'force10': '\r\n',
-        }
-        delimiter = delimiter_map.get(self.vendor.name, default)
-        return delimiter
-    '''
-    def _set_delimiter(self):
-        return self.handler.driver.delimiter
-
-    '''
-    def _set_startup_commands(self):
-        """
-        Set the commands to run at startup. For now they are just ones to
-        disable pagination.
-        """
-        def get_vendor_name():
-            """Return the vendor name for startup commands lookup."""
-            if self.is_brocade_vdx():
-                return 'brocade_vdx'
-            elif self.is_cisco_asa():
-                return 'cisco_asa'
-            elif self.is_netscreen():
-                return 'netscreen'
-            else:
-                return self.vendor.name
-
-        paging_map = settings.STARTUP_COMMANDS_MAP
-        cmds = paging_map.get(get_vendor_name())
-
-        if cmds is not None:
-            return cmds
-
-        return []
-    '''
-    def _set_startup_commands(self):
-        return self.handler.driver.startup_commands
-
-    '''
-    def _set_commit_commands(self):
-        """
-        Return the proper "commit" command. (e.g. write mem, etc.)
-        """
-        if self.is_ioslike():
-            return self._ioslike_commit()
-        elif self.is_netscaler() or self.is_netscreen():
-            return ['save config']
-        elif self.vendor == 'juniper':
-            return self._juniper_commit()
-        elif self.vendor == 'paloalto':
-            return ['commit']
-        elif self.vendor == 'pica8':
-            return ['commit']
-        elif self.vendor == 'mrv':
-            return ['save configuration flash']
-        elif self.vendor == 'f5':
-            return ['save sys config']
-        else:
-            return []
-
-    def _ioslike_commit(self):
-        """
-        Return proper 'write memory' command for IOS-like devices.
-        """
-        if self.is_brocade_vdx() or self.vendor == 'dell':
-            return ['copy running-config startup-config', 'y']
-        elif self.is_cisco_nexus():
-            return ['copy running-config startup-config']
-        else:
-            return ['write memory']
-
-    def _juniper_commit(self, fields=settings.JUNIPER_FULL_COMMIT_FIELDS):
-        """
-        Return proper ``commit-configuration`` element for a Juniper
-        device.
-        """
-        default = [JUNIPER_COMMIT]
-        if not fields:
-            return default
-
-        # Either it's a normal "commit-configuration"
-        for attr, val in fields.iteritems():
-            if not getattr(self, attr) == val:
-                return default
-
-        # Or it's a "commit-configuration full"
-        return [JUNIPER_COMMIT_FULL]
-    '''
-    def _set_commit_commands(self):
-        return self.handler.driver.commit_commands
 
     def _bind_dynamic_methods(self):
         """
