@@ -99,26 +99,18 @@ class BaseDriver(object):
         pass
 
     def open(self, *args, **kwargs):
-        self.perform_open(*args, **kwargs)
-        self._connected = True
-        return self._connected
+        return self.perform_open(*args, **kwargs)
 
     @abstractmethod
     def perform_open(self, *args, **kwargs):
         pass
 
     def close(self):
-        self.perform_close()
-        self._connected = False
-        return
+        return self.perform_close()
 
     @abstractmethod
     def perform_close(self):
         pass
-
-    @property
-    def connected(self):
-        return self._connected
 
 
 registry = DriverRegistry()

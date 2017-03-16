@@ -59,6 +59,7 @@ class ClientFactory(SSHClientFactory):
         self.delimiter = delimiter
         self.startup_commands = startup_commands
         self.transport_class = transport_class
+        self.timeout = 30
 
     def buildProtocol(self, addr):
         trans = self.transport_class(self)
@@ -109,6 +110,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         self.results = self.factory.results = []
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.hostname, self.data))
+        # self.setTimeout(self.factory.timeout)
         # self.factory._init_commands(self)
 
     def connectionLost(self, reason):
@@ -190,6 +192,8 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 return None
         else:
             # Or just use the matched regex object...
+            log.msg('[%s] STATE: buffer %r' % (self.hostname, self.data))
+            log.msg('[%s] STATE: prompt %r' % (self.hostname, m.group()))
             prompt_idx = m.start()
 
         result = self.data[:prompt_idx]
@@ -207,6 +211,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         if self.has_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.hostname, result))
             self.factory.err = exceptions.CommandFailure(result)
+            # return None
         else:
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
@@ -216,7 +221,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
 
     def _send_next(self):
         """Send the next command in the stack."""
-        self.data = ''
+        self.data = ''  # Flush the buffer before next command
         self.resetTimeout()
 
         if not self.initialized:

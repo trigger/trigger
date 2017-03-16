@@ -352,11 +352,12 @@ class NetDevice(object):
                 'Dispatcher %s already exists' % self.dispatcher
             )
 
-        self.dispatch('open', *args, **kwargs)
+        return self.dispatch('open', *args, **kwargs)
 
     def close(self, *args, **kwargs):
-        self.dispatch('close', *args, **kwargs)
+        rv = self.dispatch('close', *args, **kwargs)
         self.dispatcher = None
+        return rv
 
     def dispatch(self, method, *args, **kwargs):
         return self.dispatcher.dispatch(method, *args, **kwargs)

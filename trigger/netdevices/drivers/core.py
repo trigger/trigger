@@ -51,6 +51,7 @@ class TriggerDriver(BaseDriver):
         )
         return proto.wait()
 
+    @defer.inlineCallbacks
     def perform_open(self, *args, **kwargs):
         """
         Open new session with `~trigger.netdevices.NetDevice`.
@@ -60,13 +61,17 @@ class TriggerDriver(BaseDriver):
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
 
+        rv = yield self._endpoint
+        defer.returnValue(rv)
+
+    @defer.inlineCallbacks
     def perform_close(self):
         """Close an open `~trigger.netdevices.NetDevice` object."""
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
 
-        # self._endpoint.transport.loseConnection()
-        self._endpoint.close()
+        rv = yield self._endpoint.close()
+        defer.returnValue(rv)
 
     def run_commands(self, commands, on_error=None):
         """
@@ -92,10 +97,9 @@ class TriggerDriver(BaseDriver):
         d = defer.Deferred()
 
         result = self._endpoint.add_commands(commands, on_error)
-        result.addCallback(lambda results: d.callback(results))
         result.addBoth(on_error)
 
-        return d
+        return result
 
     def execute(self, commands):
         self.open()

@@ -53,8 +53,6 @@ class NapalmDispatcher(BaseDispatcher):
         )
         return driver
 
-    # @wait_for(timeout=30)
-    @run_in_reactor
     @defer.inlineCallbacks
     def dispatch(self, method_name, *args, **kwargs):
         """

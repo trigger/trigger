@@ -9,13 +9,6 @@ The `~trigger.cmds.Commando` class is designed to be extended but can still be
 used as-is to execute commands and return the results as-is.
 """
 
-__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Thomas'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2009-2013, AOL Inc.; 2014 Salesforce.com'
-__version__ = '2.7'
-
-
 # Imports
 import collections
 import datetime
@@ -172,11 +165,13 @@ class Commando2(object):
         self.jobs = []
 
         # Always fallback to {} for these
-        self.errors = self.errors if self.errors is not None else {}
-        self.results = self.results if self.results is not None else {}
+        # self.errors = self.errors if self.errors is not None else {}
+        # self.results = self.results if self.results is not None else {}
+        self.errors = self.errors if self.errors is not None else []
+        self.results = self.results if self.results is not None else []
         self.parsed_results = self.parsed_results if self.parsed_results is not None else {}
 
-        #self.deferrals = []
+        self.deferreds = []
         self.supported_platforms = self._validate_platforms()
         self._setup_jobs()
 
@@ -264,30 +259,34 @@ class Commando2(object):
 
         return jobs.pop()
 
-    def _add_worker(self):
-        """
-        Adds devices to the work queue to keep it populated with the maximum
-        connections as specified by ``max_conns``.
-        """
-        while self.jobs and self.curr_conns < self.max_conns:
+    def _setup_deferreds(self):
+        sem = defer.DeferredSemaphore(self.max_conns)
+        while self.jobs:
             device = self.select_next_device()
             if device is None:
                 log.msg('No device returned when adding worker. Moving on.')
                 continue
 
-            self._increment_connections()
-            log.msg('connections:', self.curr_conns)
-            log.msg('Adding work to queue...')
-            if self.verbose:
-                print 'connections:', self.curr_conns
-                print 'Adding work to queue...'
-
-            # Setup the async Deferred object with a timeout and error printing.
+            log.msg('Adding %s to queue...' % device)
             commands = self.generate(device)
-            async = device.driver.execute(commands)
+
+            dispatcher = 'trigger'
+            # dispatcher = 'napalm'
+
+            # The first deferred!
+            async = sem.run(device.open, dispatcher=dispatcher)
+
+            def dispatch(_, method, *args, **kwargs):
+                return device.dispatch(method, *args, **kwargs)
+
+            if dispatcher == 'trigger':
+                async.addCallback(dispatch, 'run_commands', commands)
+            elif dispatcher == 'napalm':
+                commands = ['get_facts']
+                async.addCallback(dispatch, 'get_facts')
 
             # Add the template parser callback for great justice!
-            #async.addCallback(self.parse_template, device, commands)
+            # async.addCallback(self.parse_template, device, commands)
 
             # Add the parser callback for even greater justice!
             async.addCallback(self.parse, device, commands)
@@ -300,25 +299,21 @@ class Commando2(object):
 
             # Here we addBoth to continue on after pass/fail, decrement the
             # connections and move on.
-            async.addBoth(self._decrement_connections)
-            async.addBoth(lambda x: self._add_worker())
-            async.addBoth(lambda x: device.driver.close())
+            # async.addBoth(self._decrement_connections)
+            # async.addBoth(lambda x: device.close())
 
-        # Do this once we've exhausted the job queue
-        else:
-            if not self.curr_conns and self.reactor_running:
-                self._stop()
-            elif not self.jobs and not self.reactor_running:
-                log.msg('No work left.')
-                if self.verbose:
-                    print 'No work left.'
+            self.deferreds.append(async)
+
+        dl = defer.DeferredList(self.deferreds)
+        # dl.addCallback(lambda x: self._stop())
+
+        self.deferred_list = dl
 
     def _lookup_method(self, device, method):
         """
         Base lookup method. Looks up stuff by device manufacturer like:
 
-            from_juniper
-            to_foundry
+           from_juniper
 
         and defaults to ``self.from_base`` and ``self.to_base`` methods if
         customized methods not found.
@@ -486,7 +481,7 @@ class Commando2(object):
         """
         failure.trap(Exception)
         self.store_error(device, failure)
-        #self._decrement_connections(failure)
+        # self._decrement_connections(failure)
         return failure
 
     def store_error(self, device, error):
@@ -530,6 +525,7 @@ class Commando2(object):
             self.parsed_results[devname] = results
         return True
 
+	'''
     def store_results(self, device, results):
         """
         A simple method for storing results called by all default
@@ -548,6 +544,7 @@ class Commando2(object):
         log.msg("Storing results for %r: %r" % (devname, results))
         self.results[devname] = results
         return True
+	'''
 
     def map_parsed_results(self, command=None, fsm=None):
         """Return a dict of ``{command: fsm, ...}``"""
@@ -556,6 +553,7 @@ class Commando2(object):
 
         return {command: fsm}
 
+	'''
     def map_results(self, commands=None, results=None):
         """Return a dict of ``{command: result, ...}``"""
         if commands is None:
@@ -564,6 +562,79 @@ class Commando2(object):
             results = []
 
         return dict(itertools.izip_longest(commands, results))
+	'''
+
+    def store_error(self, device, error):
+        """
+        Called when an errback is fired.
+
+        Should do somethign meaningful with the errors, but for now just stores
+        it as it would a result.
+        """
+        devname = str(device)
+        log.msg("Storing error for %s: %s" % (devname, error))
+
+        if isinstance(error, failure.Failure):
+            error = error.value
+        devobj = self.device_object(devname, error=repr(error))
+
+        log.msg("Final device object: %r" % devobj)
+        self.errors.append(devobj)
+
+        return True
+
+    def device_object(self, device_name, **kwargs):
+        """
+        Create a basic device dictionary with optional data.
+        """
+        devobj = dict(device=device_name, **kwargs)
+        log.msg("Got device object: %r" % devobj)
+        return devobj
+
+    def store_results(self, device, results):
+        """
+        Called by the parse (from) methods to store command output.
+
+        :device:
+            A `~trigger.netdevices.NetDevice` object
+
+        :param results:
+            The results to store. Anything you want really.
+        """
+        devname = str(device)
+        log.msg("Storing results for %r: %r" % (devname, results))
+
+        # Basic device object
+        devobj = self.device_object(devname, output=[])
+
+        # Command output will be stored in devobj['output']
+        devobj['output'] = self.map_results(self.commands, results)
+
+        log.msg("Final device object: %r" % devobj)
+        self.results.append(devobj)
+
+        return True
+
+    def map_results(self, commands=None, results=None):
+        """
+        Return a list of command objects.
+
+        [{'command': 'foo', 'result': 'bar'}, ...]
+        """
+        log.msg('Mapping results')
+        if commands is None:
+            commands = self.commands
+        if results is None:
+            results = []
+
+        cmd_list = []
+        for cmd, res in itertools.izip_longest(commands, results):
+            # if type(Element('')) == type(cmd):
+            #     cmd = ET.tostring(cmd)
+            cmdobj = dict(command=cmd, result=res)
+            log.msg("Got command object: %r" % cmdobj)
+            cmd_list.append(cmdobj)
+        return cmd_list
 
     @property
     def reactor_running(self):
@@ -572,7 +643,7 @@ class Commando2(object):
         log.msg("Reactor running? %s" % reactor.running)
         return reactor.running
 
-    def _stop(self):
+    def _stop(self, result=None):
         """Stop the reactor event loop"""
 
         if self.stop_reactor:
@@ -585,27 +656,26 @@ class Commando2(object):
             if self.verbose:
                 print 'stopping reactor... except not really.'
 
+        return result
+
     def _start(self):
         """Start the reactor event loop"""
         log.msg('starting reactor. maybe.')
         if self.verbose:
             print 'starting reactor. maybe.'
 
-        if self.curr_conns:
-            from twisted.internet import reactor
-            if not reactor.running:
-                reactor.run()
+        from twisted.internet import reactor
+        if not reactor.running:
+            log.msg('START THE REACTOR!')
+            reactor.run()
         else:
-            msg = "Won't start reactor with no work to do!"
-            log.msg(msg)
-            if self.verbose:
-                print msg
+            log.msg('Reactor already running!')
 
     def run(self):
         """
         Nothing happens until you execute this to perform the actual work.
         """
-        self._add_worker()
+        self._setup_deferreds()
         self._start()
 
     #=======================================
@@ -619,11 +689,13 @@ class Commando2(object):
     def from_base(self, results, device, commands=None):
         commands = commands or self.commands
         log.msg('Received %r from %s' % (results, device))
-        self.store_results(device, self.map_results(commands, results))
+        # self.store_results(device, self.map_results(commands, results))
+        self.store_results(device, results)
 
     #=======================================
     # Vendor-specific generate (to_)/parse (from_) methods
     #=======================================
+    '''
     def to_juniper(self, device, commands=None, extra=None):
         """
         This just creates a series of ``<command>foo</command>`` elements to
@@ -641,3 +713,4 @@ class Commando2(object):
             ret.append(cmd)
 
         return ret
+    '''
