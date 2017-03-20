@@ -17,7 +17,7 @@ import os
 from IPy import IP
 from xml.etree.cElementTree import ElementTree, Element, SubElement
 import sys
-from twisted.python import log
+from twisted.python import log, failure
 from twisted.internet import defer, task
 
 from trigger.netdevices import NetDevices
