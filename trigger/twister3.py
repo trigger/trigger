@@ -147,6 +147,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         # Either initial state or we are ready to execute more commands.
         if results or self.done is None or self.done.called:
             log.msg("SCHEDULING THE FOLLOWING {0} :: {1} WAS PREVIOUS RESULTS".format( commands, self.done))
+            self.results = []
             self.commands = commands
             self.commanditer = iter(commands)
             self._send_next()
@@ -205,6 +206,15 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         result = result[result.find('\n')+1:]
         log.msg('[%s] result AFTER: %r' % (self.hostname, result))
 
+        self.eofReceived(result)
+
+    def eofReceived(self, result):
+        """
+        First attempt to break out result post-processing from
+        dataReceived.
+        """
+        log.msg('[%s] EOF received.' % self.hostname)
+
         if self.initialized:
             self.results.append(result)
 
@@ -247,18 +257,18 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
             log.msg('[%s] No more commands to send, moving on...' %
                     self.hostname)
 
-            if self.todo:
+            if self.todo and (len(self.results) == len(self.commands)):
                 payload = list(reversed(self.results))[:len(self.commands)]
                 payload.reverse()
                 d = self.todo.pop()
                 d.callback(payload)
-
                 return d
             else:
                 # Loop again.
                 return
 
         if next_command is None:
+            log.msg('[%s] NEXT command is None; calling _send_next' % self.hostname)
             self.results.append(None)
             self._send_next()
         else:
