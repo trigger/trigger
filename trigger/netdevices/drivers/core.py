@@ -94,8 +94,6 @@ class TriggerDriver(BaseDriver):
         if on_error is None:
             on_error = lambda x: x
 
-        d = defer.Deferred()
-
         result = self._endpoint.add_commands(commands, on_error)
         result.addBoth(on_error)
 

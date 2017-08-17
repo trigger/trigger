@@ -19,7 +19,7 @@ from twisted.conch.ssh import channel, common, session, transport
 from twisted.conch.client.direct import SSHClientFactory
 from twisted.conch.ssh import userauth
 from twisted.conch.ssh import connection
-from twisted.internet import defer, protocol, reactor
+from twisted.internet import defer, protocol, reactor, task
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 
@@ -91,8 +91,8 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         self.command_interval = 1
         self.incremental = None
         self.on_error = defer.Deferred()
-        self.todo = deque()
-        self.done = None
+        self.results_queue = defer.DeferredQueue(size=1024)
+        self._jobs = 0
         self.doneLock = defer.DeferredLock()
 
     def connectionMade(self):
@@ -119,7 +119,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         # Don't call _send_next, since we expect to see a prompt, which
         # will kick off initialization.
 
-    def _schedule_commands(self, results, commands):
+    def _schedule_commands(self, results, commands, is_callback=False):
         """Schedule commands onto device loop.
 
         This is the actual routine to schedule a set of commands onto a device.
@@ -128,32 +128,36 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         :type  results: twisted.internet.defer
         :param commands: List containing commands to schedule onto device loop.
         :type commands: list
+        :param is_callback: Boolean which signals if running in a Twisted callback context.
+        :type commands: Boolean
         """
-        d = defer.Deferred()
-        self.todo.append(d)
+        if self._jobs and not is_callback:
+            d = self.results_queue.get()
 
-        # Schedule next command to run after the previous
-        # has finished.
-        if self.done and self.done.called is False:
-            self.done.addCallback(self._schedule_commands, commands)
-            self.done = d
+            reactor.callLater(0, self._schedule_commands, results, commands, True)
             return d
 
-        # First iteration, setup the previous results deferred.
-        if not results and self.done is None:
-            self.done = defer.Deferred()
-            self.done.callback(None)
+        elif self._jobs and is_callback:
+            reactor.callLater(0, self._schedule_commands, results, commands, True)
+            return
 
-        # Either initial state or we are ready to execute more commands.
-        if results or self.done is None or self.done.called:
-            log.msg("SCHEDULING THE FOLLOWING {0} :: {1} WAS PREVIOUS RESULTS".format( commands, self.done))
+        elif not self._jobs and is_callback:
             self.commands = commands
             self.commanditer = iter(commands)
             self._send_next()
-            self.done = d
+            self._jobs = True
+            return
+        else:
+            d = self.results_queue.get()
 
-        # Each call must return a deferred.
-        return d
+            self.commands = commands
+            self.commanditer = iter(commands)
+            self._send_next()
+
+            self._jobs = True
+
+            # Each call must return a deferred.
+            return d
 
     def add_commands(self, commands, on_error):
         """Add commands to abstract list of outstanding commands to execute
@@ -169,8 +173,8 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
 
         # Exception handler to be used in case device throws invalid command warning.
         self.on_error.addCallback(on_error)
-        d = self.doneLock.run(self._schedule_commands, None, commands)
-        return d
+        # d = self.doneLock.run(self._schedule_commands, None, commands)
+        return self._schedule_commands(None, commands)
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
@@ -207,6 +211,9 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
 
         if self.initialized:
             self.results.append(result)
+        else:
+            reactor.callLater(self.command_interval, self._send_next)
+            return
 
         if self.has_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.hostname, result))
@@ -217,7 +224,15 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg('[%s] Waiting %s seconds before sending next command' %
                         (self.hostname, self.command_interval))
 
-            reactor.callLater(self.command_interval, self._send_next)
+                reactor.callLater(self.command_interval, self._check_results)
+
+    def _check_results(self):
+        payload = list(reversed(self.results))[:len(self.commands)]
+        log.msg("PAYLOAD: {}".format(payload))
+        payload.reverse()
+        self.results_queue.put(payload)
+        self._jobs = False
+        return
 
     def _send_next(self):
         """Send the next command in the stack."""
@@ -232,7 +247,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg('[%s] Sending initialize command: %r' % (self.hostname,
                                                                  next_init))
                 self.transport.write(next_init.strip() + self.delimiter)
-                return None
+                return
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
                         self.hostname)
@@ -247,17 +262,9 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
             log.msg('[%s] No more commands to send, moving on...' %
                     self.hostname)
 
-            if self.todo:
-                payload = list(reversed(self.results))[:len(self.commands)]
-                payload.reverse()
-                d = self.todo.pop()
-                d.callback(payload)
+            return
 
-                return d
-            else:
-                # Loop again.
-                return
-
+        log.msg('cmd', next_command)
         if next_command is None:
             self.results.append(None)
             self._send_next()
