@@ -8,6 +8,7 @@ not at all.
 
 from __future__ import absolute_import
 from collections import deque
+from itertools import chain
 import copy
 import fcntl
 import struct
@@ -92,8 +93,8 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         self.incremental = None
         self.on_error = defer.Deferred()
         self.results_queue = defer.DeferredQueue(size=1024)
-        self._jobs = 0
-        self.doneLock = defer.DeferredLock()
+        self.commands_counter = 0
+        self._jobs_pending = False
 
     def connectionMade(self):
         """Do this when we connect."""
@@ -110,8 +111,6 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         self.results = self.factory.results = []
         self.data = ''
         log.msg('[%s] connectionMade, data: %r' % (self.hostname, self.data))
-        # self.setTimeout(self.factory.timeout)
-        # self.factory._init_commands(self)
 
     def connectionLost(self, reason):
         self.finished.callback(None)
@@ -131,22 +130,23 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
         :param is_callback: Boolean which signals if running in a Twisted callback context.
         :type commands: Boolean
         """
-        if self._jobs and not is_callback:
+        if self._jobs_pending and not is_callback:
             d = self.results_queue.get()
 
             reactor.callLater(0, self._schedule_commands, results, commands, True)
             return d
 
-        elif self._jobs and is_callback:
+        elif self._jobs_pending and is_callback:
             reactor.callLater(0, self._schedule_commands, results, commands, True)
-            return
+            return None
 
-        elif not self._jobs and is_callback:
+        elif not self._jobs_pending and is_callback:
             self.commands = commands
             self.commanditer = iter(commands)
+            self.commands_counter = len(commands)
             self._send_next()
-            self._jobs = True
-            return
+            self._jobs_pending = True
+            return None
         else:
             d = self.results_queue.get()
 
@@ -154,7 +154,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
             self.commanditer = iter(commands)
             self._send_next()
 
-            self._jobs = True
+            self._jobs_pending = True
 
             # Each call must return a deferred.
             return d
@@ -213,12 +213,11 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
             self.results.append(result)
         else:
             reactor.callLater(self.command_interval, self._send_next)
-            return
+            return None
 
         if self.has_error(result) and not self.with_errors:
             log.msg('[%s] Command failed: %r' % (self.hostname, result))
             self.factory.err = exceptions.CommandFailure(result)
-            # return None
         else:
             if self.command_interval:
                 log.msg('[%s] Waiting %s seconds before sending next command' %
@@ -227,12 +226,15 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 reactor.callLater(self.command_interval, self._check_results)
 
     def _check_results(self):
-        payload = list(reversed(self.results))[:len(self.commands)]
+        while self.commands_counter > 0:
+            reactor.callLater(self.command_interval, self._send_next)
+            return None
+
+        payload = self.results[-len(self.commands):]
         log.msg("PAYLOAD: {}".format(payload))
-        payload.reverse()
         self.results_queue.put(payload)
-        self._jobs = False
-        return
+        self._jobs_pending = False
+        return None
 
     def _send_next(self):
         """Send the next command in the stack."""
@@ -247,7 +249,7 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg('[%s] Sending initialize command: %r' % (self.hostname,
                                                                  next_init))
                 self.transport.write(next_init.strip() + self.delimiter)
-                return
+                return None
             else:
                 log.msg('[%s] Successfully initialized for command execution' %
                         self.hostname)
@@ -258,11 +260,12 @@ class SendExpect(protocol.Protocol, TimeoutMixin):
 
         try:
             next_command = self.commanditer.next()
+            self.commands_counter -= 1
         except StopIteration:
             log.msg('[%s] No more commands to send, moving on...' %
                     self.hostname)
 
-            return
+            return None
 
         log.msg('cmd', next_command)
         if next_command is None:
