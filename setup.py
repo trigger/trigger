@@ -14,7 +14,7 @@ from trigger import release as __version__
 # Names of required packages
 requires = [
     'IPy>=0.73',
-    'cryptography==1.4',
+    'cryptography>=1.4',
     'Twisted>=15.5.0,<17.0.0',
     'crochet==1.5.0',
     'mock==2.0.0',
