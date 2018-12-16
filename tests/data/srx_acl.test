@@ -1,0 +1,5 @@
+"security { policies { from-zone untrust to-zone trust { policy 3 { match { source-address 9.9.9.9; destination-address Important_Systems; application APPName; } then { permit; log { session-init; session-close; } } } policy 3 { match { source-address 7.8.9.5; destination-address Important_Systems; application APPName2; } then { permit; log { session-init; session-close; } } } } from-zone hello to-zone goodbye { policy 3 { match { source-address 5.5.5.5; destination-address Important_Systems; application APPName3; } then { permit; log { session-init; session-close; } } } } } zones { security-zone trust { address-book { address 2.5.6.8 2.5.6.8/32; address 0.1.2.3 0.1.2.3/32; address OUTSIDE 8.5.0.0/16; address-set Important_Systems { address 1.2.3.4; address 4.5.6.7; } } host-inbound-traffic { system-services { all; } } interfaces { in213; } } security-zone untrust { address-book { address 1.2.3.5 1.2.3.4/32; address INSIDE 0.0.0.0/16; } interfaces { inf23; } } } }"
+ 
+Use:
+parsed_list = juniper_srx.JuniperSRX().parse(aboveString)
+srxobj = juniper_srx.rip_list(parsed_list)

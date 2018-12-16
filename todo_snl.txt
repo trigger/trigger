@@ -1,0 +1,9 @@
+# Dev Todo List #
+ * Figure out how junos parsing works
+   * figure out how trigger parses the "filter" sections (done)
+   * what is the "replace:" terminal symbol in the junos_replace_family_acl production rule?
+     * junos_replace_family_acl := jws?, "firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"
+
+ * Learn pyparsing's EBNF/Grammar symbols
+   * Question mark: ?
+   * other characters somewhat understood; clarification/official documentation still needed
