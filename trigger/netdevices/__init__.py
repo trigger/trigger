@@ -41,6 +41,8 @@ from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
 from trigger import changemgmt, exceptions, rancid
+from trigger.netdevices.dispatchers.core import TriggerEndpointDispatcher
+from trigger.netdevices.dispatchers.napalm import NapalmDispatcher
 
 from crochet import setup, run_in_reactor, wait_for
 
@@ -239,6 +241,9 @@ class NetDevice(object):
         if self.manufacturer is not None:
             self.vendor = vendor_factory(self.manufacturer)
 
+        # Establish the correct dispatcher for this device.
+        self.dispatcher = None
+
         # Use the vendor to populate the deviceType if it's not set already
         if self.deviceType is None:
             self._populate_deviceType()
@@ -252,22 +257,8 @@ class NetDevice(object):
         # Bind the correct execute/connect methods based on deviceType
         self._bind_dynamic_methods()
 
-        # Set the correct command(s) to run on startup based on deviceType
-        self.startup_commands = self._set_startup_commands()
-
-        # Assign the configuration commit commands (e.g. 'write memory')
-        self.commit_commands = self._set_commit_commands()
-
         # Determine whether we require an async pty SSH channel
         self.requires_async_pty = self._set_requires_async_pty()
-
-        # Set the correct line-ending per vendor
-        self.delimiter = self._set_delimiter()
-
-        # Set initial endpoint state
-        self.factories = {}
-        self._connected = False
-        self._endpoint = None
 
     def _populate_data(self, data):
         """
@@ -341,89 +332,42 @@ class NetDevice(object):
         )
         return any(RULES)
 
-    def _set_delimiter(self):
-        """
-        Set the delimiter to use for line-endings.
-        """
-        default = '\n'
-        delimiter_map = {
-            'force10': '\r\n',
+    def _get_dispatcher(self, dispatcher_name='trigger', *args, **kwargs):
+        # FIXME(jathan): Move this mapping into a utility function or something.
+        # It shouldn't be hard-coded here.
+        DISPATCHER_MAP = {
+            'trigger': TriggerEndpointDispatcher,
+            'napalm': NapalmDispatcher,
         }
-        delimiter = delimiter_map.get(self.vendor.name, default)
-        return delimiter
 
-    def _set_startup_commands(self):
-        """
-        Set the commands to run at startup. For now they are just ones to
-        disable pagination.
-        """
-        def get_vendor_name():
-            """Return the vendor name for startup commands lookup."""
-            if self.is_brocade_vdx():
-                return 'brocade_vdx'
-            elif self.is_cisco_asa():
-                return 'cisco_asa'
-            elif self.is_netscreen():
-                return 'netscreen'
-            else:
-                return self.vendor.name
+        dispatcher_class = DISPATCHER_MAP.get(dispatcher_name)
+        dispatcher = dispatcher_class(self, *args, **kwargs)
+        return dispatcher
 
-        paging_map = settings.STARTUP_COMMANDS_MAP
-        cmds = paging_map.get(get_vendor_name())
-
-        if cmds is not None:
-            return cmds
-
-        return []
-
-    def _set_commit_commands(self):
-        """
-        Return the proper "commit" command. (e.g. write mem, etc.)
-        """
-        if self.is_ioslike():
-            return self._ioslike_commit()
-        elif self.is_netscaler() or self.is_netscreen():
-            return ['save config']
-        elif self.vendor == 'juniper':
-            return self._juniper_commit()
-        elif self.vendor == 'paloalto':
-            return ['commit']
-        elif self.vendor == 'pica8':
-            return ['commit']
-        elif self.vendor == 'mrv':
-            return ['save configuration flash']
-        elif self.vendor == 'f5':
-            return ['save sys config']
+    def open(self, dispatcher='trigger', *args, **kwargs):
+        if self.dispatcher is None:
+            self.dispatcher = self._get_dispatcher(dispatcher, *args, **kwargs)
         else:
-            return []
+            raise RuntimeError(
+                'Dispatcher %s already exists' % self.dispatcher
+            )
 
-    def _ioslike_commit(self):
-        """
-        Return proper 'write memory' command for IOS-like devices.
-        """
-        if self.is_brocade_vdx() or self.vendor == 'dell':
-            return ['copy running-config startup-config', 'y']
-        elif self.is_cisco_nexus():
-            return ['copy running-config startup-config']
-        else:
-            return ['write memory']
+        return self.dispatch('open', *args, **kwargs)
 
-    def _juniper_commit(self, fields=settings.JUNIPER_FULL_COMMIT_FIELDS):
-        """
-        Return proper ``commit-configuration`` element for a Juniper
-        device.
-        """
-        default = [JUNIPER_COMMIT]
-        if not fields:
-            return default
+    def close(self, *args, **kwargs):
+        rv = self.dispatch('close', *args, **kwargs)
+        self.dispatcher = None
+        return rv
 
-        # Either it's a normal "commit-configuration"
-        for attr, val in fields.iteritems():
-            if not getattr(self, attr) == val:
-                return default
+    def dispatch(self, method, *args, **kwargs):
+        return self.dispatcher.dispatch(method, *args, **kwargs)
 
-        # Or it's a "commit-configuration full"
-        return [JUNIPER_COMMIT_FULL]
+    @property
+    def connected(self):
+        try:
+            return self.dispatcher.driver_connected()
+        except AttributeError:
+            return False
 
     def _bind_dynamic_methods(self):
         """
@@ -488,167 +432,12 @@ class NetDevice(object):
                     Otherwise template does not exist.""")
             return None
 
-    def _get_endpoint(self, *args):
-        """Private method used for generating an endpoint for `~trigger.netdevices.NetDevice`."""
-        from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
-        endpoint = generate_endpoint(self).wait()
-
-        factory = TriggerEndpointClientFactory()
-        factory.protocol = IoslikeSendExpect
-
-        self.factories["base"] = factory
-
-        # FIXME(jathan): prompt_pattern could move back to protocol?
-        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        proto = endpoint.connect(factory, prompt_pattern=prompt)
-        self._proto = proto  # Track this for later, too.
-
-        return proto
-
-    def open(self):
-        """Open new session with `~trigger.netdevices.NetDevice`.
-        
-        Example:
-            >>> nd = NetDevices()
-            >>> dev = nd.find('arista-sw1.demo.local')
-            >>> dev.open()
-
-        """
-        def inject_net_device_into_protocol(proto):
-            """Now we're only injecting connection for use later."""
-            self._conn = proto.transport.conn
-            return proto
-
-        self._endpoint = self._get_endpoint()
-
-        if self._endpoint is None:
-            raise ValueError("Endpoint has not been instantiated.")
-
-        self.d = self._endpoint.addCallback(
-            inject_net_device_into_protocol
-        )
-
-        self._connected = True
-        return self._connected
-
-    def close(self):
-        """Close an open `~trigger.netdevices.NetDevice` object."""
-        def disconnect(proto):
-            proto.transport.loseConnection()
-            return proto
-
-        if self._endpoint is None:
-            raise ValueError("Endpoint has not been instantiated.")
-
-        self._endpoint.addCallback(
-            disconnect
-        )
-
-        self._connected = False
-        return
-
     def __enter__(self):
         self.open()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-
-    def get_results(self):
-        self._results = []
-        while len(self._results) != len(self.commands):
-            pass
-        return self._results
-
-    def run_channeled_commands(self, commands, on_error=None):
-        """Public method for scheduling commands onto device.
-
-        This variant allows for efficient multiplexing of commands across multiple vty
-        lines where supported ie Arista and Cumulus.
-
-        :param commands: List containing commands to schedule onto device loop.
-        :type commands: list
-        :param on_error: Error handler
-        :type  on_error: func
-
-        :Example:
-        >>> ...
-        >>> dev.open()
-        >>> dev.run_channeled_commands(['show ip int brief', 'show version'], on_error=lambda x: handle(x))
-
-        """
-        from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
-
-        if on_error is None:
-            on_error = lambda x: x
-
-        factory = TriggerEndpointClientFactory()
-        factory.protocol = IoslikeSendExpect
-        self.factories["channeled"] = factory
-
-        # Here's where we're using self._connect injected on .open()
-        ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
-        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
-        proto = ep.connect(factory, prompt_pattern=prompt)
-
-        d = defer.Deferred()
-
-        def inject_commands_into_protocol(proto):
-            result = proto.add_commands(commands, on_error)
-            result.addCallback(lambda results: d.callback(results))
-            result.addBoth(on_error)
-            return proto
-
-        proto = proto.addCallbacks(
-            inject_commands_into_protocol
-        )
-
-        return d
-
-    def run_commands(self, commands, on_error=None):
-        """Public method for scheduling commands onto device.
-
-        Default implementation that schedules commands onto a Device loop.
-        This implementation ensures commands are executed sequentially.
-
-        :param commands: List containing commands to schedule onto device loop.
-        :type commands: list
-        :param on_error: Error handler
-        :type  on_error: func
-
-        :Example:
-        >>> ...
-        >>> dev.open()
-        >>> dev.run_commands(['show ip int brief', 'show version'], on_error=lambda x: handle(x))
-
-        """
-        from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
-
-        if on_error is None:
-            on_error = lambda x: x
-
-        factory = TriggerEndpointClientFactory()
-        factory.protocol = IoslikeSendExpect
-
-        proto = self._proto
-
-        d = defer.Deferred()
-
-        def inject_commands_into_protocol(proto):
-            result = proto.add_commands(commands, on_error)
-            result.addCallback(lambda results: d.callback(results))
-            result.addBoth(on_error)
-            return proto
-
-        proto = proto.addCallbacks(
-            inject_commands_into_protocol
-        )
-
-        return d
-
-    @property
-    def connected(self):
-        return self._connected
 
     def allowable(self, action, when=None):
         """
@@ -860,6 +649,7 @@ class NetDevice(object):
         print '\tLast Updated:     ', dev.lastUpdate
         print
 
+
 class Vendor(object):
     """
     Map a manufacturer name to Trigger's canonical name.
@@ -943,6 +733,7 @@ class Vendor(object):
 
     def lower(self):
         return self.normalized
+
 
 _vendor_registry = {}
 def vendor_factory(vendor_name):
