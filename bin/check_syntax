@@ -56,7 +56,8 @@ def main():
             print ""
 
 if __name__ == '__main__':
-    tmpfile = tempfile.mktemp()+'_parsing_check'
+    fd, tmpfile = tempfile.mkstemp(suffix='_parsing_check')
     log.startLogging(open(tmpfile, 'a'), setStdout=False)
     log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
     main()
+    os.close(fd)

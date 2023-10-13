@@ -446,12 +446,13 @@ def update_expirations(matches, numdays=DEFAULT_EXPIRE):
 
 def write_tmpacl(acl, process_name='_tmpacl'):
     """Write a temporary file to disk from an Trigger acl.ACL object & return the filename"""
-    tmpfile = tempfile.mktemp() + process_name
+    fd, tmpfile = tempfile.mkstemp(suffix=process_name)
     f = open(tmpfile, 'w')
     for x in acl.output(acl.format, replace=True):
         f.write(x)
         f.write('\n')
     f.close()
+    os.close(fd)
 
     return tmpfile
 
@@ -549,7 +550,7 @@ class ACLScript:
                    }.iteritems():
             if len(v) == 0:
                 continue
-            tmpf = tempfile.mktemp() + '_genacl'
+            fd, tmpf = tempfile.mkstemp(suffix='_genacl')
             self.tempfiles.append(tmpf)
             try:
                 f = open(tmpf,'w')
@@ -559,6 +560,7 @@ class ACLScript:
             for x in v:
                 f.write('%s\n' % x.strNormal())
             f.close()
+            os.close(fd)
 
             argz.append('%s %s' % (k,tmpf))
 

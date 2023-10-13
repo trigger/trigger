@@ -77,8 +77,9 @@ def main():
                 adb.remove_acl(dev, acl_name)
 
 if __name__ == '__main__':
-    tmpfile = tempfile.mktemp()+'_prepend_acl_dot'
+    fd, tmpfile = tempfile.mkstemp(suffix='_prepend_acl_dot')
     print "Logging to %s" % tmpfile
     log.startLogging(open(tmpfile, 'a'), setStdout=False)
     log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
     main()
+    os.close(fd)

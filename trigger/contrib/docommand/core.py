@@ -80,7 +80,7 @@ def main(action_class=None):
         log.startLogging(sys.stdout, setStdout=False)
 
     # Always log all the activity to a file!
-    logfile = tempfile.mktemp() + '_run_cmds'
+    fd, logfile = tempfile.mkstemp(suffix='_run_cmds')
     log.startLogging(open(logfile, 'a'), setStdout=False)
     log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'],
         os.getuid(), ' '.join(sys.argv)))
@@ -90,6 +90,7 @@ def main(action_class=None):
     work = get_jobs(opts)
     results = do_work(work, action_class)
     print_results(results)
+    os.close(fd)
     print '\nDone.'
 
 def get_jobs(opts):
