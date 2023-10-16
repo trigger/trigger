@@ -17,7 +17,7 @@ __all__ = ('send_email', 'send_notification')
 
 
 # Functions
-def send_email(addresses, subject, body, sender, mailhost='localhost'):
+def send_email(addresses, subject, body, sender, mailhost='localhost', mailuser='', mailpass='', ssl=False):
     """
     Sends an email to a list of recipients. Returns ``True`` when done.
 
@@ -41,9 +41,15 @@ def send_email(addresses, subject, body, sender, mailhost='localhost'):
         header = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n' % \
             (sender, email, subject )
         message = header + body
-        server = smtplib.SMTP(mailhost)
-        server.sendmail(sender, email, message)
-        server.quit()
+        if ssl:
+            server = smtplib.SMTP_SSL(mailhost, port=smtplib.SMTP_SSL_PORT)
+            server.login(mailuser, mailpass)
+            server.sendmail(sender, email, message)
+            server.quit()
+        else:
+            server = smtplib.SMTP(mailhost)
+            server.sendmail(sender, email, message)
+            server.quit()
 
     return True
 
