@@ -57,7 +57,7 @@ optimizer = "trigger.bin.optimizer:main"
 run_cmds = "trigger.bin.run_cmds:main"
 
 [tool.setuptools]
-packages = ["trigger", "trigger.acl", "trigger.changemgmt",
+packages = ["trigger", "trigger.acl", "trigger.bin", "trigger.changemgmt",
             "trigger.conf", "trigger.contrib", "trigger.netdevices",
             "trigger.packages", "trigger.utils", "twisted.plugins"]
 include-package-data = true

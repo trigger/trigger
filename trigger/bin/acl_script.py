@@ -1,0 +1,490 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+acl_script - CLI interface to simplify complex modification to access-lists.
+"""
+
+from __future__ import print_function
+
+# TODO (jathan): Have this import from trigger.acl.utils.AclScript, because
+# much of the code is copypasta.
+
+__version__ = '1.2'
+
+
+from optparse import OptionParser
+import os
+import re
+import sys
+import trigger.acl.tools as acl_tools
+from trigger.acl.parser import parse, TIP, Comment
+from trigger.netdevices import NetDevices
+from trigger.utils.cli import yesno
+from trigger.utils.rcs import RCS
+
+
+def parse_args(argv):
+    notes = ''
+    parser = OptionParser(usage='%prog [options]',
+                          add_help_option=0,
+                          description='''ACL modify/generator from the commandline.'''
+                         )
+    parser.add_option('-h','--help',action="store_false")
+    parser.add_option('-a','--acl', action='append', type='string', help='specify the acl file')
+    parser.add_option('-n','--no-changes', action="store_true",
+        help="don't make the changes")
+    parser.add_option('--show-mods', action="store_true",
+        help="show modifications being made in a simple format.")
+    parser.add_option('--no-worklog', action="store_true",
+        help="don't make a worklog entry")
+    parser.add_option('-N','--no-input', action="store_true",
+        help="require no input (good for scripts)")
+    parser.add_option('-s','--source-address', action="append",
+        type='string', default=[],
+        help="define a source address")
+    parser.add_option('-d','--destination-address',
+        action="append", type='string',default=[],
+        help="define a destination address")
+    parser.add_option('--destination-address-from-file',
+        action="append", type='string', default=[],
+        help="read a set of destination-addresses from a file")
+    parser.add_option('--source-address-from-file',default=[],
+        action="append", type='string',
+        help="read a set of source-addresses from a file")
+    parser.add_option('--protocol', default=[],
+        action="append", type='string',
+        help="define a protocol")
+    parser.add_option('-p','--source-port', default=[],
+        action='append', type='int',
+        help='define a source-port')
+    parser.add_option('','--source-port-range', default=[], action='append',
+        type='string', nargs=2, help='define a source-port range')
+    parser.add_option('','--destination-port-range', default=[],
+        action='append', type='string', nargs=2, help='define a destination-port range')
+    parser.add_option('-P','--destination-port', default=[],
+        action='append', type='int',
+        help='define a destination port')
+    parser.add_option('-t','--modify-specific-term', default=[],
+        action='append', type='string',
+        help=
+"""When modifying a JUNOS type ACL, you may specify this option one or more times
+to define a specific JUNOS term you want to modify. This takes one argument
+which should be the name of term.
+""")
+    parser.add_option('-c','--modify-between-comments',
+        action='append', type='string', nargs=2,
+        help=
+"""When modifying a IOS type ACL, you may specify this option one or more times
+to define a specific AREA of the ACL you want to modify. You must have at least
+2 comments defined in the ACL prior to running. This requires two arguments, the
+start comment, and the end comment. Your modifications will be done between the
+two.
+""")
+    parser.add_option('-C', '--comment', type='string',
+        help='Add a comment when making the modification.')
+    parser.add_option('--insert-defined', default=False, action='store_true',
+        help=
+"""This option works differently based on the type of ACL we are modifying. The
+one similar characteristic is that this will never remove any access already defined, just
+append.
+""")
+
+    notes += """
+NOTE when using --insert-defined:
+    On a JUNOS type acl using --insert-defined, this will only replace parts of the
+    term that have been specified on the command-line. This may sound confusing
+    but this example should clear things up.
+
+    Take the following term:
+    term sr31337 {
+        from {
+            source-address {
+                10.0.0.0/8;
+                11.0.0.0/8;
+            }
+            destination-address {
+                192.168.0.1/32;
+            }
+            destination-port 80;
+            protocol tcp;
+        }
+        then {
+            accept;
+            count sr31337;
+        }
+    }
+
+    If you run this with the following arguments:
+    --modify-specific-term sr31337 --source-address 5.5.5.5/32 --destination-port 81 --insert-defined
+    The following term will be generated:
+    term sr31337 {
+        from {
+            source-address {
+                5.5.5.5/32;
+                10.0.0.0/8;
+                11.0.0.0/8;
+            }
+            destination-address {
+                192.168.0.1/32;
+            }
+            destination-port 80-81;
+            protocol tcp;
+        }
+        then {
+            accept;
+            count sr31337;
+        }
+    }
+
+    As you can see 5.5.5.5/32 was added to the source-address portion, and 81
+    was added as a destination-port. Notice that all other fields were left
+    alone.
+
+    On a IOS type acl using --insert-defined, this will only add access where
+    it is needed. Take the following example:
+
+    !!! I AM L33T
+    access-list 101 permit udp host 192.168.0.1 host 192.168.1.1 eq 80
+    access-list 101 permit ip host 192.168.0.5 host 192.168.1.10
+    access-list 101 permit tcp host 192.168.0.6 host 192.168.1.11 eq 22
+    !!! I AM NOT L33T
+
+    If you run this with the following arguments:
+    --modify-between-comments "I AM L33T" "I AM NOT L33T" \\
+      --source-address 192.168.0.5 \\
+      --destination-address 192.168.1.10 \\
+      --destination-address 192.168.1.11 \\
+      --protocol tcp \\
+      --destination-port 80 \\
+      --insert-defined
+    The following will be generated:
+    !!! I AM L33T
+    access-list 101 permit udp host 192.168.0.1 host 192.168.1.1 eq 80
+    access-list 101 permit ip host 192.168.0.5 host 192.168.1.10
+    access-list 101 permit tcp host 192.168.0.6 host 192.168.1.11 eq 22
+    access-list 101 permit tcp host 192.168.0.5 host 192.168.1.11 eq 80
+    !!! I AM NOT L33T
+
+    As you can see the last line was added, take note that the
+    192.168.0.5->192.168.1.10:80 access was not added because it
+    was already allowed.
+"""
+
+    parser.add_option('--replace-defined', default=False, action='store_true',
+        help=
+"""This option works differently based on the type of ACL we are modifying. The
+one similar characteristic is that access can be removed, since this replaces
+whole sets of defined data.
+""")
+    notes += """
+
+NOTE when using --replace-defined:
+    When modifying a JUNOS term you only replace parts of the term that are
+    specified on the commandline.
+
+    Take the following as an example:
+    term sr31337 {
+        from {
+            source-address {
+                10.0.0.0/8;
+                11.0.0.0/8;
+            }
+            destination-address {
+                192.168.0.1/32;
+            }
+            destination-port 80;
+            protocol tcp;
+        }
+        then {
+            accept;
+            count sr31337;
+        }
+    }
+    If you run this with the following arguments:
+    --modify-specific-term sr31337 --source-address 5.5.5.5 --replace-defined
+    The following is generated:
+    term sr31337 {
+        from {
+            source-address {
+                5.5.5.5/32;
+            }
+            destination-address {
+                192.168.0.1/32;
+            }
+            destination-port 80;
+            protocol tcp;
+        }
+        then {
+            accept;
+            count sr31337;
+        }
+    }
+
+    As you can see only the source-address portion of the term was replaced.
+"""
+    opts, args = parser.parse_args(argv)
+    #print 'OPTS:', opts
+    #print 'ARGS:', args
+
+    for i in opts.source_port_range:
+        opts.source_port.append(i)
+    for i in opts.destination_port_range:
+        opts.destination_port.append(i)
+
+
+    cnt = 0
+    for i in opts.source_address:
+        opts.source_address[cnt] = TIP(i)
+        cnt += 1
+
+    cnt = 0
+    for i in opts.destination_address:
+        opts.destination_address[cnt] = TIP(i)
+        cnt += 1
+    for i in opts.destination_address_from_file:
+        f = open(i, 'r')
+        line = f.readline()
+        while line:
+            line = line.rstrip()
+            opts.destination_address.append(TIP(line))
+            line = f.readline()
+    for i in opts.source_address_from_file:
+        f = open(i, 'r')
+        line = f.readline()
+        while line:
+            line = line.rstrip()
+            opts.source_address.append(TIP(line))
+            line = f.readline()
+
+    if len(argv) == 1 or not opts.acl or opts.help:
+        parser.print_help()
+        print(notes
+        sys.exit(2)
+
+    if not opts.replace_defined or opts.insert_defined:
+        opts.insert_defined = True
+
+    return opts, args
+
+
+def log_term(term, msg="ADDING"):
+    print(">>%s<<" % (msg),
+    for k,v in term.match.iteritems():
+        for x in v:
+            print("KEY:%s VAL:%s," % (k,x),
+    print(""
+
+
+def wedge_acl(acl, new_term, between, opts):
+    if not between:
+        # ugg, don't deal with this yet.
+        return
+    elif isinstance(between, tuple):
+        found_start = False
+        found_end   = False
+        start_offset = 0
+        end_offset   = 0
+        offset = 0
+        for term in acl.terms:
+            for comment in term.comments:
+                if found_start and between[1] in comment:
+                    end_offset = offset
+                    found_end = True
+                    break
+                elif not found_start and between[0] in comment:
+                    start_offset = offset
+                    found_start = True
+            if found_start and found_end:
+                break
+            offset += 1
+        if found_start and found_end:
+            # everthing before the start of the modify
+            head_terms   = acl.terms[0:start_offset]
+            # everything after the modify portion.
+            footer_terms = acl.terms[end_offset:]
+            # the terms to modify
+            terms = acl.terms[start_offset:end_offset]
+            # create a new term and add the head to it
+            create_term = head_terms
+            if opts.replace_defined:
+                # don't forget about the comment
+                # or else future edits will be gone.
+                new_term.comments = acl.terms[start_offset].comments
+                create_term.append(new_term)
+                if opts.show_mods:
+                    # log the added
+                    log_term(new_term)
+                    # log the removed
+                    for term in terms:
+                        log_term(term, "REMOVING")
+            elif opts.insert_defined:
+                to_insert = acl_tools.create_access(terms, new_term)
+                # put all the other stuff in here.
+                for term in terms:
+                    create_term.append(term)
+                # just insert the new entries at the bottom...
+                if to_insert:
+                    to_insert[0].comments.append(Comment("Added by acl_script on <date>"))
+                for toins in to_insert:
+                    if opts.show_mods:
+                        log_term(toins)
+                    create_term.append(toins)
+            # add the end
+            for term in footer_terms:
+                create_term.append(term)
+            # overwrite the original list.
+            acl.terms = create_term
+    elif isinstance(between, str):
+        # find a specific term to modify
+        assert acl.format == 'junos'
+        for term in acl.terms:
+            if term.name == between:
+                if opts.replace_defined:
+                    # for every part of new_term that is defined
+                    # we replace that portion in this term.
+                    for k,v in new_term.match.iteritems():
+
+                        if opts.show_mods:
+                            removing = term.match.get(k,[])
+                            for x in removing:
+                                print ">>REMOVING<< KEY:%s VAL:%s,TERM:%s" % (k,x,term.name)
+                            for x in v:
+                                print ">>ADDING<< KEY:%s VAL:%s,TERM:%s" % (k,x,term.name)
+                        term.match[k] = v
+
+                elif opts.insert_defined:
+                    # for every part of new_term that is defined
+                    # we just insert if not found in the section
+                    # of this term.
+                    for k,v in new_term.match.iteritems():
+                        if not term.match.has_key(k):
+                            if opts.show_mods:
+                                for x in v:
+                                    print ">>ADDING<< KEY:%s VAL:%s, TERM:%s" % (k,x,term.name)
+                            term.match[k] = v
+                        else:
+                            if opts.comment:
+                                for comment in term.comments:
+                                    if opts.comment == comment.data:
+                                        break
+                                else:
+                                    term.comments.append(Comment(opts.comment))
+                            for x in v:
+                                print x
+                                if x not in term.match[k]:
+                                    if opts.show_mods:
+                                        print ">>ADDING<< KEY:%s VAL:%s, TERM:%s" % (k, x, term.name)
+                                    term.match[k].append(x)
+                break
+
+
+def main():
+    """Main entry point for the CLI tool."""
+    opts, args = parse_args(sys.argv)
+    for acl_file in opts.acl:
+        rcs = RCS(acl_file, create=False)
+        rcs.lock_loop()
+
+        try:
+            with open(acl_file, 'r') as f:
+                acl = parse(f)
+        # TODO (jathan): Improve this naked except
+        except Exception as err:
+            print(">>ERROR<< Could not parse acl file %s!" % acl_file
+            rcs.unlock()
+            sys.exit(2)
+
+        short_acl = acl_file
+        r = re.compile(r'\/(acl\..*?)$')
+        ar = r.findall(acl_file) #opts.acl)
+        if ar:
+            short_acl = ar[0]
+
+        term = acl_tools.create_trigger_term(opts.source_address,
+                opts.destination_address,
+                opts.source_port,
+                opts.destination_port,
+                opts.protocol)
+
+        # Comments are not integrated and handled differently
+        if opts.comment:
+            term.comments.append(opts.comment)
+
+        if opts.modify_between_comments and not acl.format.startswith('ios'):
+            print("--modify-between-comments should only be used for ios like acls"
+            rcs.unlock()
+            sys.exit(1)
+
+        if opts.modify_specific_term and acl.format != 'junos':
+            print("--modify-specific-term should only be used on junos like acls"
+            rcs.unlock()
+            sys.exit(1)
+
+        if opts.modify_between_comments:
+            for d in opts.modify_between_comments:
+                wedge_acl(acl, term, d, opts)
+        elif opts.modify_specific_term:
+            for d in opts.modify_specific_term:
+                wedge_acl(acl, term, d, opts)
+
+        tempfile = acl_tools.write_tmpacl(acl, process_name='_acl_script')
+        diff     = acl_tools.diff_files(acl_file, tempfile)
+
+        if not diff:
+            print("No changes made to %s" % acl_file
+            rcs.unlock()
+            os.remove(tempfile)
+            #sys.exit(0)
+            continue
+
+        prestr = ''
+        if opts.no_input:
+            prestr = '>>DIFF<< '
+
+        print('%s"%s"' % (prestr, acl_file) #opts.acl)
+        print("%sBEGINNING OF CHANGES ===========" % prestr
+        for l in diff.split('\n'):
+            print("%s%s" % (prestr,l)
+        print("%sEND OF CHANGES =================" % prestr
+
+        if not opts.no_input:
+            if not yesno('Do you want to save changes?'):
+                rcs.unlock()
+                os.remove(tempfile)
+                #sys.exit(1)
+                continue
+
+        if not opts.no_changes:
+            import shutil
+            shutil.copy(tempfile, acl_file) #opts.acl)
+
+            #rcs.checkin() #message=opts.comment)
+            pats = (re.compile(r'^\+.*!+(.*)'), re.compile(r'^\+.*/\*(.*)\*/'))
+            logstr='From acl_script\n'
+            for line in diff.split('\n'):
+                for pat in pats:
+                    m = pat.match(line)
+                    if m:
+                        msg = m.group(1).strip()
+                        if msg: logstr += m.group(1).strip() + '\n'
+                        break
+            if logstr:
+                print 'Autodetected log message:'
+                print logstr
+                print ''
+            else:
+                logstr = ''
+            # TODO (jathan): Replace this with rcs.checkin()
+            os.spawnlp(os.P_WAIT, 'ci', 'ci', '-u', '-m' + logstr, acl_file) #old_file)
+            #os.remove(tmpfile)
+
+            if not opts.no_worklog:
+                acl_tools.worklog(short_acl, diff, log_string='updated by acl_script')
+
+        rcs.unlock()
+        os.remove(tempfile)
+
+
+if __name__ == "__main__":
+    main()
