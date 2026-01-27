@@ -5,8 +5,7 @@ from trigger.netdevices import NetDevices
 from trigger.cmds import Commando
 from trigger.utils.templates import *
 from contextlib import contextmanager
-from StringIO import StringIO
-import cStringIO
+from io import StringIO
 
 # Constants
 DEVICE_NAME = "test1-abc.net.aol.com"

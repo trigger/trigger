@@ -43,7 +43,7 @@ object's method of the same name) to override anything specified in a user's
 """
 
 # Imports
-import ConfigParser
+import configparser
 import os
 import sys
 from twisted.python import log
@@ -66,13 +66,13 @@ def read_config(filepath=GORC_PATH):
     :param filepath: The path to the .gorc file
     :returns: A parsed ConfigParser object
     """
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     try:
         status = config.read(filepath)
         if filepath not in status:
             log.msg("File not found: %r" % filepath)
             return None
-    except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError) as err:
+    except (configparser.MissingSectionHeaderError, configparser.ParsingError) as err:
         log.msg(err, debug=True)
         return None
     else:
@@ -130,10 +130,10 @@ def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
 
     try:
         cmdstr = config.get(section, vendor)
-    except ConfigParser.NoSectionError as err:
+    except configparser.NoSectionError as err:
         log.msg("%s in %s" % (err, GORC_PATH), debug=True)
         return []
-    except ConfigParser.NoOptionError as err:
+    except configparser.NoOptionError as err:
         log.msg(err, debug=True)
         return []
     else:

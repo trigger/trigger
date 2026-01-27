@@ -23,7 +23,7 @@ __version__ = "0.2.1"
 
 # Imports
 import itertools
-import cPickle as pickle
+import pickle
 import os
 from twisted.python import log, failure
 from trigger.cmds import Commando
@@ -69,14 +69,14 @@ class CommandoApplication(Commando):
         # Make sure that the specified containers are not passed in as strings.
         container_types = ["commands", "devices"]
         for container in container_types:
-            if isinstance(getattr(self, container), basestring):
+            if isinstance(getattr(self, container), str):
                 raise SyntaxError("%r cannot be a string!" % container)
 
-        # Temp hack to avoid ``exceptions.TypeError: Data must not be unicode``
-        # Commands that get deserialized from JSON end up as Unicode, and
-        # Twisted doesn't like that!
+        # In Python 3, all strings are unicode by default, so no conversion needed
+        # Commands that get deserialized from JSON are already strings
+        # This block is kept for compatibility but is now a no-op
         for idx, cmd in enumerate(self.commands):
-            if isinstance(cmd, unicode):
+            if isinstance(cmd, str):
                 self.commands[idx] = str(cmd)
 
         self.deferred = defer.Deferred()
@@ -162,7 +162,7 @@ class CommandoApplication(Commando):
             results = []
 
         cmd_list = []
-        for cmd, res in itertools.izip_longest(commands, results):
+        for cmd, res in itertools.zip_longest(commands, results):
             if type(Element("")) == type(cmd):
                 # XML must die a very horrible death
                 cmd = ET.tostring(cmd)

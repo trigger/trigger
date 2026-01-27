@@ -5,7 +5,7 @@ __maintainer__ = "Jathan McCollum"
 __copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com"
 __version__ = "2.0"
 
-from StringIO import StringIO
+from io import StringIO
 import unittest
 from trigger import acl, exceptions
 

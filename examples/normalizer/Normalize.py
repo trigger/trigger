@@ -144,7 +144,7 @@ def main():
             spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
             for row in spamreader:
                 device_list.append(row[0])
-        user_response = raw_input(
+        user_response = input(
             "Are you certain you want to normalize {} devices? [y/N]\n".format(
                 len(device_list)
             )

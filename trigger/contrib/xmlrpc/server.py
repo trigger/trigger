@@ -12,6 +12,7 @@ See ``examples/xmlrpc_server`` in the Trigger source distribution for a simple
 usage example.
 """
 
+import importlib
 import os
 import sys
 import types
@@ -125,7 +126,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             if force:
                 log.msg("Forcing reload of handler: %r" % task_name)
                 # Allow user to force reload of module
-                module = reload(sys.modules[mod_name])
+                module = importlib.reload(sys.modules[mod_name])
             else:
                 # If not forcing reload, don't bother with the rest
                 log.msg("%r already loaded" % mod_name)
