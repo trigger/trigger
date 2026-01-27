@@ -19,7 +19,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from support import *
+from .support import *
 
 # Each production can be any of:
 # 1. string
@@ -47,7 +47,7 @@ def S(prod):
 def literals(d):
     """Longest match of all the strings that are keys of 'd'."""
     keys = [str(key) for key in d]
-    keys.sort(lambda x, y: len(y) - len(x))
+    keys.sort(key=lambda x: -len(x))  # Sort by length descending
     return " / ".join(['"%s"' % key for key in keys])
 
 
