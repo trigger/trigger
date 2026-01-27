@@ -12,7 +12,8 @@ __copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
 
 from base64 import decodebytes as decodestring, encodebytes as encodestring
 from collections import namedtuple
-from distutils.version import LooseVersion
+# Python 3: distutils deprecated, use packaging instead
+from packaging.version import Version
 import getpass
 from time import strftime, localtime
 import os
@@ -23,6 +24,11 @@ from trigger.conf import settings
 
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from cryptography.hazmat.primitives import ciphers
+# Python 3 / cryptography 48+: TripleDES moved to decrepit module
+try:
+    from cryptography.hazmat.decrepit.ciphers.algorithms import TripleDES
+except ImportError:
+    from cryptography.hazmat.primitives.ciphers.algorithms import TripleDES
 
 # Exports
 __all__ = (
@@ -269,7 +275,7 @@ class Tacacsrc(object):
         self.data = []
         self.creds = {}
         self.creds_updated = False
-        self.version = LooseVersion("2.0")
+        self.version = Version("2.0")
 
         # If we're not generating a new file and gpg is enabled, turn it off if
         # the right files can't be found.
@@ -436,7 +442,7 @@ class Tacacsrc(object):
         key = self.key if isinstance(self.key, bytes) else self.key.encode('latin-1')
         plaintext = s if isinstance(s, bytes) else s.encode('latin-1')
 
-        des = ciphers.algorithms.TripleDES(key)
+        des = TripleDES(key)
         cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
         encryptor = cipher.encryptor()
 
@@ -455,7 +461,7 @@ class Tacacsrc(object):
         """Decodes using the old method. Strips newline for you."""
         # Ensure key is bytes for cryptography library
         key = self.key if isinstance(self.key, bytes) else self.key.encode('latin-1')
-        des = ciphers.algorithms.TripleDES(key)
+        des = TripleDES(key)
         cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
         decryptor = cipher.decryptor()
         # Ensure s is bytes for base64.decodebytes

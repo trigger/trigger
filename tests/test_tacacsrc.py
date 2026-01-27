@@ -70,7 +70,8 @@ def miniparser(data, tcrc):
     return ret
 
 
-class Testing_Tacacsrc(Tacacsrc):
+# Renamed to avoid pytest collection warning (can't start with "Test")
+class MockTacacsrc(Tacacsrc):
     def _get_key_nonce_old(self):
         """Dependency injection"""
         return "jschmoe\n"
@@ -79,9 +80,10 @@ class Testing_Tacacsrc(Tacacsrc):
 class TacacsrcTest(unittest.TestCase):
     def testRead(self):
         """Test reading .tacacsrc."""
-        t = Testing_Tacacsrc()
+        t = MockTacacsrc()
         for name, value in ALL_CREDS:
-            self.assertEqual(t.version, "2.0")
+            # Python 3: packaging.version.Version object, compare as string
+            self.assertEqual(str(t.version), "2.0")
             self.assertEqual(t.creds["%s" % name], value)
 
     def _get_perms(self, filename):
@@ -92,7 +94,7 @@ class TacacsrcTest(unittest.TestCase):
     def testWrite(self):
         """Test writing .tacacsrc."""
         _, file_name = tempfile.mkstemp("_tacacsrc")
-        t = Testing_Tacacsrc(generate_new=False)
+        t = MockTacacsrc(generate_new=False)
 
         for name, value in ALL_CREDS:
             t.creds["%s" % name] = value
@@ -116,7 +118,7 @@ class TacacsrcTest(unittest.TestCase):
 
     def test_brokenpw(self):
         self.assertRaises(
-            ValueError, Testing_Tacacsrc, tacacsrc_file="tests/data/brokenpw_tacacsrc"
+            ValueError, MockTacacsrc, tacacsrc_file="tests/data/brokenpw_tacacsrc"
         )
 
     def test_emptypw(self):
@@ -125,13 +127,13 @@ class TacacsrcTest(unittest.TestCase):
             with patch("sys.stdout", devnull):
                 self.assertRaises(
                     KeyError,
-                    Testing_Tacacsrc,
+                    MockTacacsrc,
                     tacacsrc_file="tests/data/emptypw_tacacsrc",
                 )
 
     def test_perms(self):
         """Test that permissions are being enforced."""
-        t = Testing_Tacacsrc()
+        t = MockTacacsrc()
         fname = t.file_name
         # First make sure perms are set
         old_perms = self._get_perms(fname)
