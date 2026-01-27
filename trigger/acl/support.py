@@ -1216,7 +1216,7 @@ class Matches(MyDict):
         """Return a list that can form the ``from { ... }`` clause of the term."""
         a = []
         keys = self.keys()
-        keys.sort(lambda x, y: cmp(junos_match_order[x], junos_match_order[y]))
+        keys.sort(key=lambda x: junos_match_order.get(x, 999))
         for s in keys:
             matches = map(self.junos_str, self[s])
             has_negated_addrs = any(m for m in matches if m.endswith(" except"))
