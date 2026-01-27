@@ -117,7 +117,7 @@ def main():
         writer = csv.DictWriter(f, fieldNames)
         writer.writeheader()
     
-        for router in routers.itervalues():
+        for router in routers.values():
             try:
                 last_access = "{:%Y-%m-%d %H:%M}".format(router.lastAccess)
             except AttributeError:

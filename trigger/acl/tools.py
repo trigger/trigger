@@ -61,7 +61,7 @@ def create_trigger_term(
         "source-port": source_ports,
         "destination-port": dest_ports,
         "protocol": protocols,
-    }.iteritems():
+    }.items():
         for n in data:
             if key in term.match:
                 term.match[key].append(n)
@@ -132,7 +132,7 @@ def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=
                 t.setaction("discard")  # .action[0] = 'discard'
                 t.makediscard = True  # set 'make discard' flag
 
-        for k, v in t.match.iteritems():
+        for k, v in t.match.items():
 
             if k not in matches or not matches[k]:
                 complicated = True
@@ -602,7 +602,7 @@ class ACLScript:
         for k, v in {
             "--source-address-from-file": self.source_ips,
             "--destination-address-from-file": self.dest_ips,
-        }.iteritems():
+        }.items():
             if len(v) == 0:
                 continue
             tmpf = tempfile.mktemp() + "_genacl"
@@ -618,7 +618,7 @@ class ACLScript:
 
             argz.append("%s %s" % (k, tmpf))
 
-        for k, v in {"-p": self.source_ports, "-P": self.dest_ports}.iteritems():
+        for k, v in {"-p": self.source_ports, "-P": self.dest_ports}.items():
 
             if not len(v):
                 continue

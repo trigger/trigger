@@ -344,7 +344,7 @@ def get_work(opts, args):
     # Check bounce windows, and filter or warn.
     now = datetime.datetime.now(tz=pytz.UTC)
     next_ok = dict([(dev, dev.next_ok('load-acl', now)) for dev in work])
-    bouncy_devs = [dev for dev, when in next_ok.iteritems() if when > now]
+    bouncy_devs = [dev for dev, when in next_ok.items() if when > now]
     if bouncy_devs:
         bouncy_devs.sort()
         print()
@@ -754,7 +754,7 @@ def main():
             curses.endwin()
 
     failed_count = 0
-    for dev, reason in failures.iteritems():
+    for dev, reason in failures.items():
         failed_count += 1
         log.err("LOAD FAILED ON %s: %s" % (dev, str(reason)))
         sys.stderr.write("LOAD FAILED ON %s: %s" % (dev, str(reason)))

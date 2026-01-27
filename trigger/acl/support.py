@@ -37,7 +37,7 @@ __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 import IPy
 from trigger import exceptions
 from trigger.conf import settings
-from dicts import *
+from .dicts import *
 
 # Python 2/3 compatibility
 try:
@@ -177,11 +177,11 @@ class MyDict(dict):
         return "<{}: {}>".format(self.__class__.__name__, str(self))
 
     def __str__(self):
-        return ", ".join(["{} {}".format(k, v) for k, v in self.iteritems()])
+        return ", ".join(["{} {}".format(k, v) for k, v in self.items()])
 
     def update(self, d):
         """Force this to go through __setitem__."""
-        for k, v in d.iteritems():
+        for k, v in d.items():
             self[k] = v
 
 
@@ -935,7 +935,7 @@ class Term:
                 '"%s" action not supported by IOS' % " ".join(self.action)
             )
         suffix = ""
-        for k, v in self.modifiers.iteritems():
+        for k, v in self.modifiers.items():
             if k == "syslog":
                 suffix += " log"
             elif k == "count":
@@ -1014,7 +1014,7 @@ class Protocol:
         # 112: 'vrrp' # Breaks Cisco compatibility
     }
 
-    name2num = {v: k for k, v in num2name.iteritems()}
+    name2num = {v: k for k, v in num2name.items()}
     name2num["ahp"] = 51  # undocumented Cisco special name
 
     def __init__(self, arg):
@@ -1251,7 +1251,7 @@ class Matches(MyDict):
         sourceports = []
         destports = []
         trailers = []
-        for key, arg in self.iteritems():
+        for key, arg in self.items():
             if key == "source-port":
                 sourceports += self.ios_port_str(arg)
             elif key == "destination-port":

@@ -10,7 +10,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jmccollum@salesforce.com"
 __copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
 
-from base64 import decodestring, encodestring
+from base64 import decodebytes as decodestring, encodebytes as encodestring
 from collections import namedtuple
 from distutils.version import LooseVersion
 import getpass
@@ -537,7 +537,7 @@ class Tacacsrc(object):
                     assert (realm, s) not in data
                     data[(realm, s)] = v  # self._decrypt(v)
 
-        for (realm, k), v in data.iteritems():
+        for (realm, k), v in data.items():
             if k == "uname":
                 # creds[realm] = (v, data[(realm, 'pwd')])
                 # creds[realm] = Credentials(v, data[(realm, 'pwd')])

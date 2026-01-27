@@ -37,9 +37,9 @@ import socket
 from trigger import exceptions
 from trigger.conf import settings
 
-from support import *
-from junos import *
-from ios import *
+from .support import *
+from .junos import *
+from .ios import *
 
 # Exports
 __all__ = (
@@ -117,7 +117,7 @@ def make_nondefault_processor(action):
 
 
 grammar = []
-for production, rule in rules.iteritems():
+for production, rule in rules.items():
     if isinstance(rule, tuple):
         assert len(rule) == 2
         setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))

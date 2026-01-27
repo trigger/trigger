@@ -254,7 +254,7 @@ def gather_devices(subdir_data, rancid_db_file=RANCID_DB_FILE):
         If it's named other than ``router.db``
     """
     iters = []
-    for rdir, files in subdir_data.iteritems():
+    for rdir, files in subdir_data.items():
         # Only carry on if we find 'router.db' or it's equivalent
         metadata = files.get(rancid_db_file)
         if metadata is None:
@@ -452,7 +452,7 @@ class Rancid(object):
 
     def _populate_configs(self):
         """NYI - Read configs"""
-        self.configs = _parse_config_files(self.devices.itervalues(), self.rancid_root)
+        self.configs = _parse_config_files(self.devices.values(), self.rancid_root)
 
     def _populate_data(self):
         """NYI - Maybe keep the other metadata but how?"""

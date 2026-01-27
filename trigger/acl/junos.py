@@ -27,7 +27,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from grammar import *
+from .grammar import *
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
@@ -47,7 +47,7 @@ class Policer:
         self.exceedings = []
         self.actions = []
         for elt in data:
-            for k, v in elt.iteritems():
+            for k, v in elt.items():
                 if k == "if-exceeding":
                     for entry in v:
                         type, value = entry

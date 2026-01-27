@@ -270,7 +270,7 @@ NOTE when using --replace-defined:
 
 def log_term(term, msg="ADDING"):
     print(">>%s<<" % (msg), end=' ')
-    for k,v in term.match.iteritems():
+    for k,v in term.match.items():
         for x in v:
             print("KEY:%s VAL:%s," % (k,x), end=' ')
     print("")
@@ -343,7 +343,7 @@ def wedge_acl(acl, new_term, between, opts):
                 if opts.replace_defined:
                     # for every part of new_term that is defined
                     # we replace that portion in this term.
-                    for k,v in new_term.match.iteritems():
+                    for k,v in new_term.match.items():
 
                         if opts.show_mods:
                             removing = term.match.get(k,[])
@@ -357,7 +357,7 @@ def wedge_acl(acl, new_term, between, opts):
                     # for every part of new_term that is defined
                     # we just insert if not found in the section
                     # of this term.
-                    for k,v in new_term.match.iteritems():
+                    for k,v in new_term.match.items():
                         if not term.match.has_key(k):
                             if opts.show_mods:
                                 for x in v:

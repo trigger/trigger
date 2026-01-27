@@ -164,7 +164,7 @@ class NetScreen(object):
         for (
             production,
             rule,
-        ) in rules.iteritems():
+        ) in rules.items():
             if isinstance(rule, tuple):
                 assert len(rule) == 2
                 setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
@@ -200,7 +200,7 @@ class NetScreen(object):
         """Used by NetScreen class when grouping policy members."""
         ret = {}
         for entry in x:
-            for key, val in entry.iteritems():
+            for key, val in entry.items():
                 if key in ret:
                     ret[key].append(val)
                 else:
@@ -622,7 +622,7 @@ class NSAddressBook(NetScreen):
 
     def output(self):
         ret = []
-        for zone, addrs in self.entries.iteritems():
+        for zone, addrs in self.entries.items():
             for addr in addrs:
                 for x in addr.output():
                     ret.append(x)
@@ -720,7 +720,7 @@ class NSService(NetScreen):
             self.protocol: other.protocol,
             self.source_port: other.source_port,
             self.destination_port: other.destination_port,
-        }.iteritems():
+        }.items():
 
             if a < b:
                 return -1
@@ -799,7 +799,7 @@ class NSRawPolicy(object):
         self.data = {}
 
         for entry in data:
-            for key, val in entry.iteritems():
+            for key, val in entry.items():
                 self.data[key] = val
 
 
@@ -1037,7 +1037,7 @@ class NSPolicy(NetScreen):
                 "src-address": self.source_addresses[1:],
                 "dst-address": self.destination_addresses[1:],
                 "service": self.services[1:],
-            }.iteritems():
+            }.items():
                 for item in v:
                     toret.append(' set %s "%s"' % (k, item.name))
             toret.append("exit")
