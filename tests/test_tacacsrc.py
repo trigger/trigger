@@ -10,7 +10,7 @@ from io import StringIO
 import os
 import unittest
 import tempfile
-from mock import patch
+from unittest.mock import patch
 from trigger.conf import settings
 from trigger.tacacsrc import Tacacsrc, Credentials
 

@@ -1,3 +1,6 @@
-py==1.4.30
-pytest==2.8.2
-pytest-pythonpath==0.7
+pytest>=7.4.0
+pytest-pythonpath>=0.7.4
+pytest-twisted>=1.14.0
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
