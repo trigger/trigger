@@ -7,8 +7,8 @@ name = "trigger"
 version = "2.0.0"
 description = "Network automation toolkit for managing network devices"
 readme = "README.rst"
-license = {text = "BSD"}
-authors = [{name = "Jathan McCollum", email = "jathanism@aol.com"}]
+license = "BSD-3-Clause"
+authors = [{name = "Jathan McCollum", email = "jathan@gmail.com"}]
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 6 - Mature",
@@ -36,7 +36,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
-    "pytest-pythonpath>=0.7.4",
     "pytest-twisted>=1.14.0",
     "black>=23.0.0",
     "isort>=5.12.0",
@@ -60,7 +59,7 @@ optimizer = "trigger.bin.optimizer:main"
 run_cmds = "trigger.bin.run_cmds:main"
 
 [tool.setuptools]
-packages = ["trigger", "trigger.acl", "trigger.bin", "trigger.changemgmt",
+packages = ["trigger", "trigger.acl", "trigger.changemgmt",
             "trigger.conf", "trigger.contrib", "trigger.netdevices",
             "trigger.packages", "trigger.utils", "twisted.plugins"]
 include-package-data = true

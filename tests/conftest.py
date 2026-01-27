@@ -1,6 +1,13 @@
 """Pytest configuration and fixtures for Trigger tests."""
 import os
+import sys
 import pytest
+
+
+# Add project root to Python path (replaces pytest-pythonpath)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 
 @pytest.fixture(scope="session", autouse=True)
