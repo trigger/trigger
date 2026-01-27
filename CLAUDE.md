@@ -194,7 +194,7 @@ ios_output = acl.output(format='ios')
 - **cryptography>=1.4**: Credential encryption
 - **redis**: ACL database backend
 - **SimpleParse**: BNF grammar parser for ACLs
-- **gtextfsm**: Template-based output parsing
+- **textfsm**: Template-based output parsing
 
 ## Testing Strategy
 
