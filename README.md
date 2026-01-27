@@ -1,6 +1,6 @@
 # What is Trigger?
 
-![Build Status](https://travis-ci.org/trigger/trigger.png)
+[![Tests](https://github.com/trigger/trigger/workflows/Tests/badge.svg)](https://github.com/trigger/trigger/actions)
 [![Join the chat at https://gitter.im/trigger/trigger](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/trigger/trigger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Trigger is a robust network automation toolkit written in Python that was
@@ -58,6 +58,32 @@ The best way to get started is to read the documentation hosted by [Read the
 Docs](http://readthedocs.org) at [http://trigger.readthedocs.io](http://trigger.readthedocs.io). There you will find everything you need to
 get going including usage examples, installation and configuration
 instructions, and more!
+
+### Python Version Requirements
+
+**Trigger v2.0.0+** requires **Python 3.10 or 3.11**. Python 3.12+ is not yet supported due to SimpleParse C extension compatibility issues.
+
+**Python 2.7 support ended with v1.6.0** (the last Python 2.7 compatible release).
+
+#### Installation
+
+```bash
+# Install the latest version
+pip install trigger
+
+# Install in development mode
+pip install -e ".[dev]"
+
+# Using uv (faster)
+uv pip install trigger
+```
+
+For users still requiring Python 2.7, use the v1.6.0 release:
+```bash
+pip install trigger==1.6.0
+```
+
+See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for details on upgrading from v1.6.0 to v2.0.0.
 
 ### Before you begin
 
