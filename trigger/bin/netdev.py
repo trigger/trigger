@@ -193,7 +193,7 @@ def search_builder(opts):
     except TypeError:
         from trigger.conf import settings
         print("A required field in %s is missing or invalid.  Please fix the data and try again." \
-                % settings.NETDEVICES_SOURCE
+                % settings.NETDEVICES_SOURCE)
         sys.exit(1)
 
     devlist.sort()
@@ -211,17 +211,17 @@ def search_builder(opts):
         dump = [x for x in acls]
         dump.sort()
         for acl in dump:
-            print(acl
+            print(acl)
     # Print devices
     else:
         if devlist:
-            for dev in devlist: print dev
+            for dev in devlist: print(dev)
         else:
             squery = []
             for key, value in opts_dict.iteritems():
                 if key not in ('search', 'nonprod') and value:
                     squery.append( key + "=" + value )
-            print("No matches for the query %s." % " and ".join(squery)
+            print("No matches for the query %s." % " and ".join(squery))
 
 
 def main():

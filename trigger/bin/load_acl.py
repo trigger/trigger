@@ -220,7 +220,7 @@ def parse_args(argv):
         sys.stdout = NullDevice()
     if opts.bouncy:
         opts.jobs = 1
-        print('Bouncy enabled, disabling multiple jobs.'
+        print('Bouncy enabled, disabling multiple jobs.')
         log.msg('Bouncy enabled, disabling multiple jobs.')
 
     return opts, args
@@ -294,7 +294,7 @@ def get_work(opts, args):
             if acl in settings.AUTOLOAD_FILTER_THRESH:
                 thresh_counts[acl] += 1
                 if thresh_counts[acl] >= settings.AUTOLOAD_FILTER_THRESH[acl]:
-                    print 'adding', router, acl, ' to AUTOLOAD_BLACKLIST'
+                    print('adding', router, acl, ' to AUTOLOAD_BLACKLIST')
                     log.msg("Adding %s to AUTOLOAD_BLACKLIST" % acl)
                     settings.AUTOLOAD_BLACKLIST.append(acl)
 
@@ -347,26 +347,26 @@ def get_work(opts, args):
     bouncy_devs = [dev for dev, when in next_ok.iteritems() if when > now]
     if bouncy_devs:
         bouncy_devs.sort()
-        print
+        print()
         if opts.bouncy:
             for dev in bouncy_devs:
                 dev_acls = ', '.join(work[dev])
-                print 'Loading %s OUT OF BOUNCE on %s' % (dev_acls, dev)
+                print('Loading %s OUT OF BOUNCE on %s' % (dev_acls, dev))
                 log.msg('Loading %s OUT OF BOUNCE on %s' % (dev_acls, dev))
         else:
             for dev in bouncy_devs:
                 dev_acls = ', '.join(work[dev])
-                print 'Skipping %s on %s (window starts at %s)' % \
-                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev]))
+                print('Skipping %s on %s (window starts at %s)' % \
+                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev])))
                 log.msg('Skipping %s on %s (window starts at %s)' % \
                         (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev])))
                 del work[dev]
-            print('\nUse --bouncy to forcefully load on these devices anyway.'
+            print('\nUse --bouncy to forcefully load on these devices anyway.')
         print
 
     # Display filtered acls
     for a in filtered_acls:
-        print('%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a
+        print('%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a)
         log.msg('%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a)
 
     return work
@@ -655,44 +655,44 @@ def main():
         queue = None
 
     if (not opts.auto) or (not opts.quiet):
-        print('Logging to', tmpfile
+        print('Logging to', tmpfile)
 
     # Where the magic happens
     work = get_work(opts, args)
 
     if not work:
         if not opts.auto:
-            print('Nothing to load.'
+            print('Nothing to load.')
         log.msg('Nothing to load.')
         sys.exit(0)
 
-    print('You are about to perform the following loads:'
-    print(''
+    print('You are about to perform the following loads:')
+    print('')
     devs = work.items()
     devs.sort()
     for dev, acls in devs:
         acls = list(work[dev])
         acls.sort()
-        print('%-32s %s' % (dev, ' '.join(acls))
+        print('%-32s %s' % (dev, ' '.join(acls)))
     acl_count = len(acls)
-    print(''
+    print('')
     if debug_fakeout():
-        print('DEBUG FAKEOUT ENABLED'
+        print('DEBUG FAKEOUT ENABLED')
         failures = {}
         run(None, work, opts.jobs, failures, opts)
         sys.exit(1)
 
     if not opts.auto:
         if opts.bouncy:
-            print('NOTE: Parallel jobs disabled for out of bounce loads, this will take longer than usual.'
-            print
+            print('NOTE: Parallel jobs disabled for out of bounce loads, this will take longer than usual.')
+            print()
 
         confirm = raw_input('Are you sure you want to proceed? ')
         if not confirm.lower().startswith('y'):
-            print('LOAD CANCELLED'
+            print('LOAD CANCELLED')
             log.msg('LOAD CANCELLED')
             sys.exit(1)
-        print(''
+        print('')
         # Don't let the credential prompts get hidden behind curses
         populate_tacacrc = Tacacsrc()
     else:
@@ -713,7 +713,7 @@ def main():
             log.err("Unable to get on-call information!", logLevel=logging.CRITICAL)
             sys.exit(1)
 
-        print('\nSubmitting CM ticket...'
+        print('\nSubmitting CM ticket...')
         # catch failures to create a ticket
         try:
             cm_ticketnum = create_cm_ticket(work, oncall)
@@ -729,7 +729,7 @@ def main():
             sys.exit(es)
 
         cm_msg = "Created CM ticket #%s" % cm_ticketnum
-        print(cm_msg
+        print(cm_msg)
         log.msg(cm_msg)
 
     start = time.time()
