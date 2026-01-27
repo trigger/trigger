@@ -1,11 +1,8 @@
-==================
-Trigger To Do List
-==================
+# Trigger To Do List
 
 Things we want to fix.
 
-Big Things
-==========
+## Big Things
 
 + Document the NetDevices data structure and all base attributes expected to be
   found within a NetDevice object.
@@ -25,8 +22,7 @@ Big Things
 
 + Implement SSH support in trigger.twisted.execute_ioslike()
 
-Little Things
-=============
+## Little Things
 
 + Move get_tftp_source() from bin/load_acl to trigger.acl.tools
 
@@ -35,9 +31,7 @@ Little Things
 + Improve the interface to settings.create_cm_ticket() so that it is more
   intuitive and properly documented.
 
-Non-Trivial Things
-==================
+## Non-Trivial Things
 
 + Implement real unit tests. They are horrendously out of date. Most new
   features have no tests.
-

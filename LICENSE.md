@@ -1,6 +1,4 @@
-=======
-License
-=======
+# License
 
 Copyright (c) 2006-2012, AOL Inc.
 

@@ -1,6 +1,0 @@
-include CHANGELOG *.rst
-exclude .git*
-graft conf
-graft docs
-graft examples
-graft tests
