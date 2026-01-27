@@ -8,9 +8,10 @@ __copyright__ = "Copyright 2005-2011 AOL Inc."
 __version__ = "1.1"
 
 import os
+import subprocess
 import unittest
 
-ACLCONV = "bin/aclconv"
+ACLCONV = "aclconv"  # Now an entry point, not a script in bin/
 
 os.environ["PYTHONPATH"] = os.getcwd()
 
@@ -21,9 +22,16 @@ class Aclconv(unittest.TestCase):
     # This should be expanded.
     def testI2J(self):
         """Convert IOS to JunOS."""
-        child_in, child_out = os.popen2(ACLCONV + " -j -")
-        child_in.write("access-list 100 deny ip any any")
-        self.assertEqual(child_in.close(), None)
+        # Python 3: Use subprocess.Popen instead of os.popen2
+        proc = subprocess.Popen(
+            [ACLCONV, "-j", "-"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        output, errors = proc.communicate("access-list 100 deny ip any any")
+        self.assertEqual(proc.returncode, 0)
         correct_output = """\
 firewall {
 replace:
@@ -37,8 +45,7 @@ replace:
     }
 }
 """
-        self.assertEqual(child_out.read(), correct_output)
-        self.assertEqual(child_out.close(), None)
+        self.assertEqual(output, correct_output)
 
 
 if __name__ == "__main__":

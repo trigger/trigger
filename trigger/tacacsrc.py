@@ -309,6 +309,9 @@ class Tacacsrc(object):
                 passphrase = settings.TACACSRC_PASSPHRASE
                 import hashlib
 
+                # Python 3 requires encoding string to bytes before hashing
+                if isinstance(passphrase, str):
+                    passphrase = passphrase.encode('utf-8')
                 key = hashlib.md5(passphrase).hexdigest()[:24]  # 24 bytes
                 self.key = key
             # Otherwise read from keyfile.
