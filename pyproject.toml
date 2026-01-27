@@ -28,7 +28,7 @@ dependencies = [
     "pyparsing>=3.1.0",
     "pytz>=2023.3",
     "SimpleParse>=2.2.0",
-    "gtextfsm>=1.1.0",
+    "textfsm>=1.1.0",
     "redis>=5.0.0",
     "PTable>=0.9.2",
 ]

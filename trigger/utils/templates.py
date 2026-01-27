@@ -21,7 +21,7 @@ except ImportError:
 
     Try installing it like this::
 
-        >>> pip install gtextfsm
+        >>> pip install textfsm
     """)
 
 

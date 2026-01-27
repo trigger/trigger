@@ -1,3 +1,7 @@
+# DEPRECATED: This project has migrated to Python 3.10+ and GitHub Actions
+# This file is kept for historical reference only
+# See .github/workflows/tests.yml for the current CI configuration
+
 language: python
 python:
     - "2.7"
