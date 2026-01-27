@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 Parse RANCID db files so they can be converted into Trigger NetDevice objects.
@@ -26,11 +25,11 @@ Or using multiple RANCID instances within a single root::
 
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2012-2012, AOL Inc.; 2013 Salesforce.com'
-__version__ = '0.1.1'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2012-2012, AOL Inc.; 2013 Salesforce.com"
+__version__ = "0.1.1"
 
 import collections
 import copy
@@ -40,20 +39,27 @@ import itertools
 import os
 import sys
 
-__all__ = ('parse_rancid_file', 'parse_devices', 'walk_rancid_subdirs',
-           'parse_rancid_data', 'gather_devices', 'Rancid', 'RancidDevice')
+__all__ = (
+    "parse_rancid_file",
+    "parse_devices",
+    "walk_rancid_subdirs",
+    "parse_rancid_data",
+    "gather_devices",
+    "Rancid",
+    "RancidDevice",
+)
 
 # Constants
-CONFIG_DIRNAME = 'configs'
-RANCID_DB_FILE = 'router.db'
-RANCID_ALL_FILE = 'routers.all'
-RANCID_DOWN_FILE = 'routers.down'
-RANCID_UP_FILE = 'routers.up'
-NETDEVICE_FIELDS = ['nodeName', 'manufacturer', 'deviceStatus', 'deviceType']
+CONFIG_DIRNAME = "configs"
+RANCID_DB_FILE = "router.db"
+RANCID_ALL_FILE = "routers.all"
+RANCID_DOWN_FILE = "routers.down"
+RANCID_UP_FILE = "routers.up"
+NETDEVICE_FIELDS = ["nodeName", "manufacturer", "deviceStatus", "deviceType"]
 
 
 # Functions
-def _parse_delimited_file(root_dir, filename, delimiter=':'):
+def _parse_delimited_file(root_dir, filename, delimiter=":"):
     """
     Parse a colon-delimited file and return the contents as a list of lists.
 
@@ -69,14 +75,14 @@ def _parse_delimited_file(root_dir, filename, delimiter=':'):
         (Optional) Field delimiter
     """
     filepath = os.path.join(root_dir, filename)
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         reader = csv.reader(f, delimiter=delimiter)
-        return [r for r in reader if len(r) > 1] # Skip unparsed lines
+        return [r for r in reader if len(r) > 1]  # Skip unparsed lines
 
     return None
 
-def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None,
-                      delimiter=':'):
+
+def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None, delimiter=":"):
     """
     Parse a RANCID file and return generator representing a list of lists
     mapped  to the ``fields``.
@@ -95,22 +101,22 @@ def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None,
     """
     device_data = _parse_delimited_file(rancid_root, filename, delimiter)
     if not device_data:
-        return None # Always return None if there are no results
+        return None  # Always return None if there are no results
 
     # Make sure fields is not null and is some kind of iterable
     if not fields:
         fields = NETDEVICE_FIELDS
     else:
         if not isinstance(fields, collections.Iterable):
-            raise RuntimeError('`fields` must be iterable')
+            raise RuntimeError("`fields` must be iterable")
 
     # Map fields to generator of generators (!!)
     metadata = (itertools.izip_longest(fields, vals) for vals in device_data)
 
     return metadata
 
-def walk_rancid_subdirs(rancid_root, config_dirname=CONFIG_DIRNAME,
-                        fields=None):
+
+def walk_rancid_subdirs(rancid_root, config_dirname=CONFIG_DIRNAME, fields=None):
     """
     Walk the ``rancid_root`` and parse the included RANCID files.
 
@@ -135,18 +141,18 @@ def walk_rancid_subdirs(rancid_root, config_dirname=CONFIG_DIRNAME,
         (Optional) A list of field names used to map to the device data
     """
     walker = os.walk(rancid_root)
-    baseroot, basedirs, basefiles = walker.next() # First item is base
+    baseroot, basedirs, basefiles = walker.next()  # First item is base
 
     results = {}
     for root, dirnames, filenames in walker:
         # Skip any path with CVS in it
-        if 'CVS' in root:
-            #print 'skipping CVS:', root
+        if "CVS" in root:
+            # print 'skipping CVS:', root
             continue
 
         # Don't visit CVS directories
-        if 'CVS' in dirnames:
-            dirnames.remove('CVS')
+        if "CVS" in dirnames:
+            dirnames.remove("CVS")
 
         # Skip directories with nothing in them
         if not filenames or not dirnames:
@@ -161,8 +167,14 @@ def walk_rancid_subdirs(rancid_root, config_dirname=CONFIG_DIRNAME,
 
     return results
 
-def parse_rancid_data(rancid_root, filename=RANCID_DB_FILE, fields=None,
-                      config_dirname=CONFIG_DIRNAME, recurse_subdirs=False):
+
+def parse_rancid_data(
+    rancid_root,
+    filename=RANCID_DB_FILE,
+    fields=None,
+    config_dirname=CONFIG_DIRNAME,
+    recurse_subdirs=False,
+):
     """
     Parse single or multiple RANCID instances and return an iterator of the
     device metadata.
@@ -195,6 +207,7 @@ def parse_rancid_data(rancid_root, filename=RANCID_DB_FILE, fields=None,
 
     return metadata
 
+
 def parse_devices(metadata, parser):
     """
     Iterate device ``metadata`` to use ``parser`` to create and return a
@@ -219,10 +232,11 @@ def parse_devices(metadata, parser):
         return [parser(**dict(d)) for d in md_backup]
     except Exception as err:
         # Or just give up
-        print "Parser failed with this error: %r" % repr(err)
+        print("Parser failed with this error: %r" % repr(err))
         return None
     else:
-        raise RuntimeError('This should never happen!')
+        raise RuntimeError("This should never happen!")
+
 
 def gather_devices(subdir_data, rancid_db_file=RANCID_DB_FILE):
     """
@@ -250,18 +264,20 @@ def gather_devices(subdir_data, rancid_db_file=RANCID_DB_FILE):
 
     return itertools.chain(*iters)
 
-def _parse_config_file(rancid_root, filename, parser=None,
-                       config_dirname=CONFIG_DIRNAME, max_lines=30):
+
+def _parse_config_file(
+    rancid_root, filename, parser=None, config_dirname=CONFIG_DIRNAME, max_lines=30
+):
     """Parse device config file for metadata (make, model, etc.)"""
     filepath = os.path.join(rancid_root, config_dirname, filename)
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             config = []
             for idx, line in enumerate(f):
                 if idx >= max_lines:
                     break
-    
-                if any([line.startswith('#'), line.startswith('!') and len(line) > 2]):
+
+                if any([line.startswith("#"), line.startswith("!") and len(line) > 2]):
                     config.append(line.strip())
 
             return config
@@ -269,26 +285,31 @@ def _parse_config_file(rancid_root, filename, parser=None,
     except IOError:
         return None
 
+
 def _parse_config_files(devices, rancid_root, config_dirname=CONFIG_DIRNAME):
-    '''Parse multiple device config files'''
+    """Parse multiple device config files"""
     return_data = {}
     for dev in devices:
-        return_data[dev.nodeName] = _parse_config_file(rancid_root,
-                                                       dev.nodeName,
-                                                       config_dirname)
+        return_data[dev.nodeName] = _parse_config_file(
+            rancid_root, dev.nodeName, config_dirname
+        )
     return return_data
+
 
 def _parse_cisco(config):
     """NYI - Parse Cisco config to get metadata"""
 
+
 def _parse_juniper(config):
     """NYI - Parse Juniper config to get metadata"""
+
 
 def _parse_netscreen(config):
     """NYI - Parse NetScreen config to get metadata"""
 
+
 def massage_data(device_list):
-    """"
+    """ "
     Given a list of objects, try to fixup their metadata based on thse rules.
 
     INCOMPLETE.
@@ -297,17 +318,17 @@ def massage_data(device_list):
 
     netdevices = {}
     for idx, dev in enumerate(devices):
-        if dev.manufacturer == 'netscreen':
-            dev.manufacturer = 'juniper'
-            dev.deviceType = 'FIREWALL'
+        if dev.manufacturer == "netscreen":
+            dev.manufacturer = "juniper"
+            dev.deviceType = "FIREWALL"
 
-        elif dev.manufacturer == 'cisco':
-            dev.deviceType= 'ROUTER'
+        elif dev.manufacturer == "cisco":
+            dev.deviceType = "ROUTER"
 
-        elif dev.manufacturer == 'juniper':
-            dev.deviceType = 'ROUTER'
+        elif dev.manufacturer == "juniper":
+            dev.deviceType = "ROUTER"
         else:
-            print 'WTF', dev.nodeName, 'requires no massaging!'
+            print("WTF", dev.nodeName, "requires no massaging!")
 
         """
         # Asset
@@ -339,11 +360,14 @@ class RancidDevice(collections.namedtuple("RancidDevice", NETDEVICE_FIELDS)):
     :param deviceType:
         (Optional) The device type... determined somehow
     """
+
     __slots__ = ()
 
     def __new__(cls, nodeName, manufacturer, deviceStatus=None, deviceType=None):
-        return super(cls, RancidDevice).__new__(cls, nodeName, manufacturer,
-                                                deviceStatus, deviceType)
+        return super(cls, RancidDevice).__new__(
+            cls, nodeName, manufacturer, deviceStatus, deviceType
+        )
+
 
 class Rancid(object):
     """
@@ -382,9 +406,16 @@ class Rancid(object):
     :param recurse_subdirs:
         Whether you want to recurse directories.
     """
-    def __init__(self, rancid_root, rancid_db_file=RANCID_DB_FILE,
-                 config_dirname=CONFIG_DIRNAME, device_fields=None,
-                 device_class=None, recurse_subdirs=False):
+
+    def __init__(
+        self,
+        rancid_root,
+        rancid_db_file=RANCID_DB_FILE,
+        config_dirname=CONFIG_DIRNAME,
+        device_fields=None,
+        device_class=None,
+        recurse_subdirs=False,
+    ):
         if device_class is None:
             device_class = RancidDevice
 
@@ -408,27 +439,30 @@ class Rancid(object):
         Read router.db or equivalent and populate ``devices`` dictionary
         with objects.
         """
-        metadata = parse_rancid_data(self.rancid_root,
-                                     filename=self.rancid_db_file,
-                                     fields=self.device_fields,
-                                     config_dirname=self.config_dirname,
-                                     recurse_subdirs=self.recurse_subdirs)
+        metadata = parse_rancid_data(
+            self.rancid_root,
+            filename=self.rancid_db_file,
+            fields=self.device_fields,
+            config_dirname=self.config_dirname,
+            recurse_subdirs=self.recurse_subdirs,
+        )
 
         objects = parse_devices(metadata, self.device_class)
         self.devices = dict((d.nodeName, d) for d in objects)
 
     def _populate_configs(self):
         """NYI - Read configs"""
-        self.configs = _parse_config_files(self.devices.itervalues(),
-                                           self.rancid_root)
+        self.configs = _parse_config_files(self.devices.itervalues(), self.rancid_root)
 
     def _populate_data(self):
         """NYI - Maybe keep the other metadata but how?"""
-        #self.data['routers.all'] = parse_rancid_file(root, RANCID_ALL_FILE)
-        #self.data['routers.down'] = parse_rancid_file(root, RANCID_DOWN_FILE)
-        #self.data['routers.up'] = parse_rancid_file(root, RANCID_UP_FILE)
+        # self.data['routers.all'] = parse_rancid_file(root, RANCID_ALL_FILE)
+        # self.data['routers.down'] = parse_rancid_file(root, RANCID_DOWN_FILE)
+        # self.data['routers.up'] = parse_rancid_file(root, RANCID_UP_FILE)
         pass
 
     def __repr__(self):
-        return 'Rancid(%r, recurse_subdirs=%s)' % (self.rancid_root,
-                                                   self.recurse_subdirs)
+        return "Rancid(%r, recurse_subdirs=%s)" % (
+            self.rancid_root,
+            self.recurse_subdirs,
+        )

@@ -1,10 +1,10 @@
 # a test for except processing
 import sys, os
-sys.path.append(os.path.realpath(
-        os.path.join(os.path.dirname(__file__),'..')))
+
+sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 from trigger import acl
 
-PARSIT = '''
+PARSIT = """
 filter fire1 {
     term 1 {
         from {
@@ -27,9 +27,9 @@ filter fire1 {
         }
     }
 }
-'''
+"""
 y = acl.parse(PARSIT)
-print y.terms[0].match
-print '\n'.join(acl.parse(PARSIT).output_junos())
+print(y.terms[0].match)
+print("\n".join(acl.parse(PARSIT).output_junos()))
 # following should fail
-#print '\n'.join(acl.parse(PARSIT).output_ios())
+# print('\n'.join(acl.parse(PARSIT).output_ios()))

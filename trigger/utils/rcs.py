@@ -1,21 +1,18 @@
-#coding=utf-8
-
 """
 Provides a CVS like wrapper for local RCS (Revision Control System) with common commands.
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2009-2011, AOL Inc.'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2009-2011, AOL Inc."
 
 import commands
 import os
 import time
 
-
 # Exports
-__all__ = ('RCS',)
+__all__ = ("RCS",)
 
 
 # Classes
@@ -55,6 +52,7 @@ class RCS(object):
     date: 2011/07/08 20:56:53;  author: jathan;  state: Exp;
     first commit
     """
+
     def __init__(self, filename, create=True):
         self.locked = False
         self.filename = filename
@@ -64,14 +62,14 @@ class RCS(object):
                 self.filename = None
                 return None
             try:
-                f = open(self.filename, 'w')
+                f = open(self.filename, "w")
             except:
                 return None
             f.close()
             if not self.checkin(initial=True):
                 return None
 
-    def checkin(self, logmsg='none', initial=False, verbose=False):
+    def checkin(self, logmsg="none", initial=False, verbose=False):
         """
         Perform an RCS checkin. If successful this also unlocks the file, so
         there is no need to unlock it afterward.
@@ -90,7 +88,7 @@ class RCS(object):
         status, output = commands.getstatusoutput(cmd)
 
         if verbose:
-            print output
+            print(output)
 
         if status > 0:
             return False
@@ -107,15 +105,15 @@ class RCS(object):
         >>> rcs.lock()
         True
         """
-        cmd = 'co -f -l %s' % self.filename
+        cmd = "co -f -l %s" % self.filename
         status, output = commands.getstatusoutput(cmd)
 
         if verbose:
-            print output
+            print(output)
 
         if status > 0:
             return False
-        
+
         self.locked = True
         return True
 
@@ -128,15 +126,15 @@ class RCS(object):
         >>> rcs.unlock()
         True
         """
-        cmd = 'co -f -u %s' % self.filename
+        cmd = "co -f -u %s" % self.filename
         status, output = commands.getstatusoutput(cmd)
 
         if verbose:
-            print output
+            print(output)
 
         if status > 0:
             return False
-        
+
         self.locked = False
         return True
 
@@ -149,7 +147,7 @@ class RCS(object):
         :param verbose: Print command output
 
         Default:
-            >>> rcs.lock_loop(timeout=1) 
+            >>> rcs.lock_loop(timeout=1)
             Sleeping to wait for the lock on the file: foo
             Sleeping to wait for the lock on the file: foo
 
@@ -162,7 +160,7 @@ class RCS(object):
             co: RCS/foo,v: Revision 1.2 is already locked by joe.
         """
         while not self.lock(verbose=verbose):
-            print 'Sleeping to wait for the lock on the file: %s' % self.filename
+            print("Sleeping to wait for the lock on the file: %s" % self.filename)
             time.sleep(timeout)
             if callback:
                 callback()
@@ -170,7 +168,7 @@ class RCS(object):
 
     def log(self):
         """Returns the RCS log as a string (see above)."""
-        cmd = 'rlog %s 2>&1' % self.filename
+        cmd = "rlog %s 2>&1" % self.filename
         status, output = commands.getstatusoutput(cmd)
 
         if status > 0:

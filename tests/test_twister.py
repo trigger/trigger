@@ -1,5 +1,3 @@
-
-
 import re
 
 import pytest
@@ -12,11 +10,11 @@ def test_ioslike_prompt_pattern_enabled():
     pat = settings.IOSLIKE_PROMPT_PAT
 
     prompt_tests = [
-        'foo-bar1#',
-        'foo-bar1# ',
-        'foo-bar1(config)# ',
-        '\rfoo-bar01(config)# \x08 ',  # "Bonus" backspace in there
-        'foo-bar01(config) \r#',  # "Bonus" '\s\r' in there
+        "foo-bar1#",
+        "foo-bar1# ",
+        "foo-bar1(config)# ",
+        "\rfoo-bar01(config)# \x08 ",  # "Bonus" backspace in there
+        "foo-bar01(config) \r#",  # "Bonus" '\s\r' in there
     ]
 
     for prompt in prompt_tests:
@@ -28,10 +26,10 @@ def test_ioslike_prompt_pattern_nonenabled():
     pat = settings.IOSLIKE_ENABLE_PAT
 
     prompt_tests = [
-        'foo-bar1>',
-        'foo-bar1> ',
-        '\rfoo-bar01)> \x08 ',  # "Bonus" backspace in there
-        'foo-bar01) \r>',  # "Bonus" '\s\r' in there
+        "foo-bar1>",
+        "foo-bar1> ",
+        "\rfoo-bar01)> \x08 ",  # "Bonus" backspace in there
+        "foo-bar01) \r>",  # "Bonus" '\s\r' in there
     ]
 
     for prompt in prompt_tests:

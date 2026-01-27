@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Utils to import modules.
 
@@ -9,24 +7,23 @@ Taken verbatim from ``django.utils.importlib`` in Django 1.4.
 import os
 import sys
 
-
 # Exports
-__all__ = ('import_module', 'import_module_from_path')
+__all__ = ("import_module", "import_module_from_path")
 
 
 # Functions
 def _resolve_name(name, package, level):
     """Return the absolute name of the module to be imported."""
-    if not hasattr(package, 'rindex'):
+    if not hasattr(package, "rindex"):
         raise ValueError("'package' not set to a string")
     dot = len(package)
     for x in xrange(level, 1, -1):
         try:
-            dot = package.rindex('.', 0, dot)
+            dot = package.rindex(".", 0, dot)
         except ValueError:
-            raise ValueError("attempted relative import beyond top-level "
-                              "package")
-    return "%s.%s" % (package[:dot], name)
+            raise ValueError("attempted relative import beyond top-level " "package")
+    return "{}.{}".format(package[:dot], name)
+
 
 def import_module(name, package=None):
     """
@@ -37,17 +34,18 @@ def import_module(name, package=None):
     relative import to an absolute import.
 
     """
-    if name.startswith('.'):
+    if name.startswith("."):
         if not package:
             raise TypeError("relative imports require the 'package' argument")
         level = 0
         for character in name:
-            if character != '.':
+            if character != ".":
                 break
             level += 1
         name = _resolve_name(name[level:], package, level)
     __import__(name)
     return sys.modules[name]
+
 
 def import_module_from_path(full_path, global_name):
     """
@@ -72,7 +70,7 @@ def import_module_from_path(full_path, global_name):
         mymodule = __import__(module)
         sys.modules[global_name] = mymodule
     except ImportError:
-        raise ImportError('Module could not be imported from %s.' % full_path)
+        raise ImportError("Module could not be imported from %s." % full_path)
     finally:
         del sys.path[-1]
 

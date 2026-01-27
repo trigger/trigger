@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Misc. utils for testing.
 """
@@ -8,7 +6,8 @@ from contextlib import contextmanager
 from StringIO import StringIO
 import sys
 
-__all__ = ('captured_output',)
+__all__ = ("captured_output",)
+
 
 @contextmanager
 def captured_output():

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 optimizer - ACL Optimizer
@@ -96,7 +95,7 @@ is set to 0 (or off).
     
     return opts, args
 
-class ProgressMeter(object):
+class ProgressMeter:
     def __init__(self, **kw):
         # What time do we start tracking our progress from?
         self.timestamp = kw.get('timestamp', time.time())
@@ -191,34 +190,34 @@ greater than pcount for the optimizer to 'focus' in on.
     ports         = dict()
 
     for term in terms:
-        if term.match.has_key('source-port'):
+        if 'source-port' in term.match:
             continue
 
-        if not term.match.has_key('destination-port'):
+        if 'destination-port' not in term.match:
             continue
 
         for port in term.match['destination-port']:
             if port == 0:
                 continue
 
-            if ports.has_key(port):
+            if port in ports:
                 ports[port] += 1
             else:
                 ports[port] = 1
 
-    for port, cnt in ports.iteritems():
+    for port, cnt in ports.items():
         if cnt >= pcount:
             log.info('port %s had a count of %d' % (str(port), cnt))
             matched_ports[port] = 1
 
     for term in terms:
-        if not term.match.has_key('destination-port'):
+        if 'destination-port' not in term.match:
             continue
-        if term.match.has_key('source-port'):
+        if 'source-port' in term.match:
             continue
-        
+
         for tport in term.match['destination-port']:
-            if matched_ports.has_key(tport):
+            if tport in matched_ports:
                 focused[term.name] = 1
                 break
 
@@ -235,7 +234,7 @@ rej_keys = ['reject', 'deny', 'discard']
 def optimize_terms(terms, focused, which):
     global stop_all
     to_delete = dict()
-    other     = str() 
+    other     = '' 
     total     = 0
     count     = 0
 
@@ -257,7 +256,7 @@ def optimize_terms(terms, focused, which):
 
         meter.update(1)
 
-        if focused and not focused.has_key(term1.name): 
+        if focused and term1.name not in focused:
             continue
 
         dont_merge = False
@@ -271,10 +270,10 @@ def optimize_terms(terms, focused, which):
                     
         # make sure that there are not any source-ports
         # defined in term1
-        if not term1.match.has_key('destination-port') or \
-           term1.match.has_key('source-port') or \
+        if 'destination-port' not in term1.match or \
+           'source-port' in term1.match or \
            term1.action[0] in rej_keys or \
-           to_delete.has_key(term1):
+           term1 in to_delete:
             continue
 
         for term2 in terms:
@@ -285,7 +284,7 @@ def optimize_terms(terms, focused, which):
 
             log.debug('Comparing term %s to term %s [%d terms deleted]' %
                       (term1.name, term2.name, len(to_delete)))
-            if focused and not focused.has_key(term2.name):
+            if focused and term2.name not in focused:
                 continue
 
                 if opts.no_expires:
@@ -296,22 +295,22 @@ def optimize_terms(terms, focused, which):
                 if dont_perge: continue
 
             # check to make sure that neither term
-            # has been marked for deletion. Also 
+            # has been marked for deletion. Also
             # check to make sure we're not comparing
-            # the same terms, and this is not a 
+            # the same terms, and this is not a
             # rejected action.
-            if to_delete.has_key(term1.name) or \
-               to_delete.has_key(term2.name) or \
+            if term1.name in to_delete or \
+               term2.name in to_delete or \
                term1.name == term2.name or \
                term2.action[0] in rej_keys or \
-               term2.match.has_key('source-port'):
+               'source-port' in term2.match:
                 continue
 
             # check to make sure both terms include somethin
             # that can be matched.
             for key in chk_keys:
-                if not term1.match.has_key(key) or \
-                   not term2.match.has_key(key):
+                if key not in term1.match or \
+                   key not in term2.match:
                     breaker = True
                     break
 
@@ -409,7 +408,7 @@ def optimize_terms(terms, focused, which):
                 term2.match[which].append(to_add)
                 ips.append(str(to_add))
 
-            cmt = Comment('merged [(%s) %s] from %s' % (which, 
+            cmt = Comment('merged [({}) {}] from {}'.format(which, 
                 ','.join(ips), term1.name))
 
             term2.comments.append(cmt)
@@ -418,7 +417,7 @@ def optimize_terms(terms, focused, which):
 
     new_terms = []
     for term in terms:
-        if not to_delete.has_key(term.name):
+        if term.name not in to_delete:
             new_terms.append(term)
 
     return new_terms
@@ -526,8 +525,8 @@ def do_work(opts, files):
         log.info('Parsing %s' % acl_file)
 
         try:
-            acl = parse(file(acl_file))
-        except ParserSyntaxError, e:
+            acl = parse(open(acl_file))
+        except ParserSyntaxError as e:
             etxt = str(e).split()
             log.error(etxt)
             return
@@ -601,9 +600,9 @@ def do_work(opts, files):
         new_acl.terms    = terms
 
         out = open(out_file, 'w')
-        
+
         for x in new_acl.output(replace=True):
-            print >>out, x
+            print(x, file=out)
             
 if __name__ == '__main__':
     global opts

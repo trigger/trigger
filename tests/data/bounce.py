@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file controls when bounce windows get auto-applied to network devices.
 
@@ -21,35 +19,35 @@ from trigger.changemgmt import BounceWindow as BW
 
 # Bounce windows for Backbone (all times US/Eastern)
 BACKBONE = {
-    'ABC': BW(green='0, 22-23', yellow='1-12, 19-21', red='13-18'),
-    'BBQ': BW(green='3-5', yellow='0-2, 6-11', red='12-23'),
-    'COW': BW(green='5-7', yellow='1-4, 8-18', red='0, 19-23'),
-    'FAP': BW(green='21-23', yellow='0-12, 19-20', red='13-18'),
-    'FUN': BW(green='2-4', yellow='0-1, 5-14, 21-23', red='15-20'),
-    'OMG': BW(green='5-7', yellow='1-4, 8-18', red='0, 19-23'),
-    'XYZ': BW(green='3-5', yellow='0-2, 6-11', red='12-23'),
+    "ABC": BW(green="0, 22-23", yellow="1-12, 19-21", red="13-18"),
+    "BBQ": BW(green="3-5", yellow="0-2, 6-11", red="12-23"),
+    "COW": BW(green="5-7", yellow="1-4, 8-18", red="0, 19-23"),
+    "FAP": BW(green="21-23", yellow="0-12, 19-20", red="13-18"),
+    "FUN": BW(green="2-4", yellow="0-1, 5-14, 21-23", red="15-20"),
+    "OMG": BW(green="5-7", yellow="1-4, 8-18", red="0, 19-23"),
+    "XYZ": BW(green="3-5", yellow="0-2, 6-11", red="12-23"),
 }
 
 # Bounce windows for Data Center (all times US/Eastern)
 DATACENTER = {
-    'ABC': BW(green='5-7', yellow='0-4, 8-15', red='16-23'),
-    'BBQ': BW(green='5-7', yellow='0-4, 8-15', red='16-23'),
-    'FUN': BW(green='21-23', yellow='0-12, 17-20', red='13-16'),
-    'OMG': BW(green='15-18', yellow='0-4, 19-23', red='5-14'),
-    'XYZ': BW(green='5-7', yellow='0-4, 8-15', red='16-23'),
+    "ABC": BW(green="5-7", yellow="0-4, 8-15", red="16-23"),
+    "BBQ": BW(green="5-7", yellow="0-4, 8-15", red="16-23"),
+    "FUN": BW(green="21-23", yellow="0-12, 17-20", red="13-16"),
+    "OMG": BW(green="15-18", yellow="0-4, 19-23", red="5-14"),
+    "XYZ": BW(green="5-7", yellow="0-4, 8-15", red="16-23"),
 }
 
 # Out-of-band network (all times US/Eastern)
 OOB = {
-    'ABC': BW(green='14-17', yellow='5-13, 18-20', red='1-4, 21-23'),
-    'BBQ': BW(green='14-17', yellow='18-20', red='1-13, 21-23'),
-    'OMG': BW(green='14-17', yellow='5-13, 18-20', red='1-4, 21-23'),
-    'XYZ': BW(green='14-17', yellow='5-13, 18-20', red='1-4, 21-23'),
+    "ABC": BW(green="14-17", yellow="5-13, 18-20", red="1-4, 21-23"),
+    "BBQ": BW(green="14-17", yellow="18-20", red="1-13, 21-23"),
+    "OMG": BW(green="14-17", yellow="5-13, 18-20", red="1-4, 21-23"),
+    "XYZ": BW(green="14-17", yellow="5-13, 18-20", red="1-4, 21-23"),
 }
 
 # Team definitions
-TEAM_DC = 'Data Center'
-TEAM_BB = 'Backbone'
+TEAM_DC = "Data Center"
+TEAM_BB = "Backbone"
 
 # Mapping of team name to bounce windows
 BOUNCE_MAP = {
@@ -58,9 +56,10 @@ BOUNCE_MAP = {
 }
 
 # Defaults
-DEFAULT_BOUNCE_SITE = 'ABC'
+DEFAULT_BOUNCE_SITE = "ABC"
 DEFAULT_BOUNCE_TEAM = TEAM_DC
 DEFAULT_BOUNCE = BOUNCE_MAP[DEFAULT_BOUNCE_TEAM][DEFAULT_BOUNCE_SITE]
+
 
 def bounce(device, default=DEFAULT_BOUNCE):
     """
@@ -74,7 +73,7 @@ def bounce(device, default=DEFAULT_BOUNCE):
     """
 
     # First try OOB, since it's special
-    if 'ilo' in device.nodeName or 'oob' in device.nodeName:
+    if "ilo" in device.nodeName or "oob" in device.nodeName:
         windows = OOB
     # Try to get the bounce windows by owningTeam
     else:

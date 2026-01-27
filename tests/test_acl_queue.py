@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 Test the functionality of `~trigger.acl.queue` (aka task queue)
@@ -13,11 +12,12 @@ import tempfile
 from trigger.conf import settings
 
 # Override the DB file we're going to use.
-_, db_file = tempfile.mkstemp('.db')
+_, db_file = tempfile.mkstemp(".db")
 settings.DATABASE_NAME = db_file
 
 # Make sure we load the mock redis library
 from utils import mock_redis
+
 mock_redis.install()
 
 # Now we can import from Trigger
@@ -30,8 +30,8 @@ from trigger import exceptions
 import unittest
 
 # Globals
-DEVICE_NAME = 'test1-abc.net.aol.com'
-ACL_NAME = 'foo'
+DEVICE_NAME = "test1-abc.net.aol.com"
+ACL_NAME = "foo"
 USERNAME = get_user()
 
 # Setup
@@ -40,14 +40,16 @@ adb = AclsDB()
 nd = NetDevices()
 # These must happen after we populate the dummy AclsDB
 
+
 def _setup_aclsdb(nd, device_name=DEVICE_NAME, acl=ACL_NAME):
     """Add an explicit ACL to the dummy AclsDB"""
-    #print 'Setting up ACLsdb: %s => %s' % (acl, device_name)
+    # print 'Setting up ACLsdb: %s => %s' % (acl, device_name)
     dev = nd.find(device_name)
     if acl not in dev.acls:
         adb.add_acl(dev, acl)
     NetDevices._Singleton = None
     nd = NetDevices()
+
 
 class TestAclQueue(unittest.TestCase):
     def setUp(self):
@@ -71,17 +73,18 @@ class TestAclQueue(unittest.TestCase):
 
     def test_02_insert_integrated_failure_device(self):
         """Test insert invalid device"""
-        self.assertRaises(exceptions.TriggerError, self.q.insert, self.acl, ['bogus'])
+        self.assertRaises(exceptions.TriggerError, self.q.insert, self.acl, ["bogus"])
 
     def test_03_insert_integrated_failure_acl(self):
         """Test insert devices w/ no ACL association"""
-        self.assertRaises(exceptions.TriggerError, self.q.insert, 'bogus',
-                          self.device_list)
+        self.assertRaises(
+            exceptions.TriggerError, self.q.insert, "bogus", self.device_list
+        )
 
     def test_04_list_integrated_success(self):
         """Test listing integrated queue"""
         self.q.insert(self.acl, self.device_list)
-        expected = [(u'test1-abc.net.aol.com', u'foo')]
+        expected = [("test1-abc.net.aol.com", "foo")]
         self.assertEqual(sorted(expected), sorted(self.q.list()))
 
     def test_05_complete_integrated(self):
@@ -109,7 +112,7 @@ class TestAclQueue(unittest.TestCase):
 
     def test_10_remove_integrated_failure(self):
         """Test remove (set as loaded) failure"""
-        self.assertRaises(exceptions.ACLQueueError, self.q.remove, '', self.device_list)
+        self.assertRaises(exceptions.ACLQueueError, self.q.remove, "", self.device_list)
 
     #
     # Manual queue tests
@@ -117,21 +120,21 @@ class TestAclQueue(unittest.TestCase):
 
     def test_11_insert_manual_success(self):
         """Test insert success into manual queue"""
-        self.assertTrue(self.q.insert('manual task', None) is None)
+        self.assertTrue(self.q.insert("manual task", None) is None)
 
     def test_12_list_manual_success(self):
         """Test list success of manual queue"""
-        self.q.insert('manual task', None)
-        expected = ('manual task', self.user)
-        result = self.q.list('manual')
-        actual = result[0][:2] # First tuple, items 0-1
+        self.q.insert("manual task", None)
+        expected = ("manual task", self.user)
+        result = self.q.list("manual")
+        actual = result[0][:2]  # First tuple, items 0-1
         self.assertEqual(sorted(expected), sorted(actual))
 
     def test_13_delete_manual_success(self):
         """Test delete from manual queue"""
-        self.q.delete('manual task')
+        self.q.delete("manual task")
         expected = []
-        self.assertEqual(sorted(expected), sorted(self.q.list('manual')))
+        self.assertEqual(sorted(expected), sorted(self.q.list("manual")))
 
     #
     # Generic tests
@@ -139,11 +142,11 @@ class TestAclQueue(unittest.TestCase):
 
     def test_14_delete_failure(self):
         """Test delete of task not in queue"""
-        self.assertFalse(self.q.delete('bogus'))
+        self.assertFalse(self.q.delete("bogus"))
 
     def test_15_list_invalid(self):
         """Test list of invalid queue name"""
-        self.assertFalse(self.q.list('bogus'))
+        self.assertFalse(self.q.list("bogus"))
 
     # Teardown
 
@@ -154,5 +157,6 @@ class TestAclQueue(unittest.TestCase):
     def tearDown(self):
         NetDevices._Singleton = None
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

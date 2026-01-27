@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 aclconv - Converts an ACL, or a list of ACLs, from one format to another.

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Event objects for the notification system.
 
@@ -11,24 +9,23 @@ notification type is an `~trigger.utils.notification.events.EmailEvent` that is
 handled by `~trigger.utils.notifications.handlers.email_handler`.
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2012-2012, AOL Inc.'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2012-2012, AOL Inc."
 
 import socket
 from trigger.conf import settings
 
-
 # Exports
-__all__ = ('Event', 'Notification', 'EmailEvent')
+__all__ = ("Event", "Notification", "EmailEvent")
 
 
 # Classes
 class Event(object):
     """
     Base class for events.
-   
+
     It just populates the attribute dict with all keyword arguments thrown at
     the constructor.
 
@@ -40,20 +37,22 @@ class Event(object):
     If you specify ``required_args``, these must have a value other than
     ``None`` when passed to the constructor.
     """
+
     required_args = ()
 
     def __init__(self, **kwargs):
-        self.__dict__.update(kwargs) # Brute force wins!
+        self.__dict__.update(kwargs)  # Brute force wins!
         local_vars = self.__dict__
         for var, value in local_vars.iteritems():
             if var in self.required_args and value is None:
-                raise SyntaxError('`%s` is a required argument' % var)
+                raise SyntaxError("`%s` is a required argument" % var)
 
     def __repr__(self):
-        return '<%s>' % self.__class__.__name__
+        return "<%s>" % self.__class__.__name__
 
     def handle(self):
-        raise NotImplementedError('Define me in your subclass!')
+        raise NotImplementedError("Define me in your subclass!")
+
 
 class Notification(Event):
     """
@@ -71,30 +70,38 @@ class Notification(Event):
 
     :param title:
         The title/subject of the notification
-  
+
     :param message:
         The message/body of the notification
 
     :param sender:
         A string representing the sender of the notification (such as an email
         address or a hostname)
-  
+
     :param recipients:
         An iterable containing strings representing the recipients of of the
         notification (such as a list of emails or hostnames)
-  
+
     :param event_status:
         Whether this event is a `failure` or a `success`
     """
-    required_args = ('title', 'message')
+
+    required_args = ("title", "message")
     status_map = {
-            'success': settings.SUCCESS_RECIPIENTS,
-            'failure': settings.FAILURE_RECIPIENTS,
+        "success": settings.SUCCESS_RECIPIENTS,
+        "failure": settings.FAILURE_RECIPIENTS,
     }
     default_sender = settings.NOTIFICATION_SENDER
 
-    def __init__(self, title=None, message=None, sender=None, recipients=None,
-                 event_status='failure', **kwargs):
+    def __init__(
+        self,
+        title=None,
+        message=None,
+        sender=None,
+        recipients=None,
+        event_status="failure",
+        **kwargs,
+    ):
         self.title = title
         self.message = message
 
@@ -105,7 +112,7 @@ class Notification(Event):
 
         # We want to know whether we're sending a failure or success email
         if event_status not in self.status_map:
-            raise SyntaxError('`event_status` must be in `status_map`')
+            raise SyntaxError("`event_status` must be in `status_map`")
         self.event_status = event_status
 
         # If recipients aren't specified, use the global success/failure
@@ -117,25 +124,32 @@ class Notification(Event):
         super(Notification, self).__init__(**kwargs)
         self.kwargs = kwargs
 
+
 class EmailEvent(Notification):
     """
     An email notification event.
     """
+
     default_sender = settings.EMAIL_SENDER
     status_map = {
-            'success': settings.SUCCESS_EMAILS,
-            'failure': settings.FAILURE_EMAILS,
+        "success": settings.SUCCESS_EMAILS,
+        "failure": settings.FAILURE_EMAILS,
     }
-    mailhost = 'localhost'
+    mailhost = "localhost"
 
     def handle(self):
         from trigger.utils.notifications import send_email
+
         try:
             # This should return True upon successfully sending email
             e = self
-            return send_email(addresses=e.recipients, subject=e.title,
-                              body=e.message, sender=e.sender,
-                              mailhost=e.mailhost)
+            return send_email(
+                addresses=e.recipients,
+                subject=e.title,
+                body=e.message,
+                sender=e.sender,
+                mailhost=e.mailhost,
+            )
         except Exception as err:
-            print 'Got exception', err
+            print("Got exception", err)
             return None
