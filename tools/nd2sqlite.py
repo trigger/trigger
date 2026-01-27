@@ -38,7 +38,8 @@ start = time.time()
 for node in nodes:
     keys = []
     vals = []
-    for e in node.getchildren():
+    # Python 3.9+: getchildren() removed, use list(node) instead
+    for e in list(node):
         keys.append(e.tag)
         vals.append(e.text)
     keystr = ", ".join(keys)

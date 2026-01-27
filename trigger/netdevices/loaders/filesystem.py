@@ -69,7 +69,8 @@ class XMLLoader(BaseLoader):
         xml = ET.parse(data_source).findall("device")
 
         # This is a generator within a generator. Trust me, it works in _populate()
-        data = (((e.tag, e.text) for e in node.getchildren()) for node in xml)
+        # Python 3.9+: getchildren() removed, use list(node) instead
+        data = (((e.tag, e.text) for e in list(node)) for node in xml)
 
         return data
 

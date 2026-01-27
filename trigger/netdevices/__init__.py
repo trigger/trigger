@@ -1239,6 +1239,22 @@ class NetDevices(MutableMapping):
     def __setattr__(self, attr, value):
         return setattr(self.__class__._Singleton, attr, value)
 
+    # MutableMapping abstract methods - delegate to singleton
+    def __getitem__(self, key):
+        return self.__class__._Singleton[key]
+
+    def __setitem__(self, key, value):
+        self.__class__._Singleton._dict[key] = value
+
+    def __delitem__(self, key):
+        del self.__class__._Singleton._dict[key]
+
+    def __iter__(self):
+        return iter(self.__class__._Singleton._dict)
+
+    def __len__(self):
+        return len(self.__class__._Singleton._dict)
+
     def reload(self, **kwargs):
         """Reload NetDevices metadata."""
         log.msg("Reloading NetDevices.")

@@ -30,7 +30,8 @@ print("Converting to Python structure.")
 start = time.time()
 for node in nodes:
     dev = {}
-    for e in node.getchildren():
+    # Python 3.9+: getchildren() removed, use list(node) instead
+    for e in list(node):
         dev[e.tag] = e.text
     devices.append(dev)
 print("Done:", time.time() - start, "seconds.")
