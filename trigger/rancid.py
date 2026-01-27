@@ -111,7 +111,8 @@ def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None, delimit
             raise RuntimeError("`fields` must be iterable")
 
     # Map fields to generator of generators (!!)
-    metadata = (itertools.izip_longest(fields, vals) for vals in device_data)
+    # Python 3: izip_longest renamed to zip_longest
+    metadata = (itertools.zip_longest(fields, vals) for vals in device_data)
 
     return metadata
 

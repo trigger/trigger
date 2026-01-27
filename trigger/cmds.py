@@ -598,7 +598,8 @@ class Commando(object):
         if results is None:
             results = []
 
-        return dict(itertools.izip_longest(commands, results))
+        # Python 3: izip_longest renamed to zip_longest
+        return dict(itertools.zip_longest(commands, results))
 
     @property
     def reactor_running(self):

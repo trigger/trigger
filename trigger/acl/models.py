@@ -45,14 +45,11 @@ class BaseModel(pw.Model):
         database = database
 
 
-class CharField(pw.CharField):
+class CustomCharField(pw.CharField):
     """Overload default CharField to always return strings vs. UTF-8"""
 
     def coerce(self, value):
         return str(value or "")
-
-
-pw.CharField = CharField
 
 
 class IntegratedTask(BaseModel):
@@ -63,8 +60,8 @@ class IntegratedTask(BaseModel):
     """
 
     id = pw.PrimaryKeyField()
-    acl = pw.CharField(null=False, default="")
-    router = pw.CharField(null=False, default="")
+    acl = CustomCharField(null=False, default="")
+    router = CustomCharField(null=False, default="")
     queued = pw.DateTimeField(default=datetime.datetime.now)
     loaded = pw.DateTimeField(null=True)
     escalation = pw.BooleanField(default=False)
@@ -82,11 +79,11 @@ class ManualTask(BaseModel):
 
     q_id = pw.PrimaryKeyField()
     q_ts = pw.DateTimeField(default=datetime.datetime.now)
-    q_name = pw.CharField(null=False)
-    q_routers = pw.CharField(null=False, default="")
+    q_name = CustomCharField(null=False)
+    q_routers = CustomCharField(null=False, default="")
     done = pw.BooleanField(default=False)
     q_sr = pw.IntegerField(null=False, default=0)
-    login = pw.CharField(null=False, default="")
+    login = CustomCharField(null=False, default="")
 
     class Meta:
         db_table = "queue"

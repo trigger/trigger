@@ -305,7 +305,8 @@ class CheckOutput(unittest.TestCase):
         self.t2 = acl.Term(name="windows")
         self.t2.match["protocol"] = ["tcp"]
         self.t2.match["source-address"] = ["192.0.2.0/24"]
-        self.t2.match["destination-port"] = range(135, 139) + [445]
+        # Python 3: range() returns a range object, convert to list for concatenation
+        self.t2.match["destination-port"] = list(range(135, 139)) + [445]
         self.t2.action = "reject"
         self.t2.modifiers["syslog"] = True
         self.a.terms.append(self.t2)
@@ -472,7 +473,9 @@ class CheckJunOSExamples(unittest.TestCase):
 
     def testJunOSExamples(self):
         """Test examples from JunOS documentation."""
-        examples = file(EXAMPLES_FILE).read().expandtabs().split("\n\n")
+        # Python 3: file() removed, use open()
+        with open(EXAMPLES_FILE) as f:
+            examples = f.read().expandtabs().split("\n\n")
         # Skip the last two because they use the unimplemented "except"
         # feature in address matches.
         for i in range(0, 14, 2):
@@ -696,8 +699,9 @@ class CheckMiscIOS(unittest.TestCase):
         t = acl.Term()
         t.match["protocol"] = ["icmp"]
         t.match["icmp-type"] = types
+        # Python 3: map() returns an iterator, convert to list for comparison
         self.assertEqual(
-            t.output_ios(), map(lambda x: "permit icmp any any %d" % x, types)
+            t.output_ios(), list(map(lambda x: "permit icmp any any %d" % x, types))
         )
 
     def testCounterSuppression(self):

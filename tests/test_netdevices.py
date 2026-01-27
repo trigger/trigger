@@ -131,8 +131,9 @@ class TestNetDevicesWithoutAcls(unittest.TestCase):
 
     def setUp(self):
         self.nd = NetDevices(with_acls=False)
-        self.nodename = self.nd.keys()[0]
-        self.device = self.nd.values()[0]
+        # Python 3: dict.keys() and dict.values() return views, convert to list for subscripting
+        self.nodename = list(self.nd.keys())[0]
+        self.device = list(self.nd.values())[0]
 
     def test_aclsdb(self):
         """Test acls.db handling."""
