@@ -107,7 +107,7 @@ def prompt_credentials(device, user=None):
         if user:
             user_default = " [%s]" % user
 
-        username = getpass._raw_input("Username%s: " % user_default) or user
+        username = input("Username%s: " % user_default) or user
         if username == "":
             print("\nYou must specify a username, try again!")
             return prompt_credentials(device, user=user)
@@ -393,7 +393,7 @@ class Tacacsrc(object):
             del key, val, line
 
         # Store the creds, if a password is empty, try to prompt for it.
-        for (realm, key), val in data.iteritems():
+        for (realm, key), val in data.items():
             if key == "uname":
                 try:
                     # creds[realm] = Credentials(val, data[(realm, 'pwd')])
@@ -465,7 +465,7 @@ class Tacacsrc(object):
             % (self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()))
         ]
 
-        for realm, (uname, pwd, _) in self.creds.iteritems():
+        for realm, (uname, pwd, _) in self.creds.items():
             # log.msg('encrypting %r' % ((uname, pwd),), debug=True)
             out.append("%s_uname_ = %s" % (realm, self._encrypt_old(uname)))
             out.append("%s_pwd_ = %s" % (realm, self._encrypt_old(pwd)))
@@ -499,7 +499,7 @@ class Tacacsrc(object):
             % (self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()))
         ]
 
-        for realm, (uname, pwd, _) in self.creds.iteritems():
+        for realm, (uname, pwd, _) in self.creds.items():
             out.append("%s_uname_ = %s" % (realm, uname))
             out.append("%s_pwd_ = %s" % (realm, pwd))
 
