@@ -62,12 +62,37 @@ class BounceStatus:
     def __str__(self):
         return self.status_name
 
-    def __cmp__(self, other):
+    def _get_compare_value(self, other):
+        """Helper to get comparison value from self or other."""
         try:
-            return self.value.__cmp__(other.value)
+            return other.value
         except AttributeError:
             # Other object is not a BounceStatus; maybe it's a string.
-            return self.value.__cmp__(BounceStatus(other).value)
+            return BounceStatus(other).value
+
+    def __eq__(self, other):
+        try:
+            return self.value == self._get_compare_value(other)
+        except (ValueError, KeyError):
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        return self.value < self._get_compare_value(other)
+
+    def __le__(self, other):
+        return self.value <= self._get_compare_value(other)
+
+    def __gt__(self, other):
+        return self.value > self._get_compare_value(other)
+
+    def __ge__(self, other):
+        return self.value >= self._get_compare_value(other)
+
+    def __hash__(self):
+        return hash((self.status_name, self.value))
 
 
 class BounceWindow:
@@ -174,7 +199,9 @@ class BounceWindow:
 
         # Allow for providing status_by_hour, but don't rely on it
         if status_by_hour is None:
-            status_by_hour = self.hour_map.values()
+            # Python 3: dict.values() returns a view, not a list
+            # We need a list indexed by hour (0-23) for subscripting
+            status_by_hour = [self.hour_map[i] for i in range(24)]
 
         if not len(status_by_hour) == 24:
             msg = "There must be exactly 24 hours defined for this BounceWindow."
