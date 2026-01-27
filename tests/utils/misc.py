@@ -3,7 +3,7 @@ Misc. utils for testing.
 """
 
 from contextlib import contextmanager
-from StringIO import StringIO
+from io import StringIO
 import sys
 
 __all__ = ("captured_output",)

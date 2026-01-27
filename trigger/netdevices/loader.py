@@ -84,7 +84,7 @@ def find_data_loader(loader):
 
     log.msg("BUILDING LOADER: {}; WITH ARGS: {}".format(loader, args))
     err_template = "Error importing data source loader %s: '%s'"
-    if isinstance(loader, basestring):
+    if isinstance(loader, str):
         module, attr = loader.rsplit(".", 1)
         try:
             mod = import_module(module)

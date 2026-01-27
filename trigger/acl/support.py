@@ -39,6 +39,13 @@ from trigger import exceptions
 from trigger.conf import settings
 from dicts import *
 
+# Python 2/3 compatibility
+try:
+    unicode
+except NameError:
+    # Python 3
+    unicode = str
+
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
 Comments = []
@@ -364,9 +371,9 @@ class RangeList:
             if isinstance(elt, tuple):
                 if isinstance(obj, tuple):
                     ## if obj is a tuple, see if it is within the range of elt
-                    ## using xrange here is faster (add +1 to include elt[1])
+                    ## using range here (add +1 to include elt[1])
                     ## otherwise you end up 1 digit short of max
-                    rng = xrange(elt[0], elt[1] + 1)
+                    rng = range(elt[0], elt[1] + 1)
                     if obj[0] in rng and obj[1] in rng:
                         return True
                 else:

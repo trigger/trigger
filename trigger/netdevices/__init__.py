@@ -27,7 +27,7 @@ import os
 import re
 import sys
 import time
-from UserDict import DictMixin
+from collections.abc import MutableMapping
 import xml.etree.cElementTree as ET
 
 from twisted.python import log
@@ -161,7 +161,7 @@ def device_match(name, production_only=True):
                 print(" [%s] %s" % (str(num + 1).rjust(2), shortname))
             print(" [ 0] Exit\n")
 
-            choice = input("Enter a device number: ") - 1
+            choice = int(input("Enter a device number: ")) - 1
             match = None if choice < 0 else matches[choice]
             log.msg("Choice: %s" % choice)
             log.msg("You chose: %s" % match)
@@ -316,7 +316,7 @@ class NetDevice(object):
                 return None
 
         # Make sure the port is an integer if it's not None
-        if self.nodePort is not None and isinstance(self.nodePort, basestring):
+        if self.nodePort is not None and isinstance(self.nodePort, str):
             self.nodePort = int(self.nodePort)
 
     def _populate_deviceType(self):
@@ -414,7 +414,7 @@ class NetDevice(object):
             return default
 
         # Either it's a normal "commit-configuration"
-        for attr, val in fields.iteritems():
+        for attr, val in fields.items():
             if not getattr(self, attr) == val:
                 return default
 
@@ -968,7 +968,7 @@ def vendor_factory(vendor_name):
     return _vendor_registry.setdefault(vendor_name, Vendor(vendor_name))
 
 
-class NetDevices(DictMixin):
+class NetDevices(MutableMapping):
     """
     Returns an immutable Singleton dictionary of
     `~trigger.netdevices.NetDevice` objects.
@@ -1187,7 +1187,7 @@ class NetDevices(DictMixin):
                 return self._all_field_names[attr.lower()]
 
             # Use list comp. to keep filtering out the devices.
-            for attr, val in kwargs.iteritems():
+            for attr, val in kwargs.items():
                 attr = map_attr(attr)
                 val = str(val).lower()
                 devices = [

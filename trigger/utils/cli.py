@@ -97,7 +97,7 @@ def yesno(prompt, default=False, autoyes=False):
 
 def proceed():
     """Present a proceed prompt. Return ``True`` if Y, else ``False``"""
-    return raw_input("\nDo you wish to proceed? [y/N] ").lower().startswith("y")
+    return input("\nDo you wish to proceed? [y/N] ").lower().startswith("y")
 
 
 def get_terminal_width():
@@ -105,7 +105,7 @@ def get_terminal_width():
     try:
         width = struct.unpack("hhhh", ioctl(1, termios.TIOCGWINSZ, " " * 8))[1]
     except IOError:
-        width = sys.maxint
+        width = sys.maxsize
 
     return width
 
