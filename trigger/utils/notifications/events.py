@@ -43,7 +43,7 @@ class Event(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)  # Brute force wins!
         local_vars = self.__dict__
-        for var, value in local_vars.iteritems():
+        for var, value in local_vars.items():
             if var in self.required_args and value is None:
                 raise SyntaxError("`%s` is a required argument" % var)
 

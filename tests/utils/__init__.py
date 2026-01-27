@@ -2,7 +2,7 @@
 Utils used for testing and especially mocking objects for testing.
 """
 
-import mock_redis
+from . import mock_redis
 import os
 import sys
 
@@ -10,7 +10,7 @@ __all__ = ["mock_redis"]
 
 # misc
 from . import misc
-from misc import *
+from .misc import *
 
 __all__.extend(misc.__all__)
 

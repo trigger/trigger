@@ -268,7 +268,7 @@ class BounceWindow:
         if default is None:
             default = self.default
         status = []
-        for color, hours in hdict.iteritems():
+        for color, hours in hdict.items():
             status.extend(self._get_bounces(hours, color))
 
         # Fill in missing keys with the default color

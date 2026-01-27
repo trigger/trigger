@@ -56,7 +56,7 @@ def update(d, **kwargs):
     # allowed at AOL.  For example, a Juniper term can have two different
     # 'destination-address' clauses, which means that the first will be
     # ignored.  This led to an outage on 2006-10-11.
-    for key in kwargs.iterkeys():
+    for key in kwargs.keys():
         if key in d:
             raise exceptions.ParseError("duplicate %s" % key)
     d.update(kwargs)
@@ -66,7 +66,7 @@ def update(d, **kwargs):
 def dict_sum(dlist):
     dsum = {}
     for d in dlist:
-        for k, v in d.iteritems():
+        for k, v in d.items():
             if k in dsum:
                 dsum[k] += v
             else:

@@ -307,7 +307,7 @@ def get_matching_acls(wanted, exact=True, match_acl=True, match_device=False, nd
     # if matched by ACL.
     # nd = nd or settings.get_netdevices()
     nd = nd or get_netdevices()
-    for name, dev in nd.iteritems():
+    for name, dev in nd.items():
         hit = None
         if match_device:
             if exact and name in wanted:

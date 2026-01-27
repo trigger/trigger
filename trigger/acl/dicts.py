@@ -189,7 +189,7 @@ ios_icmp_messages = {
     "unreachable": (3,),
 }
 
-ios_icmp_names = {v: k for k, v in ios_icmp_messages.iteritems()}
+ios_icmp_names = {v: k for k, v in ios_icmp_messages.items()}
 
 # Ordering for JunOS match clauses.  AOL style rules:
 # 1. Use the order found in the IP header, except, put protocol at the end
@@ -354,4 +354,4 @@ tcp_flag_names = {
 
 tcp_flag_specials = {"tcp-established": '"ack | rst"', "tcp-initial": '"syn & !ack"'}
 
-tcp_flag_rev = {v: k for k, v in tcp_flag_specials.iteritems()}
+tcp_flag_rev = {v: k for k, v in tcp_flag_specials.items()}

@@ -218,7 +218,7 @@ def search_builder(opts):
             for dev in devlist: print(dev)
         else:
             squery = []
-            for key, value in opts_dict.iteritems():
+            for key, value in opts_dict.items():
                 if key not in ('search', 'nonprod') and value:
                     squery.append( key + "=" + value )
             print("No matches for the query %s." % " and ".join(squery))

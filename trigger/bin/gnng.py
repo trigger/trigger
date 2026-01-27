@@ -99,7 +99,7 @@ def fetch_router_list(args, opts):
             ret.append(device)
 
     else:
-        for entry in nd.itervalues():
+        for entry in nd.values():
             if entry.owningTeam in blocked_groups:
                 continue
             if not pass_filters(entry, opts):
@@ -221,7 +221,7 @@ def build_output(main_data, opts, labels=None):
     subnet_table = {}
     all_rows = {}
 
-    for dev, data in main_data.iteritems():
+    for dev, data in main_data.items():
         rows = []
         interfaces = sorted(data)
         for interface in interfaces:
@@ -283,7 +283,7 @@ def handle_output(all_rows, opts):
     :param opts:
         OptionParser object
     """
-    for dev, rows in all_rows.iteritems():
+    for dev, rows in all_rows.items():
 
         if opts.csv:
             writer = csv.writer(sys.stdout)
@@ -328,7 +328,7 @@ def output_dotty(subnet_table, display=True):
     """
     links = {}
 
-    for ip, devs in subnet_table.iteritems():
+    for ip, devs in subnet_table.items():
         if len(devs) > 1:
             router1 = devs[0][0]
             router2 = devs[1][0]
@@ -358,7 +358,7 @@ def output_dotty(subnet_table, display=True):
     resolution=0.10; rankdir=LR; ratio=fill;
     node [fontname=Courier, fontsize=10]'''
 
-    for leaf, subleaves in links.iteritems():
+    for leaf, subleaves in links.items():
         for subleaf in subleaves:
             graph += '"%s"--"%s"\n' % (leaf.shortName, subleaf.shortName)
         #print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)

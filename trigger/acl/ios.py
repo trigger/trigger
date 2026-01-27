@@ -19,7 +19,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from grammar import *
+from .grammar import *
 
 
 class Remark(Comment):
@@ -87,7 +87,7 @@ def handle_ios_acl(rows):
     for d in rows:
         if not d:
             continue
-        for k, v in d.iteritems():
+        for k, v in d.items():
             if k == "no":
                 acl = ACL()
             elif k == "name":

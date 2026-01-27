@@ -174,7 +174,7 @@ class Redis(MockRedis):
 
     def __init__(self, **kwargs):
         super().__init__()
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             setattr(self, k, v)
 
 
