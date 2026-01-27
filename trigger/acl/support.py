@@ -462,15 +462,29 @@ class TIP(IPy.IP):
         if self.negated or self.inactive:
             self.NoPrefixForSingleIp = False
 
-    def __cmp__(self, other):
+    def _compare_to(self, other):
+        """Helper method for comparison. Returns -1, 0, or 1."""
         # Regular IPy sorts by prefix length before network base, but Juniper
         # (our baseline) does not. We also need comparisons to be different for
-        # negation. Following Juniper's sorting, use I Pcompare, and then break
+        # negation. Following Juniper's sorting, use IP compare, and then break
         # ties where negated < not negated.
-        diff = cmp(self.ip, other.ip)
+        # Python 3: Implement cmp() logic inline
+        if self.ip < other.ip:
+            diff = -1
+        elif self.ip > other.ip:
+            diff = 1
+        else:
+            diff = 0
+
         if diff == 0:
             # If the same IP, compare by prefixlen
-            diff = cmp(self.prefixlen(), other.prefixlen())
+            if self.prefixlen() < other.prefixlen():
+                diff = -1
+            elif self.prefixlen() > other.prefixlen():
+                diff = 1
+            else:
+                diff = 0
+
         # If both negated, they're the same
         if self.negated == other.negated:
             return diff
@@ -481,6 +495,24 @@ class TIP(IPy.IP):
             diff = 1
         # Return the base comparison
         return diff
+
+    def __lt__(self, other):
+        return self._compare_to(other) < 0
+
+    def __le__(self, other):
+        return self._compare_to(other) <= 0
+
+    def __gt__(self, other):
+        return self._compare_to(other) > 0
+
+    def __ge__(self, other):
+        return self._compare_to(other) >= 0
+
+    def __eq__(self, other):
+        return self._compare_to(other) == 0
+
+    def __ne__(self, other):
+        return self._compare_to(other) != 0
 
     def __repr__(self):
         # Just stick an 'except' at the end if except is set since we don't
