@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Trigger is a mature network automation toolkit written in Python for managing network devices at scale. Originally developed by AOL's Network Security team in 2006, it provides asynchronous command execution, ACL parsing/management, and metadata-driven device interaction across multiple vendor platforms (Cisco IOS/NX-OS/ASA, Juniper Junos/ScreenOS, Force10 FTOS, Arista, etc.).
 
 **Key characteristics:**
-- Python 2.7 codebase (legacy)
+- Python 3.10-3.11 codebase (v2.0.0+; Python 2.7 support ended with v1.6.0)
 - Twisted-based asynchronous I/O framework
 - Enterprise-scale network automation (hundreds to thousands of devices)
 - Grammar-based ACL parsing and format conversion
@@ -19,25 +19,20 @@ Trigger is a mature network automation toolkit written in Python for managing ne
 
 **Unit tests:**
 ```bash
-# Run all unit tests using setup.py
-./unit_test.sh
-
-# Or directly with setup.py
-python setup.py test
-
-# Run tests with pytest
+# Run all unit tests
 pytest
 
+# Run with verbose output
+pytest -vv
+
 # Run specific test file
-python -m unittest tests.test_acl
+pytest tests/test_acl.py
+
+# Run with coverage
+pytest --cov=trigger tests/
 ```
 
-**Acceptance tests:**
-```bash
-./acceptance_test.sh
-```
-
-**Test environment variables** (automatically set by test scripts):
+**Test environment variables** (automatically set by conftest.py):
 - `TRIGGER_SETTINGS`: Path to test settings.py
 - `NETDEVICES_SOURCE`: Path to test netdevices.xml
 - `AUTOACL_FILE`: Path to test autoacl.py
@@ -49,22 +44,29 @@ python -m unittest tests.test_acl
 
 ```bash
 # Check code style (excludes packages/ directory)
-flake8
-pep8
+flake8 trigger/ tests/ --exclude=trigger/packages --max-line-length=88
+
+# Check formatting with black
+black --check trigger/ tests/ --exclude 'trigger/packages'
+
+# Check import sorting
+isort --check-only trigger/ tests/ --skip trigger/packages
 ```
 
 ### Building and Installing
 
 ```bash
-# Install in development mode
-pip install -e .
+# Install in development mode with dev dependencies
+pip install -e ".[dev]"
 
-# Install with all dependencies
-pip install -r requirements-dev.txt
-python setup.py install
+# Install for production use
+pip install .
 
-# Clean build artifacts
-python setup.py clean
+# Build package distributions
+python -m build
+
+# Using uv (faster package manager)
+uv pip install -e ".[dev]"
 ```
 
 ### Working with Twisted Plugins
@@ -187,14 +189,17 @@ ios_output = acl.output(format='ios')
 
 ## Dependencies & Version Constraints
 
-- **Python 2.7 only** (legacy codebase)
-- **Twisted 15.5.0 - 16.x** (note: `<17.0.0` constraint in setup.py)
-- **crochet==1.5.0**: Exact version required for sync/async bridging
-- **pyparsing~=2.2.0**: ACL grammar parser compatibility
-- **cryptography>=1.4**: Credential encryption
-- **redis**: ACL database backend
-- **SimpleParse**: BNF grammar parser for ACLs
-- **textfsm**: Template-based output parsing
+- **Python 3.10-3.11** (v2.0.0+; Python 2.7 support ended with v1.6.0)
+  - Python 3.12+ not yet supported due to SimpleParse C extension incompatibility
+- **Twisted>=22.10.0**: Asynchronous networking framework
+- **crochet>=2.0.0**: Sync/async bridging
+- **pyparsing>=3.1.0**: ACL grammar parser
+- **cryptography>=41.0.0**: Credential encryption
+- **redis>=5.0.0**: ACL database backend
+- **SimpleParse>=2.2.0**: BNF grammar parser for ACLs (Python 3.10-3.11 only)
+- **textfsm>=1.1.0**: Template-based output parsing
+- **pyasn1>=0.4.8**: ASN.1 parsing for SSH
+- **IPy>=1.01**: IP address manipulation
 
 ## Testing Strategy
 
@@ -240,13 +245,14 @@ Supported vendors include:
 
 ## Common Gotchas
 
-- **Python 2.7**: This is legacy code; do not assume Python 3 compatibility
+- **Python version**: Requires Python 3.10-3.11 (v2.0.0+); Python 3.12+ not yet supported due to SimpleParse
+- **v2.0.0 breaking changes**: CLI tools now use entry points; credentials/config files unchanged
 - **Twisted Deferreds**: Asynchronous patterns throughout; callbacks/errbacks required
 - **ACL term naming**: Must call `acl.name_terms()` before outputting to Juniper format
 - **Device metadata loading**: `NetDevices()` is a singleton; first instantiation loads all devices
 - **Credentials**: Requires properly configured `.tacacsrc` file for device authentication
 - **Vendor detection**: Based on device metadata, not auto-discovery; metadata must be accurate
-- **Test isolation**: Tests set their own environment variables to use mock data
+- **Test isolation**: Tests use conftest.py to set environment variables for mock data
 
 ## Branch Strategy
 

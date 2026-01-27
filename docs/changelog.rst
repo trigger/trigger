@@ -2,6 +2,96 @@
 Changelog
 =========
 
+.. _v2.0.0:
+
+2.0.0 (2026-01-26)
+==================
+
+This is a major release that migrates Trigger from Python 2.7 to Python 3.10+.
+
+**Python 2.7 support ended with v1.6.0.** This release requires Python 3.10 or 3.11.
+
+See `MIGRATION_GUIDE.md <https://github.com/trigger/trigger/blob/develop/MIGRATION_GUIDE.md>`_
+for detailed upgrade instructions.
+
+Enhancements
+------------
+
++ **Python 3.10+ support**: Complete migration from Python 2.7 to Python 3.10-3.11
++ **Modern packaging**: Migrated from setup.py to pyproject.toml (PEP 621)
++ **CLI tools as entry points**: All 14 CLI tools (acl, netdev, etc.) now installed as proper entry points
++ **GitHub Actions CI/CD**: Replaced Travis CI with GitHub Actions using uv for faster builds
++ **Updated dependencies**: All major dependencies updated to modern versions
+
+  - Twisted: 15.5.0-16.x → ≥22.10.0
+  - cryptography: ≥1.4 → ≥41.0.0
+  - crochet: 1.5.0 → ≥2.0.0
+  - pyparsing: ~2.2.0 → ≥3.1.0
+  - redis: any → ≥5.0.0
+
++ **Modern test infrastructure**: Migrated to pytest with conftest.py configuration
++ **Code formatting**: Applied black formatter and isort to entire codebase
++ **Documentation**: Converted RST documentation to Markdown (README, LICENSE, AUTHORS, etc.)
++ **Updated vendored packages**: peewee v2.1.4 → v3.17.0, tftpy Python 3 compatibility
+
+Backwards-incompatible changes
+------------------------------
+
++ **Python version**: Requires Python 3.10 or 3.11 (Python 3.12+ not yet supported due to SimpleParse)
++ **CLI tool invocation**: Tools now installed as entry points instead of bin/ scripts
+
+  - Old: ``./bin/acl --help``
+  - New: ``acl --help``
+
++ **Test runner**: ``python setup.py test`` → ``pytest``
++ **Build system**: ``python setup.py install`` → ``pip install .``
++ **Package name change**: ``gtextfsm`` → ``textfsm``
++ **String/bytes handling**: Python 3's strict str/bytes separation may require code changes in custom integrations
++ **Removed files**: setup.py, setup.cfg, requirements-dev.txt, .travis.yml (use pyproject.toml and GitHub Actions)
+
+Configuration Compatibility
+----------------------------
+
+All configuration files remain compatible:
+
++ settings.py - No changes needed
++ netdevices.xml/json - No changes needed
++ autoacl.py - No changes needed
++ bounce.py - No changes needed
++ .tacacsrc - No changes needed
++ Environment variables - No changes needed
+
+Bug Fixes
+---------
+
++ Fixed 200+ print statement conversions to print() functions
++ Fixed 37 dictionary iterator methods (.iteritems → .items, etc.)
++ Fixed 50+ old-style exception handlers
++ Fixed 15 .has_key() calls → 'in' operator
++ Fixed 13 basestring references → str
++ Fixed multiple import errors (StringIO, ConfigParser, urlparse)
++ Fixed raise statement syntax in tftpy vendored package
++ Removed 48 deprecated metadata declarations from CLI tools
+
+Known Limitations
+-----------------
+
++ **Python 3.12+ not supported**: SimpleParse C extensions use deprecated Unicode APIs
+  that fail to compile on Python 3.12+. Support for Python 3.12+ is planned pending
+  SimpleParse updates or replacement.
+
+Migration
+---------
+
+See `MIGRATION_GUIDE.md <https://github.com/trigger/trigger/blob/develop/MIGRATION_GUIDE.md>`_
+for complete upgrade instructions including:
+
++ Installation steps for Python 3.10/3.11
++ Breaking changes and workarounds
++ Configuration compatibility notes
++ Common issues and solutions
++ Rollback instructions if needed
+
 .. _v1.6.0:
 
 1.6.0 (2017-03-08)
