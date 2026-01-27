@@ -259,7 +259,7 @@ NOTE when using --replace-defined:
 
     if len(argv) == 1 or not opts.acl or opts.help:
         parser.print_help()
-        print(notes
+        print(notes)
         sys.exit(2)
 
     if not opts.replace_defined or opts.insert_defined:
@@ -269,11 +269,11 @@ NOTE when using --replace-defined:
 
 
 def log_term(term, msg="ADDING"):
-    print(">>%s<<" % (msg),
+    print(">>%s<<" % (msg), end=' ')
     for k,v in term.match.iteritems():
         for x in v:
-            print("KEY:%s VAL:%s," % (k,x),
-    print(""
+            print("KEY:%s VAL:%s," % (k,x), end=' ')
+    print("")
 
 
 def wedge_acl(acl, new_term, between, opts):
@@ -348,9 +348,9 @@ def wedge_acl(acl, new_term, between, opts):
                         if opts.show_mods:
                             removing = term.match.get(k,[])
                             for x in removing:
-                                print ">>REMOVING<< KEY:%s VAL:%s,TERM:%s" % (k,x,term.name)
+                                print(">>REMOVING<< KEY:%s VAL:%s,TERM:%s" % (k,x,term.name))
                             for x in v:
-                                print ">>ADDING<< KEY:%s VAL:%s,TERM:%s" % (k,x,term.name)
+                                print(">>ADDING<< KEY:%s VAL:%s,TERM:%s" % (k,x,term.name))
                         term.match[k] = v
 
                 elif opts.insert_defined:
@@ -361,7 +361,7 @@ def wedge_acl(acl, new_term, between, opts):
                         if not term.match.has_key(k):
                             if opts.show_mods:
                                 for x in v:
-                                    print ">>ADDING<< KEY:%s VAL:%s, TERM:%s" % (k,x,term.name)
+                                    print(">>ADDING<< KEY:%s VAL:%s, TERM:%s" % (k,x,term.name))
                             term.match[k] = v
                         else:
                             if opts.comment:
@@ -371,10 +371,10 @@ def wedge_acl(acl, new_term, between, opts):
                                 else:
                                     term.comments.append(Comment(opts.comment))
                             for x in v:
-                                print x
+                                print(x)
                                 if x not in term.match[k]:
                                     if opts.show_mods:
-                                        print ">>ADDING<< KEY:%s VAL:%s, TERM:%s" % (k, x, term.name)
+                                        print(">>ADDING<< KEY:%s VAL:%s, TERM:%s" % (k, x, term.name))
                                     term.match[k].append(x)
                 break
 
@@ -391,7 +391,7 @@ def main():
                 acl = parse(f)
         # TODO (jathan): Improve this naked except
         except Exception as err:
-            print(">>ERROR<< Could not parse acl file %s!" % acl_file
+            print(">>ERROR<< Could not parse acl file %s!" % acl_file)
             rcs.unlock()
             sys.exit(2)
 
@@ -412,12 +412,12 @@ def main():
             term.comments.append(opts.comment)
 
         if opts.modify_between_comments and not acl.format.startswith('ios'):
-            print("--modify-between-comments should only be used for ios like acls"
+            print("--modify-between-comments should only be used for ios like acls")
             rcs.unlock()
             sys.exit(1)
 
         if opts.modify_specific_term and acl.format != 'junos':
-            print("--modify-specific-term should only be used on junos like acls"
+            print("--modify-specific-term should only be used on junos like acls")
             rcs.unlock()
             sys.exit(1)
 
@@ -432,7 +432,7 @@ def main():
         diff     = acl_tools.diff_files(acl_file, tempfile)
 
         if not diff:
-            print("No changes made to %s" % acl_file
+            print("No changes made to %s" % acl_file)
             rcs.unlock()
             os.remove(tempfile)
             #sys.exit(0)
@@ -442,11 +442,11 @@ def main():
         if opts.no_input:
             prestr = '>>DIFF<< '
 
-        print('%s"%s"' % (prestr, acl_file) #opts.acl)
-        print("%sBEGINNING OF CHANGES ===========" % prestr
+        print('%s"%s"' % (prestr, acl_file)) #opts.acl)
+        print("%sBEGINNING OF CHANGES ===========" % prestr)
         for l in diff.split('\n'):
-            print("%s%s" % (prestr,l)
-        print("%sEND OF CHANGES =================" % prestr
+            print("%s%s" % (prestr,l))
+        print("%sEND OF CHANGES =================" % prestr)
 
         if not opts.no_input:
             if not yesno('Do you want to save changes?'):
@@ -470,9 +470,9 @@ def main():
                         if msg: logstr += m.group(1).strip() + '\n'
                         break
             if logstr:
-                print 'Autodetected log message:'
-                print logstr
-                print ''
+                print('Autodetected log message:')
+                print(logstr)
+                print('')
             else:
                 logstr = ''
             # TODO (jathan): Replace this with rcs.checkin()

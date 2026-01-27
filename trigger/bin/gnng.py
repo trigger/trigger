@@ -197,7 +197,7 @@ def get_interface_data(devices, production_only=True, max_conns=MAX_CONNS, opts=
                        skip_disabled=skip_disabled)
     ninfo.run()
     if DEBUG:
-        print('NetACLInfo done!'
+        print('NetACLInfo done!')
 
     return ninfo.config
 
@@ -232,7 +232,7 @@ def build_output(main_data, opts, labels=None):
                 continue
 
             if DEBUG:
-                print '>>> ', interface
+                print('>>> ', interface)
 
             addrs   = iface['addr']
             subns   = iface['subnets']
@@ -263,8 +263,8 @@ def build_output(main_data, opts, labels=None):
                     subnet_table[s] = [(dev, interface, addrs)]
 
             if DEBUG:
-                print '\t in:', acls_in
-                print '\t ou:', acls_out
+                print('\t in:', acls_in)
+                print('\t ou:', acls_out)
             rows.append([interface, ' '.join(addresses),
              ' '.join(subnets), '\n'.join(acls_in), '\n'.join(acls_out), desctext])
 
@@ -294,7 +294,7 @@ def handle_output(all_rows, opts):
         elif opts.sqldb:
             write_sqldb(opts.sqldb, dev, rows)
         else:
-            print('DEVICE: {}'.format(dev)
+            print('DEVICE: {}'.format(dev))
             print_table(rows)
 
 
@@ -315,8 +315,8 @@ def print_table(rows, labels=None):
         row = [x.strip() for x in row]
         output_table.add_row(row)
 
-    print(output_table
-    print(''
+    print(output_table)
+    print('')
 
 
 def output_dotty(subnet_table, display=True):
@@ -348,7 +348,7 @@ def output_dotty(subnet_table, display=True):
                 links[router1] = [router2]
 
     if not links:
-        print('No valid links for dotty generation.'
+        print('No valid links for dotty generation.')
         return None
 
     nd = NetDevices() # This uses the pre-existing NetDevices singleton
@@ -365,7 +365,7 @@ def output_dotty(subnet_table, display=True):
     graph += '\n}'
 
     if display:
-        print(graph
+        print(graph)
 
     return DottyData(graph, links)
 

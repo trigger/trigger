@@ -154,12 +154,12 @@ def do_work(acl_files, opts):
 
 def print_report(data):
     for aclobj, terms in data.iteritems():
-        print(aclobj.filename
-        print('================================================='
+        print(aclobj.filename)
+        print('=================================================')
         for term in terms:
             for o in term.output(format=aclobj.format, acl_name=aclobj.name):
-                print o
-        print(''
+                print(o)
+        print('')
 
 
 def main():

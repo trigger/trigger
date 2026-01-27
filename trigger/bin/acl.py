@@ -66,9 +66,9 @@ def parse_args(argv, optp):
 
 def pretty_print_acls(name, acls, term_width, offset=41):
     output = wrap(' '.join(acls), term_width - offset)
-    print('%-39s %s' % (name, output[0])
+    print('%-39s %s' % (name, output[0]))
     for line in output[1:]:
-        print(' '*39, line
+        print(' '*39, line)
 
 
 def p_error(optp, msg=None):
@@ -108,15 +108,15 @@ def main():
         if acl_data:
             [pretty_print_acls(dev, acl_data[dev], term_width) for dev in sorted(acl_data)]
         else:
-            print("Nothing in the integrated queue."
+            print("Nothing in the integrated queue.")
 
     elif opts.mode == 'listmanual':
         for item, user, ts, done in queue.list(queue='manual'):
-            print(item
-            print('\tadded by %s on %s' % (user, ts)
-            print
+            print(item)
+            print('\tadded by %s on %s' % (user, ts))
+            print()
         if not queue.list(queue='manual'):
-            print("Nothing in the manual queue."
+            print("Nothing in the manual queue.")
 
     elif opts.mode == 'inject':
         for arg in args:
@@ -136,7 +136,7 @@ def main():
             try:
                 dev = nd.find(arg.lower())
             except KeyError:
-                print "skipping %s: invalid device" % arg
+                print("skipping %s: invalid device" % arg)
                 invalid_dev_count += 1
                 continue
                 #the continue here leads that single error if its the only attempt
@@ -144,24 +144,24 @@ def main():
             if opts.add:
                 for acl in opts.add:
                     try:
-                        print aclsdb.add_acl(dev, acl)
+                        print(aclsdb.add_acl(dev, acl))
                     except exceptions.ACLSetError as err:
-                        print err
+                        print(err)
 
             elif opts.remove:
                 for acl in opts.remove:
                     try:
-                        print aclsdb.remove_acl(dev, acl)
-                    except exceptions.ACLSetError, err:
+                        print(aclsdb.remove_acl(dev, acl))
+                    except exceptions.ACLSetError as err:
                         # Check if it is an implicit ACL
                         if acl in aclsdb.get_acl_set(dev, 'implicit'):
-                            print "This ACL is associated via %s" % \
-                                    settings.AUTOACL_FILE
+                            print("This ACL is associated via %s" % \
+                                    settings.AUTOACL_FILE)
                         else:
-                            print err
+                            print(err)
 
         if invalid_dev_count == len(args):
-            print("\nPlease use --help to find the right syntax."
+            print("\nPlease use --help to find the right syntax.")
 
     elif opts.display:
         # Pretty-print the device/acls justified to the terminal
