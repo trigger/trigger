@@ -59,7 +59,8 @@ class IntegratedTask(BaseModel):
     e.g. ``acl -l``
     """
 
-    id = pw.PrimaryKeyField()
+    # Python 3 / peewee v3+: PrimaryKeyField renamed to AutoField
+    id = pw.AutoField()
     acl = CustomCharField(null=False, default="")
     router = CustomCharField(null=False, default="")
     queued = pw.DateTimeField(default=datetime.datetime.now)
@@ -67,7 +68,8 @@ class IntegratedTask(BaseModel):
     escalation = pw.BooleanField(default=False)
 
     class Meta:
-        db_table = "acl_queue"
+        # Python 3 / peewee v3+: db_table renamed to table_name
+        table_name = "acl_queue"
 
 
 class ManualTask(BaseModel):
@@ -77,7 +79,7 @@ class ManualTask(BaseModel):
     e.g. ``acl -m``
     """
 
-    q_id = pw.PrimaryKeyField()
+    q_id = pw.AutoField()
     q_ts = pw.DateTimeField(default=datetime.datetime.now)
     q_name = CustomCharField(null=False)
     q_routers = CustomCharField(null=False, default="")
@@ -86,7 +88,7 @@ class ManualTask(BaseModel):
     login = CustomCharField(null=False, default="")
 
     class Meta:
-        db_table = "queue"
+        table_name = "queue"
 
 
 MODEL_MAP = {

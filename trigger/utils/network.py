@@ -6,7 +6,6 @@ import os
 import subprocess
 import shlex
 import socket
-import telnetlib
 
 from trigger.conf import settings
 
@@ -86,17 +85,25 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=
     >>> test_tcp_port('aol.com', 12345)
     False
     """
+    # Python 3: Use socket instead of deprecated telnetlib for port testing
+    sock = None
     try:
-        t = telnetlib.Telnet(host, port, timeout)
-        if check_result:
-            result = t.read_some()
-            t.close()
-            return result.startswith(expected_result)
-    except (TimeoutError, OSError):
-        return False
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((host, port))
 
-    t.close()
-    return True
+        if check_result:
+            # Read the initial banner/response
+            sock.settimeout(2)  # Short timeout for reading
+            result = sock.recv(1024)
+            return result.startswith(expected_result.encode() if isinstance(expected_result, str) else expected_result)
+
+        return True
+    except (TimeoutError, OSError, socket.error):
+        return False
+    finally:
+        if sock:
+            sock.close()
 
 
 def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):
