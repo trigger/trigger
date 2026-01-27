@@ -21,7 +21,7 @@ from twisted.internet import defer, protocol, reactor, stdio
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 from twisted.python.usage import Options
-from xml.etree.ElementTree import Element, ElementTree, XMLTreeBuilder
+from xml.etree.ElementTree import Element, ElementTree, TreeBuilder
 
 from trigger.conf import settings
 from trigger import tacacsrc, exceptions
@@ -1887,21 +1887,23 @@ class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
 # ==================
 
 
-class IncrementalXMLTreeBuilder(XMLTreeBuilder):
+class IncrementalXMLTreeBuilder(TreeBuilder):
     """
-    Version of XMLTreeBuilder that runs a callback on each tag.
+    Version of TreeBuilder that runs a callback on each tag.
 
     We need this because JunoScript treats the entire session as one XML
     document. IETF NETCONF fixes that.
+
+    Note: XMLTreeBuilder was renamed to TreeBuilder in Python 3.
     """
 
     def __init__(self, callback, *args, **kwargs):
         self._endhandler = callback
-        XMLTreeBuilder.__init__(self, *args, **kwargs)
+        TreeBuilder.__init__(self, *args, **kwargs)
 
     def _end(self, tag):
         """Do this when we're out of XML!"""
-        return self._endhandler(XMLTreeBuilder._end(self, tag))
+        return self._endhandler(TreeBuilder._end(self, tag))
 
 
 # ==================
