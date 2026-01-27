@@ -432,28 +432,38 @@ class Tacacsrc(object):
 
     def _encrypt_old(self, s):
         """Encodes using the old method. Adds a newline for you."""
-        des = ciphers.algorithms.TripleDES(self.key)
+        # Ensure key and plaintext are bytes for cryptography library
+        key = self.key if isinstance(self.key, bytes) else self.key.encode('latin-1')
+        plaintext = s if isinstance(s, bytes) else s.encode('latin-1')
+
+        des = ciphers.algorithms.TripleDES(key)
         cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
         encryptor = cipher.encryptor()
 
         # Crypt::TripleDES pads with *spaces*!  How 1960. Pad it so the
         # length is a multiple of 8.
-        padding = len(s) % 8 and " " * (8 - len(s) % 8) or ""
+        padding_len = (8 - len(plaintext) % 8) % 8
+        padding = b" " * padding_len
 
-        cipher_text = encryptor.update(s + padding) + encryptor.finalize()
+        cipher_text = encryptor.update(plaintext + padding) + encryptor.finalize()
 
         # We need to return a newline if a field is empty so as not to break
         # .tacacsrc parsing (trust me, this is easier)
-        return (encodestring(cipher_text).replace("\n", "") or "") + "\n"
+        return (encodestring(cipher_text).decode('ascii').replace("\n", "") or "") + "\n"
 
     def _decrypt_old(self, s):
         """Decodes using the old method. Strips newline for you."""
-        des = ciphers.algorithms.TripleDES(self.key)
+        # Ensure key is bytes for cryptography library
+        key = self.key if isinstance(self.key, bytes) else self.key.encode('latin-1')
+        des = ciphers.algorithms.TripleDES(key)
         cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
         decryptor = cipher.decryptor()
+        # Ensure s is bytes for base64.decodebytes
+        s_bytes = s if isinstance(s, bytes) else s.encode('ascii')
         # rstrip() to undo space-padding; unfortunately this means that
         # passwords cannot end in spaces.
-        return decryptor.update(decodestring(s)).rstrip(" ") + decryptor.finalize()
+        plaintext = decryptor.update(decodestring(s_bytes)) + decryptor.finalize()
+        return plaintext.rstrip(b" ").decode('latin-1')
 
     def _read_file_old(self):
         """Read old style file and return the raw data."""
