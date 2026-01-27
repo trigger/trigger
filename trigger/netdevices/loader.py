@@ -28,13 +28,12 @@ from trigger.exceptions import ImproperlyConfigured, LoaderFailed
 from trigger.utils.importlib import import_module
 from trigger.conf import settings
 
-
 # Exports
-__all__ = ('BaseLoader', 'load_metadata')
+__all__ = ("BaseLoader", "load_metadata")
 
 
 # Classes
-class BaseLoader(object):
+class BaseLoader:
     is_usable = False
 
     def __init__(self, *args, **kwargs):
@@ -83,10 +82,10 @@ def find_data_loader(loader):
     else:
         args = []
 
-    log.msg("BUILDING LOADER: %s; WITH ARGS: %s" % (loader, args))
+    log.msg("BUILDING LOADER: {}; WITH ARGS: {}".format(loader, args))
     err_template = "Error importing data source loader %s: '%s'"
     if isinstance(loader, basestring):
-        module, attr = loader.rsplit('.', 1)
+        module, attr = loader.rsplit(".", 1)
         try:
             mod = import_module(module)
         except ImportError as err:
@@ -97,27 +96,36 @@ def find_data_loader(loader):
         except AttributeError as err:
             raise ImproperlyConfigured(err_template % (loader, err))
 
-        if hasattr(DataLoader, 'load_data_source'):
+        if hasattr(DataLoader, "load_data_source"):
             func = DataLoader(*args)
         else:
             # Try loading module the old-fashioned way where string is full
             # path to callabale.
             if args:
-                raise ImproperlyConfigured("Error importing data source loader %s: Can't pass arguments to function-based loader!" % loader)
+                raise ImproperlyConfigured(
+                    "Error importing data source loader %s: Can't pass arguments to function-based loader!"
+                    % loader
+                )
             func = DataLoader
 
         if not func.is_usable:
             import warnings
-            warnings.warn("Your NETDEVICES_LOADERS setting includes %r, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS." % loader)
+
+            warnings.warn(
+                "Your NETDEVICES_LOADERS setting includes %r, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS."
+                % loader
+            )
             return None
         else:
             return func
     else:
-        raise ImproperlyConfigured('Loader does not define a "load_data" callable data source loader.')
+        raise ImproperlyConfigured(
+            'Loader does not define a "load_data" callable data source loader.'
+        )
 
 
 #: Namedtuple that holds loader instance and device metadata
-LoaderMetadata = namedtuple('LoaderMetadata', 'loader metadata')
+LoaderMetadata = namedtuple("LoaderMetadata", "loader metadata")
 
 
 def load_metadata(data_source, **kwargs):
@@ -139,30 +147,30 @@ def load_metadata(data_source, **kwargs):
     """
     # Iterate and build a loader callables, call them, stop when we get data.
     tried = []
-    log.msg('LOADING DATA FROM:', data_source)
+    log.msg("LOADING DATA FROM:", data_source)
     for loader_name in settings.NETDEVICES_LOADERS:
         loader = find_data_loader(loader_name)
-        log.msg('TRYING LOADER:', loader)
+        log.msg("TRYING LOADER:", loader)
         if loader is None:
-            log.msg('CANNOT USE LOADER:', loader)
+            log.msg("CANNOT USE LOADER:", loader)
             continue
 
         try:
             # Pass the args to the loader!
             data = loader(data_source, **kwargs)
-            log.msg('LOADER: SUCCESS!')
+            log.msg("LOADER: SUCCESS!")
         except LoaderFailed as err:
             tried.append(loader)
-            log.msg('LOADER - FAILURE: %s' % err)
+            log.msg("LOADER - FAILURE: %s" % err)
             continue
         else:
             # Successfully parsed (we hope)
             if data is not None:
-                log.msg('LOADERS TRIED: %r' % tried)
+                log.msg("LOADERS TRIED: %r" % tried)
                 return LoaderMetadata(loader, data)
             else:
                 tried.append(loader)
                 continue
 
     # All loaders failed. We don't want to get to this point!
-    raise RuntimeError('No data loaders succeeded. Tried: %r' % tried)
+    raise RuntimeError("No data loaders succeeded. Tried: %r" % tried)

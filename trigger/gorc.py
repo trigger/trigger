@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This is used by :doc:`../usage/scripts/go` to execute commands upon login to a
 device. A user may specify a list of commands to execute for each vendor. If
@@ -53,11 +51,11 @@ from trigger.conf import settings
 
 # Constants
 GORC_PATH = os.path.expanduser(settings.GORC_FILE)
-INIT_COMMANDS_SECTION = 'init_commands'
+INIT_COMMANDS_SECTION = "init_commands"
 
 
 # Exports
-#__all__ = ('get_init_commands',)
+# __all__ = ('get_init_commands',)
 
 
 # Functions
@@ -72,7 +70,7 @@ def read_config(filepath=GORC_PATH):
     try:
         status = config.read(filepath)
         if filepath not in status:
-            log.msg('File not found: %r' % filepath)
+            log.msg("File not found: %r" % filepath)
             return None
     except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError) as err:
         log.msg(err, debug=True)
@@ -80,7 +78,8 @@ def read_config(filepath=GORC_PATH):
     else:
         return config
 
-    raise RuntimeError('Something went crazy wrong with read_config()')
+    raise RuntimeError("Something went crazy wrong with read_config()")
+
 
 def filter_commands(cmds, allowed_commands=None):
     """
@@ -105,8 +104,9 @@ def filter_commands(cmds, allowed_commands=None):
         if root in allowed_commands:
             ret.append(cmd)
         else:
-            log.msg('init_command not allowed: %r' % cmd, debug=True)
+            log.msg("init_command not allowed: %r" % cmd, debug=True)
     return ret
+
 
 def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
     """
@@ -125,23 +125,24 @@ def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
         List of commands
     """
     if config is None:
-        log.msg('No config data, not sending init commands', debug=True)
+        log.msg("No config data, not sending init commands", debug=True)
         return []
 
     try:
         cmdstr = config.get(section, vendor)
     except ConfigParser.NoSectionError as err:
-        log.msg('%s in %s' % (err, GORC_PATH), debug=True)
+        log.msg("%s in %s" % (err, GORC_PATH), debug=True)
         return []
     except ConfigParser.NoOptionError as err:
         log.msg(err, debug=True)
         return []
     else:
-        cmds = (c for c in cmdstr.splitlines() if c != '')
+        cmds = (c for c in cmdstr.splitlines() if c != "")
         cmds = filter_commands(cmds)
         return cmds
 
-    raise RuntimeError('Something went crazy wrong with get_init_commands()')
+    raise RuntimeError("Something went crazy wrong with get_init_commands()")
+
 
 def get_init_commands(vendor):
     """
@@ -157,12 +158,13 @@ def get_init_commands(vendor):
     config = read_config()
     return parse_commands(vendor, config=config)
 
-if __name__ == '__main__':
-    #os.environ['DEBUG'] = '1'
-    if os.environ.get('DEBUG', None) is not None:
+
+if __name__ == "__main__":
+    # os.environ['DEBUG'] = '1'
+    if os.environ.get("DEBUG", None) is not None:
         log.startLogging(sys.stdout, setStdout=False)
 
-    print get_init_commands('juniper')
-    print get_init_commands('cisco')
-    print get_init_commands('arista')
-    print get_init_commands('foundry')
+    print(get_init_commands("juniper"))
+    print(get_init_commands("cisco"))
+    print(get_init_commands("arista"))
+    print(get_init_commands("foundry"))

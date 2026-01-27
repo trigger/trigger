@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 trigger.contrib.docommand
@@ -8,11 +7,11 @@ trigger.contrib.docommand
 This package provides facilities for running commands on devices using the CLI.
 """
 
-__author__ = 'Jathan McCollum, Mike Biancianello'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com'
-__version__ = '3.2.1'
+__author__ = "Jathan McCollum, Mike Biancianello"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan@gmail.com"
+__copyright__ = "Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com"
+__version__ = "3.2.1"
 
 
 # Imports
@@ -25,11 +24,11 @@ from trigger.cmds import Commando
 from xml.etree.cElementTree import ElementTree, Element, SubElement
 import xml.etree.cElementTree as ET
 
-
 # Exports
-__all__ = ['DoCommandBase', 'CommandRunner', 'ConfigLoader', 'xml_print', 'core']
+__all__ = ["DoCommandBase", "CommandRunner", "ConfigLoader", "xml_print", "core"]
 from . import core
 from core import *
+
 __all__.extend(core.__all__)
 
 
@@ -39,16 +38,17 @@ class DoCommandBase(Commando):
     Base class for docommand action classes.
 
     """
-    description = 'Insert description here.'
+
+    description = "Insert description here."
 
     def errback(self, failure, device):
         failure = super(DoCommandBase, self).errback(failure, device)
-        print '%s - Error: %s' % (device, failure.value)
+        print("%s - Error: %s" % (device, failure.value))
         return failure
 
     def from_base(self, results, device, commands=None):
         """Call store_results without calling map_results"""
-        log.msg('Received %r from %s' % (results, device))
+        log.msg("Received %r from %s" % (results, device))
         self.store_results(device, results)
 
 
@@ -74,7 +74,8 @@ class CommandRunner(DoCommandBase):
     :param files:
         List of files named after the FQDN of each device.
     """
-    description = 'Run commands on network devices.'
+
+    description = "Run commands on network devices."
 
     def __init__(self, files=None, commands=None, debug=False, timeout=30, **kwargs):
         """
@@ -101,8 +102,8 @@ class CommandRunner(DoCommandBase):
         self.debug = debug
         self.__loadCmdsFromFiles()
 
-        if 'kwargs' in locals():
-            kwargs['timeout'] = timeout
+        if "kwargs" in locals():
+            kwargs["timeout"] = timeout
         else:
             kwargs = dict(timeout=timeout)
         super(CommandRunner, self).__init__(**kwargs)
@@ -114,11 +115,11 @@ class CommandRunner(DoCommandBase):
         This is done to prevent having to read the list of cmds multiple times.
         """
         for fname in self.files:
-            with open(fname, 'r') as fr:
+            with open(fname, "r") as fr:
                 lines = fr.readlines()
 
             if skip_comments:
-                lines = [line for line in lines if not line.startswith('#')]
+                lines = [line for line in lines if not line.startswith("#")]
 
             for cmd in lines:
                 cmd = cmd.strip()
@@ -128,22 +129,22 @@ class CommandRunner(DoCommandBase):
         """Define how we're storing results."""
         devname = device.nodeName
         if self.verbose:
-            print 'Parsing commands for %s' % devname
+            print("Parsing commands for %s" % devname)
         if self.debug:
             msg = "-->store_results(device=%r, results=%r)" % (devname, results)
-            print msg
+            print(msg)
             log.msg(msg)
 
         outs = []
         for i, out in enumerate(results):
             cmd = self.commands[i]
-            d = {'cmd': cmd, 'out': out, 'dev': device}
+            d = {"cmd": cmd, "out": out, "dev": device}
             outs.append(d)
         self.data[devname] = outs
         return True
 
     def __children_with_namespace(self, ns):
-        return lambda elt, tag: elt.findall('./' + ns + tag)
+        return lambda elt, tag: elt.findall("./" + ns + tag)
 
     def from_juniper(self, data, device, commands=None):
         # If we've set foce_cli, use from_base() instead
@@ -151,22 +152,22 @@ class CommandRunner(DoCommandBase):
             return self.from_base(data, device, commands)
 
         devname = device.nodeName
-        ns = '{http://xml.juniper.net/xnm/1.1/xnm}'
+        ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
         if self.verbose:
-            print 'parsing JunOS commands for %s' % devname
+            print("parsing JunOS commands for %s" % devname)
         if self.debug:
-            print '-->from_juniper(data=%s, device=%r)' % (data, devname)
+            print("-->from_juniper(data=%s, device=%r)" % (data, devname))
 
         cmds = self.commands
         outs = []
         for i, xml in enumerate(data):
             cmd = cmds[i]
             outarr = xml_print(xml, iterations=10)
-            out = '\n'.join(outarr)
-            d = {'cmd': cmd, 'out': out, 'dev': device}
+            out = "\n".join(outarr)
+            d = {"cmd": cmd, "out": out, "dev": device}
             outs.append(d)
             if self.debug:
-                print '\ndata["%s"]:' % i
+                print('\ndata["%s"]:' % i)
                 ET.dump(xml)
         self.data[devname] = outs
         return True
@@ -190,11 +191,11 @@ class ConfigLoader(Commando):
         + Files *must* exist in a local TFTP directory for non-Juniper devices.
         + Files *must* be accessible by device via TFTP for non-Juniper devices.
     """
-    description = 'Load configuration changes on network devices.'
+
+    description = "Load configuration changes on network devices."
 
     # These are the only officially supported vendors at this time
-    vendors = ['a10', 'arista', 'brocade', 'cisco', 'foundry', 'dell',
-               'juniper']
+    vendors = ["a10", "arista", "brocade", "cisco", "foundry", "dell", "juniper"]
 
     # TODO: The config commands should be moved into NetDevice object
     # (.configure_commands). The save commands are already managed like that,
@@ -202,24 +203,24 @@ class ConfigLoader(Commando):
     # assumes JunoScript). We need to not be hard-coding these types of things
     # all over the code-base.
     known_commands = {
-        'config':{
-            'a10': 'configure terminal',
-            'arista': 'configure terminal',
-            'brocade': 'configure terminal',
-            'cisco': 'configure terminal',
-            'dell': 'configure',
-            'foundry': 'configure terminal',
-            'juniper': 'configure',
+        "config": {
+            "a10": "configure terminal",
+            "arista": "configure terminal",
+            "brocade": "configure terminal",
+            "cisco": "configure terminal",
+            "dell": "configure",
+            "foundry": "configure terminal",
+            "juniper": "configure",
         },
-        'save_config':{
-            'a10': 'write memory',
-            'arista': 'write memory',
-            'brocade': 'write memory',
-            'cisco': 'write memory',
-            'dell': 'copy running-config startup-config',
-            'foundry': 'write memory',
-            'juniper': 'commit and-quit',
-        }
+        "save_config": {
+            "a10": "write memory",
+            "arista": "write memory",
+            "brocade": "write memory",
+            "cisco": "write memory",
+            "dell": "copy running-config startup-config",
+            "foundry": "write memory",
+            "juniper": "commit and-quit",
+        },
     }
 
     def __init__(self, files=None, commands=None, debug=False, **kwargs):
@@ -251,24 +252,24 @@ class ConfigLoader(Commando):
             list
         """
         if self.verbose:
-            print "generating JunOS commands"
+            print("generating JunOS commands")
         files = self.files
-        cmds = [Element('lock-configuration')]
+        cmds = [Element("lock-configuration")]
         for fname in files:
             # fname is required to contain the full path
-            lc = Element('load-configuration', action='replace', format='text')
-            body = SubElement(lc, 'configuration-text')
+            lc = Element("load-configuration", action="replace", format="text")
+            body = SubElement(lc, "configuration-text")
             if self.debug:
-                print "fname: " + fname
+                print("fname: " + fname)
             body.text = file(fname).read()
             cmds.append(lc)
-        #commands = self.commands
+        # commands = self.commands
         if len(commands) > 0:
-            lc = Element('load-configuration', action='replace', format='text')
-            body = SubElement(lc, 'configuration-text')
-            body.text = '\n'.join(commands)
+            lc = Element("load-configuration", action="replace", format="text")
+            body = SubElement(lc, "configuration-text")
+            body.text = "\n".join(commands)
             cmds.append(lc)
-        cmds.append(Element('commit-configuration'))
+        cmds.append(Element("commit-configuration"))
         if self.debug:
             for xml in cmds:
                 ET.dump(xml)
@@ -283,50 +284,61 @@ class ConfigLoader(Commando):
         """
         devname = device.nodeName
         if self.verbose:
-            print 'Parsing commands for %s' % devname
+            print("Parsing commands for %s" % devname)
         if self.debug:
-            print '-->store_results(device=%r, results=%r)' % (devname, results)
-        out = '\n'.join(results)
-        self.data[devname] = [{'dev': device, 'cmd': 'load-configuration', 'out': out}]
+            print("-->store_results(device=%r, results=%r)" % (devname, results))
+        out = "\n".join(results)
+        self.data[devname] = [{"dev": device, "cmd": "load-configuration", "out": out}]
         return True
 
     def __children_with_namespace(self, ns):
-        return lambda elt, tag: elt.findall('./' + ns + tag)
+        return lambda elt, tag: elt.findall("./" + ns + tag)
 
     def from_juniper(self, data, device, commands=None):
         """Parse results from a Juniper device."""
         devname = device.nodeName
         if self.verbose:
-            print "parsing JunOS commands for %s " % devname
+            print("parsing JunOS commands for %s " % devname)
         if self.debug:
-            print '-->from_juniper(data=%s, device=%r)' % (data, devname)
+            print("-->from_juniper(data=%s, device=%r)" % (data, devname))
         if self.debug:
             for xml in data:
                 ET.dump(xml)
-        ns = '{http://xml.juniper.net/xnm/1.1/xnm}'
+        ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
         children = self.__children_with_namespace(ns)
         confresxml = data[1]
         success = 0
         error = 0
-        msg = ''
-        for res in confresxml.getiterator(ns + 'load-configuration-results'):
-            for succ in res.getiterator(ns + 'load-success'):
+        msg = ""
+        for res in confresxml.getiterator(ns + "load-configuration-results"):
+            for succ in res.getiterator(ns + "load-success"):
                 success += 1
                 msg = "Success!"
-            for err in res.getiterator(ns + 'error'):
+            for err in res.getiterator(ns + "error"):
                 error += 1
                 msg = "ERROR: "
-                elin = children(err, 'line-number')[0].text
-                emes = children(err, 'message')[0].text
-                ecol = children(err, 'column')[0].text
-                etok = children(err, 'token')[0].text
-                msg = msg + emes + " in '" + etok + "'\n    line:"+elin+",col:"+ecol
-                msg = "%s %s in %r\n    line: %s, col: %s" % (msg, emes, etok,
-                                                              elin, ecol)
+                elin = children(err, "line-number")[0].text
+                emes = children(err, "message")[0].text
+                ecol = children(err, "column")[0].text
+                etok = children(err, "token")[0].text
+                msg = (
+                    msg + emes + " in '" + etok + "'\n    line:" + elin + ",col:" + ecol
+                )
+                msg = "%s %s in %r\n    line: %s, col: %s" % (
+                    msg,
+                    emes,
+                    etok,
+                    elin,
+                    ecol,
+                )
         if success:
-            self.data[devname] = [{'dev': device, 'cmd': 'load-configuration', 'out': 'Success'}]
+            self.data[devname] = [
+                {"dev": device, "cmd": "load-configuration", "out": "Success"}
+            ]
         if error:
-            self.data[devname] = [{'dev': device, 'cmd': 'load-configuration', 'out': msg}]
+            self.data[devname] = [
+                {"dev": device, "cmd": "load-configuration", "out": msg}
+            ]
         return True
 
 
@@ -345,19 +357,19 @@ def xml_print(xml, iterations=10):
     # without making it an instance method. How!!
     ret = []
     if xml is None:
-        print "No Data"
+        print("No Data")
         return None
     if iterations < 1:
         return [str(xml)]
     tag = xml.tag
     marr = re.match(r"{http.*}", tag)
     ns = marr.group(0)
-    tag = tag.replace(ns, '')
+    tag = tag.replace(ns, "")
     ret.append(tag)
     children = list(xml)
 
     if len(children) < 1:
-        ptxt = tag + " : " + (xml.text or '')
+        ptxt = tag + " : " + (xml.text or "")
         return [ptxt]
 
     for child in children:
@@ -366,5 +378,5 @@ def xml_print(xml, iterations=10):
             # Shows elements in a tree format
             ret.append("  " + t)
             # Show elements in a tag1 -> tag2 -> tag3 -> field:value format
-            #ret.append(tag+" -> "+t)
+            # ret.append(tag+" -> "+t)
     return ret

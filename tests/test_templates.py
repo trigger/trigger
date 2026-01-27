@@ -1,6 +1,6 @@
 import unittest
 import os
-import mock
+from unittest import mock
 from trigger.netdevices import NetDevices
 from trigger.cmds import Commando
 from trigger.utils.templates import *
@@ -8,10 +8,9 @@ from contextlib import contextmanager
 from StringIO import StringIO
 import cStringIO
 
-
 # Constants
-DEVICE_NAME = 'test1-abc.net.aol.com'
-DEVICE2_NAME = 'test2-abc.net.aol.com'
+DEVICE_NAME = "test1-abc.net.aol.com"
+DEVICE2_NAME = "test2-abc.net.aol.com"
 
 try:
     import textfsm
@@ -82,7 +81,7 @@ Processor board ID 9G0T83AE5II
 
 Configuration register is 0x2102"""
 
-text_fsm_data = """Value TIME (\d+:\d+:\d+\.\d+)
+text_fsm_data = r"""Value TIME (\d+:\d+:\d+\.\d+)
 Value TIMEZONE (\w+)
 Value DAYWEEK (\w+)
 Value MONTH (\w+)
@@ -116,37 +115,45 @@ class CheckTemplates(unittest.TestCase):
     def testTemplatePath(self):
         """Test that template path is correct."""
         t_path = get_template_path("show clock", dev_type="cisco_ios")
-        self.failUnless("vendor/ntc_templates/cisco_ios_show_clock.template" in t_path)
+        self.assertTrue("vendor/ntc_templates/cisco_ios_show_clock.template" in t_path)
 
     def testGetTextFsmObject(self):
         """Test that we get structured data back from cli output."""
         data = get_textfsm_object(self.re_table, cli_data)
         self.assertTrue(isinstance(data, dict))
-        keys = ['dayweek', 'time', 'timezone', 'year', 'day', 'month']
+        keys = ["dayweek", "time", "timezone", "year", "day", "month"]
         for key in keys:
             self.assertTrue(data.has_key(key))
 
     def testCommandoResultsGood(self):
         commands = ["show version"]
         commando = Commando(devices=[self.device.nodeName])
-        data = commando.parse_template(results=[big_cli_data], device=self.device, commands=commands)
+        data = commando.parse_template(
+            results=[big_cli_data], device=self.device, commands=commands
+        )
         self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))
         self.assertTrue(isinstance(data[0], str))
         self.assertTrue(isinstance(commando.parsed_results, dict))
-        self.assertEquals(commando.parsed_results.popitem()[1]["show version"]["hardware"], ['CSR1000V'])
+        self.assertEqual(
+            commando.parsed_results.popitem()[1]["show version"]["hardware"],
+            ["CSR1000V"],
+        )
 
     def testCommandoResultsBad(self):
         commands = ["show run | in cisco"]
         commando = Commando(devices=[self.device.nodeName])
-        data = commando.parse_template(results=[no_template_data], device=self.device, commands=commands)
+        data = commando.parse_template(
+            results=[no_template_data], device=self.device, commands=commands
+        )
         self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))
         self.assertTrue(isinstance(data[0], str))
-        self.assertEquals(commando.parsed_results, {})
+        self.assertEqual(commando.parsed_results, {})
 
     def tearDown(self):
         _reset_netdevices()
+
 
 if __name__ == "__main__":
     unittest.main()

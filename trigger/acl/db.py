@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Redis-based replacement of the legacy acls.db file. This is used for
 interfacing with the explicit and automatic ACL-to-device mappings.
@@ -21,10 +19,10 @@ set(['juniper-router.policer', 'juniper-router-protect'])
   'implicit': set(['juniper-router-protect', 'juniper-router.policer'])}
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2010-2012, AOL Inc.; 2013 Salesforce.com'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan@gmail.com"
+__copyright__ = "Copyright 2010-2012, AOL Inc.; 2013 Salesforce.com"
 
 from collections import defaultdict
 import redis
@@ -35,25 +33,24 @@ from trigger.acl.autoacl import autoacl
 from trigger import exceptions
 from trigger.conf import settings
 
-
-ACLSDB_BACKUP = './acls.csv'
+ACLSDB_BACKUP = "./acls.csv"
 DEBUG = False
 
 # The redis instance. It doesn't care if it can't reach Redis until you actually
 # try to talk to Redis.
-r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT,
-                db=settings.REDIS_DB)
+r = redis.Redis(
+    host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB
+)
 
 # Exports
 __all__ = (
     # functions
-    'get_matching_acls',
-    'get_all_acls',
-    'get_bulk_acls',
-    'populate_bulk_acls',
-
+    "get_matching_acls",
+    "get_all_acls",
+    "get_bulk_acls",
+    "populate_bulk_acls",
     # classes
-    'AclsDB',
+    "AclsDB",
 )
 
 
@@ -64,9 +61,10 @@ class AclsDB(object):
 
     add/remove operations are for explicit associations only.
     """
+
     def __init__(self):
         self.redis = r
-        log.msg('ACLs database client initialized')
+        log.msg("ACLs database client initialized")
 
     def add_acl(self, device, acl):
         """
@@ -77,14 +75,16 @@ class AclsDB(object):
         'added acl abc123 to test1-mtc.net.aol.com'
         """
         try:
-            rc = self.redis.sadd('acls:explicit:%s' % device.nodeName, acl)
+            rc = self.redis.sadd("acls:explicit:%s" % device.nodeName, acl)
         except redis.exceptions.ResponseError as err:
             return str(err)
         if rc != 1:
-            raise exceptions.ACLSetError('%s already has acl %s' % (device.nodeName, acl))
+            raise exceptions.ACLSetError(
+                "%s already has acl %s" % (device.nodeName, acl)
+            )
         self.redis.save()
 
-        return 'added acl %s to %s' % (acl, device)
+        return "added acl %s to %s" % (acl, device)
 
     def remove_acl(self, device, acl):
         """
@@ -94,14 +94,16 @@ class AclsDB(object):
         'removed acl abc123 from test1-mtc.net.aol.com'
         """
         try:
-            rc = self.redis.srem('acls:explicit:%s' % device.nodeName, acl)
+            rc = self.redis.srem("acls:explicit:%s" % device.nodeName, acl)
         except redis.exceptions.ResponseError as err:
             return str(err)
         if rc != 1:
-            raise exceptions.ACLSetError('%s does not have acl %s' % (device.nodeName, acl))
+            raise exceptions.ACLSetError(
+                "%s does not have acl %s" % (device.nodeName, acl)
+            )
         self.redis.save()
 
-        return 'removed acl %s from %s' % (acl, device)
+        return "removed acl %s from %s" % (acl, device)
 
     def get_acl_dict(self, device):
         """
@@ -118,22 +120,22 @@ class AclsDB(object):
 
         # Explicit (we want to make sure the key exists before we try to assign
         # a value)
-        expl_key = 'acls:explicit:%s' % device.nodeName
+        expl_key = "acls:explicit:%s" % device.nodeName
         if self.redis.exists(expl_key):
-            acls['explicit'] = self.redis.smembers(expl_key) or set()
+            acls["explicit"] = self.redis.smembers(expl_key) or set()
         else:
-            acls['explicit'] = set()
+            acls["explicit"] = set()
 
         # Implicit (automatically-assigned). We're passing the explicit_acls to
         # autoacl so that we can use them logically for auto assignments.
-        acls['implicit'] = autoacl(device, explicit_acls=acls['explicit'])
+        acls["implicit"] = autoacl(device, explicit_acls=acls["explicit"])
 
         # All
-        acls['all'] = acls['implicit'] | acls['explicit']
+        acls["all"] = acls["implicit"] | acls["explicit"]
 
         return acls
 
-    def get_acl_set(self, device, acl_set='all'):
+    def get_acl_set(self, device, acl_set="all"):
         """
         Return an acl set matching @acl_set for a given device.  Match can be
         one of ['all', 'explicit', 'implicit']. Defaults to 'all'.
@@ -147,11 +149,14 @@ class AclsDB(object):
         set(['protectRE', 'protectRE.policer', '115j'])
         """
         acls_dict = self.get_acl_dict(device)
-        #ACL_SETS = ['all', 'explicit', 'implicit', 'bulk']
+        # ACL_SETS = ['all', 'explicit', 'implicit', 'bulk']
         ACL_SETS = acls_dict.keys()
-        if DEBUG: print 'fetching', acl_set, 'acls for', device
+        if DEBUG:
+            print("fetching"), acl_set, "acls for", device
         if acl_set not in ACL_SETS:
-            raise exceptions.InvalidACLSet('match statement must be one of %s' % ACL_SETS)
+            raise exceptions.InvalidACLSet(
+                "match statement must be one of %s" % ACL_SETS
+            )
 
         return acls_dict[acl_set]
 
@@ -175,29 +180,36 @@ def populate_explicit_acls(aclsdb_file):
     xx,test2-abc.net.aol.com,juniper-router.policer:juniper-router-protect:abc123
     """
     import csv
+
     for row in csv.reader(open(aclsdb_file)):
-        if not row[0].startswith('!'):
-            [r.sadd('acls:explicit:%s' % row[1], acl) for acl in row[2].split(':')]
+        if not row[0].startswith("!"):
+            [r.sadd("acls:explicit:%s" % row[1], acl) for acl in row[2].split(":")]
     r.save()
+
 
 def backup_explicit_acls():
     """dumps acls:explicit:* to csv"""
     import csv
-    out = csv.writer(file(ACLSDB_BACKUP, 'w'))
-    for key in r.keys('acls:explicit:*'):
-        out.writerow([key.split(':')[-1], ':'.join(map(str, r.smembers(key)))])
+
+    out = csv.writer(file(ACLSDB_BACKUP, "w"))
+    for key in r.keys("acls:explicit:*"):
+        out.writerow([key.split(":")[-1], ":".join(map(str, r.smembers(key)))])
+
 
 def populate_implicit_acls(nd=None):
     """populate acls:implicit (autoacls)"""
     nd = nd or get_netdevices()
     for dev in nd.all():
-        [r.sadd('acls:implicit:%s' % dev.nodeName, acl) for acl in autoacl(dev)]
+        [r.sadd("acls:implicit:%s" % dev.nodeName, acl) for acl in autoacl(dev)]
     r.save()
+
 
 def get_netdevices(production_only=True, with_acls=True):
     """Shortcut to import, instantiate, and return a NetDevices instance."""
     from trigger.netdevices import NetDevices
+
     return NetDevices(production_only=production_only, with_acls=with_acls)
+
 
 def get_all_acls(nd=None):
     """
@@ -210,26 +222,33 @@ def get_all_acls(nd=None):
     >>> all_acls['abc123']
     set([<NetDevice: test1-abc.net.aol.com>, <NetDevice: fw1-xyz.net.aol.com>])
     """
-    #nd = nd or settings.get_netdevices()
+    # nd = nd or settings.get_netdevices()
     nd = nd or get_netdevices()
     all_acls = defaultdict(set)
     for device in nd.all():
-        [all_acls[acl].add(device) for acl in device.acls if acl != '']
+        [all_acls[acl].add(device) for acl in device.acls if acl != ""]
 
     return all_acls
+
 
 def get_bulk_acls(nd=None):
     """
     Returns a set of acls with an applied count over
     settings.AUTOLOAD_BULK_THRESH.
     """
-    #nd = nd or settings.get_netdevices()
+    # nd = nd or settings.get_netdevices()
     nd = nd or get_netdevices()
     all_acls = get_all_acls()
-    bulk_acls = set([acl for acl, devs in all_acls.items() if
-                     len(devs) >= settings.AUTOLOAD_BULK_THRESH])
+    bulk_acls = set(
+        [
+            acl
+            for acl, devs in all_acls.items()
+            if len(devs) >= settings.AUTOLOAD_BULK_THRESH
+        ]
+    )
 
     return bulk_acls
+
 
 def populate_bulk_acls(nd=None):
     """
@@ -239,6 +258,7 @@ def populate_bulk_acls(nd=None):
     bulk_acls = get_bulk_acls()
     for dev in nd.all():
         dev.bulk_acls = dev.acls.intersection(bulk_acls)
+
 
 def get_matching_acls(wanted, exact=True, match_acl=True, match_device=False, nd=None):
     """
@@ -285,7 +305,7 @@ def get_matching_acls(wanted, exact=True, match_acl=True, match_device=False, nd
 
     # Return all the ACLs if matched by device, or the matched ACLs
     # if matched by ACL.
-    #nd = nd or settings.get_netdevices()
+    # nd = nd or settings.get_netdevices()
     nd = nd or get_netdevices()
     for name, dev in nd.iteritems():
         hit = None

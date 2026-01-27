@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 The heart and soul of Trigger, NetDevices is an abstract interface to network
 device metadata and ACL associations.
@@ -54,13 +52,13 @@ except ImportError:
 
 
 # Constants
-JUNIPER_COMMIT = ET.Element('commit-configuration')
+JUNIPER_COMMIT = ET.Element("commit-configuration")
 JUNIPER_COMMIT_FULL = copy.copy(JUNIPER_COMMIT)
-ET.SubElement(JUNIPER_COMMIT_FULL, 'full')
+ET.SubElement(JUNIPER_COMMIT_FULL, "full")
 
 
 # Exports
-__all__ = ['device_match', 'NetDevice', 'NetDevices', 'Vendor']
+__all__ = ["device_match", "NetDevice", "NetDevices", "Vendor"]
 
 
 # Functions
@@ -71,9 +69,9 @@ def _munge_source_data(data_source=settings.NETDEVICES_SOURCE):
     :param data_source:
         Absolute path to source data file
     """
-    log.msg('LOADING FROM: ', data_source)
+    log.msg("LOADING FROM: ", data_source)
     kwargs = parse_url(data_source)
-    path = kwargs.pop('path')
+    path = kwargs.pop("path")
     return loader.load_metadata(path, **kwargs)
 
 
@@ -84,7 +82,7 @@ def _populate(netdevices, data_source, production_only, with_acls):
     Abstracted from within NetDevices to prevent accidental repopulation of NetDevice
     objects.
     """
-    #start = time.time()
+    # start = time.time()
     loader, device_data = _munge_source_data(data_source=data_source)
     netdevices.set_loader(loader)
 
@@ -106,10 +104,8 @@ def _populate(netdevices, data_source, production_only, with_acls):
 
         # Only return devices with adminStatus of 'PRODUCTION' unless
         # `production_only` is True
-        if dev.adminStatus.upper() != 'PRODUCTION' and production_only:
-            log.msg(
-                '[%s] Skipping: adminStatus not PRODUCTION' % dev.nodeName
-            )
+        if dev.adminStatus.upper() != "PRODUCTION" and production_only:
+            log.msg("[%s] Skipping: adminStatus not PRODUCTION" % dev.nodeName)
             continue
 
         # These checks should be done on generation of netdevices.xml.
@@ -120,8 +116,8 @@ def _populate(netdevices, data_source, production_only, with_acls):
         # Add to dict
         netdevices.add_device(dev)
 
-    #end = time.time()
-    #print 'Took %f seconds' % (end - start)
+    # end = time.time()
+    # print 'Took %f seconds' % (end - start)
 
 
 def device_match(name, production_only=True):
@@ -155,22 +151,22 @@ def device_match(name, production_only=True):
         if matches:
             if len(matches) == 1:
                 single = matches[0]
-                print "Matched '%s'." % single
+                print("Matched '%s'." % single)
                 return single
 
-            print "%d possible matches found for '%s':" % (len(matches), name)
+            print("%d possible matches found for '%s':" % (len(matches), name))
 
             matches.sort()
             for num, shortname in enumerate(matches):
-                print ' [%s] %s' % (str(num+1).rjust(2), shortname)
-            print ' [ 0] Exit\n'
+                print(" [%s] %s" % (str(num + 1).rjust(2), shortname))
+            print(" [ 0] Exit\n")
 
-            choice = input('Enter a device number: ') - 1
+            choice = input("Enter a device number: ") - 1
             match = None if choice < 0 else matches[choice]
-            log.msg('Choice: %s' % choice)
-            log.msg('You chose: %s' % match)
+            log.msg("Choice: %s" % choice)
+            log.msg("You chose: %s" % match)
         else:
-            print "No matches for '%s'." % name
+            print("No matches for '%s'." % name)
 
     return match
 
@@ -246,7 +242,7 @@ class NetDevice(object):
         # ACLs (defaults to empty sets)
         self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
         if with_acls:
-            log.msg('[%s] Populating ACLs' % self.nodeName)
+            log.msg("[%s] Populating ACLs" % self.nodeName)
             self._populate_acls(aclsdb=with_acls)
 
         # Bind the correct execute/connect methods based on deviceType
@@ -276,7 +272,7 @@ class NetDevice(object):
         :param data:
             An iterable of key/value pairs
         """
-        self.__dict__.update(data) # Better hope this is a dict!
+        self.__dict__.update(data)  # Better hope this is a dict!
 
     def _cleanup_attributes(self):
         """Perform various cleanup actions. Abstracted for customization."""
@@ -296,12 +292,12 @@ class NetDevice(object):
             self.owningTeam = self.owningTeam.strip()
 
         # Map deviceStatus to adminStatus when data source is RANCID
-        if hasattr(self, 'deviceStatus'):
+        if hasattr(self, "deviceStatus"):
             STATUS_MAP = {
-                'up': 'PRODUCTION',
-                'down': 'NON-PRODUCTION',
+                "up": "PRODUCTION",
+                "down": "NON-PRODUCTION",
             }
-            self.adminStatus = STATUS_MAP.get(self.deviceStatus, STATUS_MAP['up'])
+            self.adminStatus = STATUS_MAP.get(self.deviceStatus, STATUS_MAP["up"])
 
     def _set_node_port(self):
         """Set the freakin' TCP port"""
@@ -325,8 +321,9 @@ class NetDevice(object):
 
     def _populate_deviceType(self):
         """Try to make a guess what the device type is"""
-        self.deviceType = settings.DEFAULT_TYPES.get(self.vendor.name,
-                                                     settings.FALLBACK_TYPE)
+        self.deviceType = settings.DEFAULT_TYPES.get(
+            self.vendor.name, settings.FALLBACK_TYPE
+        )
 
     def _set_requires_async_pty(self):
         """
@@ -334,9 +331,7 @@ class NetDevice(object):
         `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
-            self.vendor in (
-                'a10', 'arista', 'aruba', 'cisco', 'cumulus', 'force10'
-            ),
+            self.vendor in ("a10", "arista", "aruba", "cisco", "cumulus", "force10"),
             self.is_brocade_vdx(),
         )
         return any(RULES)
@@ -345,9 +340,9 @@ class NetDevice(object):
         """
         Set the delimiter to use for line-endings.
         """
-        default = '\n'
+        default = "\n"
         delimiter_map = {
-            'force10': '\r\n',
+            "force10": "\r\n",
         }
         delimiter = delimiter_map.get(self.vendor.name, default)
         return delimiter
@@ -357,14 +352,15 @@ class NetDevice(object):
         Set the commands to run at startup. For now they are just ones to
         disable pagination.
         """
+
         def get_vendor_name():
             """Return the vendor name for startup commands lookup."""
             if self.is_brocade_vdx():
-                return 'brocade_vdx'
+                return "brocade_vdx"
             elif self.is_cisco_asa():
-                return 'cisco_asa'
+                return "cisco_asa"
             elif self.is_netscreen():
-                return 'netscreen'
+                return "netscreen"
             else:
                 return self.vendor.name
 
@@ -383,17 +379,17 @@ class NetDevice(object):
         if self.is_ioslike():
             return self._ioslike_commit()
         elif self.is_netscaler() or self.is_netscreen():
-            return ['save config']
-        elif self.vendor == 'juniper':
+            return ["save config"]
+        elif self.vendor == "juniper":
             return self._juniper_commit()
-        elif self.vendor == 'paloalto':
-            return ['commit']
-        elif self.vendor == 'pica8':
-            return ['commit']
-        elif self.vendor == 'mrv':
-            return ['save configuration flash']
-        elif self.vendor == 'f5':
-            return ['save sys config']
+        elif self.vendor == "paloalto":
+            return ["commit"]
+        elif self.vendor == "pica8":
+            return ["commit"]
+        elif self.vendor == "mrv":
+            return ["save configuration flash"]
+        elif self.vendor == "f5":
+            return ["save sys config"]
         else:
             return []
 
@@ -401,12 +397,12 @@ class NetDevice(object):
         """
         Return proper 'write memory' command for IOS-like devices.
         """
-        if self.is_brocade_vdx() or self.vendor == 'dell':
-            return ['copy running-config startup-config', 'y']
+        if self.is_brocade_vdx() or self.vendor == "dell":
+            return ["copy running-config startup-config", "y"]
         elif self.is_cisco_nexus():
-            return ['copy running-config startup-config']
+            return ["copy running-config startup-config"]
         else:
-            return ['write memory']
+            return ["write memory"]
 
     def _juniper_commit(self, fields=settings.JUNIPER_FULL_COMMIT_FIELDS):
         """
@@ -435,6 +431,7 @@ class NetDevice(object):
         Note that these both rely on the value of the ``vendor`` attribute.
         """
         from trigger import twister
+
         self.execute = twister.execute.__get__(self, self.__class__)
         self.connect = twister.connect.__get__(self, self.__class__)
 
@@ -449,9 +446,9 @@ class NetDevice(object):
             return None
 
         acls_dict = aclsdb.get_acl_dict(self)
-        self.explicit_acls = acls_dict['explicit']
-        self.implicit_acls = acls_dict['implicit']
-        self.acls = acls_dict['all']
+        self.explicit_acls = acls_dict["explicit"]
+        self.implicit_acls = acls_dict["implicit"]
+        self.acls = acls_dict["all"]
 
     def __str__(self):
         return self.nodeName
@@ -473,7 +470,7 @@ class NetDevice(object):
 
     @property
     def shortName(self):
-        return self.nodeName.split('.', 1)[0]
+        return self.nodeName.split(".", 1)[0]
 
     @property
     def os(self):
@@ -481,7 +478,7 @@ class NetDevice(object):
         try:
             oss = vendor_mapping[self.vendor]
             if self.operatingSystem.lower() in oss:
-                return "{0}_{1}".format(self.vendor, self.operatingSystem.lower())
+                return "{}_{}".format(self.vendor, self.operatingSystem.lower())
         except:
             log.msg("""Unable to find template for given device.
                     Check to see if your netdevices object has the 'platform' key.
@@ -490,7 +487,12 @@ class NetDevice(object):
 
     def _get_endpoint(self, *args):
         """Private method used for generating an endpoint for `~trigger.netdevices.NetDevice`."""
-        from trigger.twister2 import generate_endpoint, TriggerEndpointClientFactory, IoslikeSendExpect
+        from trigger.twister2 import (
+            generate_endpoint,
+            TriggerEndpointClientFactory,
+            IoslikeSendExpect,
+        )
+
         endpoint = generate_endpoint(self).wait()
 
         factory = TriggerEndpointClientFactory()
@@ -507,13 +509,14 @@ class NetDevice(object):
 
     def open(self):
         """Open new session with `~trigger.netdevices.NetDevice`.
-        
+
         Example:
             >>> nd = NetDevices()
             >>> dev = nd.find('arista-sw1.demo.local')
             >>> dev.open()
 
         """
+
         def inject_net_device_into_protocol(proto):
             """Now we're only injecting connection for use later."""
             self._conn = proto.transport.conn
@@ -524,15 +527,14 @@ class NetDevice(object):
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
 
-        self.d = self._endpoint.addCallback(
-            inject_net_device_into_protocol
-        )
+        self.d = self._endpoint.addCallback(inject_net_device_into_protocol)
 
         self._connected = True
         return self._connected
 
     def close(self):
         """Close an open `~trigger.netdevices.NetDevice` object."""
+
         def disconnect(proto):
             proto.transport.loseConnection()
             return proto
@@ -540,9 +542,7 @@ class NetDevice(object):
         if self._endpoint is None:
             raise ValueError("Endpoint has not been instantiated.")
 
-        self._endpoint.addCallback(
-            disconnect
-        )
+        self._endpoint.addCallback(disconnect)
 
         self._connected = False
         return
@@ -577,7 +577,11 @@ class NetDevice(object):
         >>> dev.run_channeled_commands(['show ip int brief', 'show version'], on_error=lambda x: handle(x))
 
         """
-        from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
+        from trigger.twister2 import (
+            TriggerSSHShellClientEndpointBase,
+            IoslikeSendExpect,
+            TriggerEndpointClientFactory,
+        )
 
         if on_error is None:
             on_error = lambda x: x
@@ -599,9 +603,7 @@ class NetDevice(object):
             result.addBoth(on_error)
             return proto
 
-        proto = proto.addCallbacks(
-            inject_commands_into_protocol
-        )
+        proto = proto.addCallbacks(inject_commands_into_protocol)
 
         return d
 
@@ -622,7 +624,11 @@ class NetDevice(object):
         >>> dev.run_commands(['show ip int brief', 'show version'], on_error=lambda x: handle(x))
 
         """
-        from trigger.twister2 import TriggerSSHShellClientEndpointBase, IoslikeSendExpect, TriggerEndpointClientFactory
+        from trigger.twister2 import (
+            TriggerSSHShellClientEndpointBase,
+            IoslikeSendExpect,
+            TriggerEndpointClientFactory,
+        )
 
         if on_error is None:
             on_error = lambda x: x
@@ -640,9 +646,7 @@ class NetDevice(object):
             result.addBoth(on_error)
             return proto
 
-        proto = proto.addCallbacks(
-            inject_commands_into_protocol
-        )
+        proto = proto.addCallbacks(inject_commands_into_protocol)
 
         return d
 
@@ -663,8 +667,8 @@ class NetDevice(object):
         :param when:
             A datetime object.
         """
-        assert action == 'load-acl'
-        return self.bounce.status(when) == changemgmt.BounceStatus('green')
+        assert action == "load-acl"
+        return self.bounce.status(when) == changemgmt.BounceStatus("green")
 
     def next_ok(self, action, when=None):
         """
@@ -677,31 +681,31 @@ class NetDevice(object):
         :param when:
             A datetime object.
         """
-        assert action == 'load-acl'
-        return self.bounce.next_ok(changemgmt.BounceStatus('green'), when)
+        assert action == "load-acl"
+        return self.bounce.next_ok(changemgmt.BounceStatus("green"), when)
 
     def is_router(self):
         """Am I a router?"""
-        return self.deviceType == 'ROUTER'
+        return self.deviceType == "ROUTER"
 
     def is_switch(self):
         """Am I a switch?"""
-        return self.deviceType == 'SWITCH'
+        return self.deviceType == "SWITCH"
 
     def is_firewall(self):
         """Am I a firewall?"""
-        return self.deviceType == 'FIREWALL'
+        return self.deviceType == "FIREWALL"
 
     def is_netscaler(self):
         """Am I a NetScaler?"""
-        return all([self.is_switch(), self.vendor=='citrix'])
+        return all([self.is_switch(), self.vendor == "citrix"])
 
     def is_pica8(self):
         """Am I a Pica8?"""
-        ## This is only really needed because pica8 
+        ## This is only really needed because pica8
         ## doesn't have a global command to disable paging
         ## so we need to do some special magic.
-        return all([self.vendor=='pica8'])
+        return all([self.vendor == "pica8"])
 
     def is_netscreen(self):
         """Am I a NetScreen running ScreenOS?"""
@@ -710,19 +714,18 @@ class NetDevice(object):
             return False
 
         # If vendor or make is netscreen, automatically True
-        make_netscreen = self.make is not None and self.make.lower() == 'netscreen'
-        if self.vendor == 'netscreen' or make_netscreen:
+        make_netscreen = self.make is not None and self.make.lower() == "netscreen"
+        if self.vendor == "netscreen" or make_netscreen:
             return True
 
         # Final check: Are we made by Juniper and an SSG? This requires that
         # make or model is populated and has the word 'ssg' in it. This still
         # fails if it's an SSG running JunOS, but this is not an edge case we
         # can easily support at this time.
-        is_ssg = (
-            (self.model is not None and 'ssg' in self.model.lower()) or
-            (self.make is not None and 'ssg' in self.make.lower())
+        is_ssg = (self.model is not None and "ssg" in self.model.lower()) or (
+            self.make is not None and "ssg" in self.make.lower()
         )
-        return self.vendor == 'juniper' and is_ssg
+        return self.vendor == "juniper" and is_ssg
 
     def is_ioslike(self):
         """
@@ -734,7 +737,7 @@ class NetDevice(object):
         """
         Am I running Cumulus?
         """
-        return self.vendor == 'cumulus'
+        return self.vendor == "cumulus"
 
     def is_brocade_vdx(self):
         """
@@ -744,15 +747,15 @@ class NetDevice(object):
         switches (which behave like Foundry devices) and the Brocade VDX
         switches (which behave differently from classic Foundry devices).
         """
-        if hasattr(self, '_is_brocade_vdx'):
+        if hasattr(self, "_is_brocade_vdx"):
             return self._is_brocade_vdx
 
-        if not (self.vendor == 'brocade' and self.is_switch()):
+        if not (self.vendor == "brocade" and self.is_switch()):
             self._is_brocade_vdx = False
             return False
 
         if self.make is not None:
-            self._is_brocade_vdx = 'vdx' in self.make.lower()
+            self._is_brocade_vdx = "vdx" in self.make.lower()
         return self._is_brocade_vdx
 
     def is_cisco_asa(self):
@@ -769,17 +772,17 @@ class NetDevice(object):
         assume considering ASA (was PIX) are Cisco's flagship(if not only)
         Firewalls.
         """
-        if hasattr(self, '_is_cisco_asa'):
+        if hasattr(self, "_is_cisco_asa"):
             return self._is_cisco_asa
 
-        if not (self.vendor == 'cisco' and self.is_firewall()):
+        if not (self.vendor == "cisco" and self.is_firewall()):
             self._is_cisco_asa = False
             return False
 
         if self.make is not None:
-            self._is_cisco_asa = 'asa' in self.make.lower()
+            self._is_cisco_asa = "asa" in self.make.lower()
 
-        self._is_cisco_asa = self.vendor == 'cisco' and self.is_firewall()
+        self._is_cisco_asa = self.vendor == "cisco" and self.is_firewall()
 
         return self._is_cisco_asa
 
@@ -788,7 +791,7 @@ class NetDevice(object):
         Am I a Cisco Nexus device?
         """
         words = (self.make, self.model)
-        patterns = ('n.k', 'nexus')  # Patterns to match
+        patterns = ("n.k", "nexus")  # Patterns to match
         pairs = itertools.product(patterns, words)
 
         for pat, word in pairs:
@@ -813,8 +816,8 @@ class NetDevice(object):
         :param method: One of ('pty', 'async')
         """
         METHOD_MAP = {
-            'pty': settings.SSH_PTY_DISABLED,
-            'async': settings.SSH_ASYNC_DISABLED,
+            "pty": settings.SSH_PTY_DISABLED,
+            "async": settings.SSH_ASYNC_DISABLED,
         }
         assert method in METHOD_MAP
         method_enabled = self._ssh_enabled(METHOD_MAP[method])
@@ -823,11 +826,11 @@ class NetDevice(object):
 
     def can_ssh_async(self):
         """Am I enabled to use SSH async?"""
-        return self._can_ssh('async')
+        return self._can_ssh("async")
 
     def can_ssh_pty(self):
         """Am I enabled to use SSH pty?"""
-        return self._can_ssh('pty')
+        return self._can_ssh("pty")
 
     def is_reachable(self):
         """Do I respond to a ping?"""
@@ -837,28 +840,31 @@ class NetDevice(object):
         """Prints details for a device."""
         dev = self
         print
-        print '\tHostname:         ', dev.nodeName
-        print '\tOwning Org.:      ', dev.owner
-        print '\tOwning Team:      ', dev.owningTeam
-        print '\tOnCall Team:      ', dev.onCallName
+        print("\tHostname:         ", dev.nodeName)
+        print("\tOwning Org.:      ", dev.owner)
+        print("\tOwning Team:      ", dev.owningTeam)
+        print("\tOnCall Team:      ", dev.onCallName)
         print
-        print '\tVendor:           ', '%s (%s)' % (dev.vendor.title, dev.manufacturer)
-        #print '\tManufacturer:     ', dev.manufacturer
-        print '\tMake:             ', dev.make
-        print '\tModel:            ', dev.model
-        print '\tType:             ', dev.deviceType
-        print '\tLocation:         ', dev.site, dev.room, dev.coordinate
+        print(
+            "\tVendor:           ", " % s (%s)" % (dev.vendor.title, dev.manufacturer)
+        )
+        # print '\tManufacturer:     ', dev.manufacturer
+        print("\tMake:             ", dev.make)
+        print("\tModel:            ", dev.model)
+        print("\tType:             ", dev.deviceType)
+        print("\tLocation:         ", dev.site, dev.room, dev.coordinate)
         print
-        print '\tProject:          ', dev.projectName
-        print '\tSerial:           ', dev.serialNumber
-        print '\tAsset Tag:        ', dev.assetID
-        print '\tBudget Code:      ', '%s (%s)' % (dev.budgetCode, dev.budgetName)
+        print("\tProject:          ", dev.projectName)
+        print("\tSerial:           ", dev.serialNumber)
+        print("\tAsset Tag:        ", dev.assetID)
+        print("\tBudget Code:      ", " % s (%s)" % (dev.budgetCode, dev.budgetName))
         print
-        print '\tAdmin Status:     ', dev.adminStatus
-        print '\tLifecycle Status: ', dev.lifecycleStatus
-        print '\tOperation Status: ', dev.operationStatus
-        print '\tLast Updated:     ', dev.lastUpdate
+        print("\tAdmin Status:     ", dev.adminStatus)
+        print("\tLifecycle Status: ", dev.lifecycleStatus)
+        print("\tOperation Status: ", dev.operationStatus)
+        print("\tLast Updated:     ", dev.lastUpdate)
         print
+
 
 class Vendor(object):
     """
@@ -872,6 +878,7 @@ class Vendor(object):
     This exposes a normalized name that can be used in the event of a
     multi-word canonical name.
     """
+
     def __init__(self, manufacturer=None):
         """
         :param manufacturer:
@@ -879,7 +886,7 @@ class Vendor(object):
             its canonical name.
         """
         if manufacturer is None:
-            raise SyntaxError('You must specify a `manufacturer` name')
+            raise SyntaxError("You must specify a `manufacturer` name")
 
         self.manufacturer = manufacturer
         self.name = self.determine_vendor(manufacturer)
@@ -924,13 +931,13 @@ class Vendor(object):
     @property
     def normalized(self):
         """Return the normalized name for the vendor."""
-        return self.name.replace(' ', '_').lower()
+        return self.name.replace(" ", "_").lower()
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, self.title)
+        return "<%s: %s>" % (self.__class__.__name__, self.title)
 
     def __eq__(self, other):
         return self.name.__eq__(Vendor(str(other)).name)
@@ -944,7 +951,10 @@ class Vendor(object):
     def lower(self):
         return self.normalized
 
+
 _vendor_registry = {}
+
+
 def vendor_factory(vendor_name):
     """
     Given a full name of a vendor, retrieve or create the canonical
@@ -974,6 +984,7 @@ class NetDevices(DictMixin):
 
     You may override this by passing ``production_only=False``.
     """
+
     _Singleton = None
 
     class _actual(object):
@@ -997,13 +1008,17 @@ class NetDevices(DictMixin):
             TypeError: unbound method match() must be called with _actual
             instance as first argument (got str instance instead)
         """
+
         def __init__(self, production_only=True, with_acls=None):
             self.loader = None
             self.__dict = {}
 
-            _populate(netdevices=self,
-                      data_source=settings.NETDEVICES_SOURCE,
-                      production_only=production_only, with_acls=with_acls)
+            _populate(
+                netdevices=self,
+                data_source=settings.NETDEVICES_SOURCE,
+                production_only=production_only,
+                with_acls=with_acls,
+            )
 
         def set_loader(self, loader):
             """
@@ -1014,17 +1029,17 @@ class NetDevices(DictMixin):
             """
             self.loader = loader
 
-            if hasattr(loader, '_dict'):
-                log.msg('Installing NetDevices._dict from loader plugin!')
+            if hasattr(loader, "_dict"):
+                log.msg("Installing NetDevices._dict from loader plugin!")
             else:
-                log.msg('Installing NetDevice._dict internally!')
+                log.msg("Installing NetDevice._dict internally!")
 
         @property
         def _dict(self):
             """
             If the loader has an inner _dict, store objects on that instead.
             """
-            if hasattr(self.loader, '_dict'):
+            if hasattr(self.loader, "_dict"):
                 return self.loader._dict
             else:
                 return self.__dict
@@ -1066,14 +1081,14 @@ class NetDevices(DictMixin):
             key = key.lower()
 
             # Try to use the loader plugin first.
-            if hasattr(self.loader, 'find'):
+            if hasattr(self.loader, "find"):
                 return self.loader.find(key)
 
             # Or if there's a key, return that.
             elif key in self:
                 return self[key]
 
-            matches = [x for x in self.keys() if x.startswith(key + '.')]
+            matches = [x for x in self.keys() if x.startswith(key + ".")]
 
             if matches:
                 return self[matches[0]]
@@ -1086,11 +1101,11 @@ class NetDevices(DictMixin):
             This method can be overloaded in NetDevices loader plugins to
             customize the behavior as dictated by the plugin.
             """
-            if hasattr(self.loader, 'all'):
+            if hasattr(self.loader, "all"):
                 return self.loader.all()
             return self.values()
 
-        def search(self, token, field='nodeName'):
+        def search(self, token, field="nodeName"):
             """
             Returns a list of NetDevice objects where other is in
             ``dev.nodeName``. The getattr call in the search will allow a
@@ -1119,7 +1134,7 @@ class NetDevices(DictMixin):
             # We could actually just make this call match() to make this
             # case-insensitive as well. But we won't yet because of possible
             # implications in outside dependencies.
-            #return self.match(**{field:token})
+            # return self.match(**{field:token})
 
             return [x for x in self.all() if token in getattr(x, field)]
 
@@ -1148,15 +1163,15 @@ class NetDevices(DictMixin):
 
             :returns: List of NetDevice objects
             """
-            skip_loader = kwargs.pop('skip_loader', False)
+            skip_loader = kwargs.pop("skip_loader", False)
             if skip_loader:
-                log.msg('Skipping loader.match()')
+                log.msg("Skipping loader.match()")
 
-            if not skip_loader and hasattr(self.loader, 'match'):
-                log.msg('Calling loader.match()')
+            if not skip_loader and hasattr(self.loader, "match"):
+                log.msg("Calling loader.match()")
                 return self.loader.match(**kwargs)
 
-            all_field_names = getattr(self, '_all_field_names', {})
+            all_field_names = getattr(self, "_all_field_names", {})
             devices = self.all()
 
             # Cache the field names the first time .match() is called.
@@ -1176,9 +1191,7 @@ class NetDevices(DictMixin):
                 attr = map_attr(attr)
                 val = str(val).lower()
                 devices = [
-                    d for d in devices if (
-                        val in str(getattr(d, attr, '')).lower()
-                    )
+                    d for d in devices if (val in str(getattr(d, attr, "")).lower())
                 ]
 
             return devices
@@ -1193,15 +1206,15 @@ class NetDevices(DictMixin):
 
         def list_switches(self):
             """Returns a list of NetDevice objects with deviceType of SWITCH"""
-            return self.get_devices_by_type('SWITCH')
+            return self.get_devices_by_type("SWITCH")
 
         def list_routers(self):
             """Returns a list of NetDevice objects with deviceType of ROUTER"""
-            return self.get_devices_by_type('ROUTER')
+            return self.get_devices_by_type("ROUTER")
 
         def list_firewalls(self):
             """Returns a list of NetDevice objects with deviceType of FIREWALL"""
-            return self.get_devices_by_type('FIREWALL')
+            return self.get_devices_by_type("FIREWALL")
 
     def __init__(self, production_only=True, with_acls=None):
         """
@@ -1216,8 +1229,9 @@ class NetDevices(DictMixin):
             with_acls = settings.WITH_ACLS
         classobj = self.__class__
         if classobj._Singleton is None:
-            classobj._Singleton = classobj._actual(production_only=production_only,
-                                                   with_acls=with_acls)
+            classobj._Singleton = classobj._actual(
+                production_only=production_only, with_acls=with_acls
+            )
 
     def __getattr__(self, attr):
         return getattr(self.__class__._Singleton, attr)
@@ -1227,6 +1241,6 @@ class NetDevices(DictMixin):
 
     def reload(self, **kwargs):
         """Reload NetDevices metadata."""
-        log.msg('Reloading NetDevices.')
+        log.msg("Reloading NetDevices.")
         classobj = self.__class__
         classobj._Singleton = classobj._actual(**kwargs)

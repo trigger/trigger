@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 acl_script - CLI interface to simplify complex modification to access-lists.
@@ -395,7 +394,7 @@ if __name__ == "__main__":
             sys.exit(2)
 
         short_acl = acl_file
-        r = re.compile('\/(acl\..*?)$')
+        r = re.compile(r'\/(acl\..*?)$')
         ar = r.findall(acl_file) #opts.acl)
         if ar:
             short_acl = ar[0]

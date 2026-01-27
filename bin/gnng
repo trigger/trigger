@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 gnng - Fetches network devices interfaces and displays them in a table view.

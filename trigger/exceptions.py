@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
-
 """
 All custom exceptions used by Trigger. Where possible built-in exceptions are
 used, but sometimes we need more descriptive errors.
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__copyright__ = 'Copyright 2012-2012, AOL Inc.'
-__version__ = '1.9'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan@gmail.com"
+__copyright__ = "Copyright 2012-2012, AOL Inc."
+__version__ = "1.9"
 
 
 # Imports
@@ -37,6 +35,7 @@ class ParseError(ACLError):
     Raised when there is an error parsing/normalizing an ACL that tries to tell
     you where it failed.
     """
+
     def __init__(self, reason, line=None, column=None):
         self.reason = reason
         self.line = line
@@ -45,7 +44,7 @@ class ParseError(ACLError):
     def __str__(self):
         s = self.reason
         if self.line is not None and self.line > 1:
-            s += ' at line %d' % self.line
+            s += " at line %d" % self.line
         return s
 
 
@@ -216,6 +215,7 @@ class ConnectionFailure(TwisterError):
 
 class SSHConnectionLost(TwisterError):
     """Raised when an SSH connection is lost for any reason."""
+
     def __init__(self, code, desc):
         self.code = code
         TwisterError.__init__(self, desc)
@@ -242,15 +242,16 @@ class NetscalerCommandFailure(CommandFailure):
 
 class JunoscriptCommandFailure(CommandFailure):
     """Raised when a Junoscript command fails on a Juniper device."""
+
     def __init__(self, tag):
         self.tag = tag
 
     def __str__(self):
-        s = 'JunOS XML command failure:\n'
-        ns = '{http://xml.juniper.net/xnm/1.1/xnm}'
-        for e in self.tag.findall('.//%serror' % ns):
+        s = "JunOS XML command failure:\n"
+        ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
+        for e in self.tag.findall(".//%serror" % ns):
             for e2 in e:
-                s += '  %s: %s\n' % (e2.tag.replace(ns, ''), e2.text)
+                s += "  {}: {}\n".format(e2.tag.replace(ns, ""), e2.text)
         return s
 
 

@@ -1,17 +1,16 @@
-# -*- coding: utf-8 -*-
-
 """
 A collection of CLI tools and utilities used by Trigger.
 """
 
-__author__ = 'Jathan McCollum, Mike Biancaniello'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2008-2013, AOL Inc.'
+__author__ = "Jathan McCollum, Mike Biancaniello"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2008-2013, AOL Inc."
 
 from collections import namedtuple
 import re
 from .cli import get_user
+
 
 def crypt_md5(passwd):
     """
@@ -25,24 +24,31 @@ def crypt_md5(passwd):
         Password string to be encrypted
     """
     import platform
-    if platform.system() == 'Linux':
+
+    if platform.system() == "Linux":
         import crypt
         import hashlib
         import time
-        salt = '$1$' + hashlib.md5(str(time.time())).hexdigest()[0:8] + '$'
+
+        salt = "$1$" + hashlib.md5(str(time.time())).hexdigest()[0:8] + "$"
         crypted = crypt.crypt(passwd, salt)
 
     else:
         try:
             from passlib.hash import md5_crypt
         except ImportError:
-            raise RuntimeError("""When not using Linux, generating md5-crypt password hashes requires the `passlib` module.""")
+            raise RuntimeError(
+                """When not using Linux, generating md5-crypt password hashes requires the `passlib` module."""
+            )
         else:
             crypted = md5_crypt.encrypt(passwd)
 
     return crypted
 
-JuniperElement = namedtuple('JuniperElement', 'key value')
+
+JuniperElement = namedtuple("JuniperElement", "key value")
+
+
 def strip_juniper_namespace(path, key, value):
     """
     Given a Juniper XML element, strip the namespace and return a 2-tuple.
@@ -59,12 +65,15 @@ def strip_juniper_namespace(path, key, value):
     marr = re.match(r"(ns1:|ns0:)", key)
     if marr:
         ns = marr.group(0)
-        key = key.replace(ns, '')
+        key = key.replace(ns, "")
 
     return JuniperElement(key, value)
 
-NodePort = namedtuple('HostPort', 'nodeName nodePort')
-def parse_node_port(nodeport, delimiter=':'):
+
+NodePort = namedtuple("HostPort", "nodeName nodePort")
+
+
+def parse_node_port(nodeport, delimiter=":"):
     """
     Parse a string in format 'hostname' or 'hostname:port'  and return them
     as a 2-tuple.

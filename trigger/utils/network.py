@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Functions that perform network-based things like ping, port tests, etc.
 """
@@ -12,17 +10,16 @@ import telnetlib
 
 from trigger.conf import settings
 
-
 # Exports
-__all__ = ('ping', 'test_tcp_port', 'test_ssh', 'address_is_internal')
+__all__ = ("ping", "test_tcp_port", "test_ssh", "address_is_internal")
 
 
 # Constants
 # SSH version strings used to validate SSH banners.
 SSH_VERSION_STRINGS = (
-    'SSH-1.99',
-    'SSH-2.0',
-    'dcos_sshd run in non-FIPS mode',  # Cisco Nexus not in FIPS mode
+    "SSH-1.99",
+    "SSH-2.0",
+    "dcos_sshd run in non-FIPS mode",  # Cisco Nexus not in FIPS mode
 )
 
 
@@ -49,20 +46,20 @@ def ping(host, count=1, timeout=5):
 
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
     status = None
-    with open(os.devnull, 'w') as devnull_fd:
+    with open(os.devnull, "w") as devnull_fd:
         status = subprocess.call(
             shlex.split(ping_command),
             stdout=devnull_fd,
             stderr=devnull_fd,
-            close_fds=True)
+            close_fds=True,
+        )
 
     # Linux RC: 0 = success, 256 = failure, 512 = unknown host
     # Darwin RC: 0 = success, 512 = failure, 17408 = unknown host
     return status == 0
 
 
-def test_tcp_port(host, port=23, timeout=5, check_result=False,
-                  expected_result=''):
+def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=""):
     """
     Attempts to connect to a TCP port. Returns a Boolean.
 
@@ -95,7 +92,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False,
             result = t.read_some()
             t.close()
             return result.startswith(expected_result)
-    except (socket.timeout, socket.error):
+    except (TimeoutError, OSError):
         return False
 
     t.close()
@@ -127,8 +124,9 @@ def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):
     >>> test_ssh('localhost', version='SSH-1.5')
     False
     """
-    return test_tcp_port(host, port, timeout, check_result=True,
-                         expected_result=version)
+    return test_tcp_port(
+        host, port, timeout, check_result=True, expected_result=version
+    )
 
 
 def address_is_internal(ip):
