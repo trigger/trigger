@@ -102,7 +102,7 @@ class CheckTemplates(unittest.TestCase):
     """Test structured CLI object data."""
 
     def setUp(self):
-        data = cStringIO.StringIO(text_fsm_data)
+        data = StringIO(text_fsm_data)
         self.re_table = textfsm.TextFSM(data)
         self.assertTrue(isinstance(self.re_table, textfsm.textfsm.TextFSM))
 
