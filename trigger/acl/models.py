@@ -13,7 +13,7 @@ if not engine:
 # We're hard-coding support for the BIG THREE database solutions for now,
 # because that's what the ``peewee`` library we are using as the ORM supports.
 if engine == "sqlite3":
-    database = pw.SqliteDatabase(database=settings.DATABASE_NAME, threadlocals=True)
+    database = pw.SqliteDatabase(database=settings.DATABASE_NAME)
 elif engine == "mysql":
     if not settings.DATABASE_PORT:
         settings.DATABASE_PORT = 3306
@@ -23,7 +23,6 @@ elif engine == "mysql":
         port=settings.DATABASE_PORT,
         user=settings.DATABASE_USER,
         passwd=settings.DATABASE_PASSWORD,
-        threadlocals=True,
     )
 elif engine == "postgresql":
     database = pw.PostgresqlDatabase(
@@ -32,7 +31,6 @@ elif engine == "postgresql":
         port=settings.DATABASE_PORT,
         user=settings.DATABASE_USER,
         password=settings.DATABASE_PASSWORD,
-        threadlocals=True,
     )
 else:
     raise RuntimeError("Unsupported database engine: %s" % engine)

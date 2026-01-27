@@ -5,7 +5,7 @@ parse() method."""
 from TftpShared import *
 from TftpPacketTypes import *
 
-class TftpPacketFactory(object):
+class TftpPacketFactory:
     """This class generates TftpPacket objects. It is responsible for parsing
     raw buffers off of the wire and returning objects representing them, via
     the parse() method."""
@@ -33,7 +33,7 @@ class TftpPacketFactory(object):
     def __create(self, opcode):
         """This method returns the appropriate class object corresponding to
         the passed opcode."""
-        tftpassert(self.classes.has_key(opcode),
+        tftpassert(opcode in self.classes,
                    "Unsupported opcode: %d" % opcode)
 
         packet = self.classes[opcode]()

@@ -28,12 +28,12 @@ class TftpState(object):
     def handle(self, pkt, raddress, rport):
         """An abstract method for handling a packet. It is expected to return
         a TftpState object, either itself or a new state."""
-        raise NotImplementedError, "Abstract method"
+        raise NotImplementedError("Abstract method")
 
     def handleOACK(self, pkt):
         """This method handles an OACK from the server, syncing any accepted
         options."""
-        if pkt.options.keys() > 0:
+        if len(pkt.options.keys()) > 0:
             if pkt.match_options(self.context.options):
                 log.info("Successful negotiation of options")
                 # Set options to OACK options
@@ -42,9 +42,9 @@ class TftpState(object):
                     log.info("    %s = %s" % (key, self.context.options[key]))
             else:
                 log.error("Failed to negotiate options")
-                raise TftpException, "Failed to negotiate options"
+                raise TftpException("Failed to negotiate options")
         else:
-            raise TftpException, "No options found in OACK"
+            raise TftpException("No options found in OACK")
 
     def returnSupportedOptions(self, options):
         """This method takes a requested options list from a client, and
@@ -97,8 +97,8 @@ class TftpState(object):
         # FIXME - only octet mode is supported at this time.
         if pkt.mode != 'octet':
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, \
-                "Only octet transfers are supported at this time."
+            raise TftpException(
+                "Only octet transfers are supported at this time.")
 
         # test host/port of client end
         if self.context.host != raddress or self.context.port != rport:
@@ -118,7 +118,7 @@ class TftpState(object):
         # FIXME: Should we allow subdirectories?
         if pkt.filename.find(os.sep) >= 0:
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "%s found in filename, not permitted" % os.sep
+            raise TftpException("%s found in filename, not permitted" % os.sep)
 
         self.context.file_to_transfer = pkt.filename
 
@@ -229,7 +229,7 @@ class TftpState(object):
             if pkt.blocknumber == 0:
                 log.warn("There is no block zero!")
                 self.sendError(TftpErrors.IllegalTftpOp)
-                raise TftpException, "There is no block zero!"
+                raise TftpException("There is no block zero!")
             log.warn("Dropping duplicate block %d" % pkt.blocknumber)
             self.context.metrics.add_dup(pkt)
             log.debug("ACKing block %d again, just in case" % pkt.blocknumber)
@@ -240,7 +240,7 @@ class TftpState(object):
             msg = "Whoa! Received future block %d but expected %d" \
                 % (pkt.blocknumber, self.context.next_block)
             log.error(msg)
-            raise TftpException, msg
+            raise TftpException(msg)
 
         # Default is to ack
         return TftpStateExpectDAT(self.context)
@@ -267,10 +267,10 @@ class TftpStateServerRecvRRQ(TftpState):
                 log.debug("dyn_file_func returned 'None', treating as "
                           "FileNotFound")
                 self.sendError(TftpErrors.FileNotFound)
-                raise TftpException, "File not found: %s" % path
+                raise TftpException("File not found: %s" % path)
         else:
             self.sendError(TftpErrors.FileNotFound)
-            raise TftpException, "File not found: %s" % path
+            raise TftpException("File not found: %s" % path)
 
         # Options negotiation.
         if sendoack:
@@ -343,8 +343,8 @@ class TftpStateServerStart(TftpState):
                                                                rport)
         else:
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, \
-                "Invalid packet to begin up/download: %s" % pkt
+            raise TftpException(
+                "Invalid packet to begin up/download: %s" % pkt)
 
 class TftpStateExpectACK(TftpState):
     """This class represents the state of the transfer when a DAT was just
@@ -379,8 +379,8 @@ class TftpStateExpectACK(TftpState):
             return self
         elif isinstance(pkt, TftpPacketERR):
             log.error("Received ERR packet from peer: %s" % str(pkt))
-            raise TftpException, \
-                "Received ERR packet from peer: %s" % str(pkt)
+            raise TftpException(
+                "Received ERR packet from peer: %s" % str(pkt))
         else:
             log.warn("Discarding unsupported packet: %s" % str(pkt))
             return self
@@ -396,19 +396,19 @@ class TftpStateExpectDAT(TftpState):
         elif isinstance(pkt, TftpPacketACK):
             # Umm, we ACK, you don't.
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received ACK from peer when expecting DAT"
+            raise TftpException("Received ACK from peer when expecting DAT")
 
         elif isinstance(pkt, TftpPacketWRQ):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received WRQ from peer when expecting DAT"
+            raise TftpException("Received WRQ from peer when expecting DAT")
 
         elif isinstance(pkt, TftpPacketERR):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received ERR from peer: " + str(pkt)
+            raise TftpException("Received ERR from peer: " + str(pkt))
 
         else:
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received unknown packet type from peer: " + str(pkt)
+            raise TftpException("Received unknown packet type from peer: " + str(pkt))
 
 class TftpStateSentWRQ(TftpState):
     """Just sent an WRQ packet for an upload."""
@@ -451,19 +451,19 @@ class TftpStateSentWRQ(TftpState):
 
         elif isinstance(pkt, TftpPacketERR):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received ERR from server: " + str(pkt)
+            raise TftpException("Received ERR from server: " + str(pkt))
 
         elif isinstance(pkt, TftpPacketRRQ):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received RRQ from server while in upload"
+            raise TftpException("Received RRQ from server while in upload")
 
         elif isinstance(pkt, TftpPacketDAT):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received DAT from server while in upload"
+            raise TftpException("Received DAT from server while in upload")
 
         else:
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received unknown packet type from server: " + str(pkt)
+            raise TftpException("Received unknown packet type from server: " + str(pkt))
 
         # By default, no state change.
         return self
@@ -481,7 +481,7 @@ class TftpStateSentRRQ(TftpState):
             log.info("Received OACK from server")
             try:
                 self.handleOACK(pkt)
-            except TftpException, err:
+            except TftpException as err:
                 log.error("Failed to negotiate options: %s" % str(err))
                 self.sendError(TftpErrors.FailedNegotiation)
                 raise
@@ -506,19 +506,19 @@ class TftpStateSentRRQ(TftpState):
         elif isinstance(pkt, TftpPacketACK):
             # Umm, we ACK, the server doesn't.
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received ACK from server while in download"
+            raise TftpException("Received ACK from server while in download")
 
         elif isinstance(pkt, TftpPacketWRQ):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received WRQ from server while in download"
+            raise TftpException("Received WRQ from server while in download")
 
         elif isinstance(pkt, TftpPacketERR):
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received ERR from server: " + str(pkt)
+            raise TftpException("Received ERR from server: " + str(pkt))
 
         else:
             self.sendError(TftpErrors.IllegalTftpOp)
-            raise TftpException, "Received unknown packet type from server: " + str(pkt)
+            raise TftpException("Received unknown packet type from server: " + str(pkt))
 
         # By default, no state change.
         return self
