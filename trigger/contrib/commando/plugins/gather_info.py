@@ -54,13 +54,12 @@ import re
 from trigger.cmds import Commando
 from twisted.python import log
 
-
-task_name = 'gather_info'
+task_name = "gather_info"
 
 
 def xmlrpc_gather_info(*args, **kwargs):
     """Gather info on specified devices"""
-    log.msg('Creating GatherInfo')
+    log.msg("Creating GatherInfo")
     gi = GatherInfo(*args, **kwargs)
     d = gi.run()
     return d
@@ -70,8 +69,10 @@ class GatherInfo(Commando):
     """Extension of Commando class for generating the proper commands to
     run per-platform.
     """
-    vendors = ['cisco']
-    ios_shver_parse = re.compile(r'''
+
+    vendors = ["cisco"]
+    ios_shver_parse = re.compile(
+        r"""
         (?P<hostname>\S*)               (?# Capture Hostname)
         \suptime\sis\s                  (?# Match " uptime is ")
         (?P<uptime>[^\r\n]*)            (?# Capture until end of line)
@@ -82,8 +83,11 @@ class GatherInfo(Commando):
         (?P<model>\S*)                  (?# Capture model number)
         .*?^Processor\sboard\sID\s      (?# Skip until 'Processor board')
         (?P<serial_no>\S*)\s            (?# Capture serial number)
-        ''', re.M | re.S | re.X)
-    asa_shver_parse = re.compile(r'''
+        """,
+        re.M | re.S | re.X,
+    )
+    asa_shver_parse = re.compile(
+        r"""
         System\simage\sfile\sis\s       (?# Start from System image line)
         "[^:/]*(?::/|:)                 (?# Match from " and * until :/)
         (?P<sw_image>[^"]*)             (?# Capture everything until end ")
@@ -94,33 +98,41 @@ class GatherInfo(Commando):
         (?P<model>\S*),                 (?# Capture hardwmare model)
         .*?^Serial\sNumber:\s           (?# Match up to Serial Number)
         (?P<serial_no>\S*)\s            (?# Capture the serial number)
-        ''', re.M | re.S | re.X)
+        """,
+        re.M | re.S | re.X,
+    )
 
     def to_cisco(self, device, commands=None, extra=None):
         """We want different information depending on whether the device
         is a switch, router, or firewall
         """
         if device.is_cisco_asa():
-            return ['show version',
-                    'more system:r',
-                    'show inventory',
-                    'show hostname',
-                    'show hostname fqdn']  # In case reason to need fqdn
+            return [
+                "show version",
+                "more system:r",
+                "show inventory",
+                "show hostname",
+                "show hostname fqdn",
+            ]  # In case reason to need fqdn
         if device.is_router():
-            return ['show version',
-                    'show run',
-                    'show inventory',
-                    'show cdp neighbor detail',
-                    'show run | i ip domain-name']
+            return [
+                "show version",
+                "show run",
+                "show inventory",
+                "show cdp neighbor detail",
+                "show run | i ip domain-name",
+            ]
         if device.is_switch():
-            return ['show version',
-                    'show run',
-                    'show inventory',
-                    'show cdp neighbor detail',
-                    'show vtp status',
-                    'show vlan',
-                    'show switch detail',
-                    'show run | i ip domain-name']
+            return [
+                "show version",
+                "show run",
+                "show inventory",
+                "show cdp neighbor detail",
+                "show vtp status",
+                "show vlan",
+                "show switch detail",
+                "show run | i ip domain-name",
+            ]
 
     def from_cisco(self, results, device, commands=None):
         """Parses output of certain commands and add to ``self.results``
@@ -133,9 +145,9 @@ class GatherInfo(Commando):
         """
         commands_ran = self.generate(device)
         results_dict = {
-            'commands_ran': self.map_results(commands_ran, results),
-            }
-        show_version = results_dict['commands_ran']['show version']
+            "commands_ran": self.map_results(commands_ran, results),
+        }
+        show_version = results_dict["commands_ran"]["show version"]
         if device.is_cisco_asa():
             info_dict = self.asa_shver_parse.search(show_version).groupdict()
         if device.is_router() or device.is_switch():

@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-
 """
 Abstract interface to bounce windows and moratoria.
 """
 
-__author__ = 'Jathan McCollum, Mark Thomas, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
+__author__ = "Jathan McCollum, Mark Thomas, Michael Shields"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2006-2012, AOL Inc."
 
 # Imports
 from datetime import datetime, timedelta
@@ -15,24 +13,23 @@ from pytz import timezone, UTC
 from trigger.conf import settings
 from trigger import exceptions
 
-
 # Constants
-BOUNCE_VALUES = ('green', 'yellow', 'red')
+BOUNCE_VALUES = ("green", "yellow", "red")
 BOUNCE_DEFAULT_TZ = timezone(settings.BOUNCE_DEFAULT_TZ)
 BOUNCE_DEFAULT_COLOR = settings.BOUNCE_DEFAULT_COLOR
 BOUNCE_VALUE_MAP = {
-    'red': 3,
-    'yellow': 2,
-    'green': 1,
+    "red": 3,
+    "yellow": 2,
+    "green": 1,
 }
 
 
 # Exports
-__all__ = ('BounceStatus', 'BounceWindow', 'bounce')
+__all__ = ("BounceStatus", "BounceWindow", "bounce")
 
 
 # Classes
-class BounceStatus(object):
+class BounceStatus:
     """
     An object that represents a bounce window risk-level status.
 
@@ -54,12 +51,13 @@ class BounceStatus(object):
     :param status_name:
         The colored risk-level status name.
     """
+
     def __init__(self, status_name):
         self.status_name = status_name
         self.value = BOUNCE_VALUES.index(status_name)
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.status_name)
+        return "<{}: {}>".format(self.__class__.__name__, self.status_name)
 
     def __str__(self):
         return self.status_name
@@ -71,7 +69,8 @@ class BounceStatus(object):
             # Other object is not a BounceStatus; maybe it's a string.
             return self.value.__cmp__(BounceStatus(other).value)
 
-class BounceWindow(object):
+
+class BounceWindow:
     """
     Build a bounce window of 24 `~trigger.changemgmt.BounceStatus` objects.
 
@@ -147,11 +146,18 @@ class BounceWindow(object):
     :param default:
         The color used to fill in the gaps between other risk levels.
     """
-    # Prepopulate these objects to save a little horsepower
-    BOUNCE_STATUS = dict([(n, BounceStatus(n)) for n in BOUNCE_VALUES])
 
-    def __init__(self, status_by_hour=None, green=None, yellow=None, red=None,
-                 default=BOUNCE_DEFAULT_COLOR):
+    # Prepopulate these objects to save a little horsepower
+    BOUNCE_STATUS = {n: BounceStatus(n) for n in BOUNCE_VALUES}
+
+    def __init__(
+        self,
+        status_by_hour=None,
+        green=None,
+        yellow=None,
+        red=None,
+        default=BOUNCE_DEFAULT_COLOR,
+    ):
 
         # Parse the hours specified into BounceWindows
         self._green = green
@@ -159,9 +165,9 @@ class BounceWindow(object):
         self._red = red
         self.default = default
         hours = {
-            'green': self._parse_hours(green),
-            'yellow':  self._parse_hours(yellow),
-            'red':  self._parse_hours(red),
+            "green": self._parse_hours(green),
+            "yellow": self._parse_hours(yellow),
+            "red": self._parse_hours(red),
         }
         self.hours = hours
         self.hour_map = self._map_bounces(self.hours, default=default)
@@ -171,23 +177,21 @@ class BounceWindow(object):
             status_by_hour = self.hour_map.values()
 
         if not len(status_by_hour) == 24:
-            msg = 'There must be exactly 24 hours defined for this BounceWindow.'
+            msg = "There must be exactly 24 hours defined for this BounceWindow."
             raise exceptions.InvalidBounceWindow(msg)
 
         # Make sure each status occurs at least once, or next_ok()
         # might never return.
         for status in BOUNCE_VALUE_MAP:
             if status not in status_by_hour:
-                msg = '%s risk-level must be defined!' % status
+                msg = "%s risk-level must be defined!" % status
                 raise exceptions.InvalidBounceWindow(msg)
         self._status_by_hour = status_by_hour
 
     def __repr__(self):
-        return "%s(green=%r, yellow=%r, red=%r, default=%r)" % (self.__class__.__name__,
-                                                                self._green,
-                                                                self._yellow,
-                                                                self._red,
-                                                                self.default)
+        return "{}(green={!r}, yellow={!r}, red={!r}, default={!r})".format(
+            self.__class__.__name__, self._green, self._yellow, self._red, self.default
+        )
 
     def status(self, when=None):
         """
@@ -200,9 +204,13 @@ class BounceWindow(object):
         when_et = (when or datetime.now(tz=UTC)).astimezone(BOUNCE_DEFAULT_TZ)
 
         # Return default during weekend moratorium, otherwise look it up.
-        if (when_et.weekday() >= 5 or
-            when_et.weekday() == 0 and when_et.hour < 4 or
-            when_et.weekday() == 4 and when_et.hour >= 12):
+        if (
+            when_et.weekday() >= 5
+            or when_et.weekday() == 0
+            and when_et.hour < 4
+            or when_et.weekday() == 4
+            and when_et.hour >= 12
+        ):
             return BounceStatus(BOUNCE_DEFAULT_COLOR)
         else:
             return self._status_by_hour[when_et.hour]
@@ -294,12 +302,12 @@ class BounceWindow(object):
         # Split the pattern by ',' and then trim whitespace, carve hyphenated
         # ranges out and then return a list of hours. More error-checking
         # Coming "Soon".
-        blocks = hs.split(',')
+        blocks = hs.split(",")
         for block in blocks:
             # Clean whitespace and split on hyphens
-            parts = block.strip().split('-')
-            parts = [int(p) for p in parts] # make ints
-            if len(parts) == 1: # no hyphen
+            parts = block.strip().split("-")
+            parts = [int(p) for p in parts]  # make ints
+            if len(parts) == 1:  # no hyphen
                 parts.append(parts[0] + 1)
             elif len(parts) == 2:
                 parts[1] += 1

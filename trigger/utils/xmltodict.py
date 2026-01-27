@@ -4,45 +4,51 @@
 from xml.parsers import expat
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
-try: # pragma no cover
+
+try:  # pragma no cover
     from cStringIO import StringIO
-except ImportError: # pragma no cover
+except ImportError:  # pragma no cover
     try:
         from StringIO import StringIO
     except ImportError:
         from io import StringIO
-try: # pragma no cover
+try:  # pragma no cover
     from collections import OrderedDict
-except ImportError: # pragma no cover
+except ImportError:  # pragma no cover
     OrderedDict = dict
 
-try: # pragma no cover
+try:  # pragma no cover
     _basestring = basestring
-except NameError: # pragma no cover
+except NameError:  # pragma no cover
     _basestring = str
-try: # pragma no cover
+try:  # pragma no cover
     _unicode = unicode
-except NameError: # pragma no cover
+except NameError:  # pragma no cover
     _unicode = str
 
-__author__ = 'Martin Blech'
-__version__ = '0.4.6'
-__license__ = 'MIT'
+__author__ = "Martin Blech"
+__version__ = "0.4.6"
+__license__ = "MIT"
 
-class ParsingInterrupted(Exception): pass
 
-class _DictSAXHandler(object):
-    def __init__(self,
-                 item_depth=0,
-                 item_callback=lambda *args: True,
-                 xml_attribs=True,
-                 attr_prefix='@',
-                 cdata_key='#text',
-                 force_cdata=False,
-                 cdata_separator='',
-                 postprocessor=None,
-                 dict_constructor=OrderedDict,
-                 strip_whitespace=True):
+class ParsingInterrupted(Exception):
+    pass
+
+
+class _DictSAXHandler:
+    def __init__(
+        self,
+        item_depth=0,
+        item_callback=lambda *args: True,
+        xml_attribs=True,
+        attr_prefix="@",
+        cdata_key="#text",
+        force_cdata=False,
+        cdata_separator="",
+        postprocessor=None,
+        dict_constructor=OrderedDict,
+        strip_whitespace=True,
+    ):
         self.path = []
         self.stack = []
         self.data = None
@@ -65,8 +71,8 @@ class _DictSAXHandler(object):
             self.stack.append((self.item, self.data))
             if self.xml_attribs:
                 attrs = self.dict_constructor(
-                    (self.attr_prefix+key, value)
-                    for (key, value) in attrs.items())
+                    (self.attr_prefix + key, value) for (key, value) in attrs.items()
+                )
             else:
                 attrs = None
             self.item = attrs or None
@@ -121,7 +127,8 @@ class _DictSAXHandler(object):
             item[key] = data
         return item
 
-def parse(xml_input, encoding='utf-8', *args, **kwargs):
+
+def parse(xml_input, encoding="utf-8", *args, **kwargs):
     """Parse the given XML input and convert it into a dictionary.
 
     `xml_input` can either be a `string` or a file-like object.
@@ -195,11 +202,16 @@ def parse(xml_input, encoding='utf-8', *args, **kwargs):
         parser.Parse(xml_input, True)
     return handler.item
 
-def _emit(key, value, content_handler,
-          attr_prefix='@',
-          cdata_key='#text',
-          root=True,
-          preprocessor=None):
+
+def _emit(
+    key,
+    value,
+    content_handler,
+    attr_prefix="@",
+    cdata_key="#text",
+    root=True,
+    preprocessor=None,
+):
     if preprocessor is not None:
         result = preprocessor(key, value)
         if result is None:
@@ -208,7 +220,7 @@ def _emit(key, value, content_handler,
     if not isinstance(value, (list, tuple)):
         value = [value]
     if root and len(value) > 1:
-        raise ValueError('document with multiple roots')
+        raise ValueError("document with multiple roots")
     for v in value:
         if v is None:
             v = OrderedDict()
@@ -224,18 +236,26 @@ def _emit(key, value, content_handler,
                 cdata = iv
                 continue
             if ik.startswith(attr_prefix):
-                attrs[ik[len(attr_prefix):]] = iv
+                attrs[ik[len(attr_prefix) :]] = iv
                 continue
             children.append((ik, iv))
         content_handler.startElement(key, AttributesImpl(attrs))
         for child_key, child_value in children:
-            _emit(child_key, child_value, content_handler,
-                  attr_prefix, cdata_key, False, preprocessor)
+            _emit(
+                child_key,
+                child_value,
+                content_handler,
+                attr_prefix,
+                cdata_key,
+                False,
+                preprocessor,
+            )
         if cdata is not None:
             content_handler.characters(cdata)
         content_handler.endElement(key)
 
-def unparse(item, output=None, encoding='utf-8', **kwargs):
+
+def unparse(item, output=None, encoding="utf-8", **kwargs):
     ((key, value),) = item.items()
     must_return = False
     if output == None:
@@ -247,13 +267,14 @@ def unparse(item, output=None, encoding='utf-8', **kwargs):
     content_handler.endDocument()
     if must_return:
         value = output.getvalue()
-        try: # pragma no cover
+        try:  # pragma no cover
             value = value.decode(encoding)
-        except AttributeError: # pragma no cover
+        except AttributeError:  # pragma no cover
             pass
         return value
 
-if __name__ == '__main__': # pragma: no cover
+
+if __name__ == "__main__":  # pragma: no cover
     import sys
     import marshal
 
@@ -265,12 +286,13 @@ if __name__ == '__main__': # pragma: no cover
         return True
 
     try:
-        root = parse(sys.stdin,
-                     item_depth=item_depth,
-                     item_callback=handle_item,
-                     dict_constructor=dict)
+        root = parse(
+            sys.stdin,
+            item_depth=item_depth,
+            item_callback=handle_item,
+            dict_constructor=dict,
+        )
         if item_depth == 0:
             handle_item([], root)
     except KeyboardInterrupt:
         pass
-

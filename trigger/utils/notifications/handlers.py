@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Handlers for event notifications.
 
@@ -23,10 +21,10 @@ notification type is an `~trigger.utils.notification.events.EmailEvent` that is
 handled by `~trigger.utils.notifications.handlers.email_handler`.
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2012-2012, AOL Inc.'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2012-2012, AOL Inc."
 
 from trigger import exceptions
 from trigger.utils.importlib import import_module
@@ -41,7 +39,7 @@ HANDLERS_REGISTERED = False
 
 
 # Exports
-__all__ = ('email_handler', 'notify')
+__all__ = ("email_handler", "notify")
 
 
 # Functions
@@ -56,6 +54,7 @@ def email_handler(*args, **kwargs):
     else:
         return event.handle()
 
+
 def _register_handlers():
     """
     Walk thru the handlers specified in ``settings.NOTIFICATION_HANDLERS`` and
@@ -69,28 +68,39 @@ def _register_handlers():
     for handler_path in settings.NOTIFICATION_HANDLERS:
         # Get the module and func name
         try:
-            h_module, h_funcname = handler_path.rsplit('.', 1)
+            h_module, h_funcname = handler_path.rsplit(".", 1)
         except ValueError:
-            raise exceptions.ImproperlyConfigured("%s isn't a handler module" % handler_path)
+            raise exceptions.ImproperlyConfigured(
+                "%s isn't a handler module" % handler_path
+            )
 
         # Import the module and get the module object
         try:
             mod = import_module(h_module)
         except ImportError as err:
-            raise exceptions.ImproperlyConfigured('Error importing handler %s: "%s"' % (h_module, err))
+            raise exceptions.ImproperlyConfigured(
+                'Error importing handler {}: "{}"'.format(h_module, err)
+            )
 
         # Get the handler function
         try:
             handler = getattr(mod, h_funcname)
         except AttributeError:
-            raise exceptions.ImproperlyConfigured('Handler module "%s" does not define a "%s" function' % (h_module, h_funcname))
+            raise exceptions.ImproperlyConfigured(
+                'Handler module "{}" does not define a "{}" function'.format(
+                    h_module, h_funcname
+                )
+            )
 
         # Register the handler function
         if handler not in _registered_handlers:
             _registered_handlers.append(handler)
 
     HANDLERS_REGISTERED = True
-_register_handlers() # Do this on init
+
+
+_register_handlers()  # Do this on init
+
 
 def notify(*args, **kwargs):
     """
@@ -104,17 +114,17 @@ def notify(*args, **kwargs):
 
     for handler in _registered_handlers:
         # Pass the event args to the handler
-        #print 'Sending %s, %s to %s' % (args, kwargs, handler)
+        # print 'Sending %s, %s to %s' % (args, kwargs, handler)
         try:
             result = handler(*args, **kwargs)
         except Exception as err:
-            #print 'Got exception: %s' % err
+            # print 'Got exception: %s' % err
             continue
         else:
             if result is not None:
-                return True # Event was handled!
+                return True  # Event was handled!
             else:
                 continue
-            
+
     # We don't want to get to this point
-    raise RuntimeError('No handlers succeeded for this event: %s' % event)
+    raise RuntimeError("No handlers succeeded for this event: %s" % event)

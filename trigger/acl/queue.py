@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Database interface for automated ACL queue. Used primarily by ``load_acl`` and
 ``acl``` commands for manipulating the work queue.
@@ -11,10 +9,10 @@ Database interface for automated ACL queue. Used primarily by ``load_acl`` and
     'datacenter-protect'))
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jmccollum@salesforce.com'
-__version__ = '2.0.1'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jmccollum@salesforce.com"
+__version__ = "2.0.1"
 
 
 import datetime
@@ -26,13 +24,12 @@ from trigger.netdevices import NetDevices
 from trigger.utils import get_user
 from . import models
 
-
 # Globals
-QUEUE_NAMES = ('integrated', 'manual')
+QUEUE_NAMES = ("integrated", "manual")
 
 
 # Exports
-__all__ = ('Queue',)
+__all__ = ("Queue",)
 
 
 # Classes
@@ -46,6 +43,7 @@ class Queue(object):
     :type verbose:
         Boolean
     """
+
     def __init__(self, verbose=True):
         self.nd = NetDevices()
         self.verbose = verbose
@@ -59,7 +57,7 @@ class Queue(object):
             The string to print
         """
         if self.verbose:
-            print msg
+            print(msg)
 
     def get_model(self, queue):
         """
@@ -80,7 +78,7 @@ class Queue(object):
         model = self.get_model(queue)
         taskobj = model.create(*args, **kwargs)
 
-    def _normalize(self, arg, prefix=''):
+    def _normalize(self, arg, prefix=""):
         """
         Remove ``prefix`` from ``arg``, and set "escalation" bit.
 
@@ -91,9 +89,9 @@ class Queue(object):
             Prefix to trim from arg
         """
         if arg.startswith(prefix):
-            arg = arg[len(prefix):]
+            arg = arg[len(prefix) :]
         escalation = False
-        if arg.upper().endswith(' ESCALATION'):
+        if arg.upper().endswith(" ESCALATION"):
             escalation = True
             arg = arg[:-11]
         return (escalation, arg)
@@ -115,7 +113,9 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise exceptions.ACLQueueError('You must specify an ACL to insert into the queue')
+            raise exceptions.ACLQueueError(
+                "You must specify an ACL to insert into the queue"
+            )
         if not routers:
             routers = []
 
@@ -125,21 +125,24 @@ class Queue(object):
                 try:
                     dev = self.nd.find(router)
                 except KeyError:
-                    msg = 'Could not find device %s' % router
+                    msg = "Could not find device %s" % router
                     raise exceptions.TriggerError(msg)
 
                 if acl not in dev.acls:
                     msg = "Could not find %s in ACL list for %s" % (acl, router)
                     raise exceptions.TriggerError(msg)
 
-                self.create_task(queue='integrated', acl=acl, router=router,
-                                 escalation=escalation)
+                self.create_task(
+                    queue="integrated", acl=acl, router=router, escalation=escalation
+                )
 
-            self.vprint('ACL %s injected into integrated load queue for %s' %
-                        (acl, ', '.join(dev[:dev.find('.')] for dev in routers)))
+            self.vprint(
+                "ACL %s injected into integrated load queue for %s"
+                % (acl, ", ".join(dev[: dev.find(".")] for dev in routers))
+            )
 
         else:
-            self.create_task(queue='manual', q_name=acl, login=self.login)
+            self.create_task(queue="manual", q_name=acl, login=self.login)
             self.vprint('"%s" injected into manual load queue' % acl)
 
     def delete(self, acl, routers=None, escalation=False):
@@ -159,36 +162,45 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise exceptions.ACLQueueError('You must specify an ACL to delete from the queue')
+            raise exceptions.ACLQueueError(
+                "You must specify an ACL to delete from the queue"
+            )
 
         escalation, acl = self._normalize(acl)
-        m = self.get_model('integrated')
+        m = self.get_model("integrated")
 
         if routers is not None:
             devs = routers
         else:
-            self.vprint('Fetching routers from database')
-            result = m.select(m.router).distinct().where(
-                              m.acl == acl, m.loaded >> None).order_by(m.router)
+            self.vprint("Fetching routers from database")
+            result = (
+                m.select(m.router)
+                .distinct()
+                .where(m.acl == acl, m.loaded >> None)
+                .order_by(m.router)
+            )
             rows = result.tuples()
             devs = [row[0] for row in rows]
 
         if devs:
             for dev in devs:
-                m.delete().where(m.acl == acl, m.router == dev,
-                                 m.loaded >> None).execute()
+                m.delete().where(
+                    m.acl == acl, m.router == dev, m.loaded >> None
+                ).execute()
 
-            self.vprint('ACL %s cleared from integrated load queue for %s' %
-                        (acl, ', '.join(dev[:dev.find('.')] for dev in devs)))
+            self.vprint(
+                "ACL %s cleared from integrated load queue for %s"
+                % (acl, ", ".join(dev[: dev.find(".")] for dev in devs))
+            )
             return True
 
         else:
-            m = self.get_model('manual')
+            m = self.get_model("manual")
             if m.delete().where(m.q_name == acl, m.done == False).execute():
-                self.vprint('%r cleared from manual load queue' % acl)
+                self.vprint("%r cleared from manual load queue" % acl)
                 return True
 
-        self.vprint('%r not found in any queues' % acl)
+        self.vprint("%r not found in any queues" % acl)
         return False
 
     def complete(self, device, acls):
@@ -203,14 +215,15 @@ class Queue(object):
         :param acls:
             List of ACL names
         """
-        m = self.get_model('integrated')
+        m = self.get_model("integrated")
         for acl in acls:
-            now = loaded=datetime.datetime.now()
-            m.update(loaded=now).where(m.acl == acl, m.router == device,
-                                       m.loaded >> None).execute()
+            now = loaded = datetime.datetime.now()
+            m.update(loaded=now).where(
+                m.acl == acl, m.router == device, m.loaded >> None
+            ).execute()
 
-        self.vprint('Marked the following ACLs as complete for %s:' % device)
-        self.vprint(', '.join(acls))
+        self.vprint("Marked the following ACLs as complete for %s:" % device)
+        self.vprint(", ".join(acls))
 
     def remove(self, acl, routers, escalation=False):
         """
@@ -231,20 +244,23 @@ class Queue(object):
             Whether this is an escalated task
         """
         if not acl:
-            raise exceptions.ACLQueueError('You must specify an ACL to remove from the queue')
+            raise exceptions.ACLQueueError(
+                "You must specify an ACL to remove from the queue"
+            )
 
-        m = self.get_model('integrated')
+        m = self.get_model("integrated")
         loaded = 0
-        if settings.DATABASE_ENGINE == 'postgresql':
-            loaded = '-infinity' # See: http://bit.ly/15f0J3z
+        if settings.DATABASE_ENGINE == "postgresql":
+            loaded = "-infinity"  # See: http://bit.ly/15f0J3z
         for router in routers:
-            m.update(loaded=loaded).where(m.acl == acl, m.router == router,
-                                          m.loaded >> None).execute()
+            m.update(loaded=loaded).where(
+                m.acl == acl, m.router == router, m.loaded >> None
+            ).execute()
 
-        self.vprint('Marked the following devices as removed for ACL %s: ' % acl)
-        self.vprint(', '.join(routers))
+        self.vprint("Marked the following devices as removed for ACL %s: " % acl)
+        self.vprint(", ".join(routers))
 
-    def list(self, queue='integrated', escalation=False, q_names=QUEUE_NAMES):
+    def list(self, queue="integrated", escalation=False, q_names=QUEUE_NAMES):
         """
         List items in the specified queue, defauls to integrated queue.
 
@@ -258,19 +274,21 @@ class Queue(object):
             (Optional) List of valid queue names
         """
         if queue not in q_names:
-            self.vprint('Queue must be one of %s, not: %s' % (q_names, queue))
+            self.vprint("Queue must be one of %s, not: %s" % (q_names, queue))
             return False
 
         m = self.get_model(queue)
 
-        if queue == 'integrated':
-            result = m.select(m.router, m.acl).distinct().where(
-                              m.loaded >> None, m.escalation == escalation)
-        elif queue == 'manual':
-            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(
-                              m.done == False)
+        if queue == "integrated":
+            result = (
+                m.select(m.router, m.acl)
+                .distinct()
+                .where(m.loaded >> None, m.escalation == escalation)
+            )
+        elif queue == "manual":
+            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(m.done == False)
         else:
-            raise RuntimeError('This should never happen!!')
+            raise RuntimeError("This should never happen!!")
 
         all_data = list(result.tuples())
         return all_data

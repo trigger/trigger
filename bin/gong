@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 gong (go ng) - Command-line client to log in to network devices using TACACS credentials.

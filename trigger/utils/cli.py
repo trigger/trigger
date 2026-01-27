@@ -1,14 +1,12 @@
-#coding=utf-8
-
 """
 Command-line interface utilities for Trigger tools. Intended for re-usable
 pieces of code like user prompts, that don't fit in other utils modules.
 """
 
-__author__ = 'Jathan McCollum'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com'
+__author__ = "Jathan McCollum"
+__maintainer__ = "Jathan McCollum"
+__email__ = "jathan.mccollum@teamaol.com"
+__copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
 
 import datetime
 from fcntl import ioctl
@@ -22,9 +20,18 @@ import time
 import tty
 
 # Exports
-__all__ = ('yesno', 'get_terminal_width', 'get_terminal_size', 'Whirlygig',
-           'NullDevice', 'print_severed_head', 'min_sec', 'pretty_time',
-           'proceed', 'get_user')
+__all__ = (
+    "yesno",
+    "get_terminal_width",
+    "get_terminal_size",
+    "Whirlygig",
+    "NullDevice",
+    "print_severed_head",
+    "min_sec",
+    "pretty_time",
+    "proceed",
+    "get_user",
+)
 
 
 # Functions
@@ -65,9 +72,9 @@ def yesno(prompt, default=False, autoyes=False):
 
     sys.stdout.write(prompt)
     if default:
-        sys.stdout.write(' (Y/n) ')
+        sys.stdout.write(" (Y/n) ")
     else:
-        sys.stdout.write(' (y/N) ')
+        sys.stdout.write(" (y/N) ")
     sys.stdout.flush()
 
     fd = sys.stdin.fileno()
@@ -78,36 +85,41 @@ def yesno(prompt, default=False, autoyes=False):
         yn = sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSANOW, attr)
-        print ''
+        print("")
 
-    if yn in ('y', 'Y'):
+    if yn in ("y", "Y"):
         return True
-    elif yn in ('n', 'N'):
+    elif yn in ("n", "N"):
         return False
     else:
         return default
 
+
 def proceed():
     """Present a proceed prompt. Return ``True`` if Y, else ``False``"""
-    return raw_input('\nDo you wish to proceed? [y/N] ').lower().startswith('y')
+    return raw_input("\nDo you wish to proceed? [y/N] ").lower().startswith("y")
+
 
 def get_terminal_width():
     """Find and return stdout's terminal width, if applicable."""
     try:
-        width = struct.unpack("hhhh", ioctl(1, termios.TIOCGWINSZ, ' '*8))[1]
+        width = struct.unpack("hhhh", ioctl(1, termios.TIOCGWINSZ, " " * 8))[1]
     except IOError:
         width = sys.maxint
 
     return width
 
+
 def get_terminal_size():
     """Find and return stdouts terminal size as (height, width)"""
-    rows, cols = os.popen('stty size', 'r').read().split()
+    rows, cols = os.popen("stty size", "r").read().split()
     return rows, cols
+
 
 def get_user():
     """Return the name of the current user."""
     return pwd.getpwuid(os.getuid())[0]
+
 
 def print_severed_head():
     """
@@ -116,7 +128,7 @@ def print_severed_head():
 
     Thanks to Jeff Sullivan for this best error message ever.
     """
-    print r"""
+    print(r"""
 
                                                                 _( (~\
          _ _                        /                          ( \> > \
@@ -140,7 +152,8 @@ def print_severed_head():
         ;                            ;;+_  :::. :..;;;         YOU LOSE
                                      ;;;;;;,;;;;;;;;,;
 
-"""
+""")
+
 
 def pretty_time(t):
     """
@@ -166,9 +179,10 @@ def pretty_time(t):
     tomorrow 02:13 PDT
     """
     from trigger.conf import settings
-    localzone = timezone(os.environ.get('TZ', settings.BOUNCE_DEFAULT_TZ))
+
+    localzone = timezone(os.environ.get("TZ", settings.BOUNCE_DEFAULT_TZ))
     t = t.astimezone(localzone)
-    ct = t.replace(tzinfo=None) # convert to naive time
+    ct = t.replace(tzinfo=None)  # convert to naive time
     # to make the following calculations easier
     # calculate naive 'now' in local time
     # passing localzone into datetime.now directly can cause
@@ -182,13 +196,14 @@ def pretty_time(t):
     tomorrow = midnight + datetime.timedelta(1)
     thisweek = midnight + datetime.timedelta(6)
     if ct < midnight:
-        return t.strftime('%H:%M %Z')
+        return t.strftime("%H:%M %Z")
     elif ct < tomorrow:
-        return t.strftime('tomorrow %H:%M %Z')
+        return t.strftime("tomorrow %H:%M %Z")
     elif ct < thisweek:
-        return t.strftime('%A %H:%M %Z')
+        return t.strftime("%A %H:%M %Z")
     else:
-        return t.strftime('%Y-%m-%d %H:%M %Z')
+        return t.strftime("%Y-%m-%d %H:%M %Z")
+
 
 def min_sec(secs):
     """
@@ -204,7 +219,8 @@ def min_sec(secs):
     '0:11'
     """
     secs = int(secs)
-    return '%d:%02d' % (secs / 60, secs % 60)
+    return "%d:%02d" % (secs / 60, secs % 60)
+
 
 def setup_tty_for_pty(func):
     """
@@ -227,10 +243,10 @@ def setup_tty_for_pty(func):
         raw_ta[tty.OFLAG] |= tty.OPOST | tty.ONLCR
 
         # Pass ^C through so we can abort traceroute, etc.
-        raw_ta[tty.CC][tty.VINTR] = '\x18'  # ^X is the new ^C
+        raw_ta[tty.CC][tty.VINTR] = "\x18"  # ^X is the new ^C
 
         # Ctrl-Z is used by a lot of vendors to exit config mode
-        raw_ta[tty.CC][tty.VSUSP] = 0       # disable ^Z
+        raw_ta[tty.CC][tty.VSUSP] = 0  # disable ^Z
         tty.tcsetattr(stdin_fileno, tty.TCSANOW, raw_ta)
 
         # Execute our callable here
@@ -240,6 +256,7 @@ def setup_tty_for_pty(func):
         # Restore original tty settings
         tty.tcsetattr(stdin_fileno, tty.TCSANOW, old_ttyattr)
 
+
 def update_password_and_reconnect(hostname):
     """
     Prompts the user to update their password and reconnect to the target
@@ -247,20 +264,23 @@ def update_password_and_reconnect(hostname):
 
     :param hostname: Hostname of the device to connect to.
     """
-    if yesno('Authentication failed, would you like to update your password?',
-             default=True):
+    if yesno(
+        "Authentication failed, would you like to update your password?", default=True
+    ):
         from trigger import tacacsrc
+
         tacacsrc.update_credentials(hostname)
-        if yesno('\nReconnect to %s?' % hostname, default=True):
+        if yesno("\nReconnect to %s?" % hostname, default=True):
             # Replaces the current process w/ same pid
             args = [sys.argv[0]]
-            for arg in ('-o', '--oob'):
+            for arg in ("-o", "--oob"):
                 if arg in sys.argv:
                     idx = sys.argv.index(arg)
                     args.append(sys.argv[idx])
                     break
             args.append(hostname)
             os.execl(sys.executable, sys.executable, *args)
+
 
 # Classes
 class NullDevice(object):
@@ -281,7 +301,10 @@ class NullDevice(object):
         >>> print "3 - this will print to SDTDOUT"
         3 - this will print to SDTDOUT
     """
-    def write(self, s): pass
+
+    def write(self, s):
+        pass
+
 
 class Whirlygig(object):
     """
@@ -298,19 +321,19 @@ class Whirlygig(object):
     """
 
     def __init__(self, start_msg="", done_msg="", max=100):
-        self.unbuff = os.fdopen(sys.stdout.fileno(), 'w', 0)
+        self.unbuff = os.fdopen(sys.stdout.fileno(), "w", 0)
         self.start_msg = start_msg
         self.done_msg = done_msg
         self.max = max
-        self.whirlygig = ['|', '/', '-', '\\']
-        self.whirl    = self.whirlygig[:]
+        self.whirlygig = ["|", "/", "-", "\\"]
+        self.whirl = self.whirlygig[:]
         self.first = False
 
     def do_whirl(self, whirl):
         if not self.first:
             self.unbuff.write(self.start_msg + "  ")
             self.first = True
-        self.unbuff.write('\b%s' % whirl.pop(0))
+        self.unbuff.write("\b%s" % whirl.pop(0))
 
     def run(self):
         """Executes the whirlygig!"""
@@ -320,6 +343,6 @@ class Whirlygig(object):
                 self.do_whirl(self.whirl)
             except IndexError:
                 self.whirl = self.whirlygig[:]
-            time.sleep(.1)
+            time.sleep(0.1)
             cnt += 1
-        print '\b' + self.done_msg
+        print("\b" + self.done_msg)
