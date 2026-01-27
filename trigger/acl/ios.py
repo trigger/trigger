@@ -132,7 +132,8 @@ rules.update(
         "host_ipv4": '"host", ts, ipv4',
         S("ios_masked_ipv4"): (
             "ipv4, ts, ipv4_inverse_mask",
-            lambda x: TIP("%s/%d" % x),
+            # Python 3: Explicit tuple unpacking for string formatting
+            lambda x: TIP("%s/%d" % (x[0], x[1])),
         ),
         "ipv4_inverse_mask": (
             literals(inverse_mask_table),

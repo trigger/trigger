@@ -456,13 +456,37 @@ class NetDevice(object):
     def __repr__(self):
         return "<NetDevice: %s>" % self.nodeName
 
-    def __cmp__(self, other):
-        if self.nodeName > other.nodeName:
-            return 1
-        elif self.nodeName < other.nodeName:
-            return -1
-        else:
-            return 0
+    def __eq__(self, other):
+        """Compare NetDevice objects by nodeName."""
+        if not isinstance(other, NetDevice):
+            return NotImplemented
+        return self.nodeName == other.nodeName
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+    def __lt__(self, other):
+        if not isinstance(other, NetDevice):
+            return NotImplemented
+        return self.nodeName < other.nodeName
+
+    def __le__(self, other):
+        if not isinstance(other, NetDevice):
+            return NotImplemented
+        return self.nodeName <= other.nodeName
+
+    def __gt__(self, other):
+        if not isinstance(other, NetDevice):
+            return NotImplemented
+        return self.nodeName > other.nodeName
+
+    def __ge__(self, other):
+        if not isinstance(other, NetDevice):
+            return NotImplemented
+        return self.nodeName >= other.nodeName
 
     @property
     def bounce(self):
@@ -839,31 +863,32 @@ class NetDevice(object):
     def dump(self):
         """Prints details for a device."""
         dev = self
-        print
+        # Python 3: print is a function, not a statement
+        print()
         print("\tHostname:         ", dev.nodeName)
         print("\tOwning Org.:      ", dev.owner)
         print("\tOwning Team:      ", dev.owningTeam)
         print("\tOnCall Team:      ", dev.onCallName)
-        print
+        print()
         print(
-            "\tVendor:           ", " % s (%s)" % (dev.vendor.title, dev.manufacturer)
+            "\tVendor:           ", "%s (%s)" % (dev.vendor.title, dev.manufacturer)
         )
         # print '\tManufacturer:     ', dev.manufacturer
         print("\tMake:             ", dev.make)
         print("\tModel:            ", dev.model)
         print("\tType:             ", dev.deviceType)
         print("\tLocation:         ", dev.site, dev.room, dev.coordinate)
-        print
+        print()
         print("\tProject:          ", dev.projectName)
         print("\tSerial:           ", dev.serialNumber)
         print("\tAsset Tag:        ", dev.assetID)
-        print("\tBudget Code:      ", " % s (%s)" % (dev.budgetCode, dev.budgetName))
-        print
+        print("\tBudget Code:      ", "%s (%s)" % (dev.budgetCode, dev.budgetName))
+        print()
         print("\tAdmin Status:     ", dev.adminStatus)
         print("\tLifecycle Status: ", dev.lifecycleStatus)
         print("\tOperation Status: ", dev.operationStatus)
         print("\tLast Updated:     ", dev.lastUpdate)
-        print
+        print()
 
 
 class Vendor(object):
@@ -1103,7 +1128,8 @@ class NetDevices(MutableMapping):
             """
             if hasattr(self.loader, "all"):
                 return self.loader.all()
-            return self.values()
+            # Python 3: dict.values() returns a view, convert to list
+            return list(self.values())
 
         def search(self, token, field="nodeName"):
             """

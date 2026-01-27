@@ -104,7 +104,8 @@ class CheckTemplates(unittest.TestCase):
     def setUp(self):
         data = StringIO(text_fsm_data)
         self.re_table = textfsm.TextFSM(data)
-        self.assertTrue(isinstance(self.re_table, textfsm.textfsm.TextFSM))
+        # Python 3: textfsm.TextFSM is the correct import, not textfsm.textfsm.TextFSM
+        self.assertTrue(isinstance(self.re_table, textfsm.TextFSM))
 
         self.nd = NetDevices()
         self.device = self.nd[DEVICE_NAME]
@@ -121,8 +122,9 @@ class CheckTemplates(unittest.TestCase):
         data = get_textfsm_object(self.re_table, cli_data)
         self.assertTrue(isinstance(data, dict))
         keys = ["dayweek", "time", "timezone", "year", "day", "month"]
+        # Python 3: dict.has_key() removed, use 'in' operator
         for key in keys:
-            self.assertTrue(data.has_key(key))
+            self.assertTrue(key in data)
 
     def testCommandoResultsGood(self):
         commands = ["show version"]

@@ -223,8 +223,8 @@ class Modifiers(MyDict):
         """
         Output the modifiers to the only supported format!
         """
-        keys = self.keys()
-        keys.sort()
+        # Python 3: dict.keys() returns a view, convert to list and sort
+        keys = sorted(self.keys())
         return [k + (self[k] and " " + str(self[k]) or "") + ";" for k in keys]
 
 
@@ -349,17 +349,47 @@ class RangeList:
         self.data.append(obj)
         self._do_collapse()
 
-    def __cmp__(self, other):
-        other = self._collapse(other)
-        if self.data < other:
-            return -1
-        elif self.data > other:
-            return 0
-        else:
-            return 0
+    def __eq__(self, other):
+        """Compare RangeList to another RangeList or a list."""
+        if isinstance(other, RangeList):
+            return self.data == other.data
+        elif isinstance(other, list):
+            return self.data == other
+        return NotImplemented
 
-    # Classes
-    "Remark",
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+    def __lt__(self, other):
+        if isinstance(other, RangeList):
+            return self.data < other.data
+        elif isinstance(other, list):
+            return self.data < other
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, RangeList):
+            return self.data <= other.data
+        elif isinstance(other, list):
+            return self.data <= other
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, RangeList):
+            return self.data > other.data
+        elif isinstance(other, list):
+            return self.data > other
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, RangeList):
+            return self.data >= other.data
+        elif isinstance(other, list):
+            return self.data >= other
+        return NotImplemented
 
     def __contains__(self, obj):
         """
@@ -1072,9 +1102,49 @@ class Protocol:
     def __repr__(self):
         return "<{}: {}>".format(self.__class__.__name__, str(self))
 
-    def __cmp__(self, other):
+    def _get_compare_value(self, other):
+        """Helper to get comparison value from other."""
+        try:
+            return Protocol(other).value
+        except (ValueError, TypeError):
+            return NotImplemented
+
+    def __eq__(self, other):
         """Protocol(6) == 'tcp' == 6 == Protocol('6')."""
-        return self.value.__cmp__(Protocol(other).value)
+        other_value = self._get_compare_value(other)
+        if other_value is NotImplemented:
+            return NotImplemented
+        return self.value == other_value
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+    def __lt__(self, other):
+        other_value = self._get_compare_value(other)
+        if other_value is NotImplemented:
+            return NotImplemented
+        return self.value < other_value
+
+    def __le__(self, other):
+        other_value = self._get_compare_value(other)
+        if other_value is NotImplemented:
+            return NotImplemented
+        return self.value <= other_value
+
+    def __gt__(self, other):
+        other_value = self._get_compare_value(other)
+        if other_value is NotImplemented:
+            return NotImplemented
+        return self.value > other_value
+
+    def __ge__(self, other):
+        other_value = self._get_compare_value(other)
+        if other_value is NotImplemented:
+            return NotImplemented
+        return self.value >= other_value
 
     def __hash__(self):
         return hash(self.value)
@@ -1115,19 +1185,20 @@ class Matches(MyDict):
             key = key[:-7]
 
         if key in ("port", "source-port", "destination-port"):
-            arg = map(do_port_lookup, arg)
+            # Python 3: map() returns an iterator, convert to list
+            arg = list(map(do_port_lookup, arg))
             check_range(arg, 0, 65535)
         elif key == "protocol":
-            arg = map(do_protocol_lookup, arg)
+            arg = list(map(do_protocol_lookup, arg))
             check_range(arg, 0, 255)
         elif key == "fragment-offset":
-            arg = map(do_port_lookup, arg)
+            arg = list(map(do_port_lookup, arg))
             check_range(arg, 0, 8191)
         elif key == "icmp-type":
-            arg = map(do_icmp_type_lookup, arg)
+            arg = list(map(do_icmp_type_lookup, arg))
             check_range(arg, 0, 255)
         elif key == "icmp-code":
-            arg = map(do_icmp_code_lookup, arg)
+            arg = list(map(do_icmp_code_lookup, arg))
             check_range(arg, 0, 255)
         elif key == "icmp-type-code":
             # Not intended for external use; this is for parser convenience.
@@ -1141,10 +1212,10 @@ class Matches(MyDict):
                     pass
             return
         elif key == "packet-length":
-            arg = map(int, arg)
+            arg = list(map(int, arg))
             check_range(arg, 0, 65535)
         elif key in ("address", "source-address", "destination-address"):
-            arg = map(TIP, arg)
+            arg = list(map(TIP, arg))
         elif key in ("prefix-list", "source-prefix-list", "destination-prefix-list"):
             for pl in arg:
                 check_name(pl, exceptions.MatchError)
@@ -1157,7 +1228,7 @@ class Matches(MyDict):
         elif key == "tcp-flags":
             pass
         elif key == "ip-options":
-            arg = map(do_ip_option_lookup, arg)
+            arg = list(map(do_ip_option_lookup, arg))
             check_range(arg, 0, 255)
         elif key in ("first-fragment", "is-fragment"):
             arg = []
@@ -1253,10 +1324,11 @@ class Matches(MyDict):
     def output_junos(self):
         """Return a list that can form the ``from { ... }`` clause of the term."""
         a = []
-        keys = self.keys()
-        keys.sort(key=lambda x: junos_match_order.get(x, 999))
+        # Python 3: dict.keys() returns a view, convert to list for sorting
+        keys = sorted(self.keys(), key=lambda x: junos_match_order.get(x, 999))
         for s in keys:
-            matches = map(self.junos_str, self[s])
+            # Python 3: map() returns an iterator, convert to list
+            matches = list(map(self.junos_str, self[s]))
             has_negated_addrs = any(m for m in matches if m.endswith(" except"))
             if s in address_matches:
                 # Check to see if any of the added is any, and if so break out,
@@ -1299,7 +1371,8 @@ class Matches(MyDict):
             elif key == "destination-address":
                 dests += self.ios_address_str(arg)
             elif key == "protocol":
-                protos += map(str, arg)
+                # Python 3: map() returns an iterator, convert to list
+                protos += list(map(str, arg))
             elif key == "icmp-type":
                 for type in arg.expanded():
                     if "icmp-code" in self:
