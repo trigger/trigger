@@ -514,6 +514,11 @@ class TIP(IPy.IP):
     def __ne__(self, other):
         return self._compare_to(other) != 0
 
+    def __hash__(self):
+        # Make TIP hashable for use in sets and as dict keys
+        # Base hash on IP address, prefix length, and negation status
+        return hash((str(self.ip), self.prefixlen(), self.negated, self.inactive))
+
     def __repr__(self):
         # Just stick an 'except' at the end if except is set since we don't
         # code to accept this in the constructor really just provided, for now,
