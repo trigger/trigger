@@ -329,7 +329,8 @@ class RangeList:
         if not l:
             return l
         try:
-            return range(l[0][0], l[0][1] + 1) + self._expand(l[1:])
+            # Python 3: range() returns a range object, not a list
+            return list(range(l[0][0], l[0][1] + 1)) + self._expand(l[1:])
         except AttributeError:  # not incrementable
             return l
         except (TypeError, IndexError):
