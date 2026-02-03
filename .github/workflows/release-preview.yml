@@ -34,11 +34,11 @@ jobs:
         id: version
         run: |
           # Run semantic-release in dry-run mode to get next version
-          NEXT_VERSION=$(python-semantic-release version --print 2>&1 || echo "No version change")
+          NEXT_VERSION=$(python-semantic-release version --print || echo "No version change")
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
           # Get changelog preview
-          python-semantic-release changelog --unreleased > /tmp/changelog.md 2>&1 || echo "No changes" > /tmp/changelog.md
+          python-semantic-release changelog --unreleased > /tmp/changelog.md || echo "No changes" > /tmp/changelog.md
 
       - name: Comment PR
         uses: actions/github-script@v7
