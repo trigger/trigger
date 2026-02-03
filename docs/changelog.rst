@@ -4,93 +4,77 @@ Changelog
 
 .. _v2.0.0:
 
-2.0.0 (2026-01-26)
+2.0.0 (2026-02-XX)
 ==================
 
-This is a major release that migrates Trigger from Python 2.7 to Python 3.10+.
+This is a major release with Python 3.10-3.11 support. Python 2.7 is no longer supported.
 
-**Python 2.7 support ended with v1.6.0.** This release requires Python 3.10 or 3.11.
+Breaking Changes
+----------------
 
-See `MIGRATION_GUIDE.md <https://github.com/trigger/trigger/blob/develop/MIGRATION_GUIDE.md>`_
-for detailed upgrade instructions.
+* **Python 3.10-3.11 required**: Python 2.7 support has been removed. Minimum version is Python 3.10. Python 3.12+ is not yet supported due to SimpleParse C extension compatibility.
+* **CLI tools as entry points**: All command-line tools (``acl``, ``netdev``, ``gong``, etc.) are now installed via pip entry points instead of being in the ``bin/`` directory. After installation, tools are available directly in your PATH.
+* **Build system**: Migrated from ``setup.py`` to ``pyproject.toml`` using modern Python packaging standards.
+* **Test runner**: Changed from custom test scripts to pytest.
 
-Enhancements
-------------
+Features
+--------
 
-+ **Python 3.10+ support**: Complete migration from Python 2.7 to Python 3.10-3.11
-+ **Modern packaging**: Migrated from setup.py to pyproject.toml (PEP 621)
-+ **CLI tools as entry points**: All 14 CLI tools (acl, netdev, etc.) now installed as proper entry points
-+ **GitHub Actions CI/CD**: Replaced Travis CI with GitHub Actions using uv for faster builds
-+ **Updated dependencies**: All major dependencies updated to modern versions
+* Python 3.10 and 3.11 support with full compatibility
+* Modern packaging with ``pyproject.toml``
+* All 14 CLI tools available as entry points after pip install
+* Automated testing with pytest
+* Improved dependency management
 
-  - Twisted: 15.5.0-16.x → ≥22.10.0
-  - cryptography: ≥1.4 → ≥41.0.0
-  - crochet: 1.5.0 → ≥2.0.0
-  - pyparsing: ~2.2.0 → ≥3.1.0
-  - redis: any → ≥5.0.0
+Dependency Updates
+------------------
 
-+ **Modern test infrastructure**: Migrated to pytest with conftest.py configuration
-+ **Code formatting**: Applied black formatter and isort to entire codebase
-+ **Documentation**: Converted RST documentation to Markdown (README, LICENSE, AUTHORS, etc.)
-+ **Updated vendored packages**: peewee v2.1.4 → v3.17.0, tftpy Python 3 compatibility
+Major dependency version updates:
 
-Backwards-incompatible changes
-------------------------------
-
-+ **Python version**: Requires Python 3.10 or 3.11 (Python 3.12+ not yet supported due to SimpleParse)
-+ **CLI tool invocation**: Tools now installed as entry points instead of bin/ scripts
-
-  - Old: ``./bin/acl --help``
-  - New: ``acl --help``
-
-+ **Test runner**: ``python setup.py test`` → ``pytest``
-+ **Build system**: ``python setup.py install`` → ``pip install .``
-+ **Package name change**: ``gtextfsm`` → ``textfsm``
-+ **String/bytes handling**: Python 3's strict str/bytes separation may require code changes in custom integrations
-+ **Removed files**: setup.py, setup.cfg, requirements-dev.txt, .travis.yml (use pyproject.toml and GitHub Actions)
+* Twisted >= 22.10.0 (was 15.5.0-16.x)
+* cryptography >= 41.0.0 (was >= 1.4)
+* crochet >= 2.0.0 (was 1.5.0)
+* pyparsing >= 3.1.0 (was ~2.2.0)
+* redis >= 5.0.0
+* textfsm >= 1.1.0 (replaces gtextfsm)
+* Added: peewee >= 3.17.0
+* Added: service-identity >= 23.1.0
+* Added: bcrypt >= 4.0.0
+* Added: packaging >= 21.0
 
 Configuration Compatibility
-----------------------------
+---------------------------
 
-All configuration files remain compatible:
+**Good news**: All configuration files are fully compatible between v1.6.0 and v2.0.0:
 
-+ settings.py - No changes needed
-+ netdevices.xml/json - No changes needed
-+ autoacl.py - No changes needed
-+ bounce.py - No changes needed
-+ .tacacsrc - No changes needed
-+ Environment variables - No changes needed
-
-Bug Fixes
----------
-
-+ Fixed 200+ print statement conversions to print() functions
-+ Fixed 37 dictionary iterator methods (.iteritems → .items, etc.)
-+ Fixed 50+ old-style exception handlers
-+ Fixed 15 .has_key() calls → 'in' operator
-+ Fixed 13 basestring references → str
-+ Fixed multiple import errors (StringIO, ConfigParser, urlparse)
-+ Fixed raise statement syntax in tftpy vendored package
-+ Removed 48 deprecated metadata declarations from CLI tools
-
-Known Limitations
------------------
-
-+ **Python 3.12+ not supported**: SimpleParse C extensions use deprecated Unicode APIs
-  that fail to compile on Python 3.12+. Support for Python 3.12+ is planned pending
-  SimpleParse updates or replacement.
+* ``settings.py`` - Trigger configuration
+* ``netdevices.xml/json`` - Device metadata
+* ``autoacl.py`` - Implicit ACL assignment
+* ``bounce.py`` - Maintenance windows
+* ``.tacacsrc`` - Encrypted credentials
+* Environment variables (``TRIGGER_SETTINGS``, ``NETDEVICES_SOURCE``, etc.)
 
 Migration
 ---------
 
-See `MIGRATION_GUIDE.md <https://github.com/trigger/trigger/blob/develop/MIGRATION_GUIDE.md>`_
-for complete upgrade instructions including:
+See the :doc:`migration` guide for detailed upgrade instructions, common issues, and rollback procedures.
 
-+ Installation steps for Python 3.10/3.11
-+ Breaking changes and workarounds
-+ Configuration compatibility notes
-+ Common issues and solutions
-+ Rollback instructions if needed
+Documentation
+-------------
+
+* Added comprehensive migration guide
+* Updated all installation instructions
+* Added Python 3 compatibility notes
+
+Internal Changes
+----------------
+
+* Fixed all Python 3 compatibility issues (string/bytes handling, imports, comparisons)
+* Replaced ``__cmp__()`` with rich comparison methods
+* Fixed MutableMapping ABC compatibility
+* Updated XML ElementTree imports for Python 3
+* Fixed cStringIO usage
+* Cleaned up all deprecation warnings
 
 .. _v1.6.0:
 
