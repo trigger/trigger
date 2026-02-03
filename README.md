@@ -24,7 +24,7 @@ your network and consider participating!
 * Arista Networks 7000-family switches
 * ... and more!
 
-Refer to the [official docs](http://trigger.readthedocs.io/en/latest/#supported-platforms) for the full list.
+Refer to the [official docs](https://trigger.readthedocs.io/en/latest/#supported-platforms) for the full list.
 
 ## Key Features
 
@@ -55,7 +55,7 @@ New in version 1.3:
 ## Getting Started
 
 The best way to get started is to read the documentation hosted by [Read the
-Docs](http://readthedocs.org) at [http://trigger.readthedocs.io](http://trigger.readthedocs.io). There you will find everything you need to
+Docs](http://readthedocs.org) at [https://trigger.readthedocs.io](https://trigger.readthedocs.io). There you will find everything you need to
 get going including usage examples, installation and configuration
 instructions, and more!
 
@@ -83,7 +83,9 @@ For users still requiring Python 2.7, use the v1.6.0 release:
 pip install trigger==1.6.0
 ```
 
-See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for details on upgrading from v1.6.0 to v2.0.0.
+### Upgrading from v1.6.0?
+
+See the [Migration Guide](https://trigger.readthedocs.io/en/latest/migration.html) for detailed upgrade instructions.
 
 ### Before you begin
 
@@ -101,7 +103,7 @@ See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for details on upgrading from v1.6.
 ### Get in touch!
 
 If you run into any snags, have questions, feedback, or just want to talk shop:
-[contact us](http://trigger.readthedocs.io/en/latest/#getting-help)!
+[contact us](https://trigger.readthedocs.io/en/latest/#getting-help)!
 
 **Pro tip**: Find us on IRC at `#trigger` on Freenode
 ([irc://irc.freenode.net/trigger](irc://irc.freenode.net/trigger)).
