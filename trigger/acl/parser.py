@@ -28,6 +28,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
+from simpleparse.common import comments, strings  # noqa: F401
 from simpleparse.dispatchprocessor import DispatchProcessor, dispatch, dispatchList
 from simpleparse.parser import Parser
 

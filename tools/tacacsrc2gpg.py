@@ -22,7 +22,8 @@ if not yesno(prompt):
 
 username, err, uid, gid, name, homedir, shell = pwd.getpwuid(os.getuid())
 
-print("""
+print(
+    """
 ======== [ READ ME READ ME READ ME READ ME ] ================
 The following settings must be configured:
 
@@ -30,7 +31,9 @@ Real name: %s
 Email Address: %s@%s
 Comment: First Last
 =============================================================
-""" % (username, username, socket.getfqdn()))
+"""
+    % (username, username, socket.getfqdn())
+)
 
 os.system("gpg --gen-key")
 
