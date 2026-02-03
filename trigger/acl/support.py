@@ -1267,7 +1267,7 @@ class Matches(MyDict):
             The 2-tuple to convert.
         """
         try:
-            return "{}-{}".format(*pair)  # Tuples back to ranges.
+            return "%s-%s" % pair  # Tuples back to ranges.
         except TypeError:
             try:
                 # Make it print prefixes for /32, /128

@@ -11,6 +11,7 @@ __version__ = "1.9"
 
 
 # Imports
+from simpleparse.error import ParserSyntaxError  # noqa: F401
 
 
 # Exceptions
