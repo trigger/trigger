@@ -62,6 +62,7 @@ use Trigger's major functionality.
     overview
     platforms
     installation
+    migration
     configuration
     usage/index
     examples
