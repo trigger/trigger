@@ -1,0 +1,74 @@
+name: Release Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    name: Preview Next Version
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for semantic-release
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system python-semantic-release
+
+      - name: Get next version
+        id: version
+        run: |
+          # Run semantic-release in dry-run mode to get next version
+          NEXT_VERSION=$(python-semantic-release version --print 2>&1 || echo "No version change")
+          echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
+
+          # Get changelog preview
+          python-semantic-release changelog --unreleased > /tmp/changelog.md 2>&1 || echo "No changes" > /tmp/changelog.md
+
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const nextVersion = '${{ steps.version.outputs.next_version }}';
+            const changelog = fs.readFileSync('/tmp/changelog.md', 'utf8');
+
+            const body = `## 🚀 Release Preview
+
+            **Next Version:** \`${nextVersion}\`
+
+            ### Changelog Preview
+
+            ${changelog}
+
+            ---
+
+            *This version will be automatically released when this PR is merged to main.*
+
+            **Reminder:** Use conventional commits:
+            - \`fix:\` → Patch release (2.0.0 → 2.0.1)
+            - \`feat:\` → Minor release (2.0.0 → 2.1.0)
+            - \`feat!:\` or \`BREAKING CHANGE:\` → Major release (2.0.0 → 3.0.0)
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
