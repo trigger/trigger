@@ -1,5 +1,5 @@
-from trigger.netdevices.loader import BaseLoader
 from trigger.exceptions import LoaderFailed
+from trigger.netdevices.loader import BaseLoader
 
 try:
     from pymongo import MongoClient
@@ -36,4 +36,4 @@ class MongoDBLoader(BaseLoader):
         try:
             return self.get_data(data_source, host, port, database, table_name)
         except Exception as err:
-            raise LoaderFailed("Tried {!r}; and failed: {!r}".format(data_source, err))
+            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")

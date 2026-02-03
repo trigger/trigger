@@ -16,23 +16,20 @@ __version__ = "2.7"
 
 # Imports
 import collections
-import datetime
 import itertools
-import os
-from IPy import IP
-from xml.etree.cElementTree import ElementTree, Element, SubElement
-import sys
-from twisted.python import log
-from twisted.internet import defer, task
+from xml.etree.ElementTree import Element, SubElement
 
+from IPy import IP
+from twisted.internet import defer, task
+from twisted.python import log
+
+from trigger import exceptions
+from trigger.conf import settings
 from trigger.netdevices import NetDevices
 from trigger.utils.templates import (
-    load_cmd_template,
     get_textfsm_object,
-    get_template_path,
+    load_cmd_template,
 )
-from trigger.conf import settings
-from trigger import exceptions
 
 # Exports
 __all__ = ("Commando", "ReactorlessCommando", "NetACLInfo")
@@ -43,7 +40,7 @@ DEFAULT_TIMEOUT = 30
 
 
 # Classes
-class Commando(object):
+class Commando:
     """
     Execute commands asynchronously on multiple network devices.
 
@@ -209,15 +206,14 @@ class Commando(object):
                 types = self.platforms[vendor]
                 if not types:
                     raise exceptions.MissingPlatform(
-                        "No platforms specified for %r" % vendor
+                        f"No platforms specified for {vendor!r}"
                     )
                 else:
                     # self.supported_platforms[vendor] = types
                     supported_platforms[vendor] = types
             else:
                 raise exceptions.ImproperlyConfigured(
-                    "Platforms for vendor %r not found. Please provide it at either the class level or using the arguments."
-                    % vendor
+                    f"Platforms for vendor {vendor!r} not found. Please provide it at either the class level or using the arguments."
                 )
 
         return supported_platforms
@@ -250,7 +246,7 @@ class Commando(object):
             try:
                 devobj = self.nd.find(str(dev))
             except KeyError:
-                msg = "Device not found in NetDevices: %s" % dev
+                msg = f"Device not found in NetDevices: {dev}"
                 log.err(msg)
                 if self.verbose:
                     print("ERROR:", msg)
@@ -263,8 +259,7 @@ class Commando(object):
             # this class
             if devobj.vendor not in self.vendors:
                 raise exceptions.UnsupportedVendor(
-                    "The vendor '%s' is not specified in ``vendors``. Could not add %s to job queue. Please check the attribute in the class object."
-                    % (devobj.vendor, devobj)
+                    f"The vendor '{devobj.vendor}' is not specified in ``vendors``. Could not add {devobj} to job queue. Please check the attribute in the class object."
                 )
 
             self.jobs.append(devobj)
@@ -383,31 +378,27 @@ class Commando(object):
 
         if device_type in vendor_types:
             if hasattr(self, method_name):
-                log.msg("[%s] Found %r method: %s" % (device, method, method_name))
+                log.msg(f"[{device}] Found {method!r} method: {method_name}")
                 desired_method = method_name
             else:
-                log.msg(
-                    "[%s] Did not find %r method: %s" % (device, method, method_name)
-                )
+                log.msg(f"[{device}] Did not find {method!r} method: {method_name}")
         else:
             raise exceptions.UnsupportedDeviceType(
-                "Device %r has an invalid type %r for vendor %r. Must be "
-                "one of %r."
-                % (device.nodeName, device_type, desired_vendor, vendor_types)
+                f"Device {device.nodeName!r} has an invalid type {device_type!r} for vendor {desired_vendor!r}. Must be "
+                f"one of {vendor_types!r}."
             )
 
         if desired_method is None:
             if self.allow_fallback:
                 desired_method = METHOD_MAP[method] % "base"
                 log.msg(
-                    "[%s] Fallback enabled. Using base method: %r"
-                    % (device, desired_method)
+                    f"[{device}] Fallback enabled. Using base method: {desired_method!r}"
                 )
             else:
                 raise exceptions.UnsupportedVendor(
-                    "The vendor %r had no available %s method. Please check "
+                    f"The vendor {device.vendor.name!r} had no available {method} method. Please check "
                     "your `vendors` and `platforms` attributes in your class "
-                    "object." % (device.vendor.name, method)
+                    "object."
                 )
 
         func = getattr(self, desired_method)
@@ -558,7 +549,7 @@ class Commando(object):
             The results to store. Anything you want really.
         """
         devname = str(device)
-        log.msg("Appending results for %r: %r" % (devname, results))
+        log.msg(f"Appending results for {devname!r}: {results!r}")
         if self.parsed_results.get(devname):
             self.parsed_results[devname].update(results)
         else:
@@ -580,7 +571,7 @@ class Commando(object):
             The results to store. Anything you want really.
         """
         devname = str(device)
-        log.msg("Storing results for %r: %r" % (devname, results))
+        log.msg(f"Storing results for {devname!r}: {results!r}")
         self.results[devname] = results
         return True
 
@@ -606,7 +597,7 @@ class Commando(object):
         """Return whether reactor event loop is running or not"""
         from twisted.internet import reactor
 
-        log.msg("Reactor running? %s" % reactor.running)
+        log.msg(f"Reactor running? {reactor.running}")
         return reactor.running
 
     def _stop(self):
@@ -652,12 +643,12 @@ class Commando(object):
     # =======================================
     def to_base(self, device, commands=None, extra=None):
         commands = commands or self.commands
-        log.msg("Sending %r to %s" % (commands, device))
+        log.msg(f"Sending {commands!r} to {device}")
         return commands
 
     def from_base(self, results, device, commands=None):
         commands = commands or self.commands
-        log.msg("Received %r from %s" % (results, device))
+        log.msg(f"Received {results!r} from {device}")
         self.store_results(device, self.map_results(commands, results))
 
     # =======================================
@@ -737,7 +728,7 @@ class ReactorlessCommando(Commando):
         log.msg(".run() called")
 
         # This is the default behavior
-        super(ReactorlessCommando, self).run()
+        super().run()
 
         # Setup a deferred to hold the delayed result and not return it until
         # it's done. This object will be populated with the value of the
@@ -840,7 +831,7 @@ class NetACLInfo(Commando):
             )
         self.config = {}
         self.skip_disabled = args.pop("skip_disabled", True)
-        super(NetACLInfo, self).__init__(**args)
+        super().__init__(**args)
 
     def IPsubnet(self, addr):
         """Given '172.20.1.4/24', return IP('172.20.1.0/24')."""
@@ -967,16 +958,15 @@ class NetACLInfo(Commando):
                         if family2.tag != ns + "inet":
                             continue
                         for inout in "in", "out":
-                            dta[ifname]["acl_%s" % inout] = []
+                            dta[ifname][f"acl_{inout}"] = []
 
                             # Try basic 'filter/xput'...
-                            acl = family2.find("%sfilter/%s%sput" % (ns, ns, inout))
+                            acl = family2.find(f"{ns}filter/{ns}{inout}put")
 
                             # Junos 9.x changes to 'filter/xput/filter-name'
                             if acl is not None and "    " in acl.text:
                                 acl = family2.find(
-                                    "%sfilter/%s%sput/%sfilter-name"
-                                    % (ns, ns, inout, ns)
+                                    f"{ns}filter/{ns}{inout}put/{ns}filter-name"
                                 )
 
                             # Pushes text as variable name.  Must be a better way to do this?
@@ -989,7 +979,7 @@ class NetACLInfo(Commando):
                                 acl = [
                                     i.text
                                     for i in family2.findall(
-                                        "%sfilter/%s%sput-list" % (ns, ns, inout)
+                                        f"{ns}filter/{ns}{inout}put-list"
                                     )
                                 ]
                                 # if acl: print 'got filter list'
@@ -1000,9 +990,9 @@ class NetACLInfo(Commando):
 
                             # Append acl list to dict
                             if acl:
-                                dta[ifname]["acl_%s" % inout].extend(acl)
+                                dta[ifname][f"acl_{inout}"].extend(acl)
 
-                        for node in family2.findall("%saddress/%sname" % (ns, ns)):
+                        for node in family2.findall(f"{ns}address/{ns}name"):
                             ip = node.text
                             dta[ifname]["subnets"].append(self.IPsubnet(ip))
                             dta[ifname]["addr"].append(self.IPhost(ip))
@@ -1035,14 +1025,14 @@ def _parse_ios_interfaces(
     # Setup
     bang = pp.Literal("!").suppress()
     anychar = pp.Word(pp.printables)
-    nonbang = pp.Word("".join([x for x in pp.printables if x != "!"]) + "\n\r\t ")
-    comment = bang + pp.restOfLine.suppress()
+    pp.Word("".join([x for x in pp.printables if x != "!"]) + "\n\r\t ")
+    bang + pp.restOfLine.suppress()
 
     # weird things to ignore in foundries
-    aaa_line = pp.Literal("aaa").suppress() + pp.restOfLine.suppress()
-    module_line = pp.Literal("module").suppress() + pp.restOfLine.suppress()
-    startup_line = pp.Literal("Startup").suppress() + pp.restOfLine.suppress()
-    ver_line = pp.Literal("ver") + anychar  # + pp.restOfLine.suppress()
+    pp.Literal("aaa").suppress() + pp.restOfLine.suppress()
+    pp.Literal("module").suppress() + pp.restOfLine.suppress()
+    pp.Literal("Startup").suppress() + pp.restOfLine.suppress()
+    pp.Literal("ver") + anychar  # + pp.restOfLine.suppress()
     # using SkipTO instead now
 
     # foundry example:

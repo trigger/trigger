@@ -28,6 +28,7 @@ __copyright__ = "Copyright 2012-2012, AOL Inc."
 
 from trigger import exceptions
 from trigger.utils.importlib import import_module
+
 from . import events
 
 # Globals
@@ -49,7 +50,7 @@ def email_handler(*args, **kwargs):
     """
     try:
         event = events.EmailEvent(*args, **kwargs)
-    except Exception as err:
+    except Exception:
         return None
     else:
         return event.handle()
@@ -71,7 +72,7 @@ def _register_handlers():
             h_module, h_funcname = handler_path.rsplit(".", 1)
         except ValueError:
             raise exceptions.ImproperlyConfigured(
-                "%s isn't a handler module" % handler_path
+                f"{handler_path} isn't a handler module"
             )
 
         # Import the module and get the module object
@@ -79,7 +80,7 @@ def _register_handlers():
             mod = import_module(h_module)
         except ImportError as err:
             raise exceptions.ImproperlyConfigured(
-                'Error importing handler {}: "{}"'.format(h_module, err)
+                f'Error importing handler {h_module}: "{err}"'
             )
 
         # Get the handler function
@@ -87,9 +88,7 @@ def _register_handlers():
             handler = getattr(mod, h_funcname)
         except AttributeError:
             raise exceptions.ImproperlyConfigured(
-                'Handler module "{}" does not define a "{}" function'.format(
-                    h_module, h_funcname
-                )
+                f'Handler module "{h_module}" does not define a "{h_funcname}" function'
             )
 
         # Register the handler function
@@ -117,7 +116,7 @@ def notify(*args, **kwargs):
         # print 'Sending %s, %s to %s' % (args, kwargs, handler)
         try:
             result = handler(*args, **kwargs)
-        except Exception as err:
+        except Exception:
             # print 'Got exception: %s' % err
             continue
         else:
@@ -127,4 +126,4 @@ def notify(*args, **kwargs):
                 continue
 
     # We don't want to get to this point
-    raise RuntimeError("No handlers succeeded for this event: %s" % event)
+    raise RuntimeError(f"No handlers succeeded for this event: {event}")

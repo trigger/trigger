@@ -9,15 +9,16 @@ __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
 
 import datetime
-from fcntl import ioctl
 import os
 import pwd
-from pytz import timezone, UTC
 import struct
 import sys
 import termios
 import time
 import tty
+from fcntl import ioctl
+
+from pytz import UTC, timezone
 
 # Exports
 __all__ = (
@@ -104,7 +105,7 @@ def get_terminal_width():
     """Find and return stdout's terminal width, if applicable."""
     try:
         width = struct.unpack("hhhh", ioctl(1, termios.TIOCGWINSZ, " " * 8))[1]
-    except IOError:
+    except OSError:
         width = sys.maxsize
 
     return width
@@ -270,7 +271,7 @@ def update_password_and_reconnect(hostname):
         from trigger import tacacsrc
 
         tacacsrc.update_credentials(hostname)
-        if yesno("\nReconnect to %s?" % hostname, default=True):
+        if yesno(f"\nReconnect to {hostname}?", default=True):
             # Replaces the current process w/ same pid
             args = [sys.argv[0]]
             for arg in ("-o", "--oob"):
@@ -283,7 +284,7 @@ def update_password_and_reconnect(hostname):
 
 
 # Classes
-class NullDevice(object):
+class NullDevice:
     """
     Used to supress output to ``sys.stdout`` (aka ``print``).
 
@@ -306,7 +307,7 @@ class NullDevice(object):
         pass
 
 
-class Whirlygig(object):
+class Whirlygig:
     """
     Prints a whirlygig for use in displaying pending operation in a command-line tool.
     Guaranteed to make the user feel warm and fuzzy and be 1000% bug-free.
@@ -333,7 +334,7 @@ class Whirlygig(object):
         if not self.first:
             self.unbuff.write(self.start_msg + "  ")
             self.first = True
-        self.unbuff.write("\b%s" % whirl.pop(0))
+        self.unbuff.write(f"\b{whirl.pop(0)}")
 
     def run(self):
         """Executes the whirlygig!"""

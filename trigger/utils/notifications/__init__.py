@@ -11,8 +11,9 @@ __copyright__ = "Copyright 2012-2012, AOL Inc."
 __all__ = []
 
 # Core
-from . import core
 from core import *
+
+from . import core
 
 __all__.extend(core.__all__)
 
@@ -22,7 +23,8 @@ from . import events
 __all__.extend(events.__all__)
 
 # Handlers
-from . import handlers
 from handlers import *
+
+from . import handlers
 
 __all__.extend(handlers.__all__)

@@ -7,8 +7,9 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2008-2013, AOL Inc."
 
-from collections import namedtuple
 import re
+from collections import namedtuple
+
 from .cli import get_user
 
 

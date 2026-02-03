@@ -55,11 +55,11 @@ jobs:
 
       - name: Run ruff check
         run: |
-          ruff check .
+          ruff check trigger/ tests/ configs/
 
       - name: Run ruff format check
         run: |
-          ruff format --check .
+          ruff format --check trigger/ tests/ configs/
 
   build:
     name: Build Package

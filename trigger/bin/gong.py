@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 gong (go ng) - Command-line client to log in to network devices using TACACS credentials.
@@ -12,14 +11,15 @@ http://twistedmatrix.com/projects/conch/documentation/howto/conch_client.html
 
 __version__ = "2.0"
 
-from optparse import OptionParser
 import os
 import sys
+from optparse import OptionParser
+
 from twisted.python import log
-from trigger.netdevices import device_match
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
+from trigger.netdevices import device_match
 
 settings.WITH_ACLS = False
 
@@ -47,9 +47,9 @@ Automatically log into network devices using cached TACACS credentials.
 
 def connect_to_oob(dev):
     """Lookup out-of-band info and try to connect to the console using telnet."""
-    tn = "telnet %s %s" % (dev.OOBTerminalServerFQDN, dev.OOBTerminalServerTCPPort)
+    tn = f"telnet {dev.OOBTerminalServerFQDN} {dev.OOBTerminalServerTCPPort}"
 
-    print("OOB Information for %s:" % dev.nodeName)
+    print(f"OOB Information for {dev.nodeName}:")
     print(tn)
     print("Connecting you now...")
     os.system(tn)

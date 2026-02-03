@@ -8,13 +8,14 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2010-2011, AOL Inc."
 
-from collections import defaultdict
 import datetime
-import IPy
 import os
 import re
-import sys
 import tempfile
+from collections import defaultdict
+
+import IPy
+
 from trigger.acl.parser import *
 from trigger.conf import settings
 
@@ -280,7 +281,6 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
                 # Here is where it gets odd: If we have multiple  IPs in this
                 # new term, and one of them matches in a deny, we must set hit
                 # to True.
-                got_match = False
                 if t.action[0] in ("discard", "reject"):
                     for test in new_term.match[k]:
                         if test in v:
@@ -289,7 +289,7 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
         # Check whether access in new_term is permitted (a la check_access(),
         # track whether it's already been added into new_acl, and then add it
         # in the "right place".
-        if hit and not t.inactive and already_added == False:
+        if hit and not t.inactive and not already_added:
             if not complicated and permitted is None:
                 for comment in t.comments:
                     if (
@@ -382,8 +382,8 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
     prefix_hits = defaultdict(int)
     import trigger.acl.db as adb
 
-    bulk_acls = adb.get_bulk_acls()
-    nd = adb.get_netdevices()
+    adb.get_bulk_acls()
+    adb.get_netdevices()
 
     if DEBUG:
         print("DEVLIST:", sorted(work))
@@ -469,7 +469,7 @@ def update_expirations(matches, numdays=DEFAULT_EXPIRE):
 
             try:
                 dstamp = datetime.datetime.strptime(date, DATE_FORMAT)
-            except ValueError, err:
+            except ValueError as err:
                 print("BAD DATE FOR THIS COMMENT:")
                 print("comment:", comment.data)
                 print("bad date:", date)
@@ -481,7 +481,7 @@ def update_expirations(matches, numdays=DEFAULT_EXPIRE):
 
             new_date = dstamp + datetime.timedelta(days=numdays)
             # print 'Before:\n' + comment.data + '\n'
-            print("Updated date for term: %s" % term.name)
+            print(f"Updated date for term: {term.name}")
             comment.data = comment.data.replace(
                 date, datetime.datetime.strftime(new_date, DATE_FORMAT)
             )
@@ -502,12 +502,13 @@ def write_tmpacl(acl, process_name="_tmpacl"):
 
 def diff_files(old, new):
     """Return a unified diff between two files"""
-    return os.popen("diff -Naur %s %s" % (old, new)).read()
+    return os.popen(f"diff -Naur {old} {new}").read()
 
 
 def worklog(title, diff, log_string="updated by express-gen"):
     """Save a diff to the ACL worklog"""
-    from time import strftime, localtime
+    from time import localtime, strftime
+
     from trigger.utils.rcs import RCS
 
     date = strftime("%Y%m%d", localtime())
@@ -515,20 +516,20 @@ def worklog(title, diff, log_string="updated by express-gen"):
     rcs = RCS(file)
 
     if not os.path.isfile(file):
-        print("Creating new worklog %s" % file)
+        print(f"Creating new worklog {file}")
         f = open(file, "w")
         f.write("# vi:noai:\n\n")
         f.close()
         rcs.checkin(".")
 
-    print("inserting the diff into the worklog %s" % file)
+    print(f"inserting the diff into the worklog {file}")
     rcs.lock_loop()
     fd = open(file, "a")
-    fd.write('"%s"\n' % title)
+    fd.write(f'"{title}"\n')
     fd.write(diff)
     fd.close()
 
-    print("inserting %s into the load queue" % title)
+    print(f"inserting {title} into the load queue")
     rcs.checkin(log_string)
 
     # Use acl to insert into queue, should be replaced with API call
@@ -575,7 +576,7 @@ class ACLScript:
             raise "need acl defined"
 
         argz = []
-        argz.append("-a %s" % self.acl)
+        argz.append(f"-a {self.acl}")
 
         if self.show_mods:
             argz.append("--show-mods")
@@ -612,10 +613,10 @@ class ACLScript:
                 print("UNABLE TO OPEN TMPFILE")
                 raise "YIKES!"
             for x in v:
-                f.write("%s\n" % x.strNormal())
+                f.write(f"{x.strNormal()}\n")
             f.close()
 
-            argz.append("%s %s" % (k, tmpf))
+            argz.append(f"{k} {tmpf}")
 
         for k, v in {"-p": self.source_ports, "-P": self.dest_ports}.items():
             if not len(v):
@@ -630,14 +631,14 @@ class ACLScript:
 
         if self.modify_terms:
             for x in self.modify_terms:
-                argz.append("-t %s" % x)
+                argz.append(f"-t {x}")
         else:
             for x in self.bcomments:
                 b, e = x
-                argz.append('-c "%s" "%s"' % (b, e))
+                argz.append(f'-c "{b}" "{e}"')
 
         for proto in self.protocol:
-            argz.append("--protocol %s" % proto)
+            argz.append(f"--protocol {proto}")
 
         return argz
 

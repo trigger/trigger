@@ -15,6 +15,7 @@ __copyright__ = "Copyright 2010-2012, AOL Inc."
 __version__ = (0, 1)
 
 import os
+
 from trigger.conf import settings
 
 __all__ = ["parser", "acl_exists"]

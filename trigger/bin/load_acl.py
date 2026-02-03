@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 load_acl - Unified automatic ACL loader.
@@ -12,40 +11,35 @@ ACLs listed will load everything in the queue. ``load_acl --auto`` will
 automatically load eligible devices from the queue and email results.
 """
 
-from __future__ import print_function
-
 __version__ = "1.9.2"
 
 # Dist imports
-from collections import defaultdict
 import curses
 import datetime
 import fnmatch
 import logging
-from optparse import OptionParser
 import os
-import pytz
 import re
-import shutil
-import socket
 import sys
 import tempfile
 import time
-from twisted.internet import reactor, defer, task
+from collections import defaultdict
+from optparse import OptionParser
+from xml.etree.ElementTree import Element, SubElement
+
+import pytz
+from twisted.internet import defer, reactor, task
 from twisted.python import log
-from xml.etree.cElementTree import Element, SubElement
 
 # Trigger imports
 from trigger import exceptions
-from trigger.acl import parse as acl_parse
 from trigger.acl.queue import Queue
-from trigger.acl.tools import process_bulk_loads, get_bulk_acls
+from trigger.acl.tools import get_bulk_acls, process_bulk_loads
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
-from trigger.twister import execute_junoscript, execute_ioslike
-from trigger.utils.cli import print_severed_head, NullDevice, pretty_time, min_sec
-from trigger.utils.notifications import send_notification, send_email
 from trigger.tacacsrc import Tacacsrc
+from trigger.utils.cli import NullDevice, min_sec, pretty_time, print_severed_head
+from trigger.utils.notifications import send_email, send_notification
 
 # Globals
 # Pull in these functions from settings
@@ -94,10 +88,10 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
         for device, status in active.items():
             if device in output_cache:
                 if output_cache[device] != status:
-                    log.msg("%s: %s" % (device, status))
+                    log.msg(f"{device}: {status}")
                     output_cache[device] = status
             else:
-                log.msg("%s: %s" % (device, status))
+                log.msg(f"{device}: {status}")
                 output_cache[device] = status
         return
 
@@ -147,9 +141,9 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
 
     # Update device name
     for y, (dev, status) in zip(range(3, maxy()), active.items()):
-        s.addstr(y, 0, ("%s: %s" % (dev, status))[: maxx()], curses.A_BOLD)
+        s.addstr(y, 0, (f"{dev}: {status}")[: maxx()], curses.A_BOLD)
     for y, (dev, acls) in zip(range(3 + len(active), maxy()), work.items()):
-        s.addstr(y, 0, ("%s: %s" % (dev, " ".join(acls)))[: maxx()])
+        s.addstr(y, 0, ("{}: {}".format(dev, " ".join(acls)))[: maxx()])
 
     s.move(maxy() - 1, maxx() - 1)
     s.refresh()
@@ -301,7 +295,7 @@ def get_work(opts, args):
         try:
             dev = nd[dev_name]
         except KeyError:
-            sys.stderr.write("WARNING: device %s not found" % dev_name)
+            sys.stderr.write(f"WARNING: device {dev_name} not found")
             return
         try:
             work[dev] |= set(acls)
@@ -322,9 +316,9 @@ def get_work(opts, args):
                     add_work(a[0], set(a[1:]) & aclargs)
                 else:
                     add_work(a[0], a[1:])
-            except KeyError, e:
-                sys.stderr.write("Unknown router: %s" % e)
-                log.err("Unknown router: %s" % e)
+            except KeyError as e:
+                sys.stderr.write(f"Unknown router: {e}")
+                log.err(f"Unknown router: {e}")
                 sys.exit(1)
     elif opts.queue:
         all_sql_data = queue.list()
@@ -333,14 +327,14 @@ def get_work(opts, args):
         # if they are not add them to the AUTOLOAD_BLACKLIST.
         # Next check if acls are bulk acls and process them accordingly.
         thresh_counts = defaultdict(int)
-        bulk_thresh_count = defaultdict(int)
+        defaultdict(int)
 
         for router, acl in all_sql_data:
             if acl in settings.AUTOLOAD_FILTER_THRESH:
                 thresh_counts[acl] += 1
                 if thresh_counts[acl] >= settings.AUTOLOAD_FILTER_THRESH[acl]:
                     print("adding", router, acl, " to AUTOLOAD_BLACKLIST")
-                    log.msg("Adding %s to AUTOLOAD_BLACKLIST" % acl)
+                    log.msg(f"Adding {acl} to AUTOLOAD_BLACKLIST")
                     settings.AUTOLOAD_BLACKLIST.append(acl)
 
         for router, acl in all_sql_data:
@@ -364,7 +358,7 @@ def get_work(opts, args):
         not_found = list(aclargs - found)
         if not_found:
             not_found.sort()
-            sys.stderr.write("No devices found for %s\n" % ", ".join(not_found))
+            sys.stderr.write("No devices found for {}\n".format(", ".join(not_found)))
             sys.exit(1)
 
     # Process --bulk.  Only if not --bouncy.
@@ -397,18 +391,20 @@ def get_work(opts, args):
         if opts.bouncy:
             for dev in bouncy_devs:
                 dev_acls = ", ".join(work[dev])
-                print("Loading %s OUT OF BOUNCE on %s" % (dev_acls, dev))
-                log.msg("Loading %s OUT OF BOUNCE on %s" % (dev_acls, dev))
+                print(f"Loading {dev_acls} OUT OF BOUNCE on {dev}")
+                log.msg(f"Loading {dev_acls} OUT OF BOUNCE on {dev}")
         else:
             for dev in bouncy_devs:
                 dev_acls = ", ".join(work[dev])
                 print(
-                    "Skipping %s on %s (window starts at %s)"
-                    % (dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]))
+                    "Skipping {} on {} (window starts at {})".format(
+                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev])
+                    )
                 )
                 log.msg(
-                    "Skipping %s on %s (window starts at %s)"
-                    % (dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]))
+                    "Skipping {} on {} (window starts at {})".format(
+                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev])
+                    )
                 )
                 del work[dev]
             print("\nUse --bouncy to forcefully load on these devices anyway.")
@@ -416,8 +412,8 @@ def get_work(opts, args):
 
     # Display filtered acls
     for a in filtered_acls:
-        print("%s is in AUTOLOAD_BLACKLIST; not added to work queue." % a)
-        log.msg("%s is in AUTOLOAD_BLACKLIST; not added to work queue." % a)
+        print(f"{a} is in AUTOLOAD_BLACKLIST; not added to work queue.")
+        log.msg(f"{a} is in AUTOLOAD_BLACKLIST; not added to work queue.")
 
     return work
 
@@ -580,12 +576,6 @@ def activate(work, active, failures, jobs, redraw, opts):
 
         sanitize_acl = dev.vendor == "brocade"
 
-        status = []
-        cmds = []
-        acl_contents = []
-        tftp_paths = []
-        fails = None
-
         # Closures galore! Careful; you need to explicitly save current
         # values (using the default argument trick) 'dev', 'acls', and
         # 'status', because they vary through this loop.
@@ -641,7 +631,8 @@ def activate(work, active, failures, jobs, redraw, opts):
             (cmds, status) = result
 
             # Lambda function to call update_board() with proper args
-            incremental = lambda x: update_board(x, dev, status)
+            def incremental(x):
+                return update_board(x, dev, status)
 
             if dev.vendor in ("brocade", "foundry"):
                 handled_second = dev.execute(
@@ -745,21 +736,21 @@ def main():
             )
             print()
 
-        confirm = raw_input("Are you sure you want to proceed? ")
+        confirm = input("Are you sure you want to proceed? ")
         if not confirm.lower().startswith("y"):
             print("LOAD CANCELLED")
             log.msg("LOAD CANCELLED")
             sys.exit(1)
         print("")
         # Don't let the credential prompts get hidden behind curses
-        populate_tacacrc = Tacacsrc()
+        Tacacsrc()
     else:
         log.msg("Auto option thrown, checking if credential file exists")
         tacacsrc_file = settings.TACACSRC
         if not os.path.exists(tacacsrc_file):
-            log.msg("No %s file exists and auto option enabled." % tacacsrc_file)
+            log.msg(f"No {tacacsrc_file} file exists and auto option enabled.")
             sys.exit(1)
-        log.msg("Credential file %s exists, moving on" % tacacsrc_file)
+        log.msg(f"Credential file {tacacsrc_file} exists, moving on")
 
     cm_ticketnum = 0
     if not opts.no_cm and not debug_fakeout():
@@ -787,7 +778,7 @@ def main():
             log.err(es, logLevel=logging.CRITICAL)
             sys.exit(es)
 
-        cm_msg = "Created CM ticket #%s" % cm_ticketnum
+        cm_msg = f"Created CM ticket #{cm_ticketnum}"
         print(cm_msg)
         log.msg(cm_msg)
 
@@ -815,8 +806,8 @@ def main():
     failed_count = 0
     for dev, reason in failures.items():
         failed_count += 1
-        log.err("LOAD FAILED ON %s: %s" % (dev, str(reason)))
-        sys.stderr.write("LOAD FAILED ON %s: %s" % (dev, str(reason)))
+        log.err(f"LOAD FAILED ON {dev}: {str(reason)}")
+        sys.stderr.write(f"LOAD FAILED ON {dev}: {str(reason)}")
 
     if failures and not opts.auto:
         print_severed_head()
@@ -837,7 +828,7 @@ def main():
             )
 
     log.msg("%d failures" % failed_count)
-    log.msg("Elapsed time: %s" % min_sec(time.time() - start))
+    log.msg(f"Elapsed time: {min_sec(time.time() - start)}")
 
 
 if __name__ == "__main__":

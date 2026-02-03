@@ -20,7 +20,7 @@ invalid ACL and accept *every* valid ACL.
 7/15/2014
 This file was split into smaller modules: dicts, grammar, junos, ios, and support.
 These modules are then included back into parser.py.
-This makes the code more readable. 
+This makes the code more readable.
 """
 
 __author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
@@ -28,18 +28,14 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-import IPy
-from simpleparse import objectgenerator
-from simpleparse.common import comments, strings
 from simpleparse.dispatchprocessor import DispatchProcessor, dispatch, dispatchList
 from simpleparse.parser import Parser
-import socket
-from trigger import exceptions
-from trigger.conf import settings
 
-from .support import *
-from .junos import *
+from trigger import exceptions
+
 from .ios import *
+from .junos import *
+from .support import *
 
 # Exports
 __all__ = (
@@ -121,10 +117,10 @@ for production, rule in rules.items():
     if isinstance(rule, tuple):
         assert len(rule) == 2
         setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
-        grammar.append("%s := %s" % (production, rule[0]))
+        grammar.append(f"{production} := {rule[0]}")
     else:
         setattr(ACLProcessor, production, default_processor)
-        grammar.append("%s := %s" % (production, rule))
+        grammar.append(f"{production} := {rule}")
 
 grammar = "\n".join(grammar)
 

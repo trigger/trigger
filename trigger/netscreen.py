@@ -11,20 +11,21 @@ __copyright__ = "Copyright 2007-2012, AOL Inc."
 __version__ = "1.2.2"
 
 import IPy
+
+from trigger import exceptions
 from trigger.acl.parser import (
-    Protocol,
-    check_range,
-    literals,
     TIP,
-    do_protocol_lookup,
-    make_nondefault_processor,
     ACLParser,
     ACLProcessor,
-    default_processor,
+    Protocol,
     S,
+    check_range,
+    default_processor,
+    do_protocol_lookup,
+    literals,
+    make_nondefault_processor,
 )
 from trigger.acl.tools import create_trigger_term
-from trigger import exceptions
 
 # TODO (jathan): Implement __all__
 __all__ = (
@@ -41,7 +42,7 @@ __all__ = (
 
 
 # Classes
-class NetScreen(object):
+class NetScreen:
     """
     Parses and generates NetScreen firewall policy.
     """
@@ -168,10 +169,10 @@ class NetScreen(object):
             if isinstance(rule, tuple):
                 assert len(rule) == 2
                 setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
-                self.grammar.append("%s := %s" % (production, rule[0]))
+                self.grammar.append(f"{production} := {rule[0]}")
             else:
                 setattr(ACLProcessor, production, default_processor)
-                self.grammar.append("%s := %s" % (production, rule))
+                self.grammar.append(f"{production} := {rule}")
 
         self.grammar = "\n".join(self.grammar)
 
@@ -231,7 +232,7 @@ class NetScreen(object):
                 elif node.type == "service":
                     self.service_book.append(node)
                 else:
-                    raise "Unknown NSGroup type: %s" % node.type
+                    raise f"Unknown NSGroup type: {node.type}"
             elif isinstance(node, NSRawGroup):
                 # take a raw parsed group entry,
                 # try to find it's entry in either the addressbook,
@@ -247,7 +248,7 @@ class NetScreen(object):
                 else:
                     type, name, entry = node
 
-                if entry == None:
+                if entry is None:
                     continue
 
                 if type == "address":
@@ -255,7 +256,7 @@ class NetScreen(object):
                     group_find = self.address_book.find(name, zone)
                     # does the thing being added have an entry?
                     if not address_find:
-                        raise "GROUP ADD: no address book entry for %s" % (entry)
+                        raise f"GROUP ADD: no address book entry for {entry}"
 
                     if group_find:
                         # we already have an entry for this group? if so
@@ -272,7 +273,7 @@ class NetScreen(object):
                 elif type == "service":
                     # do the same for service groups.
                     if not self.service_book.has_key(entry):
-                        raise "GROUP ADD: no service entry for %s" % (entry)
+                        raise f"GROUP ADD: no service entry for {entry}"
                     found = None
                     if self.service_book.has_key(name):
                         found = self.service_book[name]
@@ -287,7 +288,7 @@ class NetScreen(object):
 
             elif isinstance(node, NSRawPolicy):
                 policy_id = node.data.get("id", 0)
-                rules = node.data.get("rules", {})
+                node.data.get("rules", {})
                 isglobal = node.data.get("global", 0)
 
                 source_zone = node.data.get("src-zone", None)
@@ -323,24 +324,15 @@ class NetScreen(object):
                     for entry in source_addr:
                         t = self.address_book.find(entry, found.source_zone)
                         if t is None:
-                            msg = "No address entry: %s, zone: %s, policy: %s" % (
-                                entry,
-                                found.source_zone,
-                                found.id,
-                            )
+                            msg = f"No address entry: {entry}, zone: {found.source_zone}, policy: {found.id}"
                             raise exceptions.NetScreenParseError(msg)
 
                         if (
                             t.zone and found.source_zone
                         ) and t.zone != found.source_zone:
                             raise (
-                                "%s has a zone of %s, while the source zone"
-                                " of the policy is %s"
-                                % (
-                                    t.name,
-                                    t.zone,
-                                    found.source_zone,
-                                )
+                                f"{t.name} has a zone of {t.zone}, while the source zone"
+                                f" of the policy is {found.source_zone}"
                             )
                         found["src-address"].append(t)
 
@@ -348,24 +340,15 @@ class NetScreen(object):
                     for entry in dest_addr:
                         t = self.address_book.find(entry, found.destination_zone)
                         if t is None:
-                            msg = "No address entry: %s, zone: %s, policy: %s" % (
-                                entry,
-                                found.destination_zone,
-                                found.id,
-                            )
+                            msg = f"No address entry: {entry}, zone: {found.destination_zone}, policy: {found.id}"
                             raise exceptions.NetScreenParseError(msg)
 
                         if (
                             t.zone and found.destination_zone
                         ) and t.zone != found.destination_zone:
                             raise (
-                                "%s has a zone of %s, while the destination zone"
-                                " of the policy is %s"
-                                % (
-                                    t.name,
-                                    t.zone,
-                                    found.destination_zone,
-                                )
+                                f"{t.name} has a zone of {t.zone}, while the destination zone"
+                                f" of the policy is {found.destination_zone}"
                             )
 
                         found["dst-address"].append(t)
@@ -374,10 +357,10 @@ class NetScreen(object):
                     for entry in service:
                         found["service"].append(self.service_book[entry])
 
-                if subset == False:
+                if not subset:
                     self.policies.append(found)
             else:
-                raise "Unknown node type %s" % str(type(node))
+                raise f"Unknown node type {str(type(node))}"
 
     def output(self):
         ret = []
@@ -401,7 +384,7 @@ class NetScreen(object):
 ############################
 # Policy/Service/Group stuff
 ############################
-class NSRawGroup(object):
+class NSRawGroup:
     """
     Container for group definitions.
     """
@@ -443,7 +426,7 @@ class NSGroup(NetScreen):
         # that all the zones are in the same zone
         for i in self.nodes:
             if i.zone != addr.zone:
-                raise "zone %s did not equal others in group" % addr.zone
+                raise f"zone {addr.zone} did not equal others in group"
             if i.name == addr.name:
                 return
         self.nodes.append(addr)
@@ -488,10 +471,8 @@ class NSGroup(NetScreen):
         for i in self.nodes:
             zone = ""
             if self.zone:
-                zone = '"%s"' % self.zone
-            ret.append(
-                'set group %s %s "%s" add "%s"' % (self.type, zone, self.name, i.name)
-            )
+                zone = f'"{self.zone}"'
+            ret.append(f'set group {self.type} {zone} "{self.name}" add "{i.name}"')
         return ret
 
 
@@ -611,8 +592,6 @@ class NSAddressBook(NetScreen):
         ):
             raise "Item inserted int NSAddress not correct type"
 
-        zone = item.zone
-
         if not self.entries.has_key(item.zone):
             self.entries[item.zone] = []
 
@@ -660,7 +639,7 @@ class NSAddress(NetScreen):
     def set_address(self, addr):
         try:
             a = TIP(addr)
-        except Exception, e:
+        except Exception as e:
             raise e
         self.addr = a
 
@@ -671,14 +650,14 @@ class NSAddress(NetScreen):
         self.name = name
 
     def set_comment(self, comment):
-        comment = '"%s"' % comment
+        comment = f'"{comment}"'
         self.comment = comment
 
     def get_real(self):
         return [self.addr]
 
     def output_crap(self):
-        return "[(Z:%s)%s]" % (self.zone, self.addr.strNormal())
+        return f"[(Z:{self.zone}){self.addr.strNormal()}]"
 
     def output(self):
         tmpl = 'set address "%s" "%s" %s %s %s'
@@ -797,7 +776,7 @@ class NSService(NetScreen):
         return [ret]
 
 
-class NSRawPolicy(object):
+class NSRawPolicy:
     """
     Container for policy definitions.
     """
@@ -849,9 +828,9 @@ class NSPolicy(NetScreen):
         found = address_book.find(addr, zone)
         if not found:
             if addr.prefixlen() == 32:
-                name = "h%s" % (addr.strNormal(0))
+                name = f"h{addr.strNormal(0)}"
             else:
-                name = "n%s" % (addr.strNormal())
+                name = f"n{addr.strNormal()}"
 
             found = NSAddress(name=name, zone=zone, addr=addr.strNormal())
 
@@ -910,7 +889,6 @@ class NSPolicy(NetScreen):
         raise KeyError
 
     def output_crap(self):
-        out = []
         for service in self.services:
             for src in self.source_addresses:
                 for dst in self.destination_addresses:
@@ -953,7 +931,7 @@ class NSPolicy(NetScreen):
                 dest_serv.append(serv)
 
         for protocol in serv_hash:
-            print("protocol %s" % protocol)
+            print(f"protocol {protocol}")
             for source_ports in serv_hash[protocol]:
                 print(" source ports", source_ports)
                 dest_ports = serv_hash[protocol][source_ports]
@@ -1025,8 +1003,8 @@ class NSPolicy(NetScreen):
         if self.id:
             ret += "id %d " % (self.id)
         if self.name:
-            ret += 'name "%s" ' % (self.name)
-        ret += 'from "%s" to "%s" ' % (self.source_zone, self.destination_zone)
+            ret += f'name "{self.name}" '
+        ret += f'from "{self.source_zone}" to "{self.destination_zone}" '
         for setter in [
             self.source_addresses,
             self.destination_addresses,
@@ -1035,8 +1013,8 @@ class NSPolicy(NetScreen):
             if not len(setter):
                 ret += '"ANY" '
             else:
-                ret += '"%s" ' % (setter[0].name)
-        ret += "%s" % self.action
+                ret += f'"{setter[0].name}" '
+        ret += f"{self.action}"
         toret.append(ret)
 
         if num_saddrs > 1 or num_daddrs > 1 or num_services > 1:
@@ -1047,6 +1025,6 @@ class NSPolicy(NetScreen):
                 "service": self.services[1:],
             }.items():
                 for item in v:
-                    toret.append(' set %s "%s"' % (k, item.name))
+                    toret.append(f' set {k} "{item.name}"')
             toret.append("exit")
         return toret

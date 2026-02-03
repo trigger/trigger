@@ -46,7 +46,9 @@ object's method of the same name) to override anything specified in a user's
 import configparser
 import os
 import sys
+
 from twisted.python import log
+
 from trigger.conf import settings
 
 # Constants
@@ -70,7 +72,7 @@ def read_config(filepath=GORC_PATH):
     try:
         status = config.read(filepath)
         if filepath not in status:
-            log.msg("File not found: %r" % filepath)
+            log.msg(f"File not found: {filepath!r}")
             return None
     except (configparser.MissingSectionHeaderError, configparser.ParsingError) as err:
         log.msg(err, debug=True)
@@ -104,7 +106,7 @@ def filter_commands(cmds, allowed_commands=None):
         if root in allowed_commands:
             ret.append(cmd)
         else:
-            log.msg("init_command not allowed: %r" % cmd, debug=True)
+            log.msg(f"init_command not allowed: {cmd!r}", debug=True)
     return ret
 
 
@@ -131,7 +133,7 @@ def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
     try:
         cmdstr = config.get(section, vendor)
     except configparser.NoSectionError as err:
-        log.msg("%s in %s" % (err, GORC_PATH), debug=True)
+        log.msg(f"{err} in {GORC_PATH}", debug=True)
         return []
     except configparser.NoOptionError as err:
         log.msg(err, debug=True)

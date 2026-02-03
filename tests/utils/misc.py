@@ -2,9 +2,9 @@
 Misc. utils for testing.
 """
 
+import sys
 from contextlib import contextmanager
 from io import StringIO
-import sys
 
 __all__ = ("captured_output",)
 

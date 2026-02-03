@@ -1,11 +1,9 @@
 import unittest
-import os
-from unittest import mock
-from trigger.netdevices import NetDevices
-from trigger.cmds import Commando
-from trigger.utils.templates import *
-from contextlib import contextmanager
 from io import StringIO
+
+from trigger.cmds import Commando
+from trigger.netdevices import NetDevices
+from trigger.utils.templates import *
 
 # Constants
 DEVICE_NAME = "test1-abc.net.aol.com"

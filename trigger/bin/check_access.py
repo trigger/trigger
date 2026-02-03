@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 check_access - Determines whether access is permitted by a given ACL.
@@ -9,9 +8,10 @@ __version__ = "1.2"
 
 import optparse
 import sys
+
 from simpleparse.error import ParserSyntaxError
 
-from trigger.acl.parser import parse, TIP, Protocol, Term, Comment
+from trigger.acl.parser import TIP, Comment, Protocol, parse
 from trigger.acl.tools import check_access, create_trigger_term
 
 
@@ -74,7 +74,7 @@ end with an explicit deny.""",
         permitted = None
     except ParserSyntaxError as e:
         etxt = str(e).split()
-        sys.exit("Cannot parse %s:" % acl_file + " ".join(etxt[1:]))
+        sys.exit(f"Cannot parse {acl_file}:" + " ".join(etxt[1:]))
 
     permitted = check_access(
         acl.terms, new_term, opts.quiet, format=acl.format, acl_name=acl.name

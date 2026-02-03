@@ -17,11 +17,12 @@ import os
 import sys
 import types
 
-from trigger.contrib.commando import CommandoApplication
-from trigger.utils import importlib
 from twisted.internet import defer
 from twisted.python import log
-from twisted.web import xmlrpc, server
+from twisted.web import server, xmlrpc
+
+from trigger.contrib.commando import CommandoApplication
+from trigger.utils import importlib
 
 # Enable Deferred debuging if ``DEBUG`` is set.
 if os.getenv("DEBUG"):
@@ -58,12 +59,12 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             handler = self.getSubHandler(prefix)
             if handler is None:
                 raise xmlrpc.NoSuchFunction(
-                    self.NOT_FOUND, "no such subHandler %s" % prefix
+                    self.NOT_FOUND, f"no such subHandler {prefix}"
                 )
             return handler.lookupProcedure(procedurePath)
 
         # Try self-defined methods first...
-        f = getattr(self, "xmlrpc_%s" % procedurePath, None)
+        f = getattr(self, f"xmlrpc_{procedurePath}", None)
 
         # Try mapped methods second...
         if f is None:
@@ -71,11 +72,11 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
         if not f:
             raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND, "procedure %s not found" % procedurePath
+                self.NOT_FOUND, f"procedure {procedurePath} not found"
             )
         elif not callable(f):
             raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND, "procedure %s not callable" % procedurePath
+                self.NOT_FOUND, f"procedure {procedurePath} not callable"
             )
         else:
             return f
@@ -93,7 +94,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         methods.
         """
         # Register it
-        log.msg("Adding handler: %s" % handler)
+        log.msg(f"Adding handler: {handler}")
         self._handlers.append(handler)
 
         # If it's a function, bind it as its own internal name.
@@ -101,7 +102,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             name = handler.__name__
             if name.startswith("xmlrpc_"):
                 name = name[7:]  # If it starts w/ 'xmlrpc_', slice it out!
-            log.msg("Mapping function %s..." % name)
+            log.msg(f"Mapping function {name}...")
             self._procedure_map[name] = handler
             return None
 
@@ -109,7 +110,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         # their attribute name.
         for method in dir(handler):
             if not method.startswith("_"):
-                log.msg("Mapping method %s..." % method)
+                log.msg(f"Mapping method {method}...")
                 self._procedure_map[method] = getattr(handler, method)
 
     def listProcedures(self):
@@ -124,24 +125,24 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         if mod_name in sys.modules:
             # Check if module is already loaded
             if force:
-                log.msg("Forcing reload of handler: %r" % task_name)
+                log.msg(f"Forcing reload of handler: {task_name!r}")
                 # Allow user to force reload of module
                 module = importlib.reload(sys.modules[mod_name])
             else:
                 # If not forcing reload, don't bother with the rest
-                log.msg("%r already loaded" % mod_name)
+                log.msg(f"{mod_name!r} already loaded")
                 return None
         else:
-            log.msg("Trying to add handler: %r" % task_name)
+            log.msg(f"Trying to add handler: {task_name!r}")
             try:
                 module = importlib.import_module(mod_name, __name__)
             except NameError as msg:
-                log.msg("NameError: %s" % msg)
+                log.msg(f"NameError: {msg}")
             except:
                 pass
 
         if not module:
-            log.msg("    Unable to load module: %s" % mod_name)
+            log.msg(f"    Unable to load module: {mod_name}")
             return None
         else:
             handler = getattr(module, "xmlrpc_" + task_name)
@@ -189,7 +190,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         Ref: https://netzguerilla.net/iro/dev/_modules/iro/view/xmlrpc.html
         """
         if isinstance(failure.value, Exception):
-            msg = """{}: {}""".format(failure.type.__name__, failure.value.args[0])
+            msg = f"""{failure.type.__name__}: {failure.value.args[0]}"""
             return xmlrpc.Fault(400, msg)
         return super()._ebRender(self, failure)
 
@@ -198,7 +199,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 # probably broken.
 def main():
     """To daemonize as a twistd plugin! Except this doesn't work and these"""
-    from twisted.application.internet import TCPServer, SSLServer
+    from twisted.application.internet import SSLServer
     from twisted.application.service import Application
     from twisted.internet import ssl
 

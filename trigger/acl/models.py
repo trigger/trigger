@@ -3,8 +3,10 @@ Database models for the task queue.
 """
 
 import datetime
-from trigger.conf import settings
+
 import peewee as pw
+
+from trigger.conf import settings
 
 engine = settings.DATABASE_ENGINE
 if not engine:
@@ -33,7 +35,7 @@ elif engine == "postgresql":
         password=settings.DATABASE_PASSWORD,
     )
 else:
-    raise RuntimeError("Unsupported database engine: %s" % engine)
+    raise RuntimeError(f"Unsupported database engine: {engine}")
 
 
 class BaseModel(pw.Model):

@@ -18,16 +18,19 @@ __version__ = "3.2.1"
 import os
 import re
 import socket
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, ElementTree, SubElement
+
 from twisted.python import log
-from trigger.conf import settings
+
 from trigger.cmds import Commando
-from xml.etree.cElementTree import ElementTree, Element, SubElement
-import xml.etree.cElementTree as ET
+from trigger.conf import settings
 
 # Exports
 __all__ = ["DoCommandBase", "CommandRunner", "ConfigLoader", "xml_print", "core"]
-from . import core
 from core import *
+
+from . import core
 
 __all__.extend(core.__all__)
 
@@ -42,13 +45,13 @@ class DoCommandBase(Commando):
     description = "Insert description here."
 
     def errback(self, failure, device):
-        failure = super(DoCommandBase, self).errback(failure, device)
-        print("%s - Error: %s" % (device, failure.value))
+        failure = super().errback(failure, device)
+        print(f"{device} - Error: {failure.value}")
         return failure
 
     def from_base(self, results, device, commands=None):
         """Call store_results without calling map_results"""
-        log.msg("Received %r from %s" % (results, device))
+        log.msg(f"Received {results!r} from {device}")
         self.store_results(device, results)
 
 
@@ -106,7 +109,7 @@ class CommandRunner(DoCommandBase):
             kwargs["timeout"] = timeout
         else:
             kwargs = dict(timeout=timeout)
-        super(CommandRunner, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def __loadCmdsFromFiles(self, skip_comments=True):
         """
@@ -115,7 +118,7 @@ class CommandRunner(DoCommandBase):
         This is done to prevent having to read the list of cmds multiple times.
         """
         for fname in self.files:
-            with open(fname, "r") as fr:
+            with open(fname) as fr:
                 lines = fr.readlines()
 
             if skip_comments:
@@ -129,9 +132,9 @@ class CommandRunner(DoCommandBase):
         """Define how we're storing results."""
         devname = device.nodeName
         if self.verbose:
-            print("Parsing commands for %s" % devname)
+            print(f"Parsing commands for {devname}")
         if self.debug:
-            msg = "-->store_results(device=%r, results=%r)" % (devname, results)
+            msg = f"-->store_results(device={devname!r}, results={results!r})"
             print(msg)
             log.msg(msg)
 
@@ -152,11 +155,10 @@ class CommandRunner(DoCommandBase):
             return self.from_base(data, device, commands)
 
         devname = device.nodeName
-        ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
         if self.verbose:
-            print("parsing JunOS commands for %s" % devname)
+            print(f"parsing JunOS commands for {devname}")
         if self.debug:
-            print("-->from_juniper(data=%s, device=%r)" % (data, devname))
+            print(f"-->from_juniper(data={data}, device={devname!r})")
 
         cmds = self.commands
         outs = []
@@ -167,7 +169,7 @@ class CommandRunner(DoCommandBase):
             d = {"cmd": cmd, "out": out, "dev": device}
             outs.append(d)
             if self.debug:
-                print('\ndata["%s"]:' % i)
+                print(f'\ndata["{i}"]:')
                 ET.dump(xml)
         self.data[devname] = outs
         return True
@@ -242,7 +244,7 @@ class ConfigLoader(Commando):
         self.commands = commands
         self.files = files
         self.debug = debug
-        super(ConfigLoader, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def to_juniper(self, device=None, commands=None, extra=None):
         """
@@ -284,9 +286,9 @@ class ConfigLoader(Commando):
         """
         devname = device.nodeName
         if self.verbose:
-            print("Parsing commands for %s" % devname)
+            print(f"Parsing commands for {devname}")
         if self.debug:
-            print("-->store_results(device=%r, results=%r)" % (devname, results))
+            print(f"-->store_results(device={devname!r}, results={results!r})")
         out = "\n".join(results)
         self.data[devname] = [{"dev": device, "cmd": "load-configuration", "out": out}]
         return True
@@ -298,9 +300,9 @@ class ConfigLoader(Commando):
         """Parse results from a Juniper device."""
         devname = device.nodeName
         if self.verbose:
-            print("parsing JunOS commands for %s " % devname)
+            print(f"parsing JunOS commands for {devname} ")
         if self.debug:
-            print("-->from_juniper(data=%s, device=%r)" % (data, devname))
+            print(f"-->from_juniper(data={data}, device={devname!r})")
         if self.debug:
             for xml in data:
                 ET.dump(xml)
@@ -324,13 +326,7 @@ class ConfigLoader(Commando):
                 msg = (
                     msg + emes + " in '" + etok + "'\n    line:" + elin + ",col:" + ecol
                 )
-                msg = "%s %s in %r\n    line: %s, col: %s" % (
-                    msg,
-                    emes,
-                    etok,
-                    elin,
-                    ecol,
-                )
+                msg = f"{msg} {emes} in {etok!r}\n    line: {elin}, col: {ecol}"
         if success:
             self.data[devname] = [
                 {"dev": device, "cmd": "load-configuration", "out": "Success"}

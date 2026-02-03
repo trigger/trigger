@@ -1,5 +1,7 @@
 import datetime
+
 from pytz import timezone
+
 from trigger.utils import cli
 from trigger.utils.network import ping
 

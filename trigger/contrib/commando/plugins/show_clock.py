@@ -1,9 +1,11 @@
 import datetime
-from twisted.python import log
-from trigger.utils import xmltodict, strip_juniper_namespace
-from trigger.contrib.commando import CommandoApplication
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import ElementTree, Element, SubElement
+from xml.etree.ElementTree import Element
+
+from twisted.python import log
+
+from trigger.contrib.commando import CommandoApplication
+from trigger.utils import strip_juniper_namespace, xmltodict
 
 task_name = "show_clock"
 
@@ -86,7 +88,7 @@ class ShowClock(CommandoApplication):
                     ]["system-uptime-information"]
                 except:
                     pass
-            if sysupinfo == None:
+            if sysupinfo is None:
                 currtime = "Unable to parse"
                 ## need to turn this into an error
             else:

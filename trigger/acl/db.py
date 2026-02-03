@@ -25,12 +25,12 @@ __email__ = "jathan@gmail.com"
 __copyright__ = "Copyright 2010-2012, AOL Inc.; 2013 Salesforce.com"
 
 from collections import defaultdict
-import redis
-import sys
 
+import redis
 from twisted.python import log
-from trigger.acl.autoacl import autoacl
+
 from trigger import exceptions
+from trigger.acl.autoacl import autoacl
 from trigger.conf import settings
 
 ACLSDB_BACKUP = "./acls.csv"
@@ -55,7 +55,7 @@ __all__ = (
 
 
 # Classes
-class AclsDB(object):
+class AclsDB:
     """
     Container for ACL operations.
 
@@ -75,16 +75,14 @@ class AclsDB(object):
         'added acl abc123 to test1-mtc.net.aol.com'
         """
         try:
-            rc = self.redis.sadd("acls:explicit:%s" % device.nodeName, acl)
+            rc = self.redis.sadd(f"acls:explicit:{device.nodeName}", acl)
         except redis.exceptions.ResponseError as err:
             return str(err)
         if rc != 1:
-            raise exceptions.ACLSetError(
-                "%s already has acl %s" % (device.nodeName, acl)
-            )
+            raise exceptions.ACLSetError(f"{device.nodeName} already has acl {acl}")
         self.redis.save()
 
-        return "added acl %s to %s" % (acl, device)
+        return f"added acl {acl} to {device}"
 
     def remove_acl(self, device, acl):
         """
@@ -94,16 +92,14 @@ class AclsDB(object):
         'removed acl abc123 from test1-mtc.net.aol.com'
         """
         try:
-            rc = self.redis.srem("acls:explicit:%s" % device.nodeName, acl)
+            rc = self.redis.srem(f"acls:explicit:{device.nodeName}", acl)
         except redis.exceptions.ResponseError as err:
             return str(err)
         if rc != 1:
-            raise exceptions.ACLSetError(
-                "%s does not have acl %s" % (device.nodeName, acl)
-            )
+            raise exceptions.ACLSetError(f"{device.nodeName} does not have acl {acl}")
         self.redis.save()
 
-        return "removed acl %s from %s" % (acl, device)
+        return f"removed acl {acl} from {device}"
 
     def get_acl_dict(self, device):
         """
@@ -120,7 +116,7 @@ class AclsDB(object):
 
         # Explicit (we want to make sure the key exists before we try to assign
         # a value)
-        expl_key = "acls:explicit:%s" % device.nodeName
+        expl_key = f"acls:explicit:{device.nodeName}"
         if self.redis.exists(expl_key):
             acls["explicit"] = self.redis.smembers(expl_key) or set()
         else:
@@ -154,9 +150,7 @@ class AclsDB(object):
         if DEBUG:
             print("fetching"), acl_set, "acls for", device
         if acl_set not in ACL_SETS:
-            raise exceptions.InvalidACLSet(
-                "match statement must be one of %s" % ACL_SETS
-            )
+            raise exceptions.InvalidACLSet(f"match statement must be one of {ACL_SETS}")
 
         return acls_dict[acl_set]
 
@@ -183,7 +177,7 @@ def populate_explicit_acls(aclsdb_file):
 
     for row in csv.reader(open(aclsdb_file)):
         if not row[0].startswith("!"):
-            [r.sadd("acls:explicit:%s" % row[1], acl) for acl in row[2].split(":")]
+            [r.sadd(f"acls:explicit:{row[1]}", acl) for acl in row[2].split(":")]
     r.save()
 
 
@@ -191,7 +185,7 @@ def backup_explicit_acls():
     """dumps acls:explicit:* to csv"""
     import csv
 
-    out = csv.writer(file(ACLSDB_BACKUP, "w"))
+    out = csv.writer(open(ACLSDB_BACKUP, "w"))
     for key in r.keys("acls:explicit:*"):
         out.writerow([key.split(":")[-1], ":".join(map(str, r.smembers(key)))])
 
@@ -200,7 +194,7 @@ def populate_implicit_acls(nd=None):
     """populate acls:implicit (autoacls)"""
     nd = nd or get_netdevices()
     for dev in nd.all():
-        [r.sadd("acls:implicit:%s" % dev.nodeName, acl) for acl in autoacl(dev)]
+        [r.sadd(f"acls:implicit:{dev.nodeName}", acl) for acl in autoacl(dev)]
     r.save()
 
 

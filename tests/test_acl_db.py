@@ -10,10 +10,11 @@ from utils import mock_redis
 mock_redis.install()
 
 # And now we can load the Trigger libs that call Redis
-from trigger.netdevices import NetDevices
-from trigger.acl.db import AclsDB
-from trigger import exceptions
 import unittest
+
+from trigger import exceptions
+from trigger.acl.db import AclsDB
+from trigger.netdevices import NetDevices
 
 # Globals
 adb = AclsDB()
@@ -30,7 +31,7 @@ class TestAclsDB(unittest.TestCase):
 
     def test_01_add_acl_success(self):
         """Test associate ACL to device success"""
-        exp = "added acl {} to {}".format(self.acl, self.device)
+        exp = f"added acl {self.acl} to {self.device}"
         self.assertEqual(exp, adb.add_acl(self.device, self.acl))
 
     def test_02_add_acl_failure(self):
@@ -40,7 +41,7 @@ class TestAclsDB(unittest.TestCase):
 
     def test_03_remove_acl_success(self):
         """Test remove ACL from device success"""
-        exp = "removed acl {} from {}".format(self.acl, self.device)
+        exp = f"removed acl {self.acl} from {self.device}"
         self.assertEqual(exp, adb.remove_acl(self.device, self.acl))
 
     def test_04_remove_acl_failure(self):

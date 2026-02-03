@@ -23,9 +23,10 @@ __version__ = "0.1"
 
 
 # Imports
+import warnings
+
 from trigger.conf import settings
 from trigger.utils.importlib import import_module_from_path
-import warnings
 
 # Exports
 __all__ = ("bounce",)
@@ -37,7 +38,7 @@ try:
     _bounce_module = import_module_from_path(bounce_mpath, "_bounce_module")
     from _bounce_module import bounce
 except ImportError:
-    msg = "Bounce mappings could not be found in %s. using default!" % bounce_mpath
+    msg = f"Bounce mappings could not be found in {bounce_mpath}. using default!"
     warnings.warn(msg, RuntimeWarning)
     from . import BounceWindow
 

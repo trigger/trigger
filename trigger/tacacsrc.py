@@ -10,21 +10,23 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jmccollum@salesforce.com"
 __copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
 
-from base64 import decodebytes as decodestring, encodebytes as encodestring
-from collections import namedtuple
-
-# Python 3: distutils deprecated, use packaging instead
-from packaging.version import Version
 import getpass
-from time import strftime, localtime
 import os
 import pwd
 import sys
-from twisted.python import log
-from trigger.conf import settings
+from base64 import decodebytes as decodestring
+from base64 import encodebytes as encodestring
+from collections import namedtuple
+from time import localtime, strftime
 
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from cryptography.hazmat.primitives import ciphers
+
+# Python 3: distutils deprecated, use packaging instead
+from packaging.version import Version
+from twisted.python import log
+
+from trigger.conf import settings
 
 # Python 3 / cryptography 48+: TripleDES moved to decrepit module
 try:
@@ -88,7 +90,7 @@ def get_device_password(device=None, tcrc=None):
     try:
         creds = tcrc.creds[device]
     except KeyError:
-        print("\nCredentials not found for device/realm %r, prompting..." % device)
+        print(f"\nCredentials not found for device/realm {device!r}, prompting...")
         creds = prompt_credentials(device)
         tcrc.creds[device] = creds
         tcrc.write()
@@ -109,13 +111,13 @@ def prompt_credentials(device, user=None):
     creds = ()
     # Make sure we can even get tty i/o!
     if sys.stdin.isatty() and sys.stdout.isatty():
-        print("\nUpdating credentials for device/realm %r" % device)
+        print(f"\nUpdating credentials for device/realm {device!r}")
 
         user_default = ""
         if user:
-            user_default = " [%s]" % user
+            user_default = f" [{user}]"
 
-        username = input("Username%s: " % user_default) or user
+        username = input(f"Username{user_default}: ") or user
         if username == "":
             print("\nYou must specify a username, try again!")
             return prompt_credentials(device, user=user)
@@ -247,7 +249,7 @@ def _perl_pack_Hstar_old(s):
 
 
 # Classes
-class Tacacsrc(object):
+class Tacacsrc:
     """
     Encrypts, decrypts and returns credentials for use by network devices and
     other tools.
@@ -286,8 +288,8 @@ class Tacacsrc(object):
                 log.msg(".tacacsrc.gpg not setup, disabling GPG", debug=True)
                 self.use_gpg = False
 
-        log.msg("Using GPG method: %r" % self.use_gpg, debug=True)
-        log.msg("Got username: %r" % self.username, debug=True)
+        log.msg(f"Using GPG method: {self.use_gpg!r}", debug=True)
+        log.msg(f"Got username: {self.username!r}", debug=True)
 
         # Set the .tacacsrc file location
         if self.file_name is None:
@@ -299,7 +301,7 @@ class Tacacsrc(object):
 
         # Check if the file exists
         if not os.path.exists(self.file_name):
-            print("%s not found, generating a new one!" % self.file_name)
+            print(f"{self.file_name} not found, generating a new one!")
             self.generate_new = True
 
         if self.use_gpg:
@@ -347,14 +349,14 @@ class Tacacsrc(object):
         in the filesystem really doesn't buy much.  This is best referred
         to as obfuscation of the .tacacsrc."""
         try:
-            with open(keyfile, "r") as kf:
+            with open(keyfile) as kf:
                 key = kf.readline().strip()
-        except IOError as err:
-            msg = "Keyfile at %s not found. Please create it." % keyfile
+        except OSError:
+            msg = f"Keyfile at {keyfile} not found. Please create it."
             raise CouldNotParse(msg)
 
         if not key:
-            msg = "Keyfile at %s must contain a passphrase." % keyfile
+            msg = f"Keyfile at {keyfile} must contain a passphrase."
             raise CouldNotParse(msg)
 
         key += self._get_key_nonce_old()
@@ -375,30 +377,28 @@ class Tacacsrc(object):
 
             # Skip blank lines and comments
             if any((line.startswith("#"), line == "")):
-                log.msg("skipping %r" % line, debug=True)
+                log.msg(f"skipping {line!r}", debug=True)
                 continue
             # log.msg('parsing %r' % line, debug=True)
 
             if line.count(" = ") > 1:
-                raise CouldNotParse("Malformed line %r at line %s" % (line, lineno))
+                raise CouldNotParse(f"Malformed line {line!r} at line {lineno}")
 
             key, sep, val = line.partition(" = ")
             if val == "":
                 continue  # Don't add a key with a missing value
-                raise CouldNotParse(
-                    "Missing value for key %r at line %s" % (key, lineno)
-                )
+                raise CouldNotParse(f"Missing value for key {key!r} at line {lineno}")
 
             # Check for version
             if key == "version":
                 if val != self.version:
-                    raise VersionMismatch("Bad .tacacsrc version (%s)" % v)
+                    raise VersionMismatch(f"Bad .tacacsrc version ({v})")
                 continue
 
             # Make sure tokens can be parsed
             realm, token, end = key.split("_")
             if end != "" or (realm, token) in data:
-                raise CouldNotParse("Could not parse %r at line %s" % (line, lineno))
+                raise CouldNotParse(f"Could not parse {line!r} at line {lineno}")
 
             data[(realm, token)] = self._decrypt_old(val)
             del key, val, line
@@ -410,13 +410,13 @@ class Tacacsrc(object):
                     # creds[realm] = Credentials(val, data[(realm, 'pwd')])
                     creds[realm] = Credentials(val, data[(realm, "pwd")], realm)
                 except KeyError:
-                    print("\nMissing password for %r, initializing..." % realm)
+                    print(f"\nMissing password for {realm!r}, initializing...")
                     self.update_creds(creds=creds, realm=realm, user=val)
                     # raise MissingPassword('Missing password for %r' % realm)
             elif key == "pwd":
                 pass
             else:
-                raise CouldNotParse("Unknown .tacacsrc entry (%s_%s)" % (realm, val))
+                raise CouldNotParse(f"Unknown .tacacsrc entry ({realm}_{val})")
 
         self.data = data
         return creds
@@ -434,9 +434,7 @@ class Tacacsrc(object):
         log.msg("setting self.creds_updated flag", debug=True)
         self.creds_updated = True
         new_user = creds[realm].username
-        print(
-            "\nCredentials updated for user: %r, device/realm: %r." % (new_user, realm)
-        )
+        print(f"\nCredentials updated for user: {new_user!r}, device/realm: {realm!r}.")
 
     def _encrypt_old(self, s):
         """Encodes using the old method. Adds a newline for you."""
@@ -478,20 +476,21 @@ class Tacacsrc(object):
     def _read_file_old(self):
         """Read old style file and return the raw data."""
         self._update_perms()
-        with open(self.file_name, "r") as f:
+        with open(self.file_name) as f:
             return f.readlines()
 
     def _write_old(self):
         """Write old style to disk. Newlines provided by _encrypt_old(), so don't fret!"""
         out = [
-            "# Saved by %s at %s\n\n"
-            % (self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()))
+            "# Saved by {} at {}\n\n".format(
+                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime())
+            )
         ]
 
         for realm, (uname, pwd, _) in self.creds.items():
             # log.msg('encrypting %r' % ((uname, pwd),), debug=True)
-            out.append("%s_uname_ = %s" % (realm, self._encrypt_old(uname)))
-            out.append("%s_pwd_ = %s" % (realm, self._encrypt_old(pwd)))
+            out.append(f"{realm}_uname_ = {self._encrypt_old(uname)}")
+            out.append(f"{realm}_pwd_ = {self._encrypt_old(pwd)}")
 
         with open(self.file_name, "w+") as fd:
             fd.writelines(out)
@@ -501,7 +500,7 @@ class Tacacsrc(object):
     def _decrypt_and_read(self):
         """Decrypt file using GPG and return the raw data."""
         ret = []
-        for x in os.popen("gpg2 --no-tty --quiet -d %s" % self.file_name):
+        for x in os.popen(f"gpg2 --no-tty --quiet -d {self.file_name}"):
             x = x.rstrip()
             ret.append(x)
 
@@ -510,7 +509,7 @@ class Tacacsrc(object):
     def _encrypt_and_write(self):
         """Encrypt using GPG and dump password data to disk."""
         fin, fout = os.popen2(
-            "gpg2 --yes --quiet -r %s -e -o %s" % (self.username, self.file_name)
+            f"gpg2 --yes --quiet -r {self.username} -e -o {self.file_name}"
         )
         for line in self.rawdata:
             print(line, file=fin)
@@ -518,13 +517,14 @@ class Tacacsrc(object):
     def _write_new(self):
         """Replace self.rawdata with current password details."""
         out = [
-            "# Saved by %s at %s\n\n"
-            % (self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()))
+            "# Saved by {} at {}\n\n".format(
+                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime())
+            )
         ]
 
         for realm, (uname, pwd, _) in self.creds.items():
-            out.append("%s_uname_ = %s" % (realm, uname))
-            out.append("%s_pwd_ = %s" % (realm, pwd))
+            out.append(f"{realm}_uname_ = {uname}")
+            out.append(f"{realm}_pwd_ = {pwd}")
 
         self.rawdata = out
         self._encrypt_and_write()
@@ -553,7 +553,7 @@ class Tacacsrc(object):
                 k, v = line.split(" = ")
                 if k == "version":
                     if v != self.version:
-                        raise VersionMismatch("Bad .tacacsrc version (%s)" % v)
+                        raise VersionMismatch(f"Bad .tacacsrc version ({v})")
                 else:
                     realm, s, junk = k.split("_")
                     # assert(junk == '')
@@ -568,7 +568,7 @@ class Tacacsrc(object):
             elif k == "pwd":
                 pass
             else:
-                raise CouldNotParse("Unknown .tacacsrc entry (%s_%s)" % (realm, v))
+                raise CouldNotParse(f"Unknown .tacacsrc entry ({realm}_{v})")
 
         return creds
 
