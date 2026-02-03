@@ -10,25 +10,29 @@ from twisted.python import log
 import sys
 
 # Uncomment me for verbose logging.
-#log.startLogging(sys.stdout, setStdout=False)
+# log.startLogging(sys.stdout, setStdout=False)
+
 
 class ShowClock(ReactorlessCommando):
-    commands = ['show clock']
+    commands = ["show clock"]
+
 
 class ShowUsers(ReactorlessCommando):
-    commands = ['show users']
+    commands = ["show users"]
+
 
 def stop_reactor(result):
     if reactor.running:
-        log.msg('STOPPING REACTOR!')
+        log.msg("STOPPING REACTOR!")
         reactor.stop()
     return result
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Replace these with real device IPs/hostnames in your network
     devices = [
-        'dev1',
-        'dev2',
+        "dev1",
+        "dev2",
     ]
 
     # Our Commando instances. This is an example  to show we have two instances
