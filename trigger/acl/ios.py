@@ -141,16 +141,15 @@ rules.update(
         ),
         "kw_ip": ('"ip"', None),
         S("ios_match"): (
-            "kw_ip / protocol, ts, ios_ip, ts, ios_ip, " "(ts, ios_log)?",
+            "kw_ip / protocol, ts, ios_ip, ts, ios_ip, (ts, ios_log)?",
             handle_ios_match,
         ),
         S("ios_tcp_port_match"): (
-            "tcp, ts, ios_ip_port, ts, ios_ip_port, "
-            "(ts, established)?, (ts, ios_log)?",
+            "tcp, ts, ios_ip_port, ts, ios_ip_port, (ts, established)?, (ts, ios_log)?",
             handle_ios_match,
         ),
         S("ios_udp_port_match"): (
-            "udp, ts, ios_ip_port, ts, ios_ip_port, " "(ts, ios_log)?",
+            "udp, ts, ios_ip_port, ts, ios_ip_port, (ts, ios_log)?",
             handle_ios_match,
         ),
         S("ios_ip_port"): "ios_ip, (ts, unary_port / ios_range)?",
@@ -193,11 +192,11 @@ rules.update(
             "ios_rebind_acl_line / ios_rebind_receive_acl_line"
         ),
         S("ios_ext_name_line"): (
-            '"ip", ts, "access-list", ts, ' '"extended", ts, word',
+            '"ip", ts, "access-list", ts, "extended", ts, word',
             lambda x: {"name": x[0], "format": "ios_named"},
         ),
         S("ios_ext_no_line"): (
-            '"no", ts, "ip", ts, "access-list", ts, ' '"extended", ts, word',
+            '"no", ts, "ip", ts, "access-list", ts, "extended", ts, word',
             lambda x: {"no": True, "name": x[0]},
         ),
         # Brocade "ip rebind-acl foo" or "ip rebind-receive-acl foo" syntax
@@ -217,9 +216,7 @@ rules.update(
             lambda x: x,
         ),
         "remark_body": ('-"\n"*', Remark),
-        ">ios_line<": (
-            'ts?, (ios_acl_line / ios_ext_line / "end")?, ' "ts?, icomment?"
-        ),
+        ">ios_line<": ('ts?, (ios_acl_line / ios_ext_line / "end")?, ts?, icomment?'),
         S("ios_acl"): ('(ios_line, "\n")*, ios_line', handle_ios_acl),
     }
 )

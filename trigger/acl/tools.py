@@ -133,7 +133,6 @@ def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=
                 t.makediscard = True  # set 'make discard' flag
 
         for k, v in t.match.items():
-
             if k not in matches or not matches[k]:
                 complicated = True
 
@@ -259,7 +258,6 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
         complicated = False
         permitted = None
         for k, v in t.match.items():
-
             if debug:
                 print("generate_new_acl(): k,v==", k, "and", v)
             if k == "protocol" and k not in new_term.match:
@@ -400,17 +398,19 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
         #    testacls = dev.acls
         testacls = dev.acls if force_bulk else dev.bulk_acls
 
-        for (
-            acl
-        ) in (
+        for acl in (
             testacls
         ):  # only look at each acl once, but look at all acls if bulk load forced
             if acl in work[dev]:
                 # if acl in work[router]:
                 if DEBUG:
-                    print(
-                        "Determining threshold for acl "
-                    ), acl, " on device ", dev, "\n"
+                    (
+                        print("Determining threshold for acl "),
+                        acl,
+                        " on device ",
+                        dev,
+                        "\n",
+                    )
                 if acl in settings.BULK_MAX_HITS:
                     max_hits = settings.BULK_MAX_HITS[acl]
 
@@ -425,7 +425,6 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
                 if DEBUG:
                     print(prefix_site), prefix_hits[prefix_site]
                 if prefix_hits[prefix_site] > max_hits:
-
                     msg = (
                         "Removing %s on %s from job queue: threshold of %d exceeded for "
                         "'%s' devices in '%s'"
@@ -619,7 +618,6 @@ class ACLScript:
             argz.append("%s %s" % (k, tmpf))
 
         for k, v in {"-p": self.source_ports, "-P": self.dest_ports}.items():
-
             if not len(v):
                 continue
 

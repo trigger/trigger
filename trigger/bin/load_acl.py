@@ -14,7 +14,7 @@ automatically load eligible devices from the queue and email results.
 
 from __future__ import print_function
 
-__version__ = '1.9.2'
+__version__ = "1.9.2"
 
 # Dist imports
 from collections import defaultdict
@@ -52,10 +52,10 @@ from trigger.tacacsrc import Tacacsrc
 get_current_oncall = settings.GET_CURRENT_ONCALL
 create_cm_ticket = settings.CREATE_CM_TICKET
 stage_acls = settings.STAGE_ACLS
-get_tftp_source = settings.GET_TFTP_SOURCE #(dev)
+get_tftp_source = settings.GET_TFTP_SOURCE  # (dev)
 
 # Our global NetDevices object!
-nd = NetDevices() #production_only=False)  #should be added with a flag
+nd = NetDevices()  # production_only=False)  #should be added with a flag
 
 # We don't want queue interaction messages to mess up curses display
 queue = Queue(verbose=False)
@@ -91,7 +91,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
 
     if not s:
         # this is stuff if we don't have a ncurses handle.
-        for (device,status) in active.items():
+        for device, status in active.items():
             if device in output_cache:
                 if output_cache[device] != status:
                     log.msg("%s: %s" % (device, status))
@@ -102,19 +102,20 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
         return
 
     s.erase()
+
     # DO NOT cache the result of s.getmaxyx(), or you cause race conditions
     # which can create exceptions when the window is resized.
     def maxx():
         y, x = s.getmaxyx()
         return x
+
     def maxy():
         y, x = s.getmaxyx()
         return y
 
     # Display progress bar at top (#/devices, elapsed time)
-    s.addstr(0, 0, 'load_acl'[:maxx()], curses.A_BOLD)
-    progress = '  %d/%d devices' % (start_qlen - len(work) - len(active),
-                                    start_qlen)
+    s.addstr(0, 0, "load_acl"[: maxx()], curses.A_BOLD)
+    progress = "  %d/%d devices" % (start_qlen - len(work) - len(active), start_qlen)
     s.addstr(0, maxx() - len(progress), progress)
 
     doneness = 1 - float(len(work) + len(active)) / start_qlen
@@ -123,9 +124,9 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
 
     # Update status
     if doneness == 0:
-        remaining_str = ' '
+        remaining_str = " "
     elif doneness == 1:
-        remaining_str = 'done'
+        remaining_str = "done"
     else:
         remaining_str = min_sec(elapsed / doneness - elapsed)
     max_line = int(maxx() - len(remaining_str) - len(elapsed_str) - 2)
@@ -136,15 +137,19 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
 
     # If we get failures, report them
     if failures:
-        count, plural = len(failures), (len(failures) > 1 and 's' or '')
-        s.addstr(2, 0, ' %d failure%s, will report at end ' % (count, plural),
-                 curses.A_STANDOUT)
+        count, plural = len(failures), (len(failures) > 1 and "s" or "")
+        s.addstr(
+            2,
+            0,
+            " %d failure%s, will report at end " % (count, plural),
+            curses.A_STANDOUT,
+        )
 
     # Update device name
     for y, (dev, status) in zip(range(3, maxy()), active.items()):
-        s.addstr(y, 0, ('%s: %s' % (dev, status))[:maxx()], curses.A_BOLD)
+        s.addstr(y, 0, ("%s: %s" % (dev, status))[: maxx()], curses.A_BOLD)
     for y, (dev, acls) in zip(range(3 + len(active), maxy()), work.items()):
-        s.addstr(y, 0, ('%s: %s' % (dev, ' '.join(acls)))[:maxx()])
+        s.addstr(y, 0, ("%s: %s" % (dev, " ".join(acls)))[: maxx()])
 
     s.move(maxy() - 1, maxx() - 1)
     s.refresh()
@@ -158,51 +163,89 @@ def parse_args(argv):
     :param argv:
         A list of opts/args to use over sys.argv
     """
+
     def comma_cb(option, opt_str, value, parser):
-        '''OptionParser callback to handle comma-separated arguments.'''
-        values = value.split(',')
+        """OptionParser callback to handle comma-separated arguments."""
+        values = value.split(",")
         try:
             getattr(parser.values, option.dest).extend(values)
         except AttributeError:
             setattr(parser.values, option.dest, values)
 
-    parser = OptionParser(usage='%prog [options] [acls]',
-                          description=__doc__.lstrip())
-    parser.add_option('-f', '--file',
-                      help='specify explicit list of devices')
-    parser.add_option('-Q', '--queue', action='store_true',
-                      help='load ACLs from integrated load queue')
-    parser.add_option('-q', '--quiet', action='store_true',
-                      help='suppress all standard output; errors/warnings still display')
-    parser.add_option('--exclude', '--except', type='string',
-                      action='callback', callback=comma_cb, dest='exclude', default=[],
-                      help='skip over ACLs or devices; shell-type patterns '
-                           '(e.g., "iwg?-[md]*") can be used for devices; for '
-                           'multiple excludes, use commas or give this option '
-                           'more than once')
-    parser.add_option('-j', '--jobs', type='int', default=5,
-                      help='maximum simultaneous connections (default 5)')
+    parser = OptionParser(usage="%prog [options] [acls]", description=__doc__.lstrip())
+    parser.add_option("-f", "--file", help="specify explicit list of devices")
+    parser.add_option(
+        "-Q",
+        "--queue",
+        action="store_true",
+        help="load ACLs from integrated load queue",
+    )
+    parser.add_option(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="suppress all standard output; errors/warnings still display",
+    )
+    parser.add_option(
+        "--exclude",
+        "--except",
+        type="string",
+        action="callback",
+        callback=comma_cb,
+        dest="exclude",
+        default=[],
+        help="skip over ACLs or devices; shell-type patterns "
+        '(e.g., "iwg?-[md]*") can be used for devices; for '
+        "multiple excludes, use commas or give this option "
+        "more than once",
+    )
+    parser.add_option(
+        "-j",
+        "--jobs",
+        type="int",
+        default=5,
+        help="maximum simultaneous connections (default 5)",
+    )
     # Booleans below
-    parser.add_option('-e', '--escalation', '--escalated', action='store_true',
-                      help='load escalated ACLs from integrated load queue')
-    parser.add_option('--severed-head', action='store_true',
-                      help='display severed head')
-    parser.add_option('--no-db', action='store_true',
-                      help='disable database access (for outages)')
-    parser.add_option('--bouncy', action='store_true',
-                      help='load out of bounce (override checks)')
-    parser.add_option('--no-vip', action='store_true',
-                      help='TFTP from green address, not blue VIP')
-    parser.add_option('--bulk', action='store_true',
-                      help='force all loads to be treated as bulk, restricting '
-                            'the amount of devices that will be loaded per '
-                            'execution of load_acl.')
-    parser.add_option('--no-cm', action='store_true',
-                      help='do not open up a CM ticket for this load')
-    parser.add_option('--no-curses', action='store_true',
-                      help='do not use ncurses output; output everything line-by-line in a log format')
-    parser.add_option('--auto', action='store_true',
-                      help='automatically proceed with loads; for use with cron; assumes -q')
+    parser.add_option(
+        "-e",
+        "--escalation",
+        "--escalated",
+        action="store_true",
+        help="load escalated ACLs from integrated load queue",
+    )
+    parser.add_option(
+        "--severed-head", action="store_true", help="display severed head"
+    )
+    parser.add_option(
+        "--no-db", action="store_true", help="disable database access (for outages)"
+    )
+    parser.add_option(
+        "--bouncy", action="store_true", help="load out of bounce (override checks)"
+    )
+    parser.add_option(
+        "--no-vip", action="store_true", help="TFTP from green address, not blue VIP"
+    )
+    parser.add_option(
+        "--bulk",
+        action="store_true",
+        help="force all loads to be treated as bulk, restricting "
+        "the amount of devices that will be loaded per "
+        "execution of load_acl.",
+    )
+    parser.add_option(
+        "--no-cm", action="store_true", help="do not open up a CM ticket for this load"
+    )
+    parser.add_option(
+        "--no-curses",
+        action="store_true",
+        help="do not use ncurses output; output everything line-by-line in a log format",
+    )
+    parser.add_option(
+        "--auto",
+        action="store_true",
+        help="automatically proceed with loads; for use with cron; assumes -q",
+    )
 
     opts, args = parser.parse_args(argv)
 
@@ -220,15 +263,15 @@ def parse_args(argv):
         sys.stdout = NullDevice()
     if opts.bouncy:
         opts.jobs = 1
-        print('Bouncy enabled, disabling multiple jobs.')
-        log.msg('Bouncy enabled, disabling multiple jobs.')
+        print("Bouncy enabled, disabling multiple jobs.")
+        log.msg("Bouncy enabled, disabling multiple jobs.")
 
     return opts, args
 
 
 def debug_fakeout():
     """Used for debug, but this method is rarely used."""
-    return os.getenv('DEBUG_FAKEOUT') is not None
+    return os.getenv("DEBUG_FAKEOUT") is not None
 
 
 def get_work(opts, args):
@@ -243,8 +286,10 @@ def get_work(opts, args):
     :param args:
         A list of CLI arguments
     """
-    #removing acl. assumption from files
-    aclargs = set(args[1:]) #set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
+    # removing acl. assumption from files
+    aclargs = set(
+        args[1:]
+    )  # set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
 
     work = {}
     bulk_acls = get_bulk_acls()
@@ -256,7 +301,7 @@ def get_work(opts, args):
         try:
             dev = nd[dev_name]
         except KeyError:
-            sys.stderr.write('WARNING: device %s not found' % dev_name)
+            sys.stderr.write("WARNING: device %s not found" % dev_name)
             return
         try:
             work[dev] |= set(acls)
@@ -294,19 +339,18 @@ def get_work(opts, args):
             if acl in settings.AUTOLOAD_FILTER_THRESH:
                 thresh_counts[acl] += 1
                 if thresh_counts[acl] >= settings.AUTOLOAD_FILTER_THRESH[acl]:
-                    print('adding', router, acl, ' to AUTOLOAD_BLACKLIST')
+                    print("adding", router, acl, " to AUTOLOAD_BLACKLIST")
                     log.msg("Adding %s to AUTOLOAD_BLACKLIST" % acl)
                     settings.AUTOLOAD_BLACKLIST.append(acl)
 
         for router, acl in all_sql_data:
             if not aclargs or acl in aclargs:
                 if opts.auto:
-
                     ## check autoload blacklist
                     if acl not in settings.AUTOLOAD_BLACKLIST:
                         add_work(router, [acl])
                     else:
-                        #filtered_acls = True
+                        # filtered_acls = True
                         filtered_acls.add(acl)
                 else:
                     add_work(router, [acl])
@@ -320,7 +364,7 @@ def get_work(opts, args):
         not_found = list(aclargs - found)
         if not_found:
             not_found.sort()
-            sys.stderr.write('No devices found for %s\n' % ', '.join(not_found))
+            sys.stderr.write("No devices found for %s\n" % ", ".join(not_found))
             sys.exit(1)
 
     # Process --bulk.  Only if not --bouncy.
@@ -329,11 +373,13 @@ def get_work(opts, args):
 
     # Process --exclude.
     if opts.exclude:
-        #print 'stuff'
+        # print 'stuff'
         exclude = set(opts.exclude)
         for dev in work.keys():
             for ex in exclude:
-                if fnmatch.fnmatchcase(dev.nodeName, ex) or dev.nodeName.startswith(ex+'.'):
+                if fnmatch.fnmatchcase(dev.nodeName, ex) or dev.nodeName.startswith(
+                    ex + "."
+                ):
                     del work[dev]
                     break
         for dev, acls in work.items():
@@ -343,31 +389,35 @@ def get_work(opts, args):
 
     # Check bounce windows, and filter or warn.
     now = datetime.datetime.now(tz=pytz.UTC)
-    next_ok = dict([(dev, dev.next_ok('load-acl', now)) for dev in work])
+    next_ok = dict([(dev, dev.next_ok("load-acl", now)) for dev in work])
     bouncy_devs = [dev for dev, when in next_ok.items() if when > now]
     if bouncy_devs:
         bouncy_devs.sort()
         print()
         if opts.bouncy:
             for dev in bouncy_devs:
-                dev_acls = ', '.join(work[dev])
-                print('Loading %s OUT OF BOUNCE on %s' % (dev_acls, dev))
-                log.msg('Loading %s OUT OF BOUNCE on %s' % (dev_acls, dev))
+                dev_acls = ", ".join(work[dev])
+                print("Loading %s OUT OF BOUNCE on %s" % (dev_acls, dev))
+                log.msg("Loading %s OUT OF BOUNCE on %s" % (dev_acls, dev))
         else:
             for dev in bouncy_devs:
-                dev_acls = ', '.join(work[dev])
-                print('Skipping %s on %s (window starts at %s)' % \
-                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev])))
-                log.msg('Skipping %s on %s (window starts at %s)' % \
-                        (dev_acls, dev.nodeName.split('.')[0], pretty_time(next_ok[dev])))
+                dev_acls = ", ".join(work[dev])
+                print(
+                    "Skipping %s on %s (window starts at %s)"
+                    % (dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]))
+                )
+                log.msg(
+                    "Skipping %s on %s (window starts at %s)"
+                    % (dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]))
+                )
                 del work[dev]
-            print('\nUse --bouncy to forcefully load on these devices anyway.')
+            print("\nUse --bouncy to forcefully load on these devices anyway.")
         print
 
     # Display filtered acls
     for a in filtered_acls:
-        print('%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a)
-        log.msg('%s is in AUTOLOAD_BLACKLIST; not added to work queue.' % a)
+        print("%s is in AUTOLOAD_BLACKLIST; not added to work queue." % a)
+        log.msg("%s is in AUTOLOAD_BLACKLIST; not added to work queue." % a)
 
     return work
 
@@ -383,28 +433,28 @@ def junoscript_cmds(acls_content, tftp_paths, dev):
     :param dev:
         A Juniper `~trigger.netdevices.NetDevice` object
     """
-    xml = [Element('lock-configuration')]
-    status = ['locking configuration']
+    xml = [Element("lock-configuration")]
+    status = ["locking configuration"]
 
     for i, acl_content in enumerate(acls_content):
-        lc = Element('load-configuration', action='replace', format='text')
-        body = SubElement(lc, 'configuration-text')
+        lc = Element("load-configuration", action="replace", format="text")
+        body = SubElement(lc, "configuration-text")
         body.text = acl_content
         xml.append(lc)
-        status.append('loading ACL ' + tftp_paths[i]) #acl)
+        status.append("loading ACL " + tftp_paths[i])  # acl)
 
     # Add the proper commit command
     xml.extend(dev.commit_commands)
-    status.append('committing for ' + ','.join(tftp_paths)) #acls))
-    status.append('done for' + ','.join(tftp_paths) )
+    status.append("committing for " + ",".join(tftp_paths))  # acls))
+    status.append("done for" + ",".join(tftp_paths))
 
     if debug_fakeout():
-        xml = [Element('get-software-information')] * (len(status) - 1)
+        xml = [Element("get-software-information")] * (len(status) - 1)
 
     return xml, status
 
 
-def ioslike_cmds(tftp_paths, dev, opts): #, nonce):
+def ioslike_cmds(tftp_paths, dev, opts):  # , nonce):
     """
     Return a list of IOS-like commands to load the given ACLs, and a matching
     list of tuples (acls remaining, human-readable status message).
@@ -419,25 +469,28 @@ def ioslike_cmds(tftp_paths, dev, opts): #, nonce):
         A nonce to use when staging the ACL file for TFTP
     """
     template_base = {
-        'arista': 'copy tftp://%s/%s system:/running-config\n',
-        'cisco': 'copy tftp://%s/%s system:/running-config\n',
-        'dell': 'copy tftp://%s/%s running-config\n',
-        'brocade': 'copy tftp run %s %s\n',
-        'foundry': 'copy tftp run %s %s\n',
-        'force10': 'copy tftp://%s/%s running-config\n',
+        "arista": "copy tftp://%s/%s system:/running-config\n",
+        "cisco": "copy tftp://%s/%s system:/running-config\n",
+        "dell": "copy tftp://%s/%s running-config\n",
+        "brocade": "copy tftp run %s %s\n",
+        "foundry": "copy tftp run %s %s\n",
+        "force10": "copy tftp://%s/%s running-config\n",
     }
 
     template = template_base[dev.vendor.name]
-    cmds = [template % (get_tftp_source(dev=dev, no_vip=opts.no_vip), path) for path in tftp_paths]
-    status = ['loading ACL ' + path for path in tftp_paths]  #this will print more info
+    cmds = [
+        template % (get_tftp_source(dev=dev, no_vip=opts.no_vip), path)
+        for path in tftp_paths
+    ]
+    status = ["loading ACL " + path for path in tftp_paths]  # this will print more info
 
     # Add the proper write mem command
     cmds.extend(dev.commit_commands)
-    status.append('saving config for ' + ','.join(tftp_paths)) #acls))
-    status.append('done for ' + ','.join(tftp_paths)) #acls))
+    status.append("saving config for " + ",".join(tftp_paths))  # acls))
+    status.append("done for " + ",".join(tftp_paths))  # acls))
 
     if debug_fakeout():
-        cmds = ['show ver'] * (len(status) - 1)
+        cmds = ["show ver"] * (len(status) - 1)
 
     return cmds, status
 
@@ -452,7 +505,7 @@ def group(dev):
         The `~trigger.netdevices.NetDevice` object to try to group
     """
     # TODO(jathan): Make this pattern configurable globally.
-    trimmer = re.compile('[0-9]*[a-z]+')   # allow for e.g. "36bit1"
+    trimmer = re.compile("[0-9]*[a-z]+")  # allow for e.g. "36bit1"
 
     # Try to match on nodeName, and if we don't (such as if it's an IP
     # address), just skip grouping.
@@ -464,8 +517,8 @@ def group(dev):
 
     # FIXME(jathan): This is some hard-coded AOL-specific legacy stuff that
     # will probably work for most environments, but it's awfully presumptuous.
-    if len(group_key) >= 4 and group_key[-1] not in ('i', 'e'):
-        group_key = group_key[:-1] + 'X'
+    if len(group_key) >= 4 and group_key[-1] not in ("i", "e"):
+        group_key = group_key[:-1] + "X"
 
     return (dev.site, group_key)
 
@@ -525,7 +578,7 @@ def activate(work, active, failures, jobs, redraw, opts):
         acls = work[dev]
         del work[dev]
 
-        sanitize_acl = (dev.vendor == 'brocade')
+        sanitize_acl = dev.vendor == "brocade"
 
         status = []
         cmds = []
@@ -556,7 +609,7 @@ def activate(work, active, failures, jobs, redraw, opts):
 
         def stage_acls_cb(unused, dev, acls, log, sanitize_acl):
             # Wrapper for stage_acls; result is unused
-            active[dev] = 'staging acls'
+            active[dev] = "staging acls"
             return stage_acls(acls, log, sanitize_acl)
 
         def check_failure(result, dev):
@@ -566,8 +619,8 @@ def activate(work, active, failures, jobs, redraw, opts):
                 log.msg("STAGING FAILED:", fails)
                 raise exceptions.ACLStagingFailed(fails)
 
-            active[dev] = 'connecting'
-            if dev.vendor == 'juniper':
+            active[dev] = "connecting"
+            if dev.vendor == "juniper":
                 cmds, status = junoscript_cmds(acl_contents, tftp_paths, dev)
             else:
                 cmds, status = ioslike_cmds(tftp_paths, dev, opts)
@@ -590,8 +643,10 @@ def activate(work, active, failures, jobs, redraw, opts):
             # Lambda function to call update_board() with proper args
             incremental = lambda x: update_board(x, dev, status)
 
-            if dev.vendor in ('brocade', 'foundry'):
-                handled_second = dev.execute(cmds, incremental=incremental, command_interval=1)
+            if dev.vendor in ("brocade", "foundry"):
+                handled_second = dev.execute(
+                    cmds, incremental=incremental, command_interval=1
+                )
             else:
                 handled_second = dev.execute(cmds, incremental=incremental)
             handled_second.addCallback(complete, dev, acls)
@@ -625,6 +680,7 @@ def run(stdscr, work, jobs, failures, opts):
 
     start_qlen = len(work)
     start_time = time.time()
+
     def redraw():
         """A closure to redraw the screen with current environment"""
         draw_screen(stdscr, work, active, failures, start_qlen, start_time)
@@ -648,72 +704,75 @@ def main():
         sys.exit(0)
     if opts.auto:
         opts.no_curses = True
-        opts.queue     = True
+        opts.queue = True
 
     global queue
     if opts.no_db:
         queue = None
 
     if (not opts.auto) or (not opts.quiet):
-        print('Logging to', tmpfile)
+        print("Logging to", tmpfile)
 
     # Where the magic happens
     work = get_work(opts, args)
 
     if not work:
         if not opts.auto:
-            print('Nothing to load.')
-        log.msg('Nothing to load.')
+            print("Nothing to load.")
+        log.msg("Nothing to load.")
         sys.exit(0)
 
-    print('You are about to perform the following loads:')
-    print('')
+    print("You are about to perform the following loads:")
+    print("")
     devs = work.items()
     devs.sort()
     for dev, acls in devs:
         acls = list(work[dev])
         acls.sort()
-        print('%-32s %s' % (dev, ' '.join(acls)))
+        print("%-32s %s" % (dev, " ".join(acls)))
     acl_count = len(acls)
-    print('')
+    print("")
     if debug_fakeout():
-        print('DEBUG FAKEOUT ENABLED')
+        print("DEBUG FAKEOUT ENABLED")
         failures = {}
         run(None, work, opts.jobs, failures, opts)
         sys.exit(1)
 
     if not opts.auto:
         if opts.bouncy:
-            print('NOTE: Parallel jobs disabled for out of bounce loads, this will take longer than usual.')
+            print(
+                "NOTE: Parallel jobs disabled for out of bounce loads, this will take longer than usual."
+            )
             print()
 
-        confirm = raw_input('Are you sure you want to proceed? ')
-        if not confirm.lower().startswith('y'):
-            print('LOAD CANCELLED')
-            log.msg('LOAD CANCELLED')
+        confirm = raw_input("Are you sure you want to proceed? ")
+        if not confirm.lower().startswith("y"):
+            print("LOAD CANCELLED")
+            log.msg("LOAD CANCELLED")
             sys.exit(1)
-        print('')
+        print("")
         # Don't let the credential prompts get hidden behind curses
         populate_tacacrc = Tacacsrc()
     else:
-        log.msg('Auto option thrown, checking if credential file exists')
+        log.msg("Auto option thrown, checking if credential file exists")
         tacacsrc_file = settings.TACACSRC
         if not os.path.exists(tacacsrc_file):
-            log.msg('No %s file exists and auto option enabled.' % tacacsrc_file)
+            log.msg("No %s file exists and auto option enabled." % tacacsrc_file)
             sys.exit(1)
-        log.msg('Credential file %s exists, moving on' % tacacsrc_file)
+        log.msg("Credential file %s exists, moving on" % tacacsrc_file)
 
     cm_ticketnum = 0
     if not opts.no_cm and not debug_fakeout():
         oncall = get_current_oncall()
         if not oncall:
             if opts.auto:
-                send_notification("LOAD_ACL FAILURE",
-                                  "Unable to get current ON-CALL information!")
+                send_notification(
+                    "LOAD_ACL FAILURE", "Unable to get current ON-CALL information!"
+                )
             log.err("Unable to get on-call information!", logLevel=logging.CRITICAL)
             sys.exit(1)
 
-        print('\nSubmitting CM ticket...')
+        print("\nSubmitting CM ticket...")
         # catch failures to create a ticket
         try:
             cm_ticketnum = create_cm_ticket(work, oncall)
@@ -764,21 +823,28 @@ def main():
 
     if opts.auto:
         if failed_count:
-            send_notification("LOAD_ACL FAILURE",
-                              "%d ACLS failed to load! See logfile: %s on jumphost." %
-                              (failed_count, tmpfile))
+            send_notification(
+                "LOAD_ACL FAILURE",
+                "%d ACLS failed to load! See logfile: %s on jumphost."
+                % (failed_count, tmpfile),
+            )
         else:
-            send_email(settings.SUCCESS_EMAILS, "LOAD ACL SUCCESS!",
-                       "%d acls loaded successfully! see log file: %s" % (acl_count,
-                       tmpfile), settings.EMAIL_SENDER)
-
+            send_email(
+                settings.SUCCESS_EMAILS,
+                "LOAD ACL SUCCESS!",
+                "%d acls loaded successfully! see log file: %s" % (acl_count, tmpfile),
+                settings.EMAIL_SENDER,
+            )
 
     log.msg("%d failures" % failed_count)
-    log.msg('Elapsed time: %s' % min_sec(time.time() - start))
+    log.msg("Elapsed time: %s" % min_sec(time.time() - start))
 
 
-if __name__ == '__main__':
-    tmpfile = tempfile.mktemp()+'_load_acl'
-    log.startLogging(open(tmpfile, 'a'), setStdout=False)
-    log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
+if __name__ == "__main__":
+    tmpfile = tempfile.mktemp() + "_load_acl"
+    log.startLogging(open(tmpfile, "a"), setStdout=False)
+    log.msg(
+        'User %s (uid:%d) executed "%s"'
+        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv))
+    )
     main()

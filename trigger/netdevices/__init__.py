@@ -870,9 +870,7 @@ class NetDevice(object):
         print("\tOwning Team:      ", dev.owningTeam)
         print("\tOnCall Team:      ", dev.onCallName)
         print()
-        print(
-            "\tVendor:           ", "%s (%s)" % (dev.vendor.title, dev.manufacturer)
-        )
+        print("\tVendor:           ", "%s (%s)" % (dev.vendor.title, dev.manufacturer))
         # print '\tManufacturer:     ', dev.manufacturer
         print("\tMake:             ", dev.make)
         print("\tModel:            ", dev.model)

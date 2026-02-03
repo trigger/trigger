@@ -7,7 +7,7 @@ find_access - Like check_access but reports on networks inside of networks.
 
 from __future__ import print_function
 
-__version__ = '1.6'
+__version__ = "1.6"
 
 from optparse import OptionParser
 from simpleparse.error import ParserSyntaxError
@@ -16,8 +16,11 @@ from trigger.acl.parser import parse, TIP
 
 
 def parse_args(argv):
-    parser = OptionParser(usage='%prog [options] [acls]', add_help_option=False,
-        description = 'a more detailed varient of check_access.')
+    parser = OptionParser(
+        usage="%prog [options] [acls]",
+        add_help_option=False,
+        description="a more detailed varient of check_access.",
+    )
     desc = """
 This is used more for reporting purposes. Currently check_access will do the
 right thing for finding access that is requested, but lacks the ability to
@@ -38,17 +41,28 @@ would be reported on.
 This works in reverse, if the input is 172.16.1.0/24 and a term contains
 172.16.0.0/16 this access is reported.\n"""
 
-    parser.add_option('-h', '--help', action='store_true')
-    parser.add_option('-s', '--source-network', help = \
-        'Supply a source network to find')
-    parser.add_option('-d', '--destination-network', help = \
-        'Supply a destination network to find')
-    parser.add_option('-p', '--ports', help = \
-        'Specify a set of ports comma seperated, allows for ranges')
-    parser.add_option('-S', '--no-any-source', action='store_true', help = \
-        'Do not include terms with source-address of "any"')
-    parser.add_option('-D', '--no-any-destination', action='store_true', help = \
-        'Do not include terms with destination-address of "any"')
+    parser.add_option("-h", "--help", action="store_true")
+    parser.add_option("-s", "--source-network", help="Supply a source network to find")
+    parser.add_option(
+        "-d", "--destination-network", help="Supply a destination network to find"
+    )
+    parser.add_option(
+        "-p",
+        "--ports",
+        help="Specify a set of ports comma seperated, allows for ranges",
+    )
+    parser.add_option(
+        "-S",
+        "--no-any-source",
+        action="store_true",
+        help='Do not include terms with source-address of "any"',
+    )
+    parser.add_option(
+        "-D",
+        "--no-any-destination",
+        action="store_true",
+        help='Do not include terms with destination-address of "any"',
+    )
 
     opts, args = parser.parse_args(argv)
 
@@ -70,14 +84,13 @@ def match_term(term, data, type, opts):
     if not data or not term.match.has_key(type):
         return True
 
-    if 'port' in type:
+    if "port" in type:
         for port in data:
             if port in term.match[type]:
                 return True
         return False
 
     for data_in_term in term.match[type]:
-
         for data_entry in data:
             if data_entry in data_in_term or data_in_term in data_entry:
                 return True
@@ -90,12 +103,12 @@ def match_terms(acl, sources, dests, ports, opts):
 
     for term in acl.terms:
         matched_sources = False
-        matched_dests   = False
-        matched_ports   = False
+        matched_dests = False
+        matched_ports = False
 
-        matched_sources = match_term(term, sources, 'source-address', opts)
-        matched_dests   = match_term(term, dests, 'destination-address', opts)
-        matched_ports   = match_term(term, ports, 'destination-port', opts)
+        matched_sources = match_term(term, sources, "source-address", opts)
+        matched_dests = match_term(term, dests, "destination-address", opts)
+        matched_ports = match_term(term, ports, "destination-port", opts)
 
         if matched_sources and matched_dests and matched_ports:
             matched.append(term)
@@ -105,35 +118,35 @@ def match_terms(acl, sources, dests, ports, opts):
 
 def permits_from_any(term):
     """Returns True if action is "accept" and term has no 'source-address'"""
-    return term.action[0] == 'accept' and not term.match.get('source-address')
+    return term.action[0] == "accept" and not term.match.get("source-address")
 
 
 def any_source(term):
     """Returns True term has no 'source-address'"""
-    return not term.match.get('source-address')
+    return not term.match.get("source-address")
 
 
 def any_dest(term):
     """Returns True term has no 'destination-address'"""
-    return not term.match.get('destination-address')
+    return not term.match.get("destination-address")
 
 
 def do_work(acl_files, opts):
     acl_file_data = {}
     sources = []
-    dests   = []
-    ports   = []
+    dests = []
+    ports = []
 
     if opts.source_network:
-        for x in opts.source_network.split(','):
+        for x in opts.source_network.split(","):
             sources.append(TIP(x))
 
     if opts.destination_network:
-        for x in opts.destination_network.split(','):
+        for x in opts.destination_network.split(","):
             dests.append(TIP(x))
 
     if opts.ports:
-        for x in opts.ports.split(','):
+        for x in opts.ports.split(","):
             ports.append(int(x))
 
     for acl_file in acl_files:
@@ -145,8 +158,8 @@ def do_work(acl_files, opts):
 
         matching_terms = match_terms(acl, sources, dests, ports, opts)
 
-        acl.filename = acl_file # Store this for a hot minute
-        acl.terms = [] # Nuke this in case it's huge
+        acl.filename = acl_file  # Store this for a hot minute
+        acl.terms = []  # Nuke this in case it's huge
         acl_file_data[acl] = matching_terms
 
     return acl_file_data
@@ -155,11 +168,11 @@ def do_work(acl_files, opts):
 def print_report(data):
     for aclobj, terms in data.items():
         print(aclobj.filename)
-        print('=================================================')
+        print("=================================================")
         for term in terms:
             for o in term.output(format=aclobj.format, acl_name=aclobj.name):
                 print(o)
-        print('')
+        print("")
 
 
 def main():
@@ -168,13 +181,12 @@ def main():
 
     acls_to_check = args[1:]
 
-    if not opts.source_network and not \
-      opts.destination_network or not acls_to_check:
+    if not opts.source_network and not opts.destination_network or not acls_to_check:
         sys.exit("ERROR: No source or destination networks defined. Try -h for help.")
 
     data = do_work(acls_to_check, opts)
     print_report(data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

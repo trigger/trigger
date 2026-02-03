@@ -10,7 +10,7 @@ Partially adapted from conch.  See twisted.conch.scripts.conch and
 http://twistedmatrix.com/projects/conch/documentation/howto/conch_client.html
 """
 
-__version__ = '2.0'
+__version__ = "2.0"
 
 from optparse import OptionParser
 import os
@@ -20,16 +20,21 @@ from trigger.netdevices import device_match
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
+
 settings.WITH_ACLS = False
 
 
 def parse_args(argv):
-    parser = OptionParser(usage='%prog [options] [device]', description='''\
+    parser = OptionParser(
+        usage="%prog [options] [device]",
+        description="""\
 Automatically log into network devices using cached TACACS credentials.
-''')
+""",
+    )
 
-    parser.add_option('-o', '--oob', action='store_true',
-        help='Connect to device out of band first.')
+    parser.add_option(
+        "-o", "--oob", action="store_true", help="Connect to device out of band first."
+    )
 
     opts, args = parser.parse_args(argv)
 
@@ -46,7 +51,7 @@ def connect_to_oob(dev):
 
     print("OOB Information for %s:" % dev.nodeName)
     print(tn)
-    print('Connecting you now...')
+    print("Connecting you now...")
     os.system(tn)
 
 
@@ -55,7 +60,7 @@ def main():
     global opts
     opts, args = parse_args(sys.argv)
 
-    if os.getenv('DEBUG') is not None:
+    if os.getenv("DEBUG") is not None:
         log.startLogging(sys.stdout, setStdout=False)
 
     # Exception handling is done in device_match, returns None if no match.
@@ -63,8 +68,8 @@ def main():
     if dev is None:
         return 2
 
-    if dev.adminStatus != 'PRODUCTION':
-        print('WARNING: You are connecting to a non-production device.')
+    if dev.adminStatus != "PRODUCTION":
+        print("WARNING: You are connecting to a non-production device.")
 
     if opts.oob:
         connect_to_oob(dev)
@@ -73,9 +78,9 @@ def main():
     # Connect to the device... and make sure to capture its exit code
     retval = dev.connect()
 
-    print('\n')  # Return cursor to beginning of line
+    print("\n")  # Return cursor to beginning of line
     return retval
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

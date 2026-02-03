@@ -12,6 +12,7 @@ __copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
 
 from base64 import decodebytes as decodestring, encodebytes as encodestring
 from collections import namedtuple
+
 # Python 3: distutils deprecated, use packaging instead
 from packaging.version import Version
 import getpass
@@ -24,6 +25,7 @@ from trigger.conf import settings
 
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from cryptography.hazmat.primitives import ciphers
+
 # Python 3 / cryptography 48+: TripleDES moved to decrepit module
 try:
     from cryptography.hazmat.decrepit.ciphers.algorithms import TripleDES
@@ -317,7 +319,7 @@ class Tacacsrc(object):
 
                 # Python 3 requires encoding string to bytes before hashing
                 if isinstance(passphrase, str):
-                    passphrase = passphrase.encode('utf-8')
+                    passphrase = passphrase.encode("utf-8")
                 key = hashlib.md5(passphrase).hexdigest()[:24]  # 24 bytes
                 self.key = key
             # Otherwise read from keyfile.
@@ -439,8 +441,8 @@ class Tacacsrc(object):
     def _encrypt_old(self, s):
         """Encodes using the old method. Adds a newline for you."""
         # Ensure key and plaintext are bytes for cryptography library
-        key = self.key if isinstance(self.key, bytes) else self.key.encode('latin-1')
-        plaintext = s if isinstance(s, bytes) else s.encode('latin-1')
+        key = self.key if isinstance(self.key, bytes) else self.key.encode("latin-1")
+        plaintext = s if isinstance(s, bytes) else s.encode("latin-1")
 
         des = TripleDES(key)
         cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
@@ -455,21 +457,23 @@ class Tacacsrc(object):
 
         # We need to return a newline if a field is empty so as not to break
         # .tacacsrc parsing (trust me, this is easier)
-        return (encodestring(cipher_text).decode('ascii').replace("\n", "") or "") + "\n"
+        return (
+            encodestring(cipher_text).decode("ascii").replace("\n", "") or ""
+        ) + "\n"
 
     def _decrypt_old(self, s):
         """Decodes using the old method. Strips newline for you."""
         # Ensure key is bytes for cryptography library
-        key = self.key if isinstance(self.key, bytes) else self.key.encode('latin-1')
+        key = self.key if isinstance(self.key, bytes) else self.key.encode("latin-1")
         des = TripleDES(key)
         cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
         decryptor = cipher.decryptor()
         # Ensure s is bytes for base64.decodebytes
-        s_bytes = s if isinstance(s, bytes) else s.encode('ascii')
+        s_bytes = s if isinstance(s, bytes) else s.encode("ascii")
         # rstrip() to undo space-padding; unfortunately this means that
         # passwords cannot end in spaces.
         plaintext = decryptor.update(decodestring(s_bytes)) + decryptor.finalize()
-        return plaintext.rstrip(b" ").decode('latin-1')
+        return plaintext.rstrip(b" ").decode("latin-1")
 
     def _read_file_old(self):
         """Read old style file and return the raw data."""

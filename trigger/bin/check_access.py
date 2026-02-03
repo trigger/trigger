@@ -5,7 +5,7 @@
 check_access - Determines whether access is permitted by a given ACL.
 """
 
-__version__ = '1.2'
+__version__ = "1.2"
 
 import optparse
 import sys
@@ -17,27 +17,29 @@ from trigger.acl.tools import check_access, create_trigger_term
 
 def main():
     """Main entry point for the CLI tool."""
-    optp = optparse.OptionParser(description='''\
+    optp = optparse.OptionParser(
+        description="""\
 Determine whether access is permitted by a given ACL.  Exits 0 if permitted,
 1 if edits are needed. Lists the terms that apply and what edits are needed.
 Note that in order for the suggested edits feature to work, your policy must
-end with an explicit deny.''',
-        usage='%prog [opts] file source dest [protocol [port]]')
-    optp.add_option('-q', '--quiet', action='store_true', help='suppress output')
+end with an explicit deny.""",
+        usage="%prog [opts] file source dest [protocol [port]]",
+    )
+    optp.add_option("-q", "--quiet", action="store_true", help="suppress output")
     (opts, args) = optp.parse_args()
 
     if not 3 <= len(args) <= 5:
-        optp.error('not enough arguments')
+        optp.error("not enough arguments")
 
     acl_file = args[0]
 
     source = dest = protocol = port = []
 
-    if args[1] == 'any':
+    if args[1] == "any":
         source = []
     else:
         source = [TIP(args[1])]
-    if args[2] == 'any':
+    if args[2] == "any":
         dest = []
     else:
         dest = [TIP(args[2])]
@@ -47,7 +49,7 @@ end with an explicit deny.''',
         port = []
     elif len(args) == 4:
         try:
-            protocol = [Protocol('tcp')]
+            protocol = [Protocol("tcp")]
             port = [int(args[3])]
         except ValueError:
             protocol = [Protocol(args[3])]
@@ -62,23 +64,24 @@ end with an explicit deny.''',
         source_ports=[],
         dest_ports=port,
         protocols=protocol,
-        name='sr_____',
+        name="sr_____",
     )
-    new_term.modifiers['count'] = 'sr_____'
-    new_term.comments.append(Comment('check_access: ADD THIS TERM'))
+    new_term.modifiers["count"] = "sr_____"
+    new_term.comments.append(Comment("check_access: ADD THIS TERM"))
 
     try:
         acl = parse(open(acl_file))
         permitted = None
     except ParserSyntaxError as e:
         etxt = str(e).split()
-        sys.exit('Cannot parse %s:' % acl_file + ' '.join(etxt[1:]))
+        sys.exit("Cannot parse %s:" % acl_file + " ".join(etxt[1:]))
 
-    permitted = check_access(acl.terms, new_term, opts.quiet, format=acl.format,
-                             acl_name=acl.name)
+    permitted = check_access(
+        acl.terms, new_term, opts.quiet, format=acl.format, acl_name=acl.name
+    )
 
     if permitted and not opts.quiet:
-        print('No edits needed.')
+        print("No edits needed.")
 
     if permitted:
         sys.exit(0)
@@ -86,5 +89,5 @@ end with an explicit deny.''',
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

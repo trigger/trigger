@@ -329,7 +329,7 @@ rules.update(
         "junos_filter_family": ('"family", ws, junos_family_type'),
         "junos_family_type": ('"inet" / "inet6" / "ethernet-switching"'),
         "opaque_braced_group": (
-            '"{", jws?, (jword / "[" / "]" / ";" / ' 'opaque_braced_group / jws)*, "}"',
+            '"{", jws?, (jword / "[" / "]" / ";" / opaque_braced_group / jws)*, "}"',
             lambda x: x,
         ),
         S("junos_term"): (
@@ -358,7 +358,7 @@ rules.update(
             '"then", jws?, ' + braced_list("junos_policer_action, jsemi")
         ),
         S("junos_policer_action"): (
-            "junos_discard / junos_fwd_class / " '("loss-priority", jws, jword)',
+            'junos_discard / junos_fwd_class / ("loss-priority", jws, jword)',
             lambda x: {"action": x},
         ),
         "junos_discard": ('"discard"'),
@@ -394,9 +394,7 @@ rules.update(
             "junos_reject_action / junos_ri_action",
             lambda x: {"action": x[0]},
         ),
-        "junos_one_action": (
-            '"accept" / "discard" / "reject" / ' '("next", jws, "term")'
-        ),
+        "junos_one_action": ('"accept" / "discard" / "reject" / ("next", jws, "term")'),
         "junos_reject_action": (
             '"reject", jws, ' + literals(icmp_reject_codes),
             lambda x: ("reject", x),
@@ -415,7 +413,7 @@ rules.update(
         ),
         S("junos_arg_modifier"): "junos_arg_modifier_kw, jws, jword",
         "junos_arg_modifier_kw": (
-            '"count" / "forwarding-class" / "ipsec-sa" /' '"loss-priority" / "policer"'
+            '"count" / "forwarding-class" / "ipsec-sa" /"loss-priority" / "policer"'
         ),
     }
 )

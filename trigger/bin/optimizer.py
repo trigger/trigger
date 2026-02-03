@@ -9,7 +9,7 @@ various algorithms to determine which filters can be merged
 and removed.
 """
 
-__version__ = '1.5'
+__version__ = "1.5"
 
 import copy
 import datetime
@@ -26,20 +26,20 @@ stop_all = False
 
 # Logger
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s]: %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s"
 )
 log = logging.getLogger(__name__)
 
 
-def sig_handler(s,d):
+def sig_handler(s, d):
     global stop_all
     stop_all = True
 
 
 def parse_args(argv):
-    parser = OptionParser(usage='%prog [options] [acls]',
-        description='''ACL Optimizer
+    parser = OptionParser(
+        usage="%prog [options] [acls]",
+        description="""ACL Optimizer
 
 Optimizes filters (usually best on Juniper filters) using
 various algorithms to determine which filters can be merged
@@ -57,37 +57,69 @@ It is suggested that the focus argument should be used if
 such an acl is needed to be optimized.
 
 This will output to a file: <original_acl_filename>.optimized
-    ''')
+    """,
+    )
 
-    parser.add_option('-p', '--passes', type='int', default=0,
-        help = '''The number of passes the optimizer should make.
+    parser.add_option(
+        "-p",
+        "--passes",
+        type="int",
+        default=0,
+        help="""The number of passes the optimizer should make.
 
 By defaut the optimizer will continue to make more passes until
 no more optimizations can be made. Specify this to limit this.
-    ''')
-    parser.add_option('-f', '--focus', type='int', default=0,
-        help = '''Focus on a specific set of terms based on the
+    """,
+    )
+    parser.add_option(
+        "-f",
+        "--focus",
+        type="int",
+        default=0,
+        help="""Focus on a specific set of terms based on the
 number of destination ports found. This will count the number
 of destination ports, and if the port count is over X, the terms
 in which this port was found will be accounted for in its optimization
 checks. All other terms will be left alone. By default this feature
 is set to 0 (or off).
-        ''')
+        """,
+    )
 
-    parser.add_option('', '--no-source-ip', action='store_true',
-        help = 'This will turn off the source-ip optimization')
-    parser.add_option('', '--no-destination-ip', action='store_true',
-        help = 'This will turn off the destination-ip optimization')
-    parser.add_option('', '--no-destination-port', action='store_true',
-        help = 'This will turn off the destination-port optimization')
-    parser.add_option('-v', '--verbose', action='store_true',
-        help = 'Turn on verbose/debug output')
-    parser.add_option('', '--no-expires', action='store_true',
-        help = 'If a term includes an expire date, mark non-eligible for optimize')
+    parser.add_option(
+        "",
+        "--no-source-ip",
+        action="store_true",
+        help="This will turn off the source-ip optimization",
+    )
+    parser.add_option(
+        "",
+        "--no-destination-ip",
+        action="store_true",
+        help="This will turn off the destination-ip optimization",
+    )
+    parser.add_option(
+        "",
+        "--no-destination-port",
+        action="store_true",
+        help="This will turn off the destination-port optimization",
+    )
+    parser.add_option(
+        "-v", "--verbose", action="store_true", help="Turn on verbose/debug output"
+    )
+    parser.add_option(
+        "",
+        "--no-expires",
+        action="store_true",
+        help="If a term includes an expire date, mark non-eligible for optimize",
+    )
 
-    parser.add_option('-d', '--debug', action='store_true',
-        help = 'Warning: this is very noisy. It will display every action'
-               'from the optimization process.')
+    parser.add_option(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Warning: this is very noisy. It will display every action"
+        "from the optimization process.",
+    )
 
     opts, args = parser.parse_args(argv)
 
@@ -97,17 +129,17 @@ is set to 0 (or off).
 class ProgressMeter:
     def __init__(self, **kw):
         # What time do we start tracking our progress from?
-        self.timestamp = kw.get('timestamp', time.time())
+        self.timestamp = kw.get("timestamp", time.time())
         # What kind of unit are we tracking?
-        self.unit = str(kw.get('unit', ''))
+        self.unit = str(kw.get("unit", ""))
         # Number of units to process
-        self.total = int(kw.get('total', 100))
+        self.total = int(kw.get("total", 100))
         # Number of units already processed
-        self.count = int(kw.get('count', 0))
+        self.count = int(kw.get("count", 0))
         # Refresh rate in seconds
-        self.rate_refresh = float(kw.get('rate_refresh', .5))
+        self.rate_refresh = float(kw.get("rate_refresh", 0.5))
         # Number of ticks in meter
-        self.meter_ticks = int(kw.get('ticks', 60))
+        self.meter_ticks = int(kw.get("ticks", 60))
         self.meter_division = float(self.total) / self.meter_ticks
         self.meter_value = int(self.count / self.meter_division)
         self.last_update = None
@@ -150,53 +182,54 @@ class ProgressMeter:
         if value > self.meter_value:
             self.meter_value = value
         if self.last_refresh:
-            if (now - self.last_refresh) > self.rate_refresh or \
-                (self.count >= self.total):
-                    self.refresh()
+            if (now - self.last_refresh) > self.rate_refresh or (
+                self.count >= self.total
+            ):
+                self.refresh()
         else:
             self.refresh()
 
     def get_meter(self, **kw):
-        bar = '-' * self.meter_value
-        pad = ' ' * (self.meter_ticks - self.meter_value)
+        bar = "-" * self.meter_value
+        pad = " " * (self.meter_ticks - self.meter_value)
         perc = (float(self.count) / self.total) * 100
-        return '[%s>%s] %d%%  %.1f/sec' % (bar, pad, perc, self.rate_current)
+        return "[%s>%s] %d%%  %.1f/sec" % (bar, pad, perc, self.rate_current)
 
     def refresh(self, **kw):
         # Clear line and return cursor to start-of-line
-        sys.stderr.write(' ' * self.prev_meter_len + '\x08' * self.prev_meter_len)
+        sys.stderr.write(" " * self.prev_meter_len + "\x08" * self.prev_meter_len)
         # Get meter text
         meter_text = self.get_meter(**kw)
         # Write meter and return cursor to start-of-line
-        sys.stderr.write(meter_text + '\x08'*len(meter_text))
+        sys.stderr.write(meter_text + "\x08" * len(meter_text))
         self.prev_meter_len = len(meter_text)
 
         # Are we finished?
         if self.count >= self.total:
-            sys.stderr.write('\n')
+            sys.stderr.write("\n")
         sys.stderr.flush()
         # Timestamp
         self.last_refresh = time.time()
 
 
 def focus_terms(pcount, terms):
-    '''
-Generates a list of term names that have a port count
-greater than pcount for the optimizer to 'focus' in on.
-    '''
-    focused       = dict()
+    """
+    Generates a list of term names that have a port count
+    greater than pcount for the optimizer to 'focus' in on.
+    """
+    focused = dict()
     matched_ports = dict()
-    matcher       = dict()
-    ports         = dict()
+    matcher = dict()
+    ports = dict()
 
     for term in terms:
-        if 'source-port' in term.match:
+        if "source-port" in term.match:
             continue
 
-        if 'destination-port' not in term.match:
+        if "destination-port" not in term.match:
             continue
 
-        for port in term.match['destination-port']:
+        for port in term.match["destination-port"]:
             if port == 0:
                 continue
 
@@ -207,47 +240,45 @@ greater than pcount for the optimizer to 'focus' in on.
 
     for port, cnt in ports.items():
         if cnt >= pcount:
-            log.info('port %s had a count of %d' % (str(port), cnt))
+            log.info("port %s had a count of %d" % (str(port), cnt))
             matched_ports[port] = 1
 
     for term in terms:
-        if 'destination-port' not in term.match:
+        if "destination-port" not in term.match:
             continue
-        if 'source-port' in term.match:
+        if "source-port" in term.match:
             continue
 
-        for tport in term.match['destination-port']:
+        for tport in term.match["destination-port"]:
             if tport in matched_ports:
                 focused[term.name] = 1
                 break
 
-    log.info('%d focused terms' % len(focused))
+    log.info("%d focused terms" % len(focused))
     return focused
 
 
-chk_keys = ['protocol', 'source-address',
-            'destination-address',
-            'destination-port']
+chk_keys = ["protocol", "source-address", "destination-address", "destination-port"]
 
-rej_keys = ['reject', 'deny', 'discard']
+rej_keys = ["reject", "deny", "discard"]
 
 
 def optimize_terms(terms, focused, which, opts):
     global stop_all
     to_delete = dict()
-    other     = ''
-    total     = 0
-    count     = 0
+    other = ""
+    total = 0
+    count = 0
 
     total = len(terms)
 
-    if which == 'source-address':
-        other = ['destination-address']
-    elif which == 'destination-address':
-        other = ['source-address']
+    if which == "source-address":
+        other = ["destination-address"]
+    elif which == "destination-address":
+        other = ["source-address"]
     else:
         # this is used primarily for port optimization
-        other = ['source-address', 'destination-address']
+        other = ["source-address", "destination-address"]
 
     meter = ProgressMeter(total=total)
 
@@ -263,7 +294,7 @@ def optimize_terms(terms, focused, which, opts):
         dont_merge = False
         if opts.no_expires:
             for c in term1.comments:
-                if 'UNTIL' in c and 'Never' not in c:
+                if "UNTIL" in c and "Never" not in c:
                     dont_merge = True
 
         if dont_merge:
@@ -271,10 +302,12 @@ def optimize_terms(terms, focused, which, opts):
 
         # make sure that there are not any source-ports
         # defined in term1
-        if 'destination-port' not in term1.match or \
-           'source-port' in term1.match or \
-           term1.action[0] in rej_keys or \
-           term1 in to_delete:
+        if (
+            "destination-port" not in term1.match
+            or "source-port" in term1.match
+            or term1.action[0] in rej_keys
+            or term1 in to_delete
+        ):
             continue
 
         for term2 in terms:
@@ -283,35 +316,39 @@ def optimize_terms(terms, focused, which, opts):
             if stop_all:
                 break
 
-            log.debug('Comparing term %s to term %s [%d terms deleted]' %
-                      (term1.name, term2.name, len(to_delete)))
+            log.debug(
+                "Comparing term %s to term %s [%d terms deleted]"
+                % (term1.name, term2.name, len(to_delete))
+            )
             if focused and term2.name not in focused:
                 continue
 
                 if opts.no_expires:
                     for c in term2.comments:
-                        if 'UNTIL' in c and 'Never' not in c:
+                        if "UNTIL" in c and "Never" not in c:
                             dont_merge = True
 
-                if dont_merge: continue
+                if dont_merge:
+                    continue
 
             # check to make sure that neither term
             # has been marked for deletion. Also
             # check to make sure we're not comparing
             # the same terms, and this is not a
             # rejected action.
-            if term1.name in to_delete or \
-               term2.name in to_delete or \
-               term1.name == term2.name or \
-               term2.action[0] in rej_keys or \
-               'source-port' in term2.match:
+            if (
+                term1.name in to_delete
+                or term2.name in to_delete
+                or term1.name == term2.name
+                or term2.action[0] in rej_keys
+                or "source-port" in term2.match
+            ):
                 continue
 
             # check to make sure both terms include somethin
             # that can be matched.
             for key in chk_keys:
-                if key not in term1.match or \
-                   key not in term2.match:
+                if key not in term1.match or key not in term2.match:
                     breaker = True
                     break
 
@@ -319,16 +356,14 @@ def optimize_terms(terms, focused, which, opts):
                 continue
 
             # make sure that both protocols match up.
-            if len(term1.match['protocol']) != \
-               len(term2.match['protocol']):
+            if len(term1.match["protocol"]) != len(term2.match["protocol"]):
                 continue
 
-            if 'icmp' in term1.match['protocol'] or \
-               'icmp' in term2.match['protocol']:
+            if "icmp" in term1.match["protocol"] or "icmp" in term2.match["protocol"]:
                 break
 
-            for proto in term1.match['protocol']:
-                if proto not in term2.match['protocol']:
+            for proto in term1.match["protocol"]:
+                if proto not in term2.match["protocol"]:
                     breaker = True
                     break
 
@@ -336,15 +371,16 @@ def optimize_terms(terms, focused, which, opts):
                 continue
 
             # we don't do this check if we are optimizing destination-ports
-            if which != 'destination-port':
+            if which != "destination-port":
                 # make sure that both destination-ports match up.
-                if len(term1.match['destination-port']) != \
-                   len(term2.match['destination-port']):
+                if len(term1.match["destination-port"]) != len(
+                    term2.match["destination-port"]
+                ):
                     breaker = True
                     continue
 
-                for port in term1.match['destination-port']:
-                    for port2 in term2.match['destination-port']:
+                for port in term1.match["destination-port"]:
+                    for port2 in term2.match["destination-port"]:
                         if port != port2:
                             breaker = True
                         if breaker:
@@ -388,8 +424,9 @@ def optimize_terms(terms, focused, which, opts):
                 term2.match[which].append(to_add)
                 ips.append(str(to_add))
 
-            cmt = Comment('merged [({}) {}] from {}'.format(which,
-                ','.join(ips), term1.name))
+            cmt = Comment(
+                "merged [({}) {}] from {}".format(which, ",".join(ips), term1.name)
+            )
 
             term2.comments.append(cmt)
 
@@ -435,7 +472,7 @@ def terms_chunker(terms):
     We then only optimize on chunks of terms so that we don't accidently
     optimize something accepted above a deny to an accept below the deny.
     """
-    ret           = []
+    ret = []
     current_chunk = []
 
     total = len(terms)
@@ -465,18 +502,18 @@ def optimize(opts, terms, focused):
     mtypes = []
 
     if not opts.no_source_ip:
-        mtypes.append('source-address')
+        mtypes.append("source-address")
     if not opts.no_destination_ip:
-        mtypes.append('destination-address')
+        mtypes.append("destination-address")
     if not opts.no_destination_port:
-        mtypes.append('destination-port')
+        mtypes.append("destination-port")
 
     for term in terms:
         for mtype in mtypes:
-            if mtype == 'destination-port':
+            if mtype == "destination-port":
                 continue
             if mtype not in term.match:
-                term.match[mtype] = [TIP('0.0.0.0/0')]
+                term.match[mtype] = [TIP("0.0.0.0/0")]
 
     chunks = terms_chunker(terms)
 
@@ -487,11 +524,10 @@ def optimize(opts, terms, focused):
         chunk_count = 0
 
         for chunk in chunks:
-            log.info('Optimizing %s [Chunk %d]' % (type, chunk_count))
+            log.info("Optimizing %s [Chunk %d]" % (type, chunk_count))
             chunks[chunk_count] = optimize_terms(chunk, focused, type, opts)
-            log.info('TCount: %d/%d' % (len(terms_old), len(terms)))
+            log.info("TCount: %d/%d" % (len(terms_old), len(terms)))
             chunk_count += 1
-
 
     terms = terms_unchunk(chunks)
     return terms
@@ -500,13 +536,13 @@ def optimize(opts, terms, focused):
 def do_work(opts, files):
     global stop_all
     for acl_file in files:
-        focused   = None
-        out_file  = acl_file+'.optimized'
+        focused = None
+        out_file = acl_file + ".optimized"
 
         if stop_all:
             return
 
-        log.info('Parsing %s' % acl_file)
+        log.info("Parsing %s" % acl_file)
 
         try:
             acl = parse(open(acl_file))
@@ -515,18 +551,18 @@ def do_work(opts, files):
             log.error(etxt)
             return
 
-        log.info('Done parsing')
+        log.info("Done parsing")
 
         orig_tcnt = len(acl.terms)
 
         if opts.focus:
-            log.info('Finding focused terms')
+            log.info("Finding focused terms")
             focused = focus_terms(opts.focus, acl.terms)
             if not focused:
-                log.warn('No focused terms could be found in acl %s' % (acl_file))
+                log.warn("No focused terms could be found in acl %s" % (acl_file))
                 continue
 
-            log.info('Done focused term')
+            log.info("Done focused term")
 
         passes = 1
 
@@ -541,7 +577,7 @@ def do_work(opts, files):
             if stop_all:
                 break
 
-            log.info('Optimization pass %d' % passes)
+            log.info("Optimization pass %d" % passes)
             terms = optimize(opts, terms_old, focused)
 
             if opts.passes and passes >= opts.passes:
@@ -556,15 +592,14 @@ def do_work(opts, files):
         terms_old = terms
         if not real_port_optimize_opt:
             passes = 1
-            opts.no_destination_port    = False
-            opts.no_source_ip           = True
-            opts.no_destination_ip      = True
+            opts.no_destination_port = False
+            opts.no_source_ip = True
+            opts.no_destination_ip = True
             while True:
-
                 if stop_all:
                     break
 
-                log.info('PORT Optimization pass %d' % passes)
+                log.info("PORT Optimization pass %d" % passes)
                 terms = optimize(opts, terms_old, focused)
 
                 if opts.passes and passes >= opts.passes:
@@ -578,12 +613,12 @@ def do_work(opts, files):
 
         new_acl = ACL()
         new_acl.policers = acl.policers
-        new_acl.format   = acl.format
+        new_acl.format = acl.format
         new_acl.comments = acl.comments
-        new_acl.name     = acl.name
-        new_acl.terms    = terms
+        new_acl.name = acl.name
+        new_acl.terms = terms
 
-        out = open(out_file, 'w')
+        out = open(out_file, "w")
 
         for x in new_acl.output(replace=True):
             print(x, file=out)
@@ -602,5 +637,5 @@ def main():
     do_work(opts, acl_files)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

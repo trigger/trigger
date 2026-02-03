@@ -96,7 +96,11 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=
             # Read the initial banner/response
             sock.settimeout(2)  # Short timeout for reading
             result = sock.recv(1024)
-            return result.startswith(expected_result.encode() if isinstance(expected_result, str) else expected_result)
+            return result.startswith(
+                expected_result.encode()
+                if isinstance(expected_result, str)
+                else expected_result
+            )
 
         return True
     except (TimeoutError, OSError, socket.error):

@@ -333,10 +333,14 @@ class NetScreen(object):
                         if (
                             t.zone and found.source_zone
                         ) and t.zone != found.source_zone:
-                            raise "%s has a zone of %s, while the source zone" " of the policy is %s" % (
-                                t.name,
-                                t.zone,
-                                found.source_zone,
+                            raise (
+                                "%s has a zone of %s, while the source zone"
+                                " of the policy is %s"
+                                % (
+                                    t.name,
+                                    t.zone,
+                                    found.source_zone,
+                                )
                             )
                         found["src-address"].append(t)
 
@@ -354,10 +358,14 @@ class NetScreen(object):
                         if (
                             t.zone and found.destination_zone
                         ) and t.zone != found.destination_zone:
-                            raise "%s has a zone of %s, while the destination zone" " of the policy is %s" % (
-                                t.name,
-                                t.zone,
-                                found.destination_zone,
+                            raise (
+                                "%s has a zone of %s, while the destination zone"
+                                " of the policy is %s"
+                                % (
+                                    t.name,
+                                    t.zone,
+                                    found.destination_zone,
+                                )
                             )
 
                         found["dst-address"].append(t)
@@ -547,7 +555,6 @@ class NSServiceBook(NetScreen):
         return self.entries.__iter__()
 
     def __getitem__(self, item):
-
         for entry in self.entries:
             if item == entry.name:
                 return entry
@@ -559,7 +566,10 @@ class NSServiceBook(NetScreen):
             return self.entries.append(item)
         if isinstance(item, NSGroup) and item.type == "service":
             return self.entries.append(item)
-        raise "item inserted into NSServiceBook, not an NSService or " "NSGroup.type='service' object"
+        raise (
+            "item inserted into NSServiceBook, not an NSService or "
+            "NSGroup.type='service' object"
+        )
 
     def output(self):
         ret = []
@@ -579,7 +589,6 @@ class NSAddressBook(NetScreen):
         self.any = NSAddress(name="ANY")
 
     def find(self, address, zone):
-
         if not self.entries.has_key(zone):
             return None
 
@@ -721,7 +730,6 @@ class NSService(NetScreen):
             self.source_port: other.source_port,
             self.destination_port: other.destination_port,
         }.items():
-
             if a < b:
                 return -1
             if a > b:
@@ -776,7 +784,7 @@ class NSService(NetScreen):
     def output(self):
         if self.predefined:
             return []
-        ret = 'set service "%s" protocol %s src-port %d-%d ' "dst-port %d-%d" % (
+        ret = 'set service "%s" protocol %s src-port %d-%d dst-port %d-%d' % (
             self.name,
             self.protocol,
             self.source_port[0],

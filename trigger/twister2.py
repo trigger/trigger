@@ -474,7 +474,6 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
         knownHosts=None,
         ui=None,
     ):
-
         helper = _NewTriggerConnectionHelperBase(
             reactor,
             device,
@@ -754,7 +753,5 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     def timeoutConnection(self):
         """Do this when we timeout."""
         log.msg("[%s] Timed out while sending commands" % self.device)
-        self.factory.err = exceptions.CommandTimeout(
-            "Timed out while " "sending commands"
-        )
+        self.factory.err = exceptions.CommandTimeout("Timed out while sending commands")
         self.transport.loseConnection()
