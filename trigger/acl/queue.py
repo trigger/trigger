@@ -198,7 +198,7 @@ class Queue:
 
         else:
             m = self.get_model("manual")
-            if m.delete().where(m.q_name == acl, not m.done).execute():
+            if m.delete().where(m.q_name == acl, m.done == False).execute():  # noqa: E712
                 self.vprint(f"{acl!r} cleared from manual load queue")
                 return True
 
@@ -288,7 +288,7 @@ class Queue:
                 .where(m.loaded >> None, m.escalation == escalation)
             )
         elif queue == "manual":
-            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(not m.done)
+            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(m.done == False)  # noqa: E712
         else:
             raise RuntimeError("This should never happen!!")
 
