@@ -8,7 +8,7 @@ __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2013, AOL Inc."
 __version__ = "0.1"
 
-from urllib.parse import unquote, urlparse, parse_qsl
+from urllib.parse import parse_qsl, unquote, urlparse
 
 
 def _parse_url(url):

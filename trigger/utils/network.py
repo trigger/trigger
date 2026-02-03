@@ -3,9 +3,9 @@ Functions that perform network-based things like ping, port tests, etc.
 """
 
 import os
-import subprocess
 import shlex
 import socket
+import subprocess
 
 from trigger.conf import settings
 
@@ -103,7 +103,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=
             )
 
         return True
-    except (TimeoutError, OSError, socket.error):
+    except (TimeoutError, OSError):
         return False
     finally:
         if sock:

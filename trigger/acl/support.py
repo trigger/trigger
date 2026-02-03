@@ -35,8 +35,9 @@ __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
 import IPy
+
 from trigger import exceptions
-from trigger.conf import settings
+
 from .dicts import *
 
 # Python 2/3 compatibility
@@ -76,7 +77,7 @@ def check_name(name, exc, max_len=255, extra_chars=" -_."):
             or (char >= "A" and char <= "Z")
             or (char >= "0" and char <= "9")
         ):
-            raise exc('Invalid character "{}" in name "{}"'.format(char, name))
+            raise exc(f'Invalid character "{char}" in name "{name}"')
 
 
 def check_range(values, min, max):
@@ -106,7 +107,7 @@ def do_lookup(lookup_func, arg):
     try:
         return lookup_func(arg)
     except KeyError:
-        raise exceptions.UnknownMatchArg('match argument "%s" not known' % arg)
+        raise exceptions.UnknownMatchArg(f'match argument "{arg}" not known')
 
 
 def do_protocol_lookup(arg):
@@ -174,10 +175,10 @@ class MyDict(dict):
             self.update(kwargs)
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, str(self))
+        return f"<{self.__class__.__name__}: {str(self)}>"
 
     def __str__(self):
-        return ", ".join(["{} {}".format(k, v) for k, v in self.items()])
+        return ", ".join([f"{k} {v}" for k, v in self.items()])
 
     def update(self, d):
         """Force this to go through __setitem__."""
@@ -195,12 +196,12 @@ class Modifiers(MyDict):
         # Handle argument-less modifiers first.
         if key in ("log", "sample", "syslog", "port-mirror"):
             if value not in (None, True):
-                raise exceptions.ActionError('"%s" action takes no argument' % key)
+                raise exceptions.ActionError(f'"{key}" action takes no argument')
             super().__setitem__(key, None)
             return
         # Everything below requires an argument.
         if value is None:
-            raise exceptions.ActionError('"%s" action requires an argument' % key)
+            raise exceptions.ActionError(f'"{key}" action requires an argument')
         if key == "count":
             # JunOS 7.3 docs say this cannot contain underscores and that
             # it must be 24 characters or less, but this appears to be false.
@@ -420,7 +421,7 @@ class RangeList:
         return False
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, str(self.data))
+        return f"<{self.__class__.__name__}: {str(self.data)}>"
 
     def __str__(self):
         return str(self.data)
@@ -600,7 +601,7 @@ class Comment:
         self.data = data
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, repr(self.data))
+        return f"<{self.__class__.__name__}: {repr(self.data)}>"
 
     def __str__(self):
         return self.data
@@ -617,7 +618,7 @@ class Comment:
 
     def output_junos(self):
         """Output the Comment to JunOS format."""
-        return "/*%s*/" % self.data
+        return f"/*{self.data}*/"
 
     def output_ios(self):
         """Output the Comment to IOS traditional format."""
@@ -667,7 +668,7 @@ class ACL:
         Comments = []
 
     def __repr__(self):
-        return "<ACL: %s>" % self.name
+        return f"<ACL: {self.name}>"
 
     def __str__(self):
         return "\n".join(self.output(format=self.format, family=self.family))
@@ -689,7 +690,7 @@ class ACL:
         :param family: If set, the value is used to wrap the ACL in a
             ``family inet { ...}`` section.
         """
-        if self.name == None:
+        if self.name is None:
             raise exceptions.MissingACLName("JunOS format requires a name")
 
         # Make sure we properly set 'family' so it's automatically used for
@@ -700,7 +701,7 @@ class ACL:
             family = self.family
 
         # Prep the filter body
-        out = ["filter %s {" % self.name]
+        out = [f"filter {self.name} {{"]
         out += ["    " + c.output_junos() for c in self.comments if c]
 
         # Add the policers
@@ -731,7 +732,7 @@ class ACL:
             body = ["replace:"] + ["    " + x for x in out]
             tail = ["}"]
             if family is not None:
-                body = ["family %s {" % family] + body + tail
+                body = [f"family {family} {{"] + body + tail
                 body = ["    " + x for x in body]
             out = head + body + tail
 
@@ -743,7 +744,7 @@ class ACL:
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
-        if self.name == None:
+        if self.name is None:
             raise exceptions.MissingACLName("IOS format requires a name")
         try:
             x = int(self.name)
@@ -756,7 +757,7 @@ class ACL:
             raise exceptions.VendorSupportLacking("policers not supported in IOS")
         if replace:
             out.append("no access-list " + self.name)
-        prefix = "access-list %s " % self.name
+        prefix = f"access-list {self.name} "
         for t in self.terms:
             out += [x for x in t.output_ios(prefix)]
         return out
@@ -783,9 +784,9 @@ class ACL:
 
         out = self.output_ios(replace=replace)
         if receive_acl:
-            out.append("ip rebind-receive-acl %s" % self.name)
+            out.append(f"ip rebind-receive-acl {self.name}")
         else:
-            out.append("ip rebind-acl %s" % self.name)
+            out.append(f"ip rebind-acl {self.name}")
 
         return out
 
@@ -795,14 +796,14 @@ class ACL:
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
-        if self.name == None:
+        if self.name is None:
             raise exceptions.MissingACLName("IOS format requires a name")
         out = [c.output_ios_named() for c in self.comments]
         if self.policers:
             raise exceptions.VendorSupportLacking("policers not supported in IOS")
         if replace:
             out.append("no ip access-list extended " + self.name)
-        out.append("ip access-list extended %s" % self.name)
+        out.append(f"ip access-list extended {self.name}")
         for t in self.terms:
             out += [x for x in t.output_ios_named(" ")]
         return out
@@ -813,7 +814,7 @@ class ACL:
 
         :param replace: If set the ACL is preceded by a ``no ipv4 access-list`` line.
         """
-        if self.name == None:
+        if self.name is None:
             raise exceptions.MissingACLName("IOS XR format requires a name")
         out = [c.output_iosxr() for c in self.comments]
         if self.policers:
@@ -823,7 +824,7 @@ class ACL:
         out.append("ipv4 access-list " + self.name)
         counter = 0  # 10 PRINT "CISCO SUCKS"  20 GOTO 10
         for t in self.terms:
-            if t.name == None:
+            if t.name is None:
                 for line in t.output_ios():
                     counter = counter + 10
                     out += [" %d %s" % (counter, line)]
@@ -889,7 +890,7 @@ class Term:
         Comments = []
 
     def __repr__(self):
-        return "<Term: %s>" % self.name
+        return f"<Term: {self.name}>"
 
     def getname(self):
         return self.__name
@@ -915,7 +916,7 @@ class Term:
             action = (action,)
         if len(action) > 2:
             raise exceptions.ActionError(
-                'too many arguments to action "%s"' % str(action)
+                f'too many arguments to action "{str(action)}"'
             )
         action = tuple(action)
         if action in (("accept",), ("discard",), ("reject",), ("next", "term")):
@@ -934,7 +935,7 @@ class Term:
             check_name(action[1], exceptions.BadRoutingInstanceName)
             self.__action = action
         else:
-            raise exceptions.UnknownActionName('unknown action "%s"' % str(action))
+            raise exceptions.UnknownActionName(f'unknown action "{str(action)}"')
 
     def delaction(self):
         self.action = "accept"
@@ -969,7 +970,7 @@ class Term:
         """Convert the term to JunOS format."""
         if self.name is None:
             raise exceptions.MissingTermName("JunOS requires terms to be named")
-        out = ["%sterm %s {" % (self.inactive and "inactive: " or "", self.name)]
+        out = ["{}term {} {{".format(self.inactive and "inactive: " or "", self.name)]
         out += ["    " + c.output_junos() for c in self.comments if c]
         if self.extra:
             blah = str(self.extra)
@@ -979,7 +980,7 @@ class Term:
             out += [" " * 8 + x for x in self.match.output_junos()]
             out.append("    }")
         out.append("    then {")
-        acttext = "        %s;" % " ".join(self.action)
+        acttext = "        {};".format(" ".join(self.action))
         # add a comment if 'make discard' is in use
         if self.makediscard:
             acttext += " /* REALLY AN ACCEPT, MODIFIED BY 'make discard' ABOVE */"
@@ -1000,7 +1001,7 @@ class Term:
             action = "deny "
         else:
             raise VendorSupportLacking(
-                '"%s" action not supported by IOS' % " ".join(self.action)
+                '"{}" action not supported by IOS'.format(" ".join(self.action))
             )
         suffix = ""
         for k, v in self.modifiers.items():
@@ -1010,7 +1011,7 @@ class Term:
                 pass  # counters are implicit in IOS
             else:
                 raise exceptions.VendorSupportLacking(
-                    '"%s" modifier not supported by IOS' % k
+                    f'"{k}" modifier not supported by IOS'
                 )
         return [prefix + action + x + suffix for x in self.match.output_ios()]
 
@@ -1024,7 +1025,7 @@ class Term:
         comments = [c.output_ios() for c in self.comments]
         # If prefix isn't set, but name is, force the template
         if prefix is None and acl_name is not None:
-            prefix = "access-list %s " % acl_name
+            prefix = f"access-list {acl_name} "
 
         # Or if prefix is set, but acl_name isn't, make sure prefix ends with ' '
         elif prefix is not None and acl_name is None:
@@ -1033,7 +1034,7 @@ class Term:
 
         # Or if both are set, use them
         elif prefix is not None and acl_name is not None:
-            prefix = "{} {} ".format(prefix.strip(), acl_name.strip())
+            prefix = f"{prefix.strip()} {acl_name.strip()} "
 
         # Otherwise no prefix
         else:
@@ -1100,7 +1101,7 @@ class Protocol:
             return str(self.value)
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, str(self))
+        return f"<{self.__class__.__name__}: {str(self)}>"
 
     def _get_compare_value(self, other):
         """Helper to get comparison value from other."""
@@ -1174,7 +1175,7 @@ class Matches(MyDict):
             "source-class",
             "destination-class",
         ):
-            raise NotImplementedError("match on %s not implemented" % key)
+            raise NotImplementedError(f"match on {key} not implemented")
 
         if arg is None:
             raise exceptions.MatchError("match must have an argument")
@@ -1237,7 +1238,7 @@ class Matches(MyDict):
         elif key == "precedence":
             pass
         else:
-            raise exceptions.UnknownMatchType('unknown match type "%s"' % key)
+            raise exceptions.UnknownMatchType(f'unknown match type "{key}"')
 
         arg = RangeList(arg)
 
@@ -1266,7 +1267,7 @@ class Matches(MyDict):
             The 2-tuple to convert.
         """
         try:
-            return "%s-%s" % pair  # Tuples back to ranges.
+            return "{}-{}".format(*pair)  # Tuples back to ranges.
         except TypeError:
             try:
                 # Make it print prefixes for /32, /128
@@ -1293,9 +1294,9 @@ class Matches(MyDict):
                 elif port[1] == 65535:
                     a.append("gt %s" % (port[0] - 1))
                 else:
-                    a.append("range %s %s" % port)
+                    a.append("range {} {}".format(*port))
             except TypeError:
-                a.append("eq %s" % str(port))
+                a.append(f"eq {str(port)}")
         return a
 
     def ios_address_str(self, addrs):
@@ -1315,10 +1316,10 @@ class Matches(MyDict):
             if addr.prefixlen() == 0:
                 a.append("any")
             elif addr.prefixlen() == 32:
-                a.append("host %s" % addr.net())
+                a.append(f"host {addr.net()}")
             else:
                 inverse_mask = make_inverse_mask(addr.prefixlen())
-                a.append("{} {}".format(addr.net(), inverse_mask))
+                a.append(f"{addr.net()} {inverse_mask}")
         return a
 
     def output_junos(self):
@@ -1396,7 +1397,7 @@ class Matches(MyDict):
                     )
                 trailers += ["established"]
             else:
-                raise exceptions.VendorSupportLacking('"%s" not in IOS' % key)
+                raise exceptions.VendorSupportLacking(f'"{key}" not in IOS')
         if not protos:
             protos = ["ip"]
         if not sources:

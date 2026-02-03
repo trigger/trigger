@@ -36,7 +36,7 @@ def send_email(addresses, subject, body, sender, mailhost="localhost"):
     import smtplib
 
     for email in addresses:
-        header = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, email, subject)
+        header = f"From: {sender}\r\nTo: {email}\r\nSubject: {subject}\r\n\r\n"
         message = header + body
         server = smtplib.SMTP(mailhost)
         server.sendmail(sender, email, message)

@@ -94,7 +94,7 @@ def handle_ios_acl(rows):
                 if acl.name:
                     if v != acl.name:
                         raise exceptions.ACLNameError(
-                            "Name '%s' does not match ACL '%s'" % (v, acl.name)
+                            f"Name '{v}' does not match ACL '{acl.name}'"
                         )
                 else:
                     acl.name = v
@@ -106,7 +106,7 @@ def handle_ios_acl(rows):
             elif k == "receive_acl":
                 acl.is_receive_acl = True
             else:
-                raise RuntimeError('unknown key "%s" (value %s)' % (k, v))
+                raise RuntimeError(f'unknown key "{k}" (value {v})')
     # In traditional ACLs, comments that belong to the first ACE are
     # indistinguishable from comments that belong to the ACL.
     # if acl.format == 'ios' and acl.terms:

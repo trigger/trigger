@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 gnng - Fetches network devices interfaces and displays them in a table view.
@@ -10,27 +9,22 @@ may be applied to the interface. Works on Juniper, Netscreen, Foundry, and Cisco
 devices.
 """
 
-from __future__ import print_function
-
 __version__ = "1.3.2"
 
-from collections import namedtuple
 import csv
-import cStringIO
-import math
-import operator
-from optparse import OptionParser
 import os
-import re
-from sqlite3 import dbapi2 as sqlite
 import sys
+from collections import namedtuple
+from optparse import OptionParser
+from sqlite3 import dbapi2 as sqlite
+
 import prettytable
-from twisted.python import log
+
 from trigger.cmds import NetACLInfo
-from trigger.netdevices import device_match, NetDevices
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
+from trigger.netdevices import NetDevices, device_match
 
 settings.WITH_ACLS = False
 
@@ -192,7 +186,7 @@ def write_sqldb(sqlfile, dev, rows):
     for row in rows:
         iface, addrs, snets, inacl, outacl, desc = row
         cursor.execute(
-            """
+            f"""
             INSERT INTO dev_nets (
                 device_name,
                 iface_name,
@@ -202,10 +196,9 @@ def write_sqldb(sqlfile, dev, rows):
                 iface_outacl,
                 iface_descr )
             VALUES (
-                '%s', '%s', '%s',
-                '%s', '%s', '%s', '%s'
+                '{dev}', '{iface}', '{addrs}',
+                '{snets}', '{inacl}', '{outacl}', '{desc}'
             );"""
-            % (dev, iface, addrs, snets, inacl, outacl, desc)
         )
 
     connection.commit()
@@ -339,7 +332,7 @@ def handle_output(all_rows, opts):
         elif opts.sqldb:
             write_sqldb(opts.sqldb, dev, rows)
         else:
-            print("DEVICE: {}".format(dev))
+            print(f"DEVICE: {dev}")
             print_table(rows)
 
 
@@ -396,7 +389,7 @@ def output_dotty(subnet_table, display=True):
         print("No valid links for dotty generation.")
         return None
 
-    nd = NetDevices()  # This uses the pre-existing NetDevices singleton
+    NetDevices()  # This uses the pre-existing NetDevices singleton
 
     graph = """graph network {
     overlap=scale; center=true; orientation=land;
@@ -405,7 +398,7 @@ def output_dotty(subnet_table, display=True):
 
     for leaf, subleaves in links.items():
         for subleaf in subleaves:
-            graph += '"%s"--"%s"\n' % (leaf.shortName, subleaf.shortName)
+            graph += f'"{leaf.shortName}"--"{subleaf.shortName}"\n'
         # print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
     graph += "\n}"
 

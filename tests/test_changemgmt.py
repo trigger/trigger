@@ -16,11 +16,13 @@ from utils import mock_redis
 
 mock_redis.install()
 
+import unittest
 from datetime import datetime
-from pytz import timezone, UTC
+
+from pytz import UTC, timezone
+
 from trigger.changemgmt import BounceStatus, BounceWindow
 from trigger.netdevices import NetDevices
-import unittest
 
 # Globals
 eastern = timezone("US/Eastern")

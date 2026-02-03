@@ -1,18 +1,15 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 netdev - Command-line search interface for NetDevices.
 """
 
-from __future__ import print_function
-
 __version__ = "1.2"
 
-from optparse import OptionParser
 import sys
+from optparse import OptionParser
 
-from trigger.netdevices import device_match, NetDevices
+from trigger.netdevices import NetDevices, device_match
 
 
 def parse_args(argv):
@@ -183,7 +180,7 @@ def parse_args(argv):
 def search_builder(opts):
     """Builds a list comprehension from the options passed at command-line and
     then evaluates it to return a list of matching device names."""
-    nd = NetDevices(production_only=opts.nonprod)
+    NetDevices(production_only=opts.nonprod)
 
     query = "[x for x in nd.all()"
 
@@ -199,55 +196,55 @@ def search_builder(opts):
 
     # nodeName (hostname)
     if opts.nodename:
-        vars.append(" '%s' in x.nodeName.lower()" % opts.nodename.lower())
+        vars.append(f" '{opts.nodename.lower()}' in x.nodeName.lower()")
 
     # deviceType
     if opts.type:
-        vars.append(" '%s' in x.deviceType" % opts.type.upper())
+        vars.append(f" '{opts.type.upper()}' in x.deviceType")
 
     # onCallName (oncall team)
     if opts.oncall_team:
-        vars.append(" '%s' in x.onCallName.lower()" % opts.oncall_team.lower())
+        vars.append(f" '{opts.oncall_team.lower()}' in x.onCallName.lower()")
 
     # owningTeam (owning_team)
     if opts.owning_team:
-        vars.append(" '%s' in x.owningTeam.lower()" % opts.owning_team.lower())
+        vars.append(f" '{opts.owning_team.lower()}' in x.owningTeam.lower()")
 
     # owner (owning org)
     if opts.owning_org:
-        vars.append(" '%s' in x.owner" % opts.owning_org.upper())
+        vars.append(f" '{opts.owning_org.upper()}' in x.owner")
 
     # budgetCode (budget code)
     if opts.budget_code:
-        vars.append(" '%s' in x.budgetCode" % opts.budget_code)
+        vars.append(f" '{opts.budget_code}' in x.budgetCode")
 
     # budgetName (budget name)
     if opts.budget_name:
-        vars.append(" '%s' in x.budgetName.lower()" % opts.budget_name.lower())
+        vars.append(f" '{opts.budget_name.lower()}' in x.budgetName.lower()")
 
     # vendor
     if opts.vendor:
-        vars.append(" '%s' in x.vendor" % opts.vendor.lower())
+        vars.append(f" '{opts.vendor.lower()}' in x.vendor")
 
     # manufacturer
     if opts.manufacturer:
-        vars.append(" '%s' in x.manufacturer" % opts.manufacturer.upper())
+        vars.append(f" '{opts.manufacturer.upper()}' in x.manufacturer")
 
     # site
     if opts.location:
-        vars.append(" '%s' in x.site" % opts.location.upper())
+        vars.append(f" '{opts.location.upper()}' in x.site")
 
     # make
     if opts.make:
-        vars.append(" '%s' in x.make" % opts.make.upper())
+        vars.append(f" '{opts.make.upper()}' in x.make")
 
     # model
     if opts.model:
-        vars.append(" '%s' in x.model" % opts.model.upper())
+        vars.append(f" '{opts.model.upper()}' in x.model")
 
     # coordinate/rack
     if opts.coordinate:
-        vars.append(" '%s' in x.coordinate" % opts.coordinate.upper())
+        vars.append(f" '{opts.coordinate.upper()}' in x.coordinate")
     # if opts.aclname: vars.append(" '%s' in x.model" % opts.model)
 
     # print vars
@@ -278,8 +275,7 @@ def search_builder(opts):
         from trigger.conf import settings
 
         print(
-            "A required field in %s is missing or invalid.  Please fix the data and try again."
-            % settings.NETDEVICES_SOURCE
+            f"A required field in {settings.NETDEVICES_SOURCE} is missing or invalid.  Please fix the data and try again."
         )
         sys.exit(1)
 
@@ -309,7 +305,7 @@ def search_builder(opts):
             for key, value in opts_dict.items():
                 if key not in ("search", "nonprod") and value:
                     squery.append(key + "=" + value)
-            print("No matches for the query %s." % " and ".join(squery))
+            print("No matches for the query {}.".format(" and ".join(squery)))
 
 
 def main():

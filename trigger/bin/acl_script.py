@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 acl_script - CLI interface to simplify complex modification to access-lists.
 """
 
-from __future__ import print_function
 
 # TODO (jathan): Have this import from trigger.acl.utils.AclScript, because
 # much of the code is copypasta.
@@ -13,13 +11,13 @@ from __future__ import print_function
 __version__ = "1.2"
 
 
-from optparse import OptionParser
 import os
 import re
 import sys
+from optparse import OptionParser
+
 import trigger.acl.tools as acl_tools
-from trigger.acl.parser import parse, TIP, Comment
-from trigger.netdevices import NetDevices
+from trigger.acl.parser import TIP, Comment, parse
 from trigger.utils.cli import yesno
 from trigger.utils.rcs import RCS
 
@@ -318,14 +316,14 @@ NOTE when using --replace-defined:
         opts.destination_address[cnt] = TIP(i)
         cnt += 1
     for i in opts.destination_address_from_file:
-        f = open(i, "r")
+        f = open(i)
         line = f.readline()
         while line:
             line = line.rstrip()
             opts.destination_address.append(TIP(line))
             line = f.readline()
     for i in opts.source_address_from_file:
-        f = open(i, "r")
+        f = open(i)
         line = f.readline()
         while line:
             line = line.rstrip()
@@ -344,10 +342,10 @@ NOTE when using --replace-defined:
 
 
 def log_term(term, msg="ADDING"):
-    print(">>%s<<" % (msg), end=" ")
+    print(f">>{msg}<<", end=" ")
     for k, v in term.match.items():
         for x in v:
-            print("KEY:%s VAL:%s," % (k, x), end=" ")
+            print(f"KEY:{k} VAL:{x},", end=" ")
     print("")
 
 
@@ -424,15 +422,9 @@ def wedge_acl(acl, new_term, between, opts):
                         if opts.show_mods:
                             removing = term.match.get(k, [])
                             for x in removing:
-                                print(
-                                    ">>REMOVING<< KEY:%s VAL:%s,TERM:%s"
-                                    % (k, x, term.name)
-                                )
+                                print(f">>REMOVING<< KEY:{k} VAL:{x},TERM:{term.name}")
                             for x in v:
-                                print(
-                                    ">>ADDING<< KEY:%s VAL:%s,TERM:%s"
-                                    % (k, x, term.name)
-                                )
+                                print(f">>ADDING<< KEY:{k} VAL:{x},TERM:{term.name}")
                         term.match[k] = v
 
                 elif opts.insert_defined:
@@ -444,8 +436,7 @@ def wedge_acl(acl, new_term, between, opts):
                             if opts.show_mods:
                                 for x in v:
                                     print(
-                                        ">>ADDING<< KEY:%s VAL:%s, TERM:%s"
-                                        % (k, x, term.name)
+                                        f">>ADDING<< KEY:{k} VAL:{x}, TERM:{term.name}"
                                     )
                             term.match[k] = v
                         else:
@@ -460,8 +451,7 @@ def wedge_acl(acl, new_term, between, opts):
                                 if x not in term.match[k]:
                                     if opts.show_mods:
                                         print(
-                                            ">>ADDING<< KEY:%s VAL:%s, TERM:%s"
-                                            % (k, x, term.name)
+                                            f">>ADDING<< KEY:{k} VAL:{x}, TERM:{term.name}"
                                         )
                                     term.match[k].append(x)
                 break
@@ -475,11 +465,11 @@ def main():
         rcs.lock_loop()
 
         try:
-            with open(acl_file, "r") as f:
+            with open(acl_file) as f:
                 acl = parse(f)
         # TODO (jathan): Improve this naked except
-        except Exception as err:
-            print(">>ERROR<< Could not parse acl file %s!" % acl_file)
+        except Exception:
+            print(f">>ERROR<< Could not parse acl file {acl_file}!")
             rcs.unlock()
             sys.exit(2)
 
@@ -522,7 +512,7 @@ def main():
         diff = acl_tools.diff_files(acl_file, tempfile)
 
         if not diff:
-            print("No changes made to %s" % acl_file)
+            print(f"No changes made to {acl_file}")
             rcs.unlock()
             os.remove(tempfile)
             # sys.exit(0)
@@ -532,11 +522,11 @@ def main():
         if opts.no_input:
             prestr = ">>DIFF<< "
 
-        print('%s"%s"' % (prestr, acl_file))  # opts.acl)
-        print("%sBEGINNING OF CHANGES ===========" % prestr)
+        print(f'{prestr}"{acl_file}"')  # opts.acl)
+        print(f"{prestr}BEGINNING OF CHANGES ===========")
         for l in diff.split("\n"):
-            print("%s%s" % (prestr, l))
-        print("%sEND OF CHANGES =================" % prestr)
+            print(f"{prestr}{l}")
+        print(f"{prestr}END OF CHANGES =================")
 
         if not opts.no_input:
             if not yesno("Do you want to save changes?"):

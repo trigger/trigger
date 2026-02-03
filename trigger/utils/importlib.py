@@ -22,7 +22,7 @@ def _resolve_name(name, package, level):
             dot = package.rindex(".", 0, dot)
         except ValueError:
             raise ValueError("attempted relative import beyond top-level package")
-    return "{}.{}".format(package[:dot], name)
+    return f"{package[:dot]}.{name}"
 
 
 def import_module(name, package=None):
@@ -70,7 +70,7 @@ def import_module_from_path(full_path, global_name):
         mymodule = __import__(module)
         sys.modules[global_name] = mymodule
     except ImportError:
-        raise ImportError("Module could not be imported from %s." % full_path)
+        raise ImportError(f"Module could not be imported from {full_path}.")
     finally:
         del sys.path[-1]
 

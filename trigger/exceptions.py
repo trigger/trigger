@@ -11,7 +11,6 @@ __version__ = "1.9"
 
 
 # Imports
-from simpleparse.error import ParserSyntaxError
 
 
 # Exceptions
@@ -249,7 +248,7 @@ class JunoscriptCommandFailure(CommandFailure):
     def __str__(self):
         s = "JunOS XML command failure:\n"
         ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
-        for e in self.tag.findall(".//%serror" % ns):
+        for e in self.tag.findall(f".//{ns}error"):
             for e2 in e:
                 s += "  {}: {}\n".format(e2.tag.replace(ns, ""), e2.text)
         return s

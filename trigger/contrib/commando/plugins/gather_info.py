@@ -51,8 +51,10 @@ GatherInfo.results will look something like::
 """
 
 import re
-from trigger.cmds import Commando
+
 from twisted.python import log
+
+from trigger.cmds import Commando
 
 task_name = "gather_info"
 

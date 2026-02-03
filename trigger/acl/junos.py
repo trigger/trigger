@@ -66,7 +66,7 @@ class Policer:
                             if limit < 1 or limit > 100:
                                 raise "bandwidth-percent must be between 1 and 100"
                         else:
-                            raise "Unknown policer if-exceeding tag: %s" % type
+                            raise f"Unknown policer if-exceeding tag: {type}"
                 elif k == "action":
                     for i in v:
                         self.actions.append(i)
@@ -80,27 +80,27 @@ class Policer:
             if str[-1] == "m":
                 return int(str[0:-1]) * 1048576
             else:
-                raise "invalid bit definition %s" % str
+                raise f"invalid bit definition {str}"
         return val
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, repr(self.name))
+        return f"<{self.__class__.__name__}: {repr(self.name)}>"
 
     def __str__(self):
         return self.data
 
     def output(self):
-        output = ["policer %s {" % self.name]
+        output = [f"policer {self.name} {{"]
         if self.exceedings:
             output.append("    if-exceeding {")
         for x in self.exceedings:
-            output.append("        {} {};".format(x[0], x[1]))
+            output.append(f"        {x[0]} {x[1]};")
         if self.exceedings:
             output.append("    }")
         if self.actions:
             output.append("    then {")
         for x in self.actions:
-            output.append("        %s;" % x)
+            output.append(f"        {x};")
 
         if self.actions:
             output.append("    }")
@@ -154,9 +154,9 @@ def keyword_match(keyword, arg=None):
         prod = "junos_" + k.replace("-", "_")
         junos_match_types.append(prod)
         if arg is None:
-            rules[prod] = ('"%s", jsemi' % k, {k: True})
+            rules[prod] = (f'"{k}", jsemi', {k: True})
         else:
-            tokens = '"%s", jws, ' % k
+            tokens = f'"{k}", jws, '
             if k in address_matches:
                 tokens += braced_list(arg + ", jsemi")
             else:
@@ -180,9 +180,9 @@ keyword_match("tcp-initial")
 
 
 def range_match(key, arg):
-    rules[S(arg + "_range")] = ('{}, "-", {}'.format(arg, arg), tuple)
-    match = "{}_range / {}".format(arg, arg)
-    keyword_match(key, '{} / ("[", jws?, ({}, jws?)*, "]")'.format(match, match))
+    rules[S(arg + "_range")] = (f'{arg}, "-", {arg}', tuple)
+    match = f"{arg}_range / {arg}"
+    keyword_match(key, f'{match} / ("[", jws?, ({match}, jws?)*, "]")')
 
 
 range_match("ah-spi", "alphanums")
@@ -225,7 +225,7 @@ def handle_junos_acl(x):
         elif isinstance(elt, Policer):
             a.policers.append(elt)
         else:
-            raise RuntimeError("Bad Object: %s" % repr(elt))
+            raise RuntimeError(f"Bad Object: {repr(elt)}")
     return a
 
 
@@ -251,7 +251,7 @@ def handle_junos_policers(x):
         if isinstance(elt, Policer):
             p.policers.append(elt)
         else:
-            raise RuntimeError("bad object: %s in policer" % repr(elt))
+            raise RuntimeError(f"bad object: {repr(elt)} in policer")
     return p
 
 
@@ -288,11 +288,12 @@ rules.update(
         S("jcomment"): ("jslashbang_comment", lambda x: Comment(x[0])),
         "<comment_start>": '"/*"',
         "<comment_stop>": '"*/"',
-        ">jslashbang_comment<": "comment_start, jcomment_body, !%s, comment_stop"
-        % errs["comm_stop"],
+        ">jslashbang_comment<": "comment_start, jcomment_body, !{}, comment_stop".format(
+            errs["comm_stop"]
+        ),
         "jcomment_body": juniper_multiline_comments(),
         # Errors on missing ';', ignores multiple ;; and normalizes to one.
-        "<jsemi>": "jws?, [;]+!%s" % errs["semicolon"],
+        "<jsemi>": "jws?, [;]+!{}".format(errs["semicolon"]),
         "fragment_flag": literals(fragment_flag_names),
         "ip_option": "digits / " + literals(ip_option_names),
         "tcp_flag": literals(tcp_flag_names),

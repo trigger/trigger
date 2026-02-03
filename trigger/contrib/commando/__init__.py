@@ -23,14 +23,16 @@ __version__ = "0.2.1"
 
 # Imports
 import itertools
-import pickle
 import os
-from twisted.python import log, failure
-from trigger.cmds import Commando
-from trigger import exceptions
-from twisted.internet import defer, task
+import pickle
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
+
+from twisted.internet import defer, task
+from twisted.python import failure, log
+
+from trigger import exceptions
+from trigger.cmds import Commando
 
 # Exports
 __all__ = ("CommandoApplication",)
@@ -70,7 +72,7 @@ class CommandoApplication(Commando):
         container_types = ["commands", "devices"]
         for container in container_types:
             if isinstance(getattr(self, container), str):
-                raise SyntaxError("%r cannot be a string!" % container)
+                raise SyntaxError(f"{container!r} cannot be a string!")
 
         # In Python 3, all strings are unicode by default, so no conversion needed
         # Commands that get deserialized from JSON are already strings
@@ -83,7 +85,7 @@ class CommandoApplication(Commando):
 
     def from_base(self, results, device, commands=None):
         """Call store_results directly"""
-        log.msg("Received {!r} from {}".format(results, device))
+        log.msg(f"Received {results!r} from {device}")
         self.store_results(device, results)
 
     def from_juniper(self, results, device, commands=None):
@@ -94,7 +96,7 @@ class CommandoApplication(Commando):
 
         from xml.etree.ElementTree import tostring
 
-        log.msg("Got XML from %s" % device)
+        log.msg(f"Got XML from {device}")
         results = [tostring(r) for r in results]
         self.store_results(device, results)
 
@@ -106,13 +108,13 @@ class CommandoApplication(Commando):
         it as it would a result.
         """
         devname = str(device)
-        log.msg("Storing error for {}: {}".format(devname, error))
+        log.msg(f"Storing error for {devname}: {error}")
 
         if isinstance(error, failure.Failure):
             error = error.value
         devobj = self.device_object(devname, error=repr(error))
 
-        log.msg("Final device object: %r" % devobj)
+        log.msg(f"Final device object: {devobj!r}")
         self.errors.append(devobj)
 
         return True
@@ -122,7 +124,7 @@ class CommandoApplication(Commando):
         Create a basic device dictionary with optional data.
         """
         devobj = dict(device=device_name, **kwargs)
-        log.msg("Got device object: %r" % devobj)
+        log.msg(f"Got device object: {devobj!r}")
         return devobj
 
     def store_results(self, device, results):
@@ -136,7 +138,7 @@ class CommandoApplication(Commando):
             The results to store. Anything you want really.
         """
         devname = str(device)
-        log.msg("Storing results for {!r}: {!r}".format(devname, results))
+        log.msg(f"Storing results for {devname!r}: {results!r}")
 
         # Basic device object
         devobj = self.device_object(devname, commands=[])
@@ -144,7 +146,7 @@ class CommandoApplication(Commando):
         # Command output will be stored in devobj['commands']
         devobj["commands"] = self.map_results(self.commands, results)
 
-        log.msg("Final device object: %r" % devobj)
+        log.msg(f"Final device object: {devobj!r}")
         self.results.append(devobj)
 
         return True
@@ -167,7 +169,7 @@ class CommandoApplication(Commando):
                 # XML must die a very horrible death
                 cmd = ET.tostring(cmd)
             cmdobj = dict(command=cmd, result=res)
-            log.msg("Got command object: %r" % cmdobj)
+            log.msg(f"Got command object: {cmdobj!r}")
             cmd_list.append(cmdobj)
         return cmd_list
 
@@ -179,8 +181,8 @@ class CommandoApplication(Commando):
 
     def _stop(self):
         log.msg("._stop() called")
-        log.msg("MY RESULTS ARE: %r" % self.results)
-        log.msg("MY  ERRORS ARE: %r" % self.errors)
+        log.msg(f"MY RESULTS ARE: {self.results!r}")
+        log.msg(f"MY  ERRORS ARE: {self.errors!r}")
         self.all_done = True
         # from twisted.internet import reactor
         # reactor.stop()
@@ -203,10 +205,10 @@ class CommandoApplication(Commando):
         and return them.
         """
         log.msg(">>>>> monitor_result() called")
-        log.msg(">>>>> self.all_done = %s" % self.all_done)
+        log.msg(f">>>>> self.all_done = {self.all_done}")
         if self.all_done:
-            log.msg(">>>>> SENDING RESULTS: %r" % self.results)
-            log.msg(">>>>> SENDING  ERRORS: %r" % self.errors)
+            log.msg(f">>>>> SENDING RESULTS: {self.results!r}")
+            log.msg(f">>>>> SENDING  ERRORS: {self.errors!r}")
             # return self.results
             return dict(result=self.results, errors=self.errors)
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)

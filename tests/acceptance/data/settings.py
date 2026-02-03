@@ -1,9 +1,10 @@
 # This is a sample settings.py that varies slightly from the default. Please see docs/configuration.rst or
 # trigger/conf/global_settings.py for the complete list of default settings.
 
-import IPy
 import os
 import socket
+
+import IPy
 
 # ===============================
 # Global Settings

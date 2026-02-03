@@ -6,13 +6,13 @@ __copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com"
 __version__ = "2.0.1"
 
 
-from io import StringIO
 import os
-import unittest
 import tempfile
+import unittest
 from unittest.mock import patch
+
 from trigger.conf import settings
-from trigger.tacacsrc import Tacacsrc, Credentials
+from trigger.tacacsrc import Credentials, Tacacsrc
 
 # Constants
 aol = Credentials("jschmoe", "abc123", "aol")
@@ -84,7 +84,7 @@ class TacacsrcTest(unittest.TestCase):
         for name, value in ALL_CREDS:
             # Python 3: packaging.version.Version object, compare as string
             self.assertEqual(str(t.version), "2.0")
-            self.assertEqual(t.creds["%s" % name], value)
+            self.assertEqual(t.creds[f"{name}"], value)
 
     def _get_perms(self, filename):
         """Get octal permissions for a filename"""
@@ -97,7 +97,7 @@ class TacacsrcTest(unittest.TestCase):
         t = MockTacacsrc(generate_new=False)
 
         for name, value in ALL_CREDS:
-            t.creds["%s" % name] = value
+            t.creds[f"{name}"] = value
             # Overload the default file_name w/ our temp file or
             # create a new tacacsrc by setting file_name to 'tests/data/tacacsrc'
             t.file_name = file_name
@@ -111,7 +111,7 @@ class TacacsrcTest(unittest.TestCase):
 
         # And then compare it against the manually parsed value using
         # miniparser()
-        with open(settings.TACACSRC, "r") as fd:
+        with open(settings.TACACSRC) as fd:
             lines = fd.readlines()
             self.assertEqual(output, miniparser(lines, t))
         os.remove(file_name)

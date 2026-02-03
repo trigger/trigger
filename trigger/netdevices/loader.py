@@ -24,9 +24,9 @@ from collections import namedtuple
 
 from twisted.python import log
 
+from trigger.conf import settings
 from trigger.exceptions import ImproperlyConfigured, LoaderFailed
 from trigger.utils.importlib import import_module
-from trigger.conf import settings
 
 # Exports
 __all__ = ("BaseLoader", "load_metadata")
@@ -82,7 +82,7 @@ def find_data_loader(loader):
     else:
         args = []
 
-    log.msg("BUILDING LOADER: {}; WITH ARGS: {}".format(loader, args))
+    log.msg(f"BUILDING LOADER: {loader}; WITH ARGS: {args}")
     err_template = "Error importing data source loader %s: '%s'"
     if isinstance(loader, str):
         module, attr = loader.rsplit(".", 1)
@@ -103,8 +103,7 @@ def find_data_loader(loader):
             # path to callabale.
             if args:
                 raise ImproperlyConfigured(
-                    "Error importing data source loader %s: Can't pass arguments to function-based loader!"
-                    % loader
+                    f"Error importing data source loader {loader}: Can't pass arguments to function-based loader!"
                 )
             func = DataLoader
 
@@ -112,8 +111,7 @@ def find_data_loader(loader):
             import warnings
 
             warnings.warn(
-                "Your NETDEVICES_LOADERS setting includes %r, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS."
-                % loader
+                f"Your NETDEVICES_LOADERS setting includes {loader!r}, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS."
             )
             return None
         else:
@@ -161,16 +159,16 @@ def load_metadata(data_source, **kwargs):
             log.msg("LOADER: SUCCESS!")
         except LoaderFailed as err:
             tried.append(loader)
-            log.msg("LOADER - FAILURE: %s" % err)
+            log.msg(f"LOADER - FAILURE: {err}")
             continue
         else:
             # Successfully parsed (we hope)
             if data is not None:
-                log.msg("LOADERS TRIED: %r" % tried)
+                log.msg(f"LOADERS TRIED: {tried!r}")
                 return LoaderMetadata(loader, data)
             else:
                 tried.append(loader)
                 continue
 
     # All loaders failed. We don't want to get to this point!
-    raise RuntimeError("No data loaders succeeded. Tried: %r" % tried)
+    raise RuntimeError(f"No data loaders succeeded. Tried: {tried!r}")

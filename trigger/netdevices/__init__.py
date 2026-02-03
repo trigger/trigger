@@ -27,20 +27,18 @@ import os
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from collections.abc import MutableMapping
-import xml.etree.cElementTree as ET
 
-from twisted.python import log
+from crochet import run_in_reactor, setup, wait_for
+from twisted.internet import defer, reactor
 from twisted.internet.protocol import Factory
-from twisted.internet import reactor
-from twisted.internet import defer
+from twisted.python import log
 
+from trigger import changemgmt, exceptions, rancid
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
-from trigger import changemgmt, exceptions, rancid
-
-from crochet import setup, run_in_reactor, wait_for
 
 from . import loader
 
@@ -105,7 +103,7 @@ def _populate(netdevices, data_source, production_only, with_acls):
         # Only return devices with adminStatus of 'PRODUCTION' unless
         # `production_only` is True
         if dev.adminStatus.upper() != "PRODUCTION" and production_only:
-            log.msg("[%s] Skipping: adminStatus not PRODUCTION" % dev.nodeName)
+            log.msg(f"[{dev.nodeName}] Skipping: adminStatus not PRODUCTION")
             continue
 
         # These checks should be done on generation of netdevices.xml.
@@ -151,28 +149,28 @@ def device_match(name, production_only=True):
         if matches:
             if len(matches) == 1:
                 single = matches[0]
-                print("Matched '%s'." % single)
+                print(f"Matched '{single}'.")
                 return single
 
             print("%d possible matches found for '%s':" % (len(matches), name))
 
             matches.sort()
             for num, shortname in enumerate(matches):
-                print(" [%s] %s" % (str(num + 1).rjust(2), shortname))
+                print(f" [{str(num + 1).rjust(2)}] {shortname}")
             print(" [ 0] Exit\n")
 
             choice = int(input("Enter a device number: ")) - 1
             match = None if choice < 0 else matches[choice]
-            log.msg("Choice: %s" % choice)
-            log.msg("You chose: %s" % match)
+            log.msg(f"Choice: {choice}")
+            log.msg(f"You chose: {match}")
         else:
-            print("No matches for '%s'." % name)
+            print(f"No matches for '{name}'.")
 
     return match
 
 
 # Classes
-class NetDevice(object):
+class NetDevice:
     """
     An object that represents a distinct network device and its metadata.
 
@@ -242,7 +240,7 @@ class NetDevice(object):
         # ACLs (defaults to empty sets)
         self.explicit_acls = self.implicit_acls = self.acls = self.bulk_acls = set()
         if with_acls:
-            log.msg("[%s] Populating ACLs" % self.nodeName)
+            log.msg(f"[{self.nodeName}] Populating ACLs")
             self._populate_acls(aclsdb=with_acls)
 
         # Bind the correct execute/connect methods based on deviceType
@@ -454,7 +452,7 @@ class NetDevice(object):
         return self.nodeName
 
     def __repr__(self):
-        return "<NetDevice: %s>" % self.nodeName
+        return f"<NetDevice: {self.nodeName}>"
 
     def __eq__(self, other):
         """Compare NetDevice objects by nodeName."""
@@ -502,7 +500,7 @@ class NetDevice(object):
         try:
             oss = vendor_mapping[self.vendor]
             if self.operatingSystem.lower() in oss:
-                return "{}_{}".format(self.vendor, self.operatingSystem.lower())
+                return f"{self.vendor}_{self.operatingSystem.lower()}"
         except:
             log.msg("""Unable to find template for given device.
                     Check to see if your netdevices object has the 'platform' key.
@@ -512,9 +510,9 @@ class NetDevice(object):
     def _get_endpoint(self, *args):
         """Private method used for generating an endpoint for `~trigger.netdevices.NetDevice`."""
         from trigger.twister2 import (
-            generate_endpoint,
-            TriggerEndpointClientFactory,
             IoslikeSendExpect,
+            TriggerEndpointClientFactory,
+            generate_endpoint,
         )
 
         endpoint = generate_endpoint(self).wait()
@@ -602,13 +600,15 @@ class NetDevice(object):
 
         """
         from trigger.twister2 import (
-            TriggerSSHShellClientEndpointBase,
             IoslikeSendExpect,
             TriggerEndpointClientFactory,
+            TriggerSSHShellClientEndpointBase,
         )
 
         if on_error is None:
-            on_error = lambda x: x
+
+            def on_error(x):
+                return x
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
@@ -649,13 +649,15 @@ class NetDevice(object):
 
         """
         from trigger.twister2 import (
-            TriggerSSHShellClientEndpointBase,
             IoslikeSendExpect,
             TriggerEndpointClientFactory,
+            TriggerSSHShellClientEndpointBase,
         )
 
         if on_error is None:
-            on_error = lambda x: x
+
+            def on_error(x):
+                return x
 
         factory = TriggerEndpointClientFactory()
         factory.protocol = IoslikeSendExpect
@@ -870,7 +872,7 @@ class NetDevice(object):
         print("\tOwning Team:      ", dev.owningTeam)
         print("\tOnCall Team:      ", dev.onCallName)
         print()
-        print("\tVendor:           ", "%s (%s)" % (dev.vendor.title, dev.manufacturer))
+        print("\tVendor:           ", f"{dev.vendor.title} ({dev.manufacturer})")
         # print '\tManufacturer:     ', dev.manufacturer
         print("\tMake:             ", dev.make)
         print("\tModel:            ", dev.model)
@@ -880,7 +882,7 @@ class NetDevice(object):
         print("\tProject:          ", dev.projectName)
         print("\tSerial:           ", dev.serialNumber)
         print("\tAsset Tag:        ", dev.assetID)
-        print("\tBudget Code:      ", "%s (%s)" % (dev.budgetCode, dev.budgetName))
+        print("\tBudget Code:      ", f"{dev.budgetCode} ({dev.budgetName})")
         print()
         print("\tAdmin Status:     ", dev.adminStatus)
         print("\tLifecycle Status: ", dev.lifecycleStatus)
@@ -889,7 +891,7 @@ class NetDevice(object):
         print()
 
 
-class Vendor(object):
+class Vendor:
     """
     Map a manufacturer name to Trigger's canonical name.
 
@@ -960,7 +962,7 @@ class Vendor(object):
         return self.name
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.title)
+        return f"<{self.__class__.__name__}: {self.title}>"
 
     def __eq__(self, other):
         return self.name.__eq__(Vendor(str(other)).name)
@@ -1010,7 +1012,7 @@ class NetDevices(MutableMapping):
 
     _Singleton = None
 
-    class _actual(object):
+    class _actual:
         """
         This is the real class that stays active upon instantiation. All
         attributes are inherited by NetDevices from this object. This means you

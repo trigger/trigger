@@ -7,16 +7,17 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2009-2011, AOL Inc."
 
-import commands
 import os
 import time
+
+import commands
 
 # Exports
 __all__ = ("RCS",)
 
 
 # Classes
-class RCS(object):
+class RCS:
     """
     Simple wrapper for CLI ``rcs`` command. An instance is bound to a file.
 
@@ -82,9 +83,9 @@ class RCS(object):
         True
         """
         if initial:
-            cmd = 'ci -m"first commit" -t- -i %s' % self.filename
+            cmd = f'ci -m"first commit" -t- -i {self.filename}'
         else:
-            cmd = 'ci -u -m"%s" %s' % (logmsg, self.filename)
+            cmd = f'ci -u -m"{logmsg}" {self.filename}'
         status, output = commands.getstatusoutput(cmd)
 
         if verbose:
@@ -105,7 +106,7 @@ class RCS(object):
         >>> rcs.lock()
         True
         """
-        cmd = "co -f -l %s" % self.filename
+        cmd = f"co -f -l {self.filename}"
         status, output = commands.getstatusoutput(cmd)
 
         if verbose:
@@ -126,7 +127,7 @@ class RCS(object):
         >>> rcs.unlock()
         True
         """
-        cmd = "co -f -u %s" % self.filename
+        cmd = f"co -f -u {self.filename}"
         status, output = commands.getstatusoutput(cmd)
 
         if verbose:
@@ -160,7 +161,7 @@ class RCS(object):
             co: RCS/foo,v: Revision 1.2 is already locked by joe.
         """
         while not self.lock(verbose=verbose):
-            print("Sleeping to wait for the lock on the file: %s" % self.filename)
+            print(f"Sleeping to wait for the lock on the file: {self.filename}")
             time.sleep(timeout)
             if callback:
                 callback()
@@ -168,7 +169,7 @@ class RCS(object):
 
     def log(self):
         """Returns the RCS log as a string (see above)."""
-        cmd = "rlog %s 2>&1" % self.filename
+        cmd = f"rlog {self.filename} 2>&1"
         status, output = commands.getstatusoutput(cmd)
 
         if status > 0:

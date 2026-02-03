@@ -12,8 +12,6 @@ __maintainer__ = "Jathan McCollum"
 __copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com.; 2016 Dropbox"
 __version__ = "1.0"
 
-import os
-import unittest
 
 # from utils import captured_output
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 Interface with the access-control list (ACL) database and task queue.
@@ -9,21 +8,18 @@ database (acls.db), to search for both implicit and explicit ACL associations,
 and to manage the ACL task queue.
 """
 
-from __future__ import print_function
-
 __version__ = "1.6.1"
 
-from textwrap import wrap
-from collections import defaultdict
 import optparse
-import os
 import sys
+from collections import defaultdict
+from textwrap import wrap
 
-from trigger.utils.cli import get_terminal_width
-from trigger.acl.queue import Queue
-from trigger.acl.db import AclsDB, get_matching_acls
-from trigger.conf import settings
 from trigger import exceptions
+from trigger.acl.db import AclsDB, get_matching_acls
+from trigger.acl.queue import Queue
+from trigger.conf import settings
+from trigger.utils.cli import get_terminal_width
 
 
 def parse_args(argv, optp):
@@ -169,7 +165,7 @@ def main():
     elif opts.mode == "listmanual":
         for item, user, ts, done in queue.list(queue="manual"):
             print(item)
-            print("\tadded by %s on %s" % (user, ts))
+            print(f"\tadded by {user} on {ts}")
             print()
         if not queue.list(queue="manual"):
             print("Nothing in the manual queue.")
@@ -193,7 +189,7 @@ def main():
             try:
                 dev = nd.find(arg.lower())
             except KeyError:
-                print("skipping %s: invalid device" % arg)
+                print(f"skipping {arg}: invalid device")
                 invalid_dev_count += 1
                 continue
                 # the continue here leads that single error if its the only attempt
@@ -212,9 +208,7 @@ def main():
                     except exceptions.ACLSetError as err:
                         # Check if it is an implicit ACL
                         if acl in aclsdb.get_acl_set(dev, "implicit"):
-                            print(
-                                "This ACL is associated via %s" % settings.AUTOACL_FILE
-                            )
+                            print(f"This ACL is associated via {settings.AUTOACL_FILE}")
                         else:
                             print(err)
 
@@ -227,7 +221,7 @@ def main():
             args, opts.exact, match_acl=(not opts.dev_only), match_device=True
         )
         if not acl_data:
-            msg = "No results for %s" % args if not opts.quiet else 1
+            msg = f"No results for {args}" if not opts.quiet else 1
             sys.exit(msg)
 
         [pretty_print_acls(name, acls, term_width) for name, acls in acl_data]

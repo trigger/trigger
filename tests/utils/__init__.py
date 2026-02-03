@@ -2,9 +2,10 @@
 Utils used for testing and especially mocking objects for testing.
 """
 
-from . import mock_redis
 import os
 import sys
+
+from . import mock_redis
 
 __all__ = ["mock_redis"]
 
@@ -19,8 +20,9 @@ if __name__ == "__main__":
 
     mock_redis.install()
     import redis
-    from trigger.netdevices import NetDevices
+
     from trigger.acl.db import AclsDB
+    from trigger.netdevices import NetDevices
 
     r = redis.Redis()
     a = AclsDB()

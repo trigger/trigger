@@ -6,9 +6,9 @@ Test the functionality of `~trigger.acl.queue` (aka task queue)
 Only tests SQLite for now.
 """
 
-import datetime
 import os
 import tempfile
+
 from trigger.conf import settings
 
 # Override the DB file we're going to use.
@@ -21,13 +21,14 @@ from utils import mock_redis
 mock_redis.install()
 
 # Now we can import from Trigger
+import unittest
+
+from trigger import exceptions
 from trigger.acl import queue
-from trigger.acl.models import create_tables
 from trigger.acl.db import AclsDB
+from trigger.acl.models import create_tables
 from trigger.netdevices import NetDevices
 from trigger.utils import get_user
-from trigger import exceptions
-import unittest
 
 # Globals
 DEVICE_NAME = "test1-abc.net.aol.com"

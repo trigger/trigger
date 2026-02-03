@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 optimizer - ACL Optimizer
@@ -12,15 +11,15 @@ and removed.
 __version__ = "1.5"
 
 import copy
-import datetime
-import IPy
 import logging
-from optparse import OptionParser
 import signal
-from simpleparse.error import ParserSyntaxError
 import sys
 import time
-from trigger.acl.parser import parse, Comment, ACL, TIP
+from optparse import OptionParser
+
+from simpleparse.error import ParserSyntaxError
+
+from trigger.acl.parser import ACL, TIP, Comment, parse
 
 stop_all = False
 
@@ -170,7 +169,7 @@ class ProgressMeter:
             total = 0.0
             # Average rate history
             for rate in self.rate_history:
-                if rate == None:
+                if rate is None:
                     continue
                 cnt += 1
                 total += rate
@@ -219,7 +218,6 @@ def focus_terms(pcount, terms):
     """
     focused = dict()
     matched_ports = dict()
-    matcher = dict()
     ports = dict()
 
     for term in terms:
@@ -268,7 +266,6 @@ def optimize_terms(terms, focused, which, opts):
     to_delete = dict()
     other = ""
     total = 0
-    count = 0
 
     total = len(terms)
 
@@ -481,7 +478,7 @@ def terms_chunker(terms):
 
     for term in terms:
         meter.update(1)
-        if current_modifier == None:
+        if current_modifier is None:
             current_modifier = term.action[0]
         if current_modifier != term.action[0]:
             ret.append(copy.copy(current_chunk))
@@ -542,7 +539,7 @@ def do_work(opts, files):
         if stop_all:
             return
 
-        log.info("Parsing %s" % acl_file)
+        log.info(f"Parsing {acl_file}")
 
         try:
             acl = parse(open(acl_file))
@@ -553,13 +550,13 @@ def do_work(opts, files):
 
         log.info("Done parsing")
 
-        orig_tcnt = len(acl.terms)
+        len(acl.terms)
 
         if opts.focus:
             log.info("Finding focused terms")
             focused = focus_terms(opts.focus, acl.terms)
             if not focused:
-                log.warn("No focused terms could be found in acl %s" % (acl_file))
+                log.warn(f"No focused terms could be found in acl {acl_file}")
                 continue
 
             log.info("Done focused term")

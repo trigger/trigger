@@ -6,43 +6,39 @@ not at all.
 
 import fcntl
 import os
-import re
-import signal
 import struct
 import sys
 import tty
-from copy import copy
 from collections import deque
-from crochet import wait_for, run_in_reactor, setup, EventLoop
+from copy import copy
+
+from crochet import run_in_reactor, setup
 
 setup()
 
-from twisted.conch.ssh import session, common, transport
-from twisted.conch.ssh.channel import SSHChannel
 from twisted.conch.endpoints import (
     SSHCommandClientEndpoint,
-    _NewConnectionHelper,
-    _ExistingConnectionHelper,
-    _CommandTransport,
     TCP4ClientEndpoint,
-    connectProtocol,
-    _UserAuth,
+    _CommandTransport,
     _ConnectionReady,
+    _ExistingConnectionHelper,
+    _NewConnectionHelper,
+    _UserAuth,
+    connectProtocol,
 )
-from twisted.internet import defer, protocol, reactor, threads
+from twisted.conch.ssh import common, session, transport
+from twisted.conch.ssh.channel import SSHChannel
+from twisted.internet import defer, protocol, reactor
 from twisted.internet.defer import CancelledError
-from twisted.internet.task import LoopingCall
 from twisted.protocols.policies import TimeoutMixin
 from twisted.python import log
 
+from trigger import exceptions, tacacsrc
 from trigger.conf import settings
-from trigger import tacacsrc, exceptions
 from trigger.twister import (
-    is_awaiting_confirmation,
     has_ioslike_error,
-    TriggerSSHUserAuth,
+    is_awaiting_confirmation,
 )
-from twisted.internet import reactor
 
 
 @run_in_reactor
@@ -198,7 +194,7 @@ class _TriggerUserAuth(_UserAuth):
         getPassword() method.
         """
         log.msg("Performing interactive authentication", debug=True)
-        log.msg("Prompts: %r" % prompts, debug=True)
+        log.msg(f"Prompts: {prompts!r}", debug=True)
 
         # The response must always a sequence, and the length must match that
         # of the prompts list
@@ -207,7 +203,7 @@ class _TriggerUserAuth(_UserAuth):
             prompt, echo = prompt_tuple  # e.g. [('Password: ', False)]
             if "assword" in prompt:
                 log.msg(
-                    "Got password prompt: %r, sending password!" % prompt, debug=True
+                    f"Got password prompt: {prompt!r}, sending password!", debug=True
                 )
                 response[idx] = self.password
 
@@ -224,7 +220,7 @@ class _TriggerUserAuth(_UserAuth):
         """
         canContinue, partial = common.getNS(packet)
         partial = ord(partial)
-        log.msg("Previous method: %r " % self.lastAuth, debug=True)
+        log.msg(f"Previous method: {self.lastAuth!r} ", debug=True)
 
         # If the last method succeeded, track it. If network devices ever start
         # doing second-factor authentication this might be useful.
@@ -259,8 +255,8 @@ class _TriggerUserAuth(_UserAuth):
             key=orderByPreference,
         )
 
-        log.msg("Can continue with: %s" % canContinue)
-        log.msg("Already tried: %s" % self.authenticatedWith, debug=True)
+        log.msg(f"Can continue with: {canContinue}")
+        log.msg(f"Already tried: {self.authenticatedWith}", debug=True)
         return self._cbUserauthFailure(None, iter(canContinue))
 
     def _cbUserauthFailure(self, result, iterator):
@@ -272,9 +268,9 @@ class _TriggerUserAuth(_UserAuth):
         except StopIteration:
             msg = (
                 "No more authentication methods available.\n"
-                "Tried: %s\n"
+                f"Tried: {self.preferredOrder}\n"
                 "If not using ssh-agent w/ public key, make sure "
-                "SSH_AUTH_SOCK is not set and try again.\n" % (self.preferredOrder,)
+                "SSH_AUTH_SOCK is not set and try again.\n"
             )
             self.transport.factory.err = exceptions.LoginFailure(msg)
             self.transport.loseConnection()
@@ -346,8 +342,7 @@ class _TriggerCommandTransport(_CommandTransport):
 
 class _TriggerSessionTransport(_TriggerCommandTransport):
     def verifyHostKey(self, hostKey, fingerprint):
-        hostname = self.creator.hostname
-        ip = self.transport.getPeer().host
+        self.transport.getPeer().host
 
         self._state = b"SECURING"
         return defer.succeed(1)
@@ -409,23 +404,23 @@ class TriggerEndpointClientFactory(protocol.Factory):
         if init_commands is None:
             init_commands = []  # We need this to be a list
         self.init_commands = init_commands
-        log.msg("INITIAL COMMANDS: %r" % self.init_commands, debug=True)
+        log.msg(f"INITIAL COMMANDS: {self.init_commands!r}", debug=True)
         self.initialized = False
 
     def clientConnectionFailed(self, connector, reason):
         """Do this when the connection fails."""
-        log.msg("Client connection failed. Reason: %s" % reason)
+        log.msg(f"Client connection failed. Reason: {reason}")
         self.d.errback(reason)
 
     def clientConnectionLost(self, connector, reason):
         """Do this when the connection is lost."""
-        log.msg("Client connection lost. Reason: %s" % reason)
+        log.msg(f"Client connection lost. Reason: {reason}")
         if self.err:
-            log.msg("Got err: %r" % self.err)
+            log.msg(f"Got err: {self.err!r}")
             # log.err(self.err)
             self.d.errback(self.err)
         else:
-            log.msg("Got results: %r" % self.results)
+            log.msg(f"Got results: {self.results!r}")
             self.d.callback(self.results)
 
     def stopFactory(self):
@@ -442,7 +437,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
         if not self.initialized:
             log.msg("Not initialized, sending init commands", debug=True)
             for next_init in self.init_commands:
-                log.msg("Sending: %r" % next_init, debug=True)
+                log.msg(f"Sending: {next_init!r}", debug=True)
                 protocol.write(next_init + "\r\n")
             else:
                 self.initialized = True
@@ -451,7 +446,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
         log.msg("Connection success.")
         self.conn = conn
         self.transport = transport
-        log.msg("Connection information: %s" % self.transport)
+        log.msg(f"Connection information: {self.transport}")
 
 
 class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
@@ -595,7 +590,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.finished = defer.Deferred()
         self.results = self.factory.results = []
         self.data = ""
-        log.msg("[{}] connectionMade, data: {!r}".format(self.device, self.data))
+        log.msg(f"[{self.device}] connectionMade, data: {self.data!r}")
         # self.factory._init_commands(self)
 
     def connectionLost(self, reason):
@@ -660,7 +655,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
-        log.msg("[{}] BYTES: {!r}".format(self.device, bytes))
+        log.msg(f"[{self.device}] BYTES: {bytes!r}")
         self.data += (
             bytes  # See if the prompt matches, and if it doesn't, see if it is waiting
         )
@@ -670,9 +665,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         if not m:
             # If the prompt confirms set the index to the matched bytes,
             if is_awaiting_confirmation(self.data):
-                log.msg(
-                    "[{}] Got confirmation prompt: {!r}".format(self.device, self.data)
-                )
+                log.msg(f"[{self.device}] Got confirmation prompt: {self.data!r}")
                 prompt_idx = self.data.find(bytes)
             else:
                 return None
@@ -685,21 +678,20 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # since the telnet session is in WONT ECHO.  This is confirmed with
         # a packet trace, and running self.transport.dont(ECHO) from
         # connectionMade() returns an AlreadyDisabled error.  What's up?
-        log.msg("[{}] result BEFORE: {!r}".format(self.device, result))
+        log.msg(f"[{self.device}] result BEFORE: {result!r}")
         result = result[result.find("\n") + 1 :]
-        log.msg("[{}] result AFTER: {!r}".format(self.device, result))
+        log.msg(f"[{self.device}] result AFTER: {result!r}")
 
         if self.initialized:
             self.results.append(result)
 
         if has_ioslike_error(result) and not self.with_errors:
-            log.msg("[{}] Command failed: {!r}".format(self.device, result))
+            log.msg(f"[{self.device}] Command failed: {result!r}")
             self.factory.err = exceptions.IoslikeCommandFailure(result)
         else:
             if self.command_interval:
                 log.msg(
-                    "[%s] Waiting %s seconds before sending next command"
-                    % (self.device, self.command_interval)
+                    f"[{self.device}] Waiting {self.command_interval} seconds before sending next command"
                 )
 
             reactor.callLater(self.command_interval, self._send_next)
@@ -710,19 +702,15 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.resetTimeout()
 
         if not self.initialized:
-            log.msg("[%s] Not initialized, sending startup commands" % self.device)
+            log.msg(f"[{self.device}] Not initialized, sending startup commands")
             if self.startup_commands:
                 next_init = self.startup_commands.pop(0)
-                log.msg(
-                    "[{}] Sending initialize command: {!r}".format(
-                        self.device, next_init
-                    )
-                )
+                log.msg(f"[{self.device}] Sending initialize command: {next_init!r}")
                 self.transport.write(next_init.strip() + self.device.delimiter)
                 return None
             else:
                 log.msg(
-                    "[%s] Successfully initialized for command execution" % self.device
+                    f"[{self.device}] Successfully initialized for command execution"
                 )
                 self.initialized = True
 
@@ -732,7 +720,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         try:
             next_command = self.commanditer.next()
         except StopIteration:
-            log.msg("[%s] No more commands to send, moving on..." % self.device)
+            log.msg(f"[{self.device}] No more commands to send, moving on...")
 
             if self.todo:
                 payload = list(reversed(self.results))[: len(self.commands)]
@@ -747,11 +735,11 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             self.results.append(None)
             self._send_next()
         else:
-            log.msg("[{}] Sending command {!r}".format(self.device, next_command))
+            log.msg(f"[{self.device}] Sending command {next_command!r}")
             self.transport.write(next_command + "\n")
 
     def timeoutConnection(self):
         """Do this when we timeout."""
-        log.msg("[%s] Timed out while sending commands" % self.device)
+        log.msg(f"[{self.device}] Timed out while sending commands")
         self.factory.err = exceptions.CommandTimeout("Timed out while sending commands")
         self.transport.loseConnection()

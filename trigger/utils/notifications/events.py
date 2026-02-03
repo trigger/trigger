@@ -14,7 +14,6 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2012-2012, AOL Inc."
 
-import socket
 from trigger.conf import settings
 
 # Exports
@@ -22,7 +21,7 @@ __all__ = ("Event", "Notification", "EmailEvent")
 
 
 # Classes
-class Event(object):
+class Event:
     """
     Base class for events.
 
@@ -45,10 +44,10 @@ class Event(object):
         local_vars = self.__dict__
         for var, value in local_vars.items():
             if var in self.required_args and value is None:
-                raise SyntaxError("`%s` is a required argument" % var)
+                raise SyntaxError(f"`{var}` is a required argument")
 
     def __repr__(self):
-        return "<%s>" % self.__class__.__name__
+        return f"<{self.__class__.__name__}>"
 
     def handle(self):
         raise NotImplementedError("Define me in your subclass!")
@@ -121,7 +120,7 @@ class Notification(Event):
             recipients = self.status_map.get(self.event_status)
         self.recipients = recipients
 
-        super(Notification, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.kwargs = kwargs
 
 

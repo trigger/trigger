@@ -2,9 +2,10 @@
 # pointed-to by the TRIGGER_SETTINGS environment variable. This is pretty much
 # an exact duplication of how Django does this.
 
-import IPy
 import os
 import socket
+
+import IPy
 
 # ===============================
 # Global Settings
@@ -511,7 +512,9 @@ BULK_MAX_HITS_DEFAULT = 1
 def _stage_acls(acls, log=None, sanitize_acl=False):
     """stage the new ACL files for load_acl"""
 
-    import os, shutil
+    import os
+    import shutil
+
     from trigger.acl import parse as acl_parse
     from trigger.conf import settings
 
@@ -522,20 +525,20 @@ def _stage_acls(acls, log=None, sanitize_acl=False):
 
     for acl in acls:
         nonce = os.urandom(8).encode("hex")
-        acl_nonce = "%s.%s" % (acl, nonce)
+        acl_nonce = f"{acl}.{nonce}"
         src_file = os.path.join(settings.FIREWALL_DIR, acl)
         dst_file = os.path.join(settings.TFTPROOT_DIR, acl_nonce)
 
         if not os.path.exists(dst_file):
             try:
                 shutil.copyfile(src_file, dst_file)
-            except Exception as err:
-                fails.append("Unable to stage TFTP File %s" % str(acls))
+            except Exception:
+                fails.append(f"Unable to stage TFTP File {str(acls)}")
                 continue
             else:
                 os.chmod(dst_file, 0o644)
 
-        with open(src_file, "r") as src_acl:
+        with open(src_file) as src_acl:
             file_contents = src_acl.read()
         acl_contents.append(file_contents)
 
@@ -543,7 +546,7 @@ def _stage_acls(acls, log=None, sanitize_acl=False):
 
         # strip comments if brocade
         if sanitize_acl:
-            msg = "Sanitizing ACL {} as {}".format(src_file, dst_file)
+            msg = f"Sanitizing ACL {src_file} as {dst_file}"
             log.msg(msg)
             aclobj = acl_parse(file_contents)
             aclobj.strip_comments()
@@ -568,8 +571,9 @@ def _get_tftp_source(dev=None, no_vip=True):  # False): #True):
     :param dev:
         A `~trigger.netdevices.NetDevice` object
     """
-    from trigger.conf import settings
     import socket
+
+    from trigger.conf import settings
 
     host = socket.gethostbyname(socket.getfqdn())
 

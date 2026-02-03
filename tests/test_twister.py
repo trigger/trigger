@@ -1,7 +1,5 @@
 import re
 
-import pytest
-
 from trigger.conf import settings
 
 

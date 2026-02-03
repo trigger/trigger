@@ -1,12 +1,14 @@
 import os.path
 import re
-from socket import getfqdn, gethostbyname
-from twisted.python import log
-from trigger.contrib.commando import CommandoApplication
-from trigger.conf import settings
-from trigger.utils import xmltodict, strip_juniper_namespace
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import ElementTree, Element, SubElement
+from socket import gethostbyname
+from xml.etree.ElementTree import Element, SubElement
+
+from twisted.python import log
+
+from trigger.conf import settings
+from trigger.contrib.commando import CommandoApplication
+from trigger.utils import strip_juniper_namespace, xmltodict
 
 task_name = "config_device"
 
@@ -59,7 +61,7 @@ class ConfigDevice(CommandoApplication):
         cmds = []
         files = self.files
         for fn in files:
-            copytftpcmd = "copy tftp://{}/{} running-config".format(self.tftp_ip, fn)
+            copytftpcmd = f"copy tftp://{self.tftp_ip}/{fn} running-config"
             cmds.append(copytftpcmd)
         cmds.append("copy running-config startup-config")
         return cmds
@@ -71,10 +73,10 @@ class ConfigDevice(CommandoApplication):
         action = self.action
         files = self.files
         if re.match(r"^BRMLXE", dev.make):
-            log.msg("Device Type ({} {}) not supported".format(dev.vendor, dev.make))
+            log.msg(f"Device Type ({dev.vendor} {dev.make}) not supported")
             return []
         for fn in files:
-            copytftpcmd = "copy tftp running-config {} {}".format(self.tftp_ip, fn)
+            copytftpcmd = f"copy tftp running-config {self.tftp_ip} {fn}"
             if action == "overwrite":
                 copytftpcmd += " overwrite"
             cmds.append(copytftpcmd)
@@ -85,18 +87,17 @@ class ConfigDevice(CommandoApplication):
         cmds = []
         files = self.files
         if dev.make != "POWERCONNECT":
-            log.msg("Device Type ({} {}) not supported".format(dev.vendor, dev.make))
+            log.msg(f"Device Type ({dev.vendor} {dev.make}) not supported")
             return cmds
         for fn in files:
-            copytftpcmd = "copy tftp://{}/{} running-config".format(self.tftp_ip, fn)
+            copytftpcmd = f"copy tftp://{self.tftp_ip}/{fn} running-config"
             cmds.append(copytftpcmd)
         cmds.append("copy running-config startup-config")
         return cmds
 
     def to_a10(self, dev, commands=None, extra=None):
         cmds = []
-        files = self.files
-        log.msg("Device Type (%s) not supported" % dev.vendor)
+        log.msg(f"Device Type ({dev.vendor}) not supported")
         return cmds
 
     def to_juniper(self, dev, commands=None, extra=None):
@@ -114,8 +115,8 @@ class ConfigDevice(CommandoApplication):
                 fname = tftp_dir + fname
             try:
                 filecontents = file(fname).read()
-            except OSError as e:
-                log.msg("Unable to open file: %s" % fname)
+            except OSError:
+                log.msg(f"Unable to open file: {fname}")
             if filecontents == "":
                 continue
             lc = Element("load-configuration", action=action, format="text")

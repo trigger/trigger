@@ -32,12 +32,9 @@ __copyright__ = "Copyright 2012-2012, AOL Inc.; 2013 Salesforce.com"
 __version__ = "0.1.1"
 
 import collections
-import copy
 import csv
-import datetime
 import itertools
 import os
-import sys
 
 __all__ = (
     "parse_rancid_file",
@@ -75,7 +72,7 @@ def _parse_delimited_file(root_dir, filename, delimiter=":"):
         (Optional) Field delimiter
     """
     filepath = os.path.join(root_dir, filename)
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         reader = csv.reader(f, delimiter=delimiter)
         return [r for r in reader if len(r) > 1]  # Skip unparsed lines
 
@@ -233,7 +230,7 @@ def parse_devices(metadata, parser):
         return [parser(**dict(d)) for d in md_backup]
     except Exception as err:
         # Or just give up
-        print("Parser failed with this error: %r" % repr(err))
+        print(f"Parser failed with this error: {repr(err)!r}")
         return None
     else:
         raise RuntimeError("This should never happen!")
@@ -272,7 +269,7 @@ def _parse_config_file(
     """Parse device config file for metadata (make, model, etc.)"""
     filepath = os.path.join(rancid_root, config_dirname, filename)
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             config = []
             for idx, line in enumerate(f):
                 if idx >= max_lines:
@@ -283,7 +280,7 @@ def _parse_config_file(
 
             return config
 
-    except IOError:
+    except OSError:
         return None
 
 
@@ -370,7 +367,7 @@ class RancidDevice(collections.namedtuple("RancidDevice", NETDEVICE_FIELDS)):
         )
 
 
-class Rancid(object):
+class Rancid:
     """
     Holds RANCID data. INCOMPLETE.
 
@@ -463,7 +460,4 @@ class Rancid(object):
         pass
 
     def __repr__(self):
-        return "Rancid(%r, recurse_subdirs=%s)" % (
-            self.rancid_root,
-            self.recurse_subdirs,
-        )
+        return f"Rancid({self.rancid_root!r}, recurse_subdirs={self.recurse_subdirs})"

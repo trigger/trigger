@@ -22,10 +22,12 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2010-2012, AOL Inc."
 
+import warnings
+
+from twisted.python import log
+
 from trigger.conf import settings
 from trigger.utils.importlib import import_module_from_path
-from twisted.python import log
-import warnings
 
 __all__ = ("autoacl",)
 
@@ -38,10 +40,10 @@ try:
     # function. Either of these operations will raise an ImportError if they
     # don't work, so it's safe to have them within the same try statement.
     _autoacl_module = import_module_from_path(module_path, "_autoacl_module")
-    log.msg("Loading autoacl() from %s" % module_path)
+    log.msg(f"Loading autoacl() from {module_path}")
     from _autoacl_module import autoacl
 except ImportError:
-    msg = "Function autoacl() could not be found in %s, using default!" % module_path
+    msg = f"Function autoacl() could not be found in {module_path}, using default!"
     warnings.warn(msg, RuntimeWarning)
 
     def autoacl(dev, explicit_acls=None):

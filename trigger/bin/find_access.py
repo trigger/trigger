@@ -1,18 +1,17 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 find_access - Like check_access but reports on networks inside of networks.
 """
 
-from __future__ import print_function
-
 __version__ = "1.6"
 
-from optparse import OptionParser
-from simpleparse.error import ParserSyntaxError
 import sys
-from trigger.acl.parser import parse, TIP
+from optparse import OptionParser
+
+from simpleparse.error import ParserSyntaxError
+
+from trigger.acl.parser import TIP, parse
 
 
 def parse_args(argv):
@@ -151,8 +150,8 @@ def do_work(acl_files, opts):
 
     for acl_file in acl_files:
         try:
-            acl = parse(file(acl_file))
-        except ParserSyntaxError, e:
+            acl = parse(open(acl_file))
+        except ParserSyntaxError as e:
             etxt = str(e).split()
             sys.exit(etxt)
 

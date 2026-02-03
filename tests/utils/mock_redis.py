@@ -8,9 +8,9 @@ Modified for Trigger by Jathan McCollum
 __all__ = ("Redis", "MockRedis", "install")
 
 
-from collections import defaultdict
 import re
 import sys
+from collections import defaultdict
 
 
 class MockRedisLock:

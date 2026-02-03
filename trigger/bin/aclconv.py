@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 aclconv - Converts an ACL, or a list of ACLs, from one format to another.
@@ -11,7 +10,6 @@ import optparse
 import sys
 
 from trigger import acl
-
 
 formats = {
     "ios": ("i", "IOS old-school"),
@@ -41,7 +39,7 @@ specified with -n."""
             action="store_const",
             const=format,
             dest="format",
-            help="Use %s ACL output format" % t[1],
+            help=f"Use {t[1]} ACL output format",
         )
     optp.add_option("-n", "--name", dest="aclname")
     (opts, files) = optp.parse_args()
@@ -57,7 +55,7 @@ specified with -n."""
         with open(fname) as f:
             a = acl.parse(f)
 
-        if not opts.aclname == None:
+        if opts.aclname is not None:
             a.name = opts.aclname
         elif opts.format == "ios" and (a.name is None or not a.name.isdigit()):
             a.name = "100"

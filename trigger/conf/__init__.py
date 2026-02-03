@@ -22,10 +22,12 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2010-2012, AOL Inc."
 
-from . import global_settings
 import os
-from trigger.utils.importlib import import_module_from_path
 import warnings
+
+from trigger.utils.importlib import import_module_from_path
+
+from . import global_settings
 
 # Defaults
 DEFAULT_LOCATION = "/etc/trigger/settings.py"

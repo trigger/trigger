@@ -11,10 +11,11 @@ __version__ = "1.1"
 
 import itertools
 import os
+
+from trigger import rancid
 from trigger.conf import settings
-from trigger.netdevices.loader import BaseLoader
-from trigger import exceptions, rancid
 from trigger.exceptions import LoaderFailed
+from trigger.netdevices.loader import BaseLoader
 
 try:
     import simplejson as json  # Prefer simplejson because of SPEED!
@@ -50,7 +51,7 @@ class JSONLoader(BaseLoader):
         try:
             return self.get_data(data_source)
         except Exception as err:
-            raise LoaderFailed("Tried {!r}; and failed: {!r}".format(data_source, err))
+            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
 
 
 class XMLLoader(BaseLoader):
@@ -78,7 +79,7 @@ class XMLLoader(BaseLoader):
         try:
             return self.get_data(data_source)
         except Exception as err:
-            raise LoaderFailed("Tried {!r}; and failed: {!r}".format(data_source, err))
+            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
 
 
 class RancidLoader(BaseLoader):
@@ -101,7 +102,7 @@ class RancidLoader(BaseLoader):
         try:
             return self.get_data(data_source, recurse_subdirs)
         except Exception as err:
-            raise LoaderFailed("Tried {!r}; and failed: {!r}".format(data_source, err))
+            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
 
 
 class SQLiteLoader(BaseLoader):
@@ -118,13 +119,13 @@ class SQLiteLoader(BaseLoader):
         cursor = connection.cursor()
 
         # Get the column names. This is a simple list strings.
-        colfetch = cursor.execute("pragma table_info(%s)" % table_name)
+        colfetch = cursor.execute(f"pragma table_info({table_name})")
         results = colfetch.fetchall()
         columns = [r[1] for r in results]
 
         # And the devices. This is a list of tuples whose values match the indexes
         # of the column names.
-        devfetch = cursor.execute("select * from %s" % table_name)
+        devfetch = cursor.execute(f"select * from {table_name}")
         devrows = devfetch.fetchall()
 
         # Another generator within a generator, which structurally is a list of
@@ -138,7 +139,7 @@ class SQLiteLoader(BaseLoader):
         try:
             return self.get_data(data_source, table_name)
         except Exception as err:
-            raise LoaderFailed("Tried {!r}; and failed: {!r}".format(data_source, err))
+            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
 
 
 class CSVLoader(BaseLoader):
@@ -168,4 +169,4 @@ class CSVLoader(BaseLoader):
         try:
             return self.get_data(data_source)
         except Exception as err:
-            raise LoaderFailed("Tried {!r}; and failed: {!r}".format(data_source, err))
+            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")

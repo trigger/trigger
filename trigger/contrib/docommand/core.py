@@ -43,11 +43,12 @@ __version__ = "3.1.1"
 
 
 # Imports
-from optparse import OptionParser
 import os
 import re
 import sys
 import tempfile
+from optparse import OptionParser
+
 from twisted.python import log
 
 # Globals
@@ -123,7 +124,7 @@ def get_jobs(opts):
       would allow feeding entire list into a single run()
     """
     if DEBUG:
-        print("-->get_jobs(%r)" % opts)
+        print(f"-->get_jobs({opts!r})")
     work = []
     if opts.device_path:
         # If using device-path, then each device gets a customized list of
@@ -131,7 +132,7 @@ def get_jobs(opts):
         # each device.
         path = opts.device_path
         if VERBOSE:
-            print("getting devicelist from path: %s" % path)
+            print(f"getting devicelist from path: {path}")
 
         # Normalize path variable
         if not re.search("/$", path):
@@ -139,7 +140,7 @@ def get_jobs(opts):
         devs = get_devices_from_path(path)
 
         if VERBOSE:
-            print("\tfound %s devices" % len(devs))
+            print(f"\tfound {len(devs)} devices")
 
         for dev in devs:
             cmds = []
@@ -172,7 +173,7 @@ def get_devices_from_path(path):
     + verify that the devnames exist in netdevices.xml
     """
     if DEBUG:
-        print("-->get_devices_from_path(%r)" % path)
+        print(f"-->get_devices_from_path({path!r})")
 
     devs = os.listdir(path)
     return devs
@@ -186,9 +187,9 @@ def get_list_from_file(path):
     function is used for loading both configs/cmds as well as devices.
     """
     if DEBUG:
-        print("-->get_list_from_file(%r)" % path)
+        print(f"-->get_list_from_file({path!r})")
     ret = []
-    with open(path, "r") as fr:
+    with open(path) as fr:
         ret = fr.readlines()
     ret = [x.strip() for x in ret]
     return ret
@@ -202,7 +203,7 @@ def get_devices_from_opts(opts):
     devices or an actual list. Return the list!
     """
     if DEBUG:
-        print("-->get_devices_from_opts(%r)" % opts)
+        print(f"-->get_devices_from_opts({opts!r})")
     ret = []
     if len(opts.device_file) > 0:
         ret = []
@@ -213,9 +214,9 @@ def get_devices_from_opts(opts):
     else:
         ret = opts.devices
     if VERBOSE:
-        print("loaded %s devices" % len(ret))
+        print(f"loaded {len(ret)} devices")
     if DEBUG:
-        print("ret: %s" % ret)
+        print(f"ret: {ret}")
     return ret
 
 
@@ -227,7 +228,7 @@ def get_commands_from_opts(opts):
     commands/config or an actual list. Return the list!
     """
     if DEBUG:
-        print("-->get_commands_from_opts(%r)" % opts)
+        print(f"-->get_commands_from_opts({opts!r})")
     ret = []
     if len(opts.config_file) > 0:
         ret = []
@@ -238,20 +239,20 @@ def get_commands_from_opts(opts):
     else:
         ret = opts.config
     if VERBOSE:
-        print("loaded %s commands" % len(ret))
+        print(f"loaded {len(ret)} commands")
     return ret
 
 
 def do_work(work=None, action_class=None):
     """list results = do_work(list work)"""
     """
-    Cycle through the list of jobs and then actually 
+    Cycle through the list of jobs and then actually
     load the config onto the devices.
     """
     if work is None:
         work = []
     if DEBUG:
-        print("-->do_work(%r)" % work)
+        print(f"-->do_work({work!r})")
     # work = [{'d':[],'c':[],'f':[]}]
     ret = []
     if VERBOSE:
@@ -299,7 +300,7 @@ def print_work(work=None):
     if work is None:
         work = []
     if DEBUG:
-        print("-->print_work(%r)" % work)
+        print(f"-->print_work({work!r})")
 
     for i, job in enumerate(work):
         print("\n***JOB %s ***" % (i + 1))
@@ -330,20 +331,20 @@ def print_results(results=None):
     if results is None:
         results = []
     if DEBUG:
-        print("-->print_results(%r)" % results)
+        print(f"-->print_results({results!r})")
     for res in results:
         devname = res["devname"]
         data = res["data"]
         print
         print("###")
-        print("# %s" % devname)
+        print(f"# {devname}")
         print("###")
         for d in data:
             cmd = d["cmd"]
             out = d["out"]
             device = d["dev"]
             print(
-                "%s# %s\n%s" % (device.shortName, cmd, out),
+                f"{device.shortName}# {cmd}\n{out}",
             )
     return True
 
@@ -354,8 +355,8 @@ def stage_tftp(acls, nonce):
     the basic idea is borrowed from ``bin/load_acl``.
     """
     for device in devices:
-        source = settings.FIREWALL_DIR + "/acl.%s" % acl
-        dest = settings.TFTPROOT_DIR + "/acl.%s.%s" % (acl, nonce)
+        source = settings.FIREWALL_DIR + f"/acl.{acl}"
+        dest = settings.TFTPROOT_DIR + f"/acl.{acl}.{nonce}"
         try:
             os.stat(dest)
         except OSError:
@@ -464,9 +465,8 @@ def parse_args(argv, description=None):
         "--timeout",
         type="int",
         default=TIMEOUT,
-        help="""Time in seconds to wait for each command to
-                      complete (default %s)."""
-        % TIMEOUT,
+        help=f"""Time in seconds to wait for each command to
+                      complete (default {TIMEOUT}).""",
     )
     # Booleans below
     parser.add_option(
@@ -520,7 +520,7 @@ def verify_opts(opts):
     isp = opts.device_path is not None
     if isp:
         if not os.path.isdir(opts.device_path):
-            return False, "ERROR: %r is not a valid directory\n" % opts.device_path
+            return False, f"ERROR: {opts.device_path!r} is not a valid directory\n"
         else:
             return True, ""
     elif isdf or iscf or isd or isc:
@@ -532,14 +532,14 @@ def verify_opts(opts):
         for df in opts.device_file:
             if not os.path.exists(df):
                 ok = False
-                err += "ERROR: Device file %r does not exist\n" % df
+                err += f"ERROR: Device file {df!r} does not exist\n"
 
     # Validate opts.config_file
     if iscf:
         for cf in opts.config_file:
             if not os.path.exists(cf):
                 ok = False
-                err += "ERROR: Config file %r does not exist\n" % cf
+                err += f"ERROR: Config file {cf!r} does not exist\n"
 
     # If opts.devices is set, opts.device_file must also be set
     if not isd and not isdf:

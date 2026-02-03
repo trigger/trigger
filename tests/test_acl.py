@@ -5,8 +5,9 @@ __maintainer__ = "Jathan McCollum"
 __copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com"
 __version__ = "2.0"
 
-from io import StringIO
 import unittest
+from io import StringIO
+
 from trigger import acl, exceptions
 
 EXAMPLES_FILE = "tests/data/junos-examples.txt"
@@ -83,13 +84,13 @@ class CheckACLNames(unittest.TestCase):
         """Test names that are valid in at least one vendor's ACLs"""
         names = ("101", "131mj", "STR-MDC-ATM", "with space", "3.14", None)
         for name in names:
-            a = acl.ACL(name=name)
+            acl.ACL(name=name)
 
     def testBadNames(self):
         """Test names that are valid in no vendor's ACLs"""
         for name in ("", "x" * 25):
             try:
-                a = acl.ACL(name=name)
+                acl.ACL(name=name)
             except exceptions.ACLNameError:
                 pass
             else:
@@ -123,13 +124,13 @@ class CheckTerms(unittest.TestCase):
     def testOkNames(self):
         """Test valid JunOS term names"""
         for name in ("101", "T1337", "sr12345", "3.1415926"):
-            t = acl.Term(name=name)
+            acl.Term(name=name)
 
     def testBadNames(self):
         """Test invalid JunOS term names"""
         for name in ("", "x" * 300):
             try:
-                t = acl.Term(name=name)
+                acl.Term(name=name)
             except exceptions.BadTermName:
                 pass
             else:
@@ -159,7 +160,7 @@ class CheckTerms(unittest.TestCase):
 
     def testBadActions(self):
         """Test invalid filter actions"""
-        t = acl.Term()
+        acl.Term()
         for action in (
             "blah",
             "",
@@ -168,11 +169,11 @@ class CheckTerms(unittest.TestCase):
             "sample",
         ):
             try:
-                t = acl.Term(action=action)
+                acl.Term(action=action)
             except exceptions.ActionError:
                 pass
             else:
-                self.fail('expected ActionError on "%s"' % str(action))
+                self.fail(f'expected ActionError on "{str(action)}"')
 
     def testOkModifiers(self):
         """Test valid filter action modifiers"""
@@ -208,11 +209,11 @@ class CheckTerms(unittest.TestCase):
             ("sample", "abc"),
         ):
             try:
-                t = acl.Term(action=action)
+                acl.Term(action=action)
             except exceptions.ActionError:
                 pass
             else:
-                self.fail('expected ActionError on "%s"' % str(action))
+                self.fail(f'expected ActionError on "{str(action)}"')
 
     def testOkMatches(self):
         """Test valid match conditions"""
@@ -498,7 +499,7 @@ class CheckMiscJunOS(unittest.TestCase):
 firewall {
 replace:
     filter blah {
-        term foo { 
+        term foo {
             then {
                 accept;
             }
@@ -621,7 +622,7 @@ filter 100 {
             }
         }
     }"""
-        a = acl.parse(x)
+        acl.parse(x)
 
     def testDoubleQuotes(self):
         """Test JunOS double-quoted names (regression)."""
@@ -654,7 +655,7 @@ replace:
     def testNextTerm(self):
         """Test "next term" action (regression)."""
         x = "filter f { term t { then { next term; } } }"
-        a = acl.parse(x)
+        acl.parse(x)
 
     def testPolicer(self):
         """test policer stuff."""

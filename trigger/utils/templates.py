@@ -8,10 +8,11 @@ __email__ = "tcuthbert90@gmail.com"
 __copyright__ = "Copyright 2016 Trigger Org"
 
 
-import sys
 import os
-from trigger.conf import settings
+
 from twisted.python import log
+
+from trigger.conf import settings
 
 try:
     import textfsm

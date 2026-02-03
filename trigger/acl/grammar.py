@@ -48,7 +48,7 @@ def literals(d):
     """Longest match of all the strings that are keys of 'd'."""
     keys = [str(key) for key in d]
     keys.sort(key=lambda x: -len(x))  # Sort by length descending
-    return " / ".join(['"%s"' % key for key in keys])
+    return " / ".join([f'"{key}"' for key in keys])
 
 
 def update(d, **kwargs):
@@ -58,7 +58,7 @@ def update(d, **kwargs):
     # ignored.  This led to an outage on 2006-10-11.
     for key in kwargs.keys():
         if key in d:
-            raise exceptions.ParseError("duplicate %s" % key)
+            raise exceptions.ParseError(f"duplicate {key}")
     d.update(kwargs)
     return d
 

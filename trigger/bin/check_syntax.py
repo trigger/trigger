@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 check_syntax - Determines if ACL passes parsing check
@@ -8,14 +7,13 @@ check_syntax - Determines if ACL passes parsing check
 __version__ = "1.0"
 
 import optparse
-import sys
-from simpleparse.error import ParserSyntaxError
-import logging
-import tempfile
 import os
+import sys
+import tempfile
+
+from twisted.python import log
 
 from trigger.acl.parser import parse as acl_parse
-from twisted.python import log
 
 CONTEXT = 3
 
@@ -47,19 +45,19 @@ def main():
 
     for file in args[1:]:
         if not os.path.exists(file):
-            print("Moving on.  File does not exist: {}".format(file))
+            print(f"Moving on.  File does not exist: {file}")
             continue
         if not os.path.isfile(file):
-            print("Moving on.  Not a normal file: {}".format(file))
+            print(f"Moving on.  Not a normal file: {file}")
             continue
         # Calling `read()` on the fd immediately closes it
-        file_contents = open(file, "r").read()
+        file_contents = open(file).read()
 
         try:
             acl_parse(file_contents)
-            print("File %s passes the syntax check." % file)
+            print(f"File {file} passes the syntax check.")
         except Exception as e:
-            print("File %s FAILED the syntax check.  Here is the error:" % file)
+            print(f"File {file} FAILED the syntax check.  Here is the error:")
             print(e)
             print("")
 

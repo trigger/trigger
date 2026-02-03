@@ -9,9 +9,11 @@ __copyright__ = "Copyright 2006-2012, AOL Inc."
 
 # Imports
 from datetime import datetime, timedelta
-from pytz import timezone, UTC
-from trigger.conf import settings
+
+from pytz import UTC, timezone
+
 from trigger import exceptions
+from trigger.conf import settings
 
 # Constants
 BOUNCE_VALUES = ("green", "yellow", "red")
@@ -57,7 +59,7 @@ class BounceStatus:
         self.value = BOUNCE_VALUES.index(status_name)
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, self.status_name)
+        return f"<{self.__class__.__name__}: {self.status_name}>"
 
     def __str__(self):
         return self.status_name
@@ -210,14 +212,12 @@ class BounceWindow:
         # might never return.
         for status in BOUNCE_VALUE_MAP:
             if status not in status_by_hour:
-                msg = "%s risk-level must be defined!" % status
+                msg = f"{status} risk-level must be defined!"
                 raise exceptions.InvalidBounceWindow(msg)
         self._status_by_hour = status_by_hour
 
     def __repr__(self):
-        return "{}(green={!r}, yellow={!r}, red={!r}, default={!r})".format(
-            self.__class__.__name__, self._green, self._yellow, self._red, self.default
-        )
+        return f"{self.__class__.__name__}(green={self._green!r}, yellow={self._yellow!r}, red={self._red!r}, default={self.default!r})"
 
     def status(self, when=None):
         """

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 fe - the File Editor. Uses RCS to maintain ACL policy versioning.
@@ -10,14 +9,13 @@ __version__ = "1.2.1"
 
 import os
 import re
-from simpleparse.error import ParserSyntaxError
 import sys
-import termios
+
+from simpleparse.error import ParserSyntaxError
 
 from trigger import acl
 from trigger.acl.parser import TIP
 from trigger.utils.cli import yesno
-
 
 psa_checks = (
     (lambda t: "source-port" in t.match, "source port"),
@@ -44,7 +42,7 @@ def gsr_checks(a):
         for t in a.terms:
             for check, reason in psa_checks:
                 if check(t):
-                    print("Match on %s not permitted in PSA mode" % reason)
+                    print(f"Match on {reason} not permitted in PSA mode")
                     for line in t.output_ios():
                         print("    " + line)
                     ok = False
@@ -140,7 +138,7 @@ def main():
             stat = None
 
         if not stat:
-            if yesno("%s does not exist; create?" % editfile, False):
+            if yesno(f"{editfile} does not exist; create?", False):
                 edit(editfile)
                 os.spawnlp(os.P_WAIT, "ci", "ci", "-u", editfile)
 
@@ -159,7 +157,7 @@ def main():
                 continue
 
             print("")
-            print('"%s"' % os.path.basename(editfile))
+            print(f'"{os.path.basename(editfile)}"')
             print("BEGINNING OF CHANGES========================")
             print(diff, end="")
             print("END OF CHANGES==============================")

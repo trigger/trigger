@@ -16,12 +16,12 @@ __version__ = "2.0.1"
 
 
 import datetime
-import os
-import sys
+
 from trigger import exceptions
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
 from trigger.utils import get_user
+
 from . import models
 
 # Globals
@@ -33,7 +33,7 @@ __all__ = ("Queue",)
 
 
 # Classes
-class Queue(object):
+class Queue:
     """
     Interacts with firewalls database to insert/remove items into the queue.
 
@@ -76,7 +76,7 @@ class Queue(object):
             Name of the queue whose object you want
         """
         model = self.get_model(queue)
-        taskobj = model.create(*args, **kwargs)
+        model.create(*args, **kwargs)
 
     def _normalize(self, arg, prefix=""):
         """
@@ -125,11 +125,11 @@ class Queue(object):
                 try:
                     dev = self.nd.find(router)
                 except KeyError:
-                    msg = "Could not find device %s" % router
+                    msg = f"Could not find device {router}"
                     raise exceptions.TriggerError(msg)
 
                 if acl not in dev.acls:
-                    msg = "Could not find %s in ACL list for %s" % (acl, router)
+                    msg = f"Could not find {acl} in ACL list for {router}"
                     raise exceptions.TriggerError(msg)
 
                 self.create_task(
@@ -137,13 +137,14 @@ class Queue(object):
                 )
 
             self.vprint(
-                "ACL %s injected into integrated load queue for %s"
-                % (acl, ", ".join(dev[: dev.find(".")] for dev in routers))
+                "ACL {} injected into integrated load queue for {}".format(
+                    acl, ", ".join(dev[: dev.find(".")] for dev in routers)
+                )
             )
 
         else:
             self.create_task(queue="manual", q_name=acl, login=self.login)
-            self.vprint('"%s" injected into manual load queue' % acl)
+            self.vprint(f'"{acl}" injected into manual load queue')
 
     def delete(self, acl, routers=None, escalation=False):
         """
@@ -189,18 +190,19 @@ class Queue(object):
                 ).execute()
 
             self.vprint(
-                "ACL %s cleared from integrated load queue for %s"
-                % (acl, ", ".join(dev[: dev.find(".")] for dev in devs))
+                "ACL {} cleared from integrated load queue for {}".format(
+                    acl, ", ".join(dev[: dev.find(".")] for dev in devs)
+                )
             )
             return True
 
         else:
             m = self.get_model("manual")
-            if m.delete().where(m.q_name == acl, m.done == False).execute():
-                self.vprint("%r cleared from manual load queue" % acl)
+            if m.delete().where(m.q_name == acl, not m.done).execute():
+                self.vprint(f"{acl!r} cleared from manual load queue")
                 return True
 
-        self.vprint("%r not found in any queues" % acl)
+        self.vprint(f"{acl!r} not found in any queues")
         return False
 
     def complete(self, device, acls):
@@ -217,12 +219,12 @@ class Queue(object):
         """
         m = self.get_model("integrated")
         for acl in acls:
-            now = loaded = datetime.datetime.now()
+            now = datetime.datetime.now()
             m.update(loaded=now).where(
                 m.acl == acl, m.router == device, m.loaded >> None
             ).execute()
 
-        self.vprint("Marked the following ACLs as complete for %s:" % device)
+        self.vprint(f"Marked the following ACLs as complete for {device}:")
         self.vprint(", ".join(acls))
 
     def remove(self, acl, routers, escalation=False):
@@ -257,7 +259,7 @@ class Queue(object):
                 m.acl == acl, m.router == router, m.loaded >> None
             ).execute()
 
-        self.vprint("Marked the following devices as removed for ACL %s: " % acl)
+        self.vprint(f"Marked the following devices as removed for ACL {acl}: ")
         self.vprint(", ".join(routers))
 
     def list(self, queue="integrated", escalation=False, q_names=QUEUE_NAMES):
@@ -274,7 +276,7 @@ class Queue(object):
             (Optional) List of valid queue names
         """
         if queue not in q_names:
-            self.vprint("Queue must be one of %s, not: %s" % (q_names, queue))
+            self.vprint(f"Queue must be one of {q_names}, not: {queue}")
             return False
 
         m = self.get_model(queue)
@@ -286,7 +288,7 @@ class Queue(object):
                 .where(m.loaded >> None, m.escalation == escalation)
             )
         elif queue == "manual":
-            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(m.done == False)
+            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(not m.done)
         else:
             raise RuntimeError("This should never happen!!")
 

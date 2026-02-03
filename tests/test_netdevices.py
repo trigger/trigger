@@ -12,18 +12,16 @@ __maintainer__ = "Jathan McCollum"
 __copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com"
 __version__ = "2.0"
 
-import os
 import unittest
 
 # Make sure we load the mock redis library
-from utils import captured_output
-from utils import mock_redis
+from utils import captured_output, mock_redis
 
 mock_redis.install()
 
 # Now we can import from Trigger
-from trigger.netdevices import NetDevices, NetDevice, Vendor
 from trigger import changemgmt
+from trigger.netdevices import NetDevices, Vendor
 
 # Constants
 DEVICE_NAME = "test1-abc.net.aol.com"
@@ -76,7 +74,6 @@ class TestNetDevicesWithAcls(unittest.TestCase):
 
     def test_search(self):
         """Test the search() method."""
-        expected = [self.device]
         self.assertEqual([self.device], self.nd.search(self.nodename))
         self.assertEqual(self.nd.all(), self.nd.search("17", field="onCallID"))
 

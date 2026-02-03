@@ -258,7 +258,7 @@ def _emit(
 def unparse(item, output=None, encoding="utf-8", **kwargs):
     ((key, value),) = item.items()
     must_return = False
-    if output == None:
+    if output is None:
         output = StringIO()
         must_return = True
     content_handler = XMLGenerator(output, encoding)
@@ -275,8 +275,8 @@ def unparse(item, output=None, encoding="utf-8", **kwargs):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    import sys
     import marshal
+    import sys
 
     (item_depth,) = sys.argv[1:]
     item_depth = int(item_depth)
