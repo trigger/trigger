@@ -183,7 +183,6 @@ class BounceWindow:
         red=None,
         default=BOUNCE_DEFAULT_COLOR,
     ):
-
         # Parse the hours specified into BounceWindows
         self._green = green
         self._yellow = yellow

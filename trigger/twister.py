@@ -243,7 +243,7 @@ def pty_connect(
         port = device.nodePort or settings.TELNET_PORT
         log.msg("Trying telnet to %s:%s" % (device, port), debug=True)
     else:
-        log.msg("[%s] SSH connection test FAILED, " "telnet fallback disabled" % device)
+        log.msg("[%s] SSH connection test FAILED, telnet fallback disabled" % device)
         return None
 
     reactor.connectTCP(device.nodeName, port, factory)
@@ -939,7 +939,6 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         device=None,
         connection_class=None,
     ):
-
         # Fallback to sane defaults if they aren't specified
         if channel_class is None:
             channel_class = TriggerSSHGenericChannel
@@ -1079,7 +1078,7 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
 
     def sendDisconnect(self, reason, desc):
         """Trigger disconnect of the transport."""
-        log.msg("Got disconnect request, reason: " "%r, desc: %r" % (reason, desc))
+        log.msg("Got disconnect request, reason: %r, desc: %r" % (reason, desc))
 
         # Only throw an error if this wasn't user-initiated (reason: 10)
         if reason == transport.DISCONNECT_CONNECTION_LOST:
@@ -1091,9 +1090,7 @@ class TriggerSSHTransport(transport.SSHClientTransport, object):
         else:
             # Emulate the most common OpenSSH reason for this to happen
             if reason == transport.DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT:
-                desc = (
-                    "ssh_exchange_identification: " "Connection closed by remote host"
-                )
+                desc = "ssh_exchange_identification: Connection closed by remote host"
             self.factory.err = exceptions.SSHConnectionLost(reason, desc)
 
         super(TriggerSSHTransport, self).sendDisconnect(reason, desc)
@@ -1357,7 +1354,7 @@ class Interactor(protocol.Protocol):
 
         # Check whether we need to send an enable password.
         if not self.enabled and requires_enable(self, data):
-            log.msg("[%s] " "Interactive PTY requires enable commands" % self.device)
+            log.msg("[%s] Interactive PTY requires enable commands" % self.device)
             send_enable(self, disconnect_on_fail=False)  # Don't exit on fail
 
         # Setup and run the initial commands, and also assume we're enabled
@@ -1499,9 +1496,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
             # Check for confirmation prompts
             # If the prompt confirms set the index to the matched bytes
             if is_awaiting_confirmation(self.data):
-                log.msg(
-                    "[%s] Got confirmation prompt: " "%r" % (self.device, self.data)
-                )
+                log.msg("[%s] Got confirmation prompt: %r" % (self.device, self.data))
                 prompt_idx = self.data.find(bytes)
             else:
                 return None
@@ -1591,9 +1586,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin, object):
         Do this when the connection times out.
         """
         log.msg("[%s] Timed out while sending commands" % self.device)
-        self.factory.err = exceptions.CommandTimeout(
-            "Timed out while sending " "commands"
-        )
+        self.factory.err = exceptions.CommandTimeout("Timed out while sending commands")
         self.loseConnection()
 
     def request_exit_status(self, data):
@@ -1699,7 +1692,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
 
     def send_next_command(self):
         """Send the next command in the stack stored on the connection"""
-        log.msg("[%s] CHANNEL %s: " "sending next command!" % (self.device, self.id))
+        log.msg("[%s] CHANNEL %s: sending next command!" % (self.device, self.id))
         self.conn.send_command()
 
     def closeReceived(self):
@@ -1742,7 +1735,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
         _xml = '<?xml version="1.0" encoding="us-ascii"?>\n'
         # TODO (jathan): Make the release version dynamic at some point
         _xml += (
-            "<" 'junoscript version="1.0" hostname="%s" release="7.6R2.9"' ">\n"
+            '<junoscript version="1.0" hostname="%s" release="7.6R2.9">\n'
         ) % socket.getfqdn()
         self.write(_xml)
         self.xmltb = IncrementalXMLTreeBuilder(self._endhandler)
@@ -2094,8 +2087,8 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
 
     def timeoutConnection(self):
         """Do this when we timeout logging in."""
-        log.msg("[%s] " "Timed out while logging in" % self.transport.connector.host)
-        self.factory.err = exceptions.LoginTimeout("Timed out while " "logging in")
+        log.msg("[%s] Timed out while logging in" % self.transport.connector.host)
+        self.factory.err = exceptions.LoginTimeout("Timed out while logging in")
         self.loseConnection()
 
 
@@ -2224,7 +2217,5 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     def timeoutConnection(self):
         """Do this when we timeout."""
         log.msg("[%s] Timed out while sending commands" % self.device)
-        self.factory.err = exceptions.CommandTimeout(
-            "Timed out while " "sending commands"
-        )
+        self.factory.err = exceptions.CommandTimeout("Timed out while sending commands")
         self.loseConnection()

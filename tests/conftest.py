@@ -1,4 +1,5 @@
 """Pytest configuration and fixtures for Trigger tests."""
+
 import os
 import sys
 import pytest

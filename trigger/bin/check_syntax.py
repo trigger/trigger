@@ -5,7 +5,7 @@
 check_syntax - Determines if ACL passes parsing check
 """
 
-__version__ = '1.0'
+__version__ = "1.0"
 
 import optparse
 import sys
@@ -21,10 +21,12 @@ CONTEXT = 3
 
 
 def parse_args(argv):
-    optp = optparse.OptionParser(description='''\
-        Determine if ACL file passes trigger's parsing checks.''',
-        usage='%prog [opts] file')
-    optp.add_option('-q', '--quiet', action='store_true', help='suppress output')
+    optp = optparse.OptionParser(
+        description="""\
+        Determine if ACL file passes trigger's parsing checks.""",
+        usage="%prog [opts] file",
+    )
+    optp.add_option("-q", "--quiet", action="store_true", help="suppress output")
     (opts, args) = optp.parse_args(argv)
 
     return opts, args
@@ -34,21 +36,24 @@ def main():
     """Main entry point for the CLI tool."""
     global opts
 
-    tmpfile = tempfile.mktemp()+'_parsing_check'
-    log.startLogging(open(tmpfile, 'a'), setStdout=False)
-    log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
+    tmpfile = tempfile.mktemp() + "_parsing_check"
+    log.startLogging(open(tmpfile, "a"), setStdout=False)
+    log.msg(
+        'User %s (uid:%d) executed "%s"'
+        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv))
+    )
 
     opts, args = parse_args(sys.argv)
 
     for file in args[1:]:
         if not os.path.exists(file):
-            print('Moving on.  File does not exist: {}'.format(file))
+            print("Moving on.  File does not exist: {}".format(file))
             continue
         if not os.path.isfile(file):
-            print('Moving on.  Not a normal file: {}'.format(file))
+            print("Moving on.  Not a normal file: {}".format(file))
             continue
         # Calling `read()` on the fd immediately closes it
-        file_contents = open(file, 'r').read()
+        file_contents = open(file, "r").read()
 
         try:
             acl_parse(file_contents)
@@ -59,5 +64,5 @@ def main():
             print("")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

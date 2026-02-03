@@ -945,7 +945,6 @@ class NetACLInfo(Commando):
         xml = data[0]
         dta = {}
         for interface in xml.getiterator(ns + "interface"):
-
             basename = children(interface, "name")[0].text
 
             description = interface.find(ns + "description")

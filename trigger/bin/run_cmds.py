@@ -15,5 +15,5 @@ def main():
     docommand.main(action_class=docommand.CommandRunner)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

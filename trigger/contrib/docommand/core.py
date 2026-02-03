@@ -465,7 +465,8 @@ def parse_args(argv, description=None):
         type="int",
         default=TIMEOUT,
         help="""Time in seconds to wait for each command to
-                      complete (default %s).""" % TIMEOUT,
+                      complete (default %s)."""
+        % TIMEOUT,
     )
     # Booleans below
     parser.add_option(

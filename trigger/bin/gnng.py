@@ -12,7 +12,7 @@ devices.
 
 from __future__ import print_function
 
-__version__ = '1.3.2'
+__version__ = "1.3.2"
 
 from collections import namedtuple
 import csv
@@ -31,49 +31,84 @@ from trigger.netdevices import device_match, NetDevices
 
 # Put this here until the default changes to not load ACLs from redis.
 from trigger.conf import settings
+
 settings.WITH_ACLS = False
 
-#log.startLogging(sys.stdout, setStdout=False)
+# log.startLogging(sys.stdout, setStdout=False)
 
 # Constants
-DEBUG = os.getenv('DEBUG')
+DEBUG = os.getenv("DEBUG")
 MAX_CONNS = 10
-ROW_LABELS = ['Interface', 'Addresses', 'Subnets', 'ACLs IN', 'ACLs OUT',
-              'Description']
+ROW_LABELS = ["Interface", "Addresses", "Subnets", "ACLs IN", "ACLs OUT", "Description"]
 
 # Namedtuples
-RowData = namedtuple('RowData', 'all_rows subnet_table')
-DottyData = namedtuple('DottyData', 'graph links')
+RowData = namedtuple("RowData", "all_rows subnet_table")
+DottyData = namedtuple("DottyData", "graph links")
 
 
 def parse_args(argv):
-    parser = OptionParser(usage='%prog [options] [routers]', description='''GetNets-NG
+    parser = OptionParser(
+        usage="%prog [options] [routers]",
+        description="""GetNets-NG
 
 Fetches interface information from routing and firewall devices. This includes
 network and IP information along with the inbound and outbound filters that
 may be applied to the interface. Skips un-numbered and disabled interfaces by
-default. Works on Cisco, Foundry, Juniper, and NetScreen devices.''')
-    parser.add_option('-a', '--all', action='store_true',
-                      help='run on all devices')
-    parser.add_option('-c', '--csv', action='store_true',
-                      help='output the data in CSV format instead.')
-    parser.add_option('-d', '--include-disabled', action='store_true',
-                      help='include disabled interfaces.')
-    parser.add_option('-u', '--include-unnumbered', action='store_true',
-                      help='include un-numbered interfaces.')
-    parser.add_option('-j', '--jobs', type='int', default=MAX_CONNS,
-                      help='maximum simultaneous connections to maintain.')
-    parser.add_option('-N', '--nonprod', action='store_false', default=True,
-                      help='Include non-production devices from the query or '
-                      '[routers].  Requires a legitimate query.')
-    parser.add_option('-s', '--sqldb', type='str',
-                      help='output to SQLite DB')
-    parser.add_option('', '--dotty', action='store_true',
-                      help='output connect-to information in dotty format.')
-    parser.add_option('', '--filter-on-group', action='append',
-                      help='Run on all devices owned by this group')
-    parser.add_option('', '--filter-on-type', action='append',
-                      help='Run on all devices with this device type')
+default. Works on Cisco, Foundry, Juniper, and NetScreen devices.""",
+    )
+    parser.add_option("-a", "--all", action="store_true", help="run on all devices")
+    parser.add_option(
+        "-c",
+        "--csv",
+        action="store_true",
+        help="output the data in CSV format instead.",
+    )
+    parser.add_option(
+        "-d",
+        "--include-disabled",
+        action="store_true",
+        help="include disabled interfaces.",
+    )
+    parser.add_option(
+        "-u",
+        "--include-unnumbered",
+        action="store_true",
+        help="include un-numbered interfaces.",
+    )
+    parser.add_option(
+        "-j",
+        "--jobs",
+        type="int",
+        default=MAX_CONNS,
+        help="maximum simultaneous connections to maintain.",
+    )
+    parser.add_option(
+        "-N",
+        "--nonprod",
+        action="store_false",
+        default=True,
+        help="Include non-production devices from the query or "
+        "[routers].  Requires a legitimate query.",
+    )
+    parser.add_option("-s", "--sqldb", type="str", help="output to SQLite DB")
+    parser.add_option(
+        "",
+        "--dotty",
+        action="store_true",
+        help="output connect-to information in dotty format.",
+    )
+    parser.add_option(
+        "",
+        "--filter-on-group",
+        action="append",
+        help="Run on all devices owned by this group",
+    )
+    parser.add_option(
+        "",
+        "--filter-on-type",
+        action="append",
+        help="Run on all devices with this device type",
+    )
 
     opts, args = parser.parse_args(argv)
 
@@ -133,7 +168,7 @@ def write_sqldb(sqlfile, dev, rows):
 
     if create_table:
         # if the db doesn't exist we want to create the table.
-        cursor.execute('''
+        cursor.execute("""
         CREATE TABLE dev_nets (
             id            INTEGER PRIMARY KEY,
             insert_date   DATE,
@@ -145,18 +180,19 @@ def write_sqldb(sqlfile, dev, rows):
             iface_outacl  VARCHAR(32),
             iface_descr   VARCHAR(1024)
         );
-        ''')
-        cursor.execute('''
+        """)
+        cursor.execute("""
         CREATE TRIGGER auto_date AFTER INSERT ON dev_nets
         BEGIN
             UPDATE dev_nets SET insert_date = DATETIME('NOW')
                 WHERE rowid = new.rowid;
         END;
-        ''')
+        """)
 
     for row in rows:
         iface, addrs, snets, inacl, outacl, desc = row
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT INTO dev_nets (
                 device_name,
                 iface_name,
@@ -168,9 +204,8 @@ def write_sqldb(sqlfile, dev, rows):
             VALUES (
                 '%s', '%s', '%s',
                 '%s', '%s', '%s', '%s'
-            );''' % (
-                dev, iface, addrs,
-                snets, inacl, outacl, desc )
+            );"""
+            % (dev, iface, addrs, snets, inacl, outacl, desc)
         )
 
     connection.commit()
@@ -191,13 +226,16 @@ def get_interface_data(devices, production_only=True, max_conns=MAX_CONNS, opts=
     :param max_conns:
         Max number of simultaneous connections
     """
-    skip_disabled = not opts.include_disabled # Inverse of include is skip :D
-    ninfo = NetACLInfo(devices=devices, production_only=production_only,
-                       max_conns=max_conns,
-                       skip_disabled=skip_disabled)
+    skip_disabled = not opts.include_disabled  # Inverse of include is skip :D
+    ninfo = NetACLInfo(
+        devices=devices,
+        production_only=production_only,
+        max_conns=max_conns,
+        skip_disabled=skip_disabled,
+    )
     ninfo.run()
     if DEBUG:
-        print('NetACLInfo done!')
+        print("NetACLInfo done!")
 
     return ninfo.config
 
@@ -228,17 +266,17 @@ def build_output(main_data, opts, labels=None):
             iface = data[interface]
 
             # Maybe skip down interfaces
-            if 'addr' not in iface and not opts.include_disabled:
+            if "addr" not in iface and not opts.include_disabled:
                 continue
 
             if DEBUG:
-                print('>>> ', interface)
+                print(">>> ", interface)
 
-            addrs   = iface['addr']
-            subns   = iface['subnets']
-            acls_in  = iface['acl_in']
-            acls_out = iface['acl_out']
-            desctext = ' '.join(iface.get('description')).replace(' : ', ':')
+            addrs = iface["addr"]
+            subns = iface["subnets"]
+            acls_in = iface["acl_in"]
+            acls_out = iface["acl_out"]
+            desctext = " ".join(iface.get("description")).replace(" : ", ":")
 
             # Maybe skip un-numbered interfaces
             if not addrs and not opts.include_unnumbered:
@@ -249,7 +287,7 @@ def build_output(main_data, opts, labels=None):
                 desctext = desctext[0:50]
 
             addresses = []
-            subnets   = []
+            subnets = []
 
             for a in addrs:
                 addresses.append(a.strNormal())
@@ -263,10 +301,18 @@ def build_output(main_data, opts, labels=None):
                     subnet_table[s] = [(dev, interface, addrs)]
 
             if DEBUG:
-                print('\t in:', acls_in)
-                print('\t ou:', acls_out)
-            rows.append([interface, ' '.join(addresses),
-             ' '.join(subnets), '\n'.join(acls_in), '\n'.join(acls_out), desctext])
+                print("\t in:", acls_in)
+                print("\t ou:", acls_out)
+            rows.append(
+                [
+                    interface,
+                    " ".join(addresses),
+                    " ".join(subnets),
+                    "\n".join(acls_in),
+                    "\n".join(acls_out),
+                    desctext,
+                ]
+            )
 
         all_rows[dev.nodeName] = rows
 
@@ -284,7 +330,6 @@ def handle_output(all_rows, opts):
         OptionParser object
     """
     for dev, rows in all_rows.items():
-
         if opts.csv:
             writer = csv.writer(sys.stdout)
             for row in rows:
@@ -294,7 +339,7 @@ def handle_output(all_rows, opts):
         elif opts.sqldb:
             write_sqldb(opts.sqldb, dev, rows)
         else:
-            print('DEVICE: {}'.format(dev))
+            print("DEVICE: {}".format(dev))
             print_table(rows)
 
 
@@ -307,7 +352,7 @@ def print_table(rows, labels=None):
 
     output_table = prettytable.PrettyTable()
     output_table.field_names = labels
-    output_table.align = 'l'
+    output_table.align = "l"
     output_table.vrules = prettytable.prettytable.ALL
     output_table.hrules = prettytable.prettytable.HEADER
 
@@ -316,7 +361,7 @@ def print_table(rows, labels=None):
         output_table.add_row(row)
 
     print(output_table)
-    print('')
+    print("")
 
 
 def output_dotty(subnet_table, display=True):
@@ -348,21 +393,21 @@ def output_dotty(subnet_table, display=True):
                 links[router1] = [router2]
 
     if not links:
-        print('No valid links for dotty generation.')
+        print("No valid links for dotty generation.")
         return None
 
-    nd = NetDevices() # This uses the pre-existing NetDevices singleton
+    nd = NetDevices()  # This uses the pre-existing NetDevices singleton
 
-    graph = '''graph network {
+    graph = """graph network {
     overlap=scale; center=true; orientation=land;
     resolution=0.10; rankdir=LR; ratio=fill;
-    node [fontname=Courier, fontsize=10]'''
+    node [fontname=Courier, fontsize=10]"""
 
     for leaf, subleaves in links.items():
         for subleaf in subleaves:
             graph += '"%s"--"%s"\n' % (leaf.shortName, subleaf.shortName)
-        #print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
-    graph += '\n}'
+        # print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
+    graph += "\n}"
 
     if display:
         print(graph)
@@ -382,7 +427,9 @@ def main():
     if not routers:
         sys.exit(1)
 
-    main_data = get_interface_data(devices=routers, production_only=opts.nonprod, opts=opts)
+    main_data = get_interface_data(
+        devices=routers, production_only=opts.nonprod, opts=opts
+    )
     all_rows, subnet_table = build_output(main_data, opts)
     handle_output(all_rows, opts)
 
@@ -390,5 +437,5 @@ def main():
         output_dotty(subnet_table)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
