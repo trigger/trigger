@@ -79,7 +79,7 @@ addopts = "-v"
 [tool.ruff]
 line-length = 88
 target-version = "py310"
-exclude = ["trigger/packages", "configs", ".venv", "build", "dist"]
+exclude = ["trigger/packages", ".venv", "build", "dist"]
 
 [tool.ruff.lint]
 select = [
