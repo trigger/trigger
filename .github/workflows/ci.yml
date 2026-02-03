@@ -20,8 +20,6 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -57,11 +55,11 @@ jobs:
 
       - name: Run ruff check
         run: |
-          ruff check trigger/ tests/ --exclude trigger/packages
+          ruff check .
 
       - name: Run ruff format check
         run: |
-          ruff format --check trigger/ tests/ --exclude trigger/packages
+          ruff format --check .
 
   build:
     name: Build Package
