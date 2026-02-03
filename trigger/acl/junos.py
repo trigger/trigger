@@ -332,7 +332,8 @@ rules.update(
         "junos_filter_family": ('"family", ws, junos_family_type'),
         "junos_family_type": ('"inet" / "inet6" / "ethernet-switching"'),
         "opaque_braced_group": (
-            '"{", jws?, (jword / "[" / "]" / ";" / opaque_braced_group / jws)*, "}"',
+            '"{", jws?, (jword / "[" / "]" / ";" / '
+            '"opaque_braced_group" / jws)*, "}"',
             lambda x: x,
         ),
         S("junos_term"): (
