@@ -39,9 +39,8 @@ dependencies = [
 dev = [
     "pytest>=7.4.0",
     "pytest-twisted>=1.14.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
+    "ruff>=0.1.0",
+    "python-semantic-release>=9.0.0",
 ]
 
 [project.scripts]
@@ -77,11 +76,47 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v"
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-target-version = ['py310']
-exclude = 'trigger/packages'
+target-version = "py310"
+exclude = ["trigger/packages", ".venv", "build", "dist"]
 
-[tool.isort]
-profile = "black"
-skip_glob = ["trigger/packages/*"]
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "S",   # flake8-bandit (security)
+    "PT",  # flake8-pytest-style
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "S101",   # assert used (pytest uses asserts)
+    "S603",   # subprocess without shell=True (we validate inputs)
+    "S607",   # start process with partial path (standard practice)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",  # asserts allowed in tests
+    "PT",    # pytest style may vary in older tests
+]
+"trigger/bin/*.py" = [
+    "T20",   # print statements OK in CLI tools
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["trigger"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
