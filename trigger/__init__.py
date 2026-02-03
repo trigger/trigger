@@ -1,5 +1,7 @@
-__version__ = (1, 6, 0)
+from importlib.metadata import version, PackageNotFoundError
 
-full_version = ".".join(str(x) for x in __version__[0:3]) + "".join(__version__[3:])
-release = full_version
-short_version = ".".join(str(x) for x in __version__[0:3])
+try:
+    __version__ = version("trigger")
+except PackageNotFoundError:
+    # Package is not installed (development mode)
+    __version__ = "2.0.0.dev0"
