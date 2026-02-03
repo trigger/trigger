@@ -27,6 +27,8 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
+from trigger.conf import settings
+
 from .grammar import *
 
 # Temporary resting place for comments, so the rest of the parser can
