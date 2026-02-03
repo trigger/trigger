@@ -58,3 +58,7 @@ _build
 vendor/*
 .python-version
 uv.lock
+
+# Git worktrees
+.worktrees/
+.venv
