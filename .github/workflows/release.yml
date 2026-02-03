@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
+    tags: ['v*']
 
 permissions:
   contents: write
@@ -11,8 +12,12 @@ permissions:
 jobs:
   release:
     name: Semantic Release
+    # Only run semantic-release on branch pushes, not tag pushes
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     environment: release
+    outputs:
+      released: ${{ steps.release.outputs.released }}
 
     steps:
       - uses: actions/checkout@v4
@@ -34,13 +39,31 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+  publish:
+    name: Build & Publish to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    needs: [release]
+    # Run if semantic-release created a new version OR if a tag was pushed directly
+    if: |
+      always() &&
+      (needs.release.outputs.released == 'true' || github.ref_type == 'tag')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Build package
-        if: steps.release.outputs.released == 'true'
-        run: |
-          uv build
+        run: uv build
 
       - name: Publish to PyPI
-        if: steps.release.outputs.released == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           print-hash: true
