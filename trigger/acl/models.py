@@ -118,4 +118,3 @@ def confirm_tables():
         print(q_name.ljust(width), end=" ")
         print(model.table_exists())
     return True
-    return False
