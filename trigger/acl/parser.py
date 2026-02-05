@@ -104,7 +104,6 @@ def make_nondefault_processor(action):
     else:
 
         def processor(self, tag_info, buffer):
-            _tag, _start, _stop, _subtags = tag_info
             return action
 
     return processor
