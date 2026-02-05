@@ -1,6 +1,33 @@
 # CHANGELOG
 
 
+## v2.0.2 (2026-02-05)
+
+### Bug Fixes
+
+- **release**: Checkout version-bumped tag for PyPI publish
+  ([`e5044d8`](https://github.com/trigger/trigger/commit/e5044d87d05d9c8df213752a1169e02e65e59be9))
+
+The publish job was checking out the triggering commit (PR merge) instead of the commit where
+  semantic-release bumped the version. This caused the build to produce artifacts with the old
+  version, which PyPI rejected.
+
+Pass the tag output from semantic-release and use it as the checkout ref in the publish job.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+- **release**: Use RELEASE_TOKEN PAT to bypass branch protection
+  ([`45489a8`](https://github.com/trigger/trigger/commit/45489a84dd485b6cc9996671d03bc02335e696b4))
+
+GITHUB_TOKEN cannot push directly to main due to repository ruleset requiring pull requests. Use a
+  PAT (RELEASE_TOKEN) so semantic-release can push version bump commits and tags.
+
+Also update CLAUDE.md branch strategy to reflect main as the primary branch and deprecate the
+  develop branch.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+
 ## v2.0.1 (2026-02-05)
 
 ### Bug Fixes
