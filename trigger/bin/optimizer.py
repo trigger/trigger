@@ -25,7 +25,8 @@ stop_all = False
 
 # Logger
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s",
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s]: %(message)s",
 )
 log = logging.getLogger(__name__)
 
@@ -103,7 +104,10 @@ is set to 0 (or off).
         help="This will turn off the destination-port optimization",
     )
     parser.add_option(
-        "-v", "--verbose", action="store_true", help="Turn on verbose/debug output",
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Turn on verbose/debug output",
     )
     parser.add_option(
         "",

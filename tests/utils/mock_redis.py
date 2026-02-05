@@ -123,7 +123,6 @@ class MockRedis:
         # Find every key that matches the pattern
         return [key for key in list(MockRedis.redis.keys()) if re.match(regex, key)]
 
-
     def lock(self, key, timeout=0, sleep=0):  # pylint: disable=W0613
         """Emulate lock."""
         return MockRedisLock(self, key)

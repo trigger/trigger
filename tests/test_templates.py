@@ -128,7 +128,9 @@ class CheckTemplates(unittest.TestCase):
         commands = ["show version"]
         commando = Commando(devices=[self.device.nodeName])
         data = commando.parse_template(
-            results=[big_cli_data], device=self.device, commands=commands,
+            results=[big_cli_data],
+            device=self.device,
+            commands=commands,
         )
         self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))
@@ -143,7 +145,9 @@ class CheckTemplates(unittest.TestCase):
         commands = ["show run | in cisco"]
         commando = Commando(devices=[self.device.nodeName])
         data = commando.parse_template(
-            results=[no_template_data], device=self.device, commands=commands,
+            results=[no_template_data],
+            device=self.device,
+            commands=commands,
         )
         self.assertTrue(len(data) > 0)
         self.assertTrue(isinstance(data, list))

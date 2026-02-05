@@ -293,7 +293,8 @@ NETDEVICES_LOADERS = (
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
 NETDEVICES_SOURCE = os.environ.get(
-    "NETDEVICES_SOURCE", os.path.join(PREFIX, "netdevices.json"),
+    "NETDEVICES_SOURCE",
+    os.path.join(PREFIX, "netdevices.json"),
 )
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
@@ -301,7 +302,8 @@ TEXTFSM_VENDOR_MAPPINGS = {"cisco": ["ios", "nxos"], "arista": ["eos"]}
 
 # TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates"),
+    "TEXTFSM_TEMPLATE_DIR",
+    os.path.join(PREFIX, "vendor/ntc_templates"),
 )
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
@@ -309,7 +311,8 @@ TEXTFSM_VENDOR_MAPPINGS = {"cisco": ["ios", "nxos"], "arista": ["eos"]}
 
 # TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates"),
+    "TEXTFSM_TEMPLATE_DIR",
+    os.path.join(PREFIX, "vendor/ntc_templates"),
 )
 
 # Whether to treat the RANCID root as a normal instance, or as the root to

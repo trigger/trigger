@@ -37,9 +37,7 @@ __all__.extend(core.__all__)
 
 # Classes
 class DoCommandBase(Commando):
-    """Base class for docommand action classes.
-
-    """
+    """Base class for docommand action classes."""
 
     description = "Insert description here."
 

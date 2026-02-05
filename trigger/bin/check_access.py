@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""check_access - Determines whether access is permitted by a given ACL.
-"""
+"""check_access - Determines whether access is permitted by a given ACL."""
 
 __version__ = "1.2"
 
@@ -71,7 +70,11 @@ end with an explicit deny.""",
         sys.exit(f"Cannot parse {acl_file}:" + " ".join(etxt[1:]))
 
     permitted = check_access(
-        acl.terms, new_term, opts.quiet, format=acl.format, acl_name=acl.name,
+        acl.terms,
+        new_term,
+        opts.quiet,
+        format=acl.format,
+        acl_name=acl.name,
     )
 
     if permitted and not opts.quiet:

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""aclconv - Converts an ACL, or a list of ACLs, from one format to another.
-"""
+"""aclconv - Converts an ACL, or a list of ACLs, from one format to another."""
 
 __version__ = "1.11"
 

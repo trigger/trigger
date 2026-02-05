@@ -118,8 +118,7 @@ class CommandoApplication(Commando):
         return True
 
     def device_object(self, device_name, **kwargs):
-        """Create a basic device dictionary with optional data.
-        """
+        """Create a basic device dictionary with optional data."""
         devobj = dict(device=device_name, **kwargs)
         log.msg(f"Got device object: {devobj!r}")
         return devobj

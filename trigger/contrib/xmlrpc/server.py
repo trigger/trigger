@@ -29,8 +29,7 @@ if os.getenv("DEBUG"):
 
 
 class TriggerXMLRPCServer(xmlrpc.XMLRPC):
-    """Twisted XMLRPC server front-end for Commando.
-    """
+    """Twisted XMLRPC server front-end for Commando."""
 
     def __init__(self, *args, **kwargs):
         xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
@@ -56,7 +55,8 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             handler = self.getSubHandler(prefix)
             if handler is None:
                 raise xmlrpc.NoSuchFunction(
-                    self.NOT_FOUND, f"no such subHandler {prefix}",
+                    self.NOT_FOUND,
+                    f"no such subHandler {prefix}",
                 )
             return handler.lookupProcedure(procedurePath)
 
@@ -69,11 +69,13 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
         if not f:
             raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND, f"procedure {procedurePath} not found",
+                self.NOT_FOUND,
+                f"procedure {procedurePath} not found",
             )
         if not callable(f):
             raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND, f"procedure {procedurePath} not callable",
+                self.NOT_FOUND,
+                f"procedure {procedurePath} not callable",
             )
         return f
 
@@ -95,7 +97,9 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         # If it's a function, bind it as its own internal name.
         if type(handler) in (types.BuiltinFunctionType, types.FunctionType):
             name = handler.__name__
-            name = name.removeprefix("xmlrpc_")  # If it starts w/ 'xmlrpc_', slice it out!
+            name = name.removeprefix(
+                "xmlrpc_"
+            )  # If it starts w/ 'xmlrpc_', slice it out!
             log.msg(f"Mapping function {name}...")
             self._procedure_map[name] = handler
             return
@@ -112,8 +116,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         return self._procedure_map.keys()
 
     def xmlrpc_add_handler(self, mod_name, task_name, force=False):
-        """Add a handler object from a remote call.
-        """
+        """Add a handler object from a remote call."""
         module = None
         if mod_name in sys.modules:
             # Check if module is already loaded
@@ -166,8 +169,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         return x + y
 
     def xmlrpc_fault(self):
-        """Raise a Fault indicating that the procedure should not be used.
-        """
+        """Raise a Fault indicating that the procedure should not be used."""
         raise xmlrpc.Fault(123, "The fault procedure is faulty.")
 
     def _ebRender(self, failure):

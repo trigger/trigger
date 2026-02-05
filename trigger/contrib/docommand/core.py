@@ -80,8 +80,7 @@ __all__ = (
 
 # Functions
 def main(action_class=None):
-    """Void = main(CommandoClass action_class).
-    """
+    """Void = main(CommandoClass action_class)."""
     if action_class is None:
         sys.exit("You must specify a docommand action class.")
 
@@ -371,7 +370,9 @@ def parse_args(argv, description=None):
             setattr(parser.values, option.dest, values)
 
     parser = OptionParser(
-        usage="%prog [options]", description=description, version=__version__,
+        usage="%prog [options]",
+        description=description,
+        version=__version__,
     )
     # Options to collect lists of devices and commands
     parser.add_option(
@@ -466,10 +467,18 @@ def parse_args(argv, description=None):
         help="Force CLI execution, skipping the API.",
     )
     parser.add_option(
-        "-v", "--verbose", action="store_true", default=False, help="verbose output.",
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="verbose output.",
     )
     parser.add_option(
-        "-V", "--debug", action="store_true", default=False, help="debug output.",
+        "-V",
+        "--debug",
+        action="store_true",
+        default=False,
+        help="debug output.",
     )
     parser.add_option(
         "--push",

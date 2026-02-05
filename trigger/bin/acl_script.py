@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""acl_script - CLI interface to simplify complex modification to access-lists.
-"""
+"""acl_script - CLI interface to simplify complex modification to access-lists."""
 
 
 # TODO (jathan): Have this import from trigger.acl.utils.AclScript, because
@@ -31,10 +30,17 @@ def parse_args(argv):
     )
     parser.add_option("-h", "--help", action="store_false")
     parser.add_option(
-        "-a", "--acl", action="append", type="string", help="specify the acl file",
+        "-a",
+        "--acl",
+        action="append",
+        type="string",
+        help="specify the acl file",
     )
     parser.add_option(
-        "-n", "--no-changes", action="store_true", help="don't make the changes",
+        "-n",
+        "--no-changes",
+        action="store_true",
+        help="don't make the changes",
     )
     parser.add_option(
         "--show-mods",
@@ -42,7 +48,9 @@ def parse_args(argv):
         help="show modifications being made in a simple format.",
     )
     parser.add_option(
-        "--no-worklog", action="store_true", help="don't make a worklog entry",
+        "--no-worklog",
+        action="store_true",
+        help="don't make a worklog entry",
     )
     parser.add_option(
         "-N",
@@ -549,7 +557,12 @@ def main():
                 logstr = ""
             # TODO (jathan): Replace this with rcs.checkin()
             os.spawnlp(
-                os.P_WAIT, "ci", "ci", "-u", "-m" + logstr, acl_file,
+                os.P_WAIT,
+                "ci",
+                "ci",
+                "-u",
+                "-m" + logstr,
+                acl_file,
             )  # old_file)
 
             if not opts.no_worklog:

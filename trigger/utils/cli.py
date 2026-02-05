@@ -257,7 +257,8 @@ def update_password_and_reconnect(hostname):
     :param hostname: Hostname of the device to connect to.
     """
     if yesno(
-        "Authentication failed, would you like to update your password?", default=True,
+        "Authentication failed, would you like to update your password?",
+        default=True,
     ):
         from trigger import tacacsrc
 

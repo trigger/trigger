@@ -49,8 +49,7 @@ class DummySettings:
 # BaseSettings and Settings concepts were lifted from Django's objects of the
 # same name, except our implementation is simplified. (See: django.conf.__init__.py)
 class BaseSettings:
-    """Common logic for settings whether set by a module or by the user.
-    """
+    """Common logic for settings whether set by a module or by the user."""
 
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
@@ -88,5 +87,7 @@ try:
     settings = Settings(SETTINGS_FILE)
 except ImportError as err:
     # Complain loudly but carry on with defaults
-    warnings.warn(str(err) + " Using default global settings.", RuntimeWarning, stacklevel=2)
+    warnings.warn(
+        str(err) + " Using default global settings.", RuntimeWarning, stacklevel=2
+    )
     settings = global_settings

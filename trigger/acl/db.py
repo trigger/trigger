@@ -39,7 +39,9 @@ DEBUG = False
 # The redis instance. It doesn't care if it can't reach Redis until you actually
 # try to talk to Redis.
 r = redis.Redis(
-    host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB,
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    db=settings.REDIS_DB,
 )
 
 # Exports
@@ -234,10 +236,8 @@ def get_bulk_acls(nd=None):
     )
 
 
-
 def populate_bulk_acls(nd=None):
-    """Given a NetDevices instance, Adds bulk_acls attribute to NetDevice objects.
-    """
+    """Given a NetDevices instance, Adds bulk_acls attribute to NetDevice objects."""
     nd = nd or get_netdevices()
     bulk_acls = get_bulk_acls()
     for dev in nd.all():

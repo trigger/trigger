@@ -119,13 +119,17 @@ class TacacsrcTest(unittest.TestCase):
 
     def test_brokenpw(self):
         self.assertRaises(
-            ValueError, MockTacacsrc, tacacsrc_file="tests/data/brokenpw_tacacsrc",
+            ValueError,
+            MockTacacsrc,
+            tacacsrc_file="tests/data/brokenpw_tacacsrc",
         )
 
     def test_emptypw(self):
-        with Path(os.devnull).open("w") as devnull, \
-             patch("trigger.tacacsrc.prompt_credentials", side_effect=KeyError), \
-             patch("sys.stdout", devnull):
+        with (
+            Path(os.devnull).open("w") as devnull,
+            patch("trigger.tacacsrc.prompt_credentials", side_effect=KeyError),
+            patch("sys.stdout", devnull),
+        ):
             self.assertRaises(
                 KeyError,
                 MockTacacsrc,

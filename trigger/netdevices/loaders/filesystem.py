@@ -71,7 +71,6 @@ class XMLLoader(BaseLoader):
         # Python 3.9+: getchildren() removed, use list(node) instead
         return (((e.tag, e.text) for e in list(node)) for node in xml)
 
-
     def load_data_source(self, data_source, **kwargs):
         try:
             return self.get_data(data_source)
@@ -127,7 +126,6 @@ class SQLiteLoader(BaseLoader):
         # Another generator within a generator, which structurally is a list of
         # lists containing 2-tuples (key, value).
         return (itertools.izip(columns, row) for row in devrows)
-
 
     def load_data_source(self, data_source, **kwargs):
         table_name = kwargs.get("table_name", "netdevices")

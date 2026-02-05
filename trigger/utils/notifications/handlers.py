@@ -44,8 +44,7 @@ __all__ = ("email_handler", "notify")
 
 # Functions
 def email_handler(*args, **kwargs):
-    """Default email notification handler.
-    """
+    """Default email notification handler."""
     try:
         event = events.EmailEvent(*args, **kwargs)
     except Exception:
@@ -86,7 +85,9 @@ def _register_handlers():
         try:
             handler = getattr(mod, h_funcname)
         except AttributeError as err:
-            msg = f'Handler module "{h_module}" does not define a "{h_funcname}" function'
+            msg = (
+                f'Handler module "{h_module}" does not define a "{h_funcname}" function'
+            )
             raise exceptions.ImproperlyConfigured(
                 msg,
             ) from err

@@ -50,7 +50,10 @@ def generate_endpoint(device):
     """
     creds = tacacsrc.get_device_password(device.nodeName)
     return TriggerSSHShellClientEndpointBase.newConnection(
-        reactor, creds.username, device, password=creds.password,
+        reactor,
+        creds.username,
+        device,
+        password=creds.password,
     )
 
 
@@ -114,7 +117,9 @@ class _TriggerShellChannel(SSHChannel):
         endpoint to load the shell subsystem.
         """
         pr = session.packRequest_pty_req(
-            os.environ["TERM"], self._get_window_size(), "",
+            os.environ["TERM"],
+            self._get_window_size(),
+            "",
         )
         self.conn.sendRequest(self, "pty-req", pr)
 
@@ -199,7 +204,8 @@ class _TriggerUserAuth(_UserAuth):
             prompt, _echo = prompt_tuple  # e.g. [('Password: ', False)]
             if "assword" in prompt:
                 log.msg(
-                    f"Got password prompt: {prompt!r}, sending password!", debug=True,
+                    f"Got password prompt: {prompt!r}, sending password!",
+                    debug=True,
                 )
                 response[idx] = self.password
 
@@ -275,8 +281,7 @@ class _TriggerUserAuth(_UserAuth):
 
 class _TriggerCommandTransport(_CommandTransport):
     def connectionMade(self):
-        """Once the connection is up, set the ciphers but don't do anything else!
-        """
+        """Once the connection is up, set the ciphers but don't do anything else!"""
         self.currentEncryptions = transport.SSHCiphers("none", "none", "none", "none")
         self.currentEncryptions.setKeys("", "", "", "", "", "")
 
@@ -308,8 +313,7 @@ class _TriggerCommandTransport(_CommandTransport):
             _CommandTransport.connectionMade(self)
 
     def connectionSecure(self):
-        """When the connection is secure, start the authentication process.
-        """
+        """When the connection is secure, start the authentication process."""
         self._state = b"AUTHENTICATING"
 
         command = _ConnectionReady(self.connectionReady)
@@ -380,8 +384,7 @@ class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
 
 
 class TriggerEndpointClientFactory(protocol.Factory):
-    """Factory for all clients. Subclass me.
-    """
+    """Factory for all clients. Subclass me."""
 
     def __init__(self, creds=None, init_commands=None):
         self.creds = tacacsrc.validate_credentials(creds)

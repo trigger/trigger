@@ -107,6 +107,9 @@ select = [
     "W",      # pycodestyle warnings
 ]
 ignore = [
+    # --- Formatter conflicts ---
+    "COM812",   # trailing-comma-missing (handled by ruff formatter)
+
     # --- Kept from v2.0.0 baseline ---
     "E402",     # module-import-not-at-top-of-file
     "E501",     # line-too-long (handled by formatter)

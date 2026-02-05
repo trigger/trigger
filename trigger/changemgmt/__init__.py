@@ -1,5 +1,4 @@
-"""Abstract interface to bounce windows and moratoria.
-"""
+"""Abstract interface to bounce windows and moratoria."""
 
 __author__ = "Jathan McCollum, Mark Thomas, Michael Shields"
 __maintainer__ = "Jathan McCollum"
@@ -228,10 +227,8 @@ class BounceWindow:
         # Return default during weekend moratorium, otherwise look it up.
         if (
             when_et.weekday() >= 5
-            or (when_et.weekday() == 0
-            and when_et.hour < 4)
-            or (when_et.weekday() == 4
-            and when_et.hour >= 12)
+            or (when_et.weekday() == 0 and when_et.hour < 4)
+            or (when_et.weekday() == 4 and when_et.hour >= 12)
         ):
             return BounceStatus(BOUNCE_DEFAULT_COLOR)
         return self._status_by_hour[when_et.hour]

@@ -110,7 +110,6 @@ def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None, delimit
     return (itertools.zip_longest(fields, vals) for vals in device_data)
 
 
-
 def walk_rancid_subdirs(rancid_root, config_dirname=CONFIG_DIRNAME, fields=None):
     """Walk the ``rancid_root`` and parse the included RANCID files.
 
@@ -257,7 +256,11 @@ def gather_devices(subdir_data, rancid_db_file=RANCID_DB_FILE):
 
 
 def _parse_config_file(
-    rancid_root, filename, parser=None, config_dirname=CONFIG_DIRNAME, max_lines=30,
+    rancid_root,
+    filename,
+    parser=None,
+    config_dirname=CONFIG_DIRNAME,
+    max_lines=30,
 ):
     """Parse device config file for metadata (make, model, etc.)."""
     filepath = str(Path(rancid_root) / config_dirname / filename)
@@ -282,7 +285,9 @@ def _parse_config_files(devices, rancid_root, config_dirname=CONFIG_DIRNAME):
     return_data = {}
     for dev in devices:
         return_data[dev.nodeName] = _parse_config_file(
-            rancid_root, dev.nodeName, config_dirname,
+            rancid_root,
+            dev.nodeName,
+            config_dirname,
         )
     return return_data
 
@@ -351,7 +356,11 @@ class RancidDevice(collections.namedtuple("RancidDevice", NETDEVICE_FIELDS)):
 
     def __new__(cls, nodeName, manufacturer, deviceStatus=None, deviceType=None):
         return super(cls, RancidDevice).__new__(
-            cls, nodeName, manufacturer, deviceStatus, deviceType,
+            cls,
+            nodeName,
+            manufacturer,
+            deviceStatus,
+            deviceType,
         )
 
 

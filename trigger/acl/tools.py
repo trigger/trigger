@@ -310,10 +310,14 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
                     "reject",
                 ):
                     permitted = False
-                elif t.action[0] in ("discard", "reject") or (t.action[0] == "accept" and new_term.action[0] in (
-                    "discard",
-                    "reject",
-                )):
+                elif t.action[0] in ("discard", "reject") or (
+                    t.action[0] == "accept"
+                    and new_term.action[0]
+                    in (
+                        "discard",
+                        "reject",
+                    )
+                ):
                     permitted = False
                     new_acl.terms.append(new_term)
                     already_added = True
@@ -343,8 +347,7 @@ def create_new_acl(old_file, terms_to_be_added):
 
 
 def get_bulk_acls():
-    """Returns a dict of acls with an applied count over settings.AUTOLOAD_BULK_THRESH.
-    """
+    """Returns a dict of acls with an applied count over settings.AUTOLOAD_BULK_THRESH."""
     from trigger.netdevices import NetDevices
 
     nd = NetDevices()
@@ -477,7 +480,8 @@ def update_expirations(matches, numdays=DEFAULT_EXPIRE):
             # print 'Before:\n' + comment.data + '\n'
             print(f"Updated date for term: {term.name}")
             comment.data = comment.data.replace(
-                date, datetime.datetime.strftime(new_date, DATE_FORMAT),
+                date,
+                datetime.datetime.strftime(new_date, DATE_FORMAT),
             )
             # print 'After:\n' + comment.data
 

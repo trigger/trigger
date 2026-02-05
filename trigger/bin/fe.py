@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""fe - the File Editor. Uses RCS to maintain ACL policy versioning.
-"""
+"""fe - the File Editor. Uses RCS to maintain ACL policy versioning."""
 
 __version__ = "1.2.1"
 
@@ -95,7 +94,12 @@ def edit(editfile):
     editor = os.environ.get("EDITOR", "vim")
     if editor.startswith("vi"):
         os.spawnlp(
-            os.P_WAIT, editor, editor, "+set sw=4", "+set softtabstop=4", editfile,
+            os.P_WAIT,
+            editor,
+            editor,
+            "+set sw=4",
+            "+set softtabstop=4",
+            editfile,
         )
     else:
         os.spawnlp(os.P_WAIT, editor, editor, editfile)

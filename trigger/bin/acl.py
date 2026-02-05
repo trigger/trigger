@@ -217,7 +217,10 @@ def main():
     elif opts.display:
         # Pretty-print the device/acls justified to the terminal
         acl_data = get_matching_acls(
-            args, opts.exact, match_acl=(not opts.dev_only), match_device=True,
+            args,
+            opts.exact,
+            match_acl=(not opts.dev_only),
+            match_device=True,
         )
         if not acl_data:
             msg = f"No results for {args}" if not opts.quiet else 1

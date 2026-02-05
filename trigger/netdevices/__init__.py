@@ -111,7 +111,6 @@ def _populate(netdevices, data_source, production_only, with_acls):
         netdevices.add_device(dev)
 
 
-
 def device_match(name, production_only=True):
     """Return a matching :class:`~trigger.netdevices.NetDevice` object based on partial name.
 
@@ -312,7 +311,8 @@ class NetDevice:  # noqa: PLW1641
     def _populate_deviceType(self):
         """Try to make a guess what the device type is."""
         self.deviceType = settings.DEFAULT_TYPES.get(
-            self.vendor.name, settings.FALLBACK_TYPE,
+            self.vendor.name,
+            settings.FALLBACK_TYPE,
         )
 
     def _set_requires_async_pty(self):
@@ -326,8 +326,7 @@ class NetDevice:  # noqa: PLW1641
         return any(RULES)
 
     def _set_delimiter(self):
-        """Set the delimiter to use for line-endings.
-        """
+        """Set the delimiter to use for line-endings."""
         default = "\n"
         delimiter_map = {
             "force10": "\r\n",
@@ -358,8 +357,7 @@ class NetDevice:  # noqa: PLW1641
         return []
 
     def _set_commit_commands(self):
-        """Return the proper "commit" command. (e.g. write mem, etc.).
-        """
+        """Return the proper "commit" command. (e.g. write mem, etc.)."""
         if self.is_ioslike():
             return self._ioslike_commit()
         if self.is_netscaler() or self.is_netscreen():
@@ -375,8 +373,7 @@ class NetDevice:  # noqa: PLW1641
         return []
 
     def _ioslike_commit(self):
-        """Return proper 'write memory' command for IOS-like devices.
-        """
+        """Return proper 'write memory' command for IOS-like devices."""
         if self.is_brocade_vdx() or self.vendor == "dell":
             return ["copy running-config startup-config", "y"]
         if self.is_cisco_nexus():
@@ -733,13 +730,11 @@ class NetDevice:  # noqa: PLW1641
         return self.vendor == "juniper" and is_ssg
 
     def is_ioslike(self):
-        """Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
-        """
+        """Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?"""
         return self.vendor in settings.IOSLIKE_VENDORS
 
     def is_cumulus(self):
-        """Am I running Cumulus?
-        """
+        """Am I running Cumulus?"""
         return self.vendor == "cumulus"
 
     def is_brocade_vdx(self):
@@ -788,8 +783,7 @@ class NetDevice:  # noqa: PLW1641
         return self._is_cisco_asa
 
     def is_cisco_nexus(self):
-        """Am I a Cisco Nexus device?
-        """
+        """Am I a Cisco Nexus device?"""
         words = (self.make, self.model)
         patterns = ("n.k", "nexus")  # Patterns to match
         pairs = itertools.product(patterns, words)
@@ -1024,8 +1018,7 @@ class NetDevices(MutableMapping):
 
         @property
         def _dict(self):
-            """If the loader has an inner _dict, store objects on that instead.
-            """
+            """If the loader has an inner _dict, store objects on that instead."""
             if hasattr(self.loader, "_dict"):
                 return self.loader._dict
             return self.__dict
@@ -1209,7 +1202,8 @@ class NetDevices(MutableMapping):
         classobj = self.__class__
         if classobj._Singleton is None:
             classobj._Singleton = classobj._actual(
-                production_only=production_only, with_acls=with_acls,
+                production_only=production_only,
+                with_acls=with_acls,
             )
 
     def __getattr__(self, attr):

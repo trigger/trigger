@@ -42,8 +42,7 @@ __all__ = (
 
 # Classes
 class NetScreen:
-    """Parses and generates NetScreen firewall policy.
-    """
+    """Parses and generates NetScreen firewall policy."""
 
     def __init__(self):
         self.service_book = NSServiceBook()
@@ -93,7 +92,10 @@ class NetScreen:
                 '"protocol", ws, protocol, ws, "src-port", ws, portrange, ws,'
                 '"dst-port", ws, portrange',
                 lambda x: NSService(
-                    name=x[0], protocol=x[1], source_port=x[2], destination_port=x[3],
+                    name=x[0],
+                    protocol=x[1],
+                    source_port=x[2],
+                    destination_port=x[3],
                 ),
             ),
             S("address"): (
@@ -192,7 +194,9 @@ class NetScreen:
         print("Error at: ", string[nextchar:])
         msg = "Could not match syntax. Please report as a bug."
         raise exceptions.ParseError(
-            msg, line, column,
+            msg,
+            line,
+            column,
         )
 
     def concatenate_grp(self, x):
@@ -377,8 +381,7 @@ class NetScreen:
 # Policy/Service/Group stuff
 ############################
 class NSRawGroup:
-    """Container for group definitions.
-    """
+    """Container for group definitions."""
 
     def __init__(self, data):
         if data[0] == "address" and len(data) == 3:
@@ -396,8 +399,7 @@ class NSRawGroup:
 
 
 class NSGroup(NetScreen):
-    """Container for address/service groups.
-    """
+    """Container for address/service groups."""
 
     def __init__(self, name=None, group_type="address", zone=None):
         self.nodes = []
@@ -546,8 +548,7 @@ class NSServiceBook(NetScreen):
 
 
 class NSAddressBook(NetScreen):
-    """Container for address book entries.
-    """
+    """Container for address book entries."""
 
     def __init__(self, name="ANY", zone=None):
         self.entries = {}
@@ -599,8 +600,7 @@ class NSAddressBook(NetScreen):
 
 
 class NSAddress(NetScreen):
-    """Container for individual address items.
-    """
+    """Container for individual address items."""
 
     def __init__(self, name=None, zone=None, addr=None, comment=None):
         self.name = None
@@ -652,8 +652,7 @@ class NSAddress(NetScreen):
 
 
 class NSService(NetScreen):
-    """Container for individual service items.
-    """
+    """Container for individual service items."""
 
     def __init__(
         self,
@@ -756,8 +755,7 @@ class NSService(NetScreen):
 
 
 class NSRawPolicy:
-    """Container for policy definitions.
-    """
+    """Container for policy definitions."""
 
     def __init__(self, data, isglobal=0):
         self.isglobal = isglobal
@@ -769,8 +767,7 @@ class NSRawPolicy:
 
 
 class NSPolicy(NetScreen):
-    """Container for individual policy definitions.
-    """
+    """Container for individual policy definitions."""
 
     def __init__(
         self,
@@ -820,7 +817,10 @@ class NSPolicy(NetScreen):
 
     def add_source_address(self, address):
         self.add_address(
-            address, self.source_zone, self.address_book, self.source_addresses,
+            address,
+            self.source_zone,
+            self.address_book,
+            self.source_addresses,
         )
 
     def add_destination_address(self, address):
@@ -832,7 +832,10 @@ class NSPolicy(NetScreen):
         )
 
     def add_service(
-        self, protocol, source_port=(1, 65535), destination_port=(1, 65535),
+        self,
+        protocol,
+        source_port=(1, 65535),
+        destination_port=(1, 65535),
     ):
         found = None
         if not protocol:

@@ -142,7 +142,9 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
     # Update device name
     for y, (dev, status) in zip(range(3, maxy()), active.items(), strict=False):
         s.addstr(y, 0, (f"{dev}: {status}")[: maxx()], curses.A_BOLD)
-    for y, (dev, acls) in zip(range(3 + len(active), maxy()), work.items(), strict=False):
+    for y, (dev, acls) in zip(
+        range(3 + len(active), maxy()), work.items(), strict=False
+    ):
         s.addstr(y, 0, ("{}: {}".format(dev, " ".join(acls)))[: maxx()])
 
     s.move(maxy() - 1, maxx() - 1)
@@ -208,16 +210,24 @@ def parse_args(argv):
         help="load escalated ACLs from integrated load queue",
     )
     parser.add_option(
-        "--severed-head", action="store_true", help="display severed head",
+        "--severed-head",
+        action="store_true",
+        help="display severed head",
     )
     parser.add_option(
-        "--no-db", action="store_true", help="disable database access (for outages)",
+        "--no-db",
+        action="store_true",
+        help="disable database access (for outages)",
     )
     parser.add_option(
-        "--bouncy", action="store_true", help="load out of bounce (override checks)",
+        "--bouncy",
+        action="store_true",
+        help="load out of bounce (override checks)",
     )
     parser.add_option(
-        "--no-vip", action="store_true", help="TFTP from green address, not blue VIP",
+        "--no-vip",
+        action="store_true",
+        help="TFTP from green address, not blue VIP",
     )
     parser.add_option(
         "--bulk",
@@ -227,7 +237,9 @@ def parse_args(argv):
         "execution of load_acl.",
     )
     parser.add_option(
-        "--no-cm", action="store_true", help="do not open up a CM ticket for this load",
+        "--no-cm",
+        action="store_true",
+        help="do not open up a CM ticket for this load",
     )
     parser.add_option(
         "--no-curses",
@@ -287,8 +299,7 @@ def get_work(opts, args):
     bulk_acls = get_bulk_acls()
 
     def add_work(dev_name, acls):
-        """A closure for the purpose of adding/updating ACLS for a given device.
-        """
+        """A closure for the purpose of adding/updating ACLS for a given device."""
         try:
             dev = nd[dev_name]
         except KeyError:
@@ -394,12 +405,16 @@ def get_work(opts, args):
                 dev_acls = ", ".join(work[dev])
                 print(
                     "Skipping {} on {} (window starts at {})".format(
-                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]),
+                        dev_acls,
+                        dev.nodeName.split(".")[0],
+                        pretty_time(next_ok[dev]),
                     ),
                 )
                 log.msg(
                     "Skipping {} on {} (window starts at {})".format(
-                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]),
+                        dev_acls,
+                        dev.nodeName.split(".")[0],
+                        pretty_time(next_ok[dev]),
                     ),
                 )
                 del work[dev]
@@ -624,7 +639,9 @@ def activate(work, active, failures, jobs, redraw, opts):
 
             if dev.vendor in ("brocade", "foundry"):
                 handled_second = dev.execute(
-                    cmds, incremental=incremental, command_interval=1,
+                    cmds,
+                    incremental=incremental,
+                    command_interval=1,
                 )
             else:
                 handled_second = dev.execute(cmds, incremental=incremental)
@@ -745,7 +762,8 @@ def main():
         if not oncall:
             if opts.auto:
                 send_notification(
-                    "LOAD_ACL FAILURE", "Unable to get current ON-CALL information!",
+                    "LOAD_ACL FAILURE",
+                    "Unable to get current ON-CALL information!",
                 )
             log.err("Unable to get on-call information!", logLevel=logging.CRITICAL)
             sys.exit(1)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""check_syntax - Determines if ACL passes parsing check.
-"""
+"""check_syntax - Determines if ACL passes parsing check."""
 
 __version__ = "1.0"
 

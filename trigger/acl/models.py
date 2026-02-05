@@ -1,5 +1,4 @@
-"""Database models for the task queue.
-"""
+"""Database models for the task queue."""
 
 import datetime
 
@@ -40,8 +39,7 @@ else:
 
 
 class BaseModel(pw.Model):
-    """Base model that inherits the database object determined above.
-    """
+    """Base model that inherits the database object determined above."""
 
     class Meta:
         """Peewee Meta class for database configuration."""

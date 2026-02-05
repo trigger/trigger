@@ -45,13 +45,11 @@ class BaseLoader:
         return self.load_data_source(data_source, **kwargs)
 
     def load_data_source(self, data_source, **kwargs):
-        """Returns an iterable of key/value pairs for the given ``data_source``.
-        """
+        """Returns an iterable of key/value pairs for the given ``data_source``."""
         raise NotImplementedError
 
     def reset(self):
-        """Resets any state maintained by the loader instance.
-        """
+        """Resets any state maintained by the loader instance."""
 
 
 # Functions
@@ -106,7 +104,8 @@ def find_data_loader(loader):
             import warnings
 
             warnings.warn(
-                f"Your NETDEVICES_LOADERS setting includes {loader!r}, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS.", stacklevel=2,
+                f"Your NETDEVICES_LOADERS setting includes {loader!r}, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS.",
+                stacklevel=2,
             )
             return None
         return func

@@ -25,11 +25,13 @@ WITH_ACLS = True
 
 # Configs
 NETDEVICES_SOURCE = os.environ.get(
-    "NETDEVICES_SOURCE", str(Path(PREFIX) / "netdevices.xml"),
+    "NETDEVICES_SOURCE",
+    str(Path(PREFIX) / "netdevices.xml"),
 )
 AUTOACL_FILE = os.environ.get("AUTOACL_FILE", str(Path(PREFIX) / "autoacl.py"))
 BOUNCE_FILE = os.environ.get("BOUNCE_FILE", str(Path(PREFIX) / "bounce.py"))
 
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", str(Path(PREFIX) / "vendor/ntc_templates"),
+    "TEXTFSM_TEMPLATE_DIR",
+    str(Path(PREFIX) / "vendor/ntc_templates"),
 )
