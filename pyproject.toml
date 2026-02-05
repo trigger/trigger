@@ -82,46 +82,119 @@ target-version = "py310"
 exclude = ["trigger/packages", ".venv", "build", "dist"]
 
 [tool.ruff.lint]
-# Focus on Python 3 compatibility and critical errors for v2.0.0
-# More comprehensive linting can be added in future releases
 select = [
-    "F",   # pyflakes - critical errors
-    "E",   # pycodestyle errors - serious issues
-    "W",   # pycodestyle warnings - whitespace/formatting
-    "I",   # isort - import sorting
-    "UP",  # pyupgrade - Python 3 modernization
+    "B",      # flake8-bugbear - bug prevention
+    "COM",    # flake8-commas - trailing comma consistency
+    "D",      # pydocstyle - docstring formatting
+    "E",      # pycodestyle errors
+    "EM",     # flake8-errmsg - exception message hygiene
+    "ERA",    # eradicate - commented-out code removal
+    "F",      # pyflakes
+    "FURB",   # refurb - modern Python idioms
+    "I",      # isort - import sorting
+    "PERF",   # perflint - performance patterns
+    "PIE",    # flake8-pie - unnecessary constructs
+    "PLR",    # pylint-refactor
+    "PLW",    # pylint-warnings
+    "PT",     # flake8-pytest-style
+    "PTH",    # flake8-use-pathlib
+    "RET",    # flake8-return
+    "RSE",    # flake8-raise
+    "RUF",    # ruff-specific rules
+    "S",      # flake8-bandit - security
+    "SIM",    # flake8-simplify
+    "UP",     # pyupgrade - Python 3 modernization
+    "W",      # pycodestyle warnings
 ]
 ignore = [
-    "E501",   # line too long (handled by formatter)
-    "E402",   # module level import not at top (common in test files)
-    "E721",   # type comparisons (existing code style)
-    "E722",   # bare except (intentional in many places)
-    "E741",   # ambiguous variable names (existing code style)
-    "UP031",  # percent formatting (leave for future cleanup)
-    "F401",   # unused imports (may be used dynamically or by subclasses)
-    "F402",   # import shadowing (acceptable in limited scope loops)
-    "F403",   # star imports (common pattern, leave for future refactor)
-    "F405",   # undefined from star imports (consequence of F403)
-    "F523",   # format call issues (leave for future cleanup)
-    "F811",   # redefinition (tests may intentionally override)
-    "F821",   # undefined names (may be in contrib plugins not fully ported)
+    # --- Kept from v2.0.0 baseline ---
+    "E402",     # module-import-not-at-top-of-file
+    "E501",     # line-too-long (handled by formatter)
+    "E721",     # type-comparison (existing code style)
+    "E722",     # bare-except (intentional in many places)
+    "E741",     # ambiguous-variable-name (existing code style)
+    "F401",     # unused-import (may be used dynamically)
+    "F402",     # import-shadowed-by-loop-var
+    "F403",     # undefined-local-with-import-star
+    "F405",     # undefined-local-with-import-star-usage
+    "F523",     # string-dot-format-extra-positional-arguments
+    "F811",     # redefined-while-unused
+    "F821",     # undefined-name
+    "UP031",    # printf-string-formatting
+
+    # --- Bugbear exceptions ---
+    "B016",     # raise-literal (used intentionally in tests)
+    "B018",     # useless-expression (test assertions)
+
+    # --- Docstring exceptions (not enforcing coverage/style) ---
+    "D100",     # undocumented-public-module
+    "D101",     # undocumented-public-class
+    "D102",     # undocumented-public-method
+    "D103",     # undocumented-public-function
+    "D104",     # undocumented-public-package
+    "D105",     # undocumented-magic-method
+    "D107",     # undocumented-public-init
+    "D200",     # unnecessary-multiline-docstring
+    "D205",     # missing-blank-line-after-summary
+    "D401",     # non-imperative-mood
+    "D402",     # signature-in-docstring
+    "D404",     # docstring-starts-with-this
+
+    # --- Complexity (deep refactoring territory) ---
+    "PLR0911",  # too-many-return-statements
+    "PLR0912",  # too-many-branches
+    "PLR0913",  # too-many-arguments
+    "PLR0915",  # too-many-statements
+    "PLR2004",  # magic-value-comparison
+    "PLW0603",  # global-statement (parser pattern)
+
+    # --- Security false positives for network toolkit ---
+    "S101",     # assert (used in tests)
+    "S105",     # hardcoded-password-string (false positives)
+    "S110",     # try-except-pass
+    "S112",     # try-except-continue
+    "S314",     # suspicious-xml-element-tree-usage
+    "S603",     # subprocess-without-shell-equals-true
+    "S605",     # start-process-with-a-shell (fix manually)
+    "S606",     # start-process-with-no-shell
+    "S608",     # hardcoded-sql-expression
+
+    # --- Other ---
+    "RUF012",   # mutable-class-default (too many in device metadata)
+    "SLF001",   # private-member-access (common in Twisted patterns)
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
+    "ARG",   # unused arguments (test fixtures)
+    "D",     # docstrings not enforced in tests
+    "E402",  # module-level imports not at top
+    "E722",  # bare-except
+    "E731",  # lambda assignments
     "F821",  # undefined names (test fixtures)
-    "E402",  # module level imports not at top
-    "E722",  # bare except (common in test error handling)
-    "E731",  # lambda assignments (test utilities)
+    "PT009", # pytest-unittest-assertion (allow mixing in tests)
+    "PT027", # pytest-unittest-raises-assertion
+    "S",     # security checks not relevant in tests
 ]
 "tests/acceptance/**/*.py" = [
-    "F821",  # undefined names (acceptance test config)
-    "E402",  # module level imports not at top
-    "E722",  # bare except
+    "D",     # docstrings not enforced
+    "E402",  # module-level imports not at top
+    "E722",  # bare-except
+    "F821",  # undefined names
+    "S",     # security checks not relevant
+]
+"trigger/bin/**/*.py" = [
+    "S605",  # start-process-with-a-shell (CLI tools)
+    "S606",  # start-process-with-no-shell
+    "S607",  # start-process-with-partial-path
 ]
 "docs/conf.py" = [
-    "E402",  # module level imports not at top (Sphinx config)
-    "F401",  # unused imports (may be used by Sphinx)
+    "D",     # docstrings not enforced
+    "E402",  # module-level imports not at top
+    "F401",  # unused imports (used by Sphinx)
 ]
 
 [tool.ruff.lint.isort]

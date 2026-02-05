@@ -1,6 +1,5 @@
-"""
-This code is originally from parser.py. This file is not meant to by used by itself.
-This is for IOS like ACLs
+"""This code is originally from parser.py. This file is not meant to by used by itself.
+This is for IOS like ACLs.
 
 #Constants
     unary_port_operators
@@ -23,8 +22,7 @@ from .grammar import *
 
 
 class Remark(Comment):
-    """
-    IOS extended ACL "remark" lines automatically become comments when
+    """IOS extended ACL "remark" lines automatically become comments when
     converting to other formats of ACL.
     """
 
@@ -36,7 +34,7 @@ class Remark(Comment):
 # Build a table to unwind Cisco's weird inverse netmask.
 # TODO (jathan): These don't actually get sorted properly, but it doesn't seem
 # to have mattered up until now. Worth looking into it at some point, though.
-inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(0, 33)])
+inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(33)])
 
 
 def handle_ios_match(a):
@@ -54,9 +52,8 @@ def handle_ios_match(a):
             if arg[0] is not None:
                 match[sd + "-address"] = [arg[0]]
             match[sd + "-port"] = arg[1]
-        else:
-            if arg is not None:
-                match[sd + "-address"] = [arg]
+        elif arg is not None:
+            match[sd + "-address"] = [arg]
 
     if "log" in extra:
         modifiers["syslog"] = True
@@ -93,8 +90,9 @@ def handle_ios_acl(rows):
             elif k == "name":
                 if acl.name:
                     if v != acl.name:
+                        msg = f"Name '{v}' does not match ACL '{acl.name}'"
                         raise exceptions.ACLNameError(
-                            f"Name '{v}' does not match ACL '{acl.name}'"
+                            msg,
                         )
                 else:
                     acl.name = v
@@ -106,7 +104,8 @@ def handle_ios_acl(rows):
             elif k == "receive_acl":
                 acl.is_receive_acl = True
             else:
-                raise RuntimeError(f'unknown key "{k}" (value {v})')
+                msg = f'unknown key "{k}" (value {v})'
+                raise RuntimeError(msg)
     # In traditional ACLs, comments that belong to the first ACE are
     # indistinguishable from comments that belong to the ACL.
     # if acl.format == 'ios' and acl.terms:
@@ -218,5 +217,5 @@ rules.update(
         "remark_body": ('-"\n"*', Remark),
         ">ios_line<": ('ts?, (ios_acl_line / ios_ext_line / "end")?, ts?, icomment?'),
         S("ios_acl"): ('(ios_line, "\n")*, ios_line', handle_ios_acl),
-    }
+    },
 )

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Uses Trigger libraries to load configs on network devices.
+"""Uses Trigger libraries to load configs on network devices.
 
 Please see `~trigger.contrib.docommand.ConfigLoader` for details
 """

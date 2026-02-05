@@ -1,16 +1,16 @@
-"""
-Functions that perform network-based things like ping, port tests, etc.
+"""Functions that perform network-based things like ping, port tests, etc.
 """
 
 import os
 import shlex
 import socket
 import subprocess
+from pathlib import Path
 
 from trigger.conf import settings
 
 # Exports
-__all__ = ("ping", "test_tcp_port", "test_ssh", "address_is_internal")
+__all__ = ("address_is_internal", "ping", "test_ssh", "test_tcp_port")
 
 
 # Constants
@@ -24,8 +24,7 @@ SSH_VERSION_STRINGS = (
 
 # Functions
 def ping(host, count=1, timeout=5):
-    """
-    Returns pass/fail for a ping. Supports POSIX only.
+    """Returns pass/fail for a ping. Supports POSIX only.
 
     :param host:
         Hostname or address
@@ -42,10 +41,9 @@ def ping(host, count=1, timeout=5):
     >>> network.ping('192.168.199.253')
     False
     """
-
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
     status = None
-    with open(os.devnull, "w") as devnull_fd:
+    with Path(os.devnull).open("w") as devnull_fd:
         status = subprocess.call(
             shlex.split(ping_command),
             stdout=devnull_fd,
@@ -58,9 +56,8 @@ def ping(host, count=1, timeout=5):
     return status == 0
 
 
-def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=""):
-    """
-    Attempts to connect to a TCP port. Returns a Boolean.
+def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=""):  # noqa: PT028
+    """Attempts to connect to a TCP port. Returns a Boolean.
 
     If ``check_result`` is set, the first line of output is retreived from the
     connection and the starting characters must match ``expected_result``.
@@ -99,7 +96,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=
             return result.startswith(
                 expected_result.encode()
                 if isinstance(expected_result, str)
-                else expected_result
+                else expected_result,
             )
 
         return True
@@ -110,9 +107,8 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=
             sock.close()
 
 
-def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):
-    """
-    Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
+def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):  # noqa: PT028
+    """Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
 
     Note that the default of ('SSH-1.99', 'SSH-2.0') both indicate SSHv2 per
     RFC 4253. (Ref: http://en.wikipedia.org/wiki/Secure_Shell#Version_1.99)
@@ -136,13 +132,12 @@ def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):
     False
     """
     return test_tcp_port(
-        host, port, timeout, check_result=True, expected_result=version
+        host, port, timeout, check_result=True, expected_result=version,
     )
 
 
 def address_is_internal(ip):
-    """
-    Determines if an IP address is internal to your network. Relies on
+    """Determines if an IP address is internal to your network. Relies on
     networks specified in :mod:`settings.INTERNAL_NETWORKS`.
 
     :param ip:
@@ -151,7 +146,4 @@ def address_is_internal(ip):
     >>> address_is_internal('1.1.1.1')
     False
     """
-    for i in settings.INTERNAL_NETWORKS:
-        if ip in i:
-            return True
-    return False
+    return any(ip in i for i in settings.INTERNAL_NETWORKS)

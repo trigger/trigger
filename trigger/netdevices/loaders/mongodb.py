@@ -10,8 +10,7 @@ else:
 
 
 class MongoDBLoader(BaseLoader):
-    """
-    Wrapper for loading metadata via MongoDB.
+    """Wrapper for loading metadata via MongoDB.
 
     To use this define ``NETDEVICES_SOURCE`` in this format::
 
@@ -23,10 +22,7 @@ class MongoDBLoader(BaseLoader):
     def get_data(self, data_source, host, port, database, table_name):
         client = MongoClient(host, port)
         collection = client[database][table_name]
-        data = []
-        for device in collection.find():
-            data.append(device)
-        return data
+        return list(collection.find())
 
     def load_data_source(self, data_source, **kwargs):
         host = kwargs.get("hostname")
@@ -36,4 +32,5 @@ class MongoDBLoader(BaseLoader):
         try:
             return self.get_data(data_source, host, port, database, table_name)
         except Exception as err:
-            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
+            msg = f"Tried {data_source!r}; and failed: {err!r}"
+            raise LoaderFailed(msg) from err

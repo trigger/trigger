@@ -129,8 +129,8 @@ class TestNetDevicesWithoutAcls(unittest.TestCase):
     def setUp(self):
         self.nd = NetDevices(with_acls=False)
         # Python 3: dict.keys() and dict.values() return views, convert to list for subscripting
-        self.nodename = list(self.nd.keys())[0]
-        self.device = list(self.nd.values())[0]
+        self.nodename = next(iter(self.nd.keys()))
+        self.device = next(iter(self.nd.values()))
 
     def test_aclsdb(self):
         """Test acls.db handling."""
@@ -173,12 +173,10 @@ class TestNetDeviceObject(unittest.TestCase):
     def test_allowable(self):
         """Test allowable() method"""
         # This is already tested in test_changemgmt.py, so this is a stub.
-        pass
 
     def test_next_ok(self):
         """Test next_ok() method"""
         # This is already tested in test_changemgmt.py, so this is a stub.
-        pass
 
     def test_identity(self):
         """Exercise NetDevice identity tests."""
@@ -207,7 +205,7 @@ class TestNetDeviceObject(unittest.TestCase):
 
     def test_dump(self):
         """Test the dump() method."""
-        with captured_output() as (out, err):
+        with captured_output() as (out, _err):
             self.device.dump()
         expected = NETDEVICE_DUMP_EXPECTED
         output = out.getvalue()
@@ -254,9 +252,9 @@ class TestVendorObject(unittest.TestCase):
     def test_membership(self):
         """Test membership w/ __eq__ and __contains__"""
         expected = "cisco"
-        self.assertTrue(expected in [self.vendor])
-        self.assertTrue(self.vendor in [self.vendor])
-        self.assertTrue(self.vendor in [expected])
+        self.assertTrue(expected == self.vendor)
+        self.assertTrue(self.vendor == self.vendor)
+        self.assertTrue(self.vendor == expected)
         self.assertFalse(self.vendor in ["juniper", "foundry"])
 
     def test_determine_vendor(self):

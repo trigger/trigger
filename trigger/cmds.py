@@ -1,5 +1,4 @@
-"""
-This module abstracts the asynchronous execution of commands on multiple
+"""This module abstracts the asynchronous execution of commands on multiple
 network devices. It allows for integrated parsing and event-handling of return
 data for rapid integration to existing or newly-created tools.
 
@@ -32,7 +31,7 @@ from trigger.utils.templates import (
 )
 
 # Exports
-__all__ = ("Commando", "ReactorlessCommando", "NetACLInfo")
+__all__ = ("Commando", "NetACLInfo", "ReactorlessCommando")
 
 
 # Default timeout in seconds for commands to return a result
@@ -41,8 +40,7 @@ DEFAULT_TIMEOUT = 30
 
 # Classes
 class Commando:
-    """
-    Execute commands asynchronously on multiple network devices.
+    """Execute commands asynchronously on multiple network devices.
 
     This class is designed to be extended but can still be used as-is to execute
     commands and return the results as-is.
@@ -164,8 +162,9 @@ class Commando:
         stop_reactor=True,
     ):
         if devices is None:
+            msg = "You must specify some `devices` to interact with!"
             raise exceptions.ImproperlyConfigured(
-                "You must specify some `devices` to interact with!"
+                msg,
             )
 
         self.devices = devices
@@ -191,13 +190,11 @@ class Commando:
             self.parsed_results if self.parsed_results is not None else {}
         )
 
-        # self.deferrals = []
         self.supported_platforms = self._validate_platforms()
         self._setup_jobs()
 
     def _validate_platforms(self):
-        """
-        Determine the set of supported platforms for this instance by making
+        """Determine the set of supported platforms for this instance by making
         sure the specified vendors/platforms for the class match up.
         """
         supported_platforms = {}
@@ -205,22 +202,21 @@ class Commando:
             if vendor in self.platforms:
                 types = self.platforms[vendor]
                 if not types:
+                    msg = f"No platforms specified for {vendor!r}"
                     raise exceptions.MissingPlatform(
-                        f"No platforms specified for {vendor!r}"
+                        msg,
                     )
-                else:
-                    # self.supported_platforms[vendor] = types
-                    supported_platforms[vendor] = types
+                supported_platforms[vendor] = types
             else:
+                msg = f"Platforms for vendor {vendor!r} not found. Please provide it at either the class level or using the arguments."
                 raise exceptions.ImproperlyConfigured(
-                    f"Platforms for vendor {vendor!r} not found. Please provide it at either the class level or using the arguments."
+                    msg,
                 )
 
         return supported_platforms
 
     def _decrement_connections(self, data=None):
-        """
-        Self-explanatory. Called by _add_worker() as both callback/errback
+        """Self-explanatory. Called by _add_worker() as both callback/errback
         so we can accurately refill the jobs queue, which relies on the
         current connection count.
         """
@@ -233,8 +229,7 @@ class Commando:
         return True
 
     def _setup_jobs(self):
-        """
-        "Maps device hostnames to `~trigger.netdevices.NetDevice` objects and
+        """"Maps device hostnames to `~trigger.netdevices.NetDevice` objects and
         populates the job queue.
         """
         for dev in self.devices:
@@ -258,15 +253,15 @@ class Commando:
             # We only want to add devices for which we've enabled support in
             # this class
             if devobj.vendor not in self.vendors:
+                msg = f"The vendor '{devobj.vendor}' is not specified in ``vendors``. Could not add {devobj} to job queue. Please check the attribute in the class object."
                 raise exceptions.UnsupportedVendor(
-                    f"The vendor '{devobj.vendor}' is not specified in ``vendors``. Could not add {devobj} to job queue. Please check the attribute in the class object."
+                    msg,
                 )
 
             self.jobs.append(devobj)
 
     def select_next_device(self, jobs=None):
-        """
-        Select another device for the active queue.
+        """Select another device for the active queue.
 
         Currently only returns the next device in the job queue. This is
         abstracted out so that this behavior may be customized, such as for
@@ -286,8 +281,7 @@ class Commando:
         return jobs.pop()
 
     def _add_worker(self):
-        """
-        Adds devices to the work queue to keep it populated with the maximum
+        """Adds devices to the work queue to keep it populated with the maximum
         connections as specified by ``max_conns``.
         """
         while self.jobs and self.curr_conns < self.max_conns:
@@ -333,17 +327,17 @@ class Commando:
             async_result.addBoth(lambda x: self._add_worker())
 
         # Do this once we've exhausted the job queue
-        else:
-            if not self.curr_conns and self.reactor_running:
-                self._stop()
-            elif not self.jobs and not self.reactor_running:
-                log.msg("No work left.")
-                if self.verbose:
-                    print("No work left.")
+        if not self.curr_conns and self.reactor_running:
+            self._stop()
+        elif not self.jobs and not self.reactor_running:
+            log.msg("No work left.")
+            if self.verbose:
+                print("No work left.")
 
     def _lookup_method(self, device, method):
-        """
-        Base lookup method. Looks up stuff by device manufacturer like:
+        """Look up stuff by device manufacturer.
+
+        Looks for methods like:
 
             from_juniper
             to_foundry
@@ -383,30 +377,34 @@ class Commando:
             else:
                 log.msg(f"[{device}] Did not find {method!r} method: {method_name}")
         else:
-            raise exceptions.UnsupportedDeviceType(
+            msg = (
                 f"Device {device.nodeName!r} has an invalid type {device_type!r} for vendor {desired_vendor!r}. Must be "
                 f"one of {vendor_types!r}."
+            )
+            raise exceptions.UnsupportedDeviceType(
+                msg,
             )
 
         if desired_method is None:
             if self.allow_fallback:
                 desired_method = METHOD_MAP[method] % "base"
                 log.msg(
-                    f"[{device}] Fallback enabled. Using base method: {desired_method!r}"
+                    f"[{device}] Fallback enabled. Using base method: {desired_method!r}",
                 )
             else:
-                raise exceptions.UnsupportedVendor(
+                msg = (
                     f"The vendor {device.vendor.name!r} had no available {method} method. Please check "
                     "your `vendors` and `platforms` attributes in your class "
                     "object."
                 )
+                raise exceptions.UnsupportedVendor(
+                    msg,
+                )
 
-        func = getattr(self, desired_method)
-        return func
+        return getattr(self, desired_method)
 
     def generate(self, device, commands=None, extra=None):
-        """
-        Generate commands to be run on a device. If you don't provide
+        """Generate commands to be run on a device. If you don't provide
         ``commands`` to the class constructor, this will return an empty list.
 
         Define a 'to_{vendor_name}' method to customize the behavior for each
@@ -437,8 +435,7 @@ class Commando:
         return func(device, commands, extra)
 
     def parse_template(self, results, device, commands=None):
-        """
-        Generator function that processes unstructured CLI data and yields either
+        """Generator function that processes unstructured CLI data and yields either
         a TextFSM based object or generic raw output.
 
         :param results:
@@ -450,7 +447,6 @@ class Commando:
         :type device:
             `~trigger.netdevices.NetDevice`
         """
-
         device_type = device.os
         ret = []
 
@@ -460,11 +456,11 @@ class Commando:
                     re_table = load_cmd_template(command, dev_type=device_type)
                     fsm = get_textfsm_object(re_table, results[idx])
                     self.append_parsed_results(
-                        device, self.map_parsed_results(command, fsm)
+                        device, self.map_parsed_results(command, fsm),
                     )
                 except:
                     log.msg(
-                        "Unable to load TextFSM template, just updating with unstructured output"
+                        "Unable to load TextFSM template, just updating with unstructured output",
                     )
 
             ret.append(results[idx])
@@ -472,8 +468,7 @@ class Commando:
         return ret
 
     def parse(self, results, device, commands=None):
-        """
-        Parse output from a device. Calls to ``self._lookup_method`` to find
+        """Parse output from a device. Calls to ``self._lookup_method`` to find
         specific ``from`` method.
 
         Define a 'from_{vendor_name}' method to customize the behavior for each
@@ -500,8 +495,7 @@ class Commando:
         return func(results, device, commands)
 
     def errback(self, failure, device):
-        """
-        The default errback. Overload for custom behavior but make sure it
+        """The default errback. Overload for custom behavior but make sure it
         always decrements the connections.
 
         :param failure:
@@ -512,12 +506,10 @@ class Commando:
         """
         failure.trap(Exception)
         self.store_error(device, failure)
-        # self._decrement_connections(failure)
         return failure
 
     def store_error(self, device, error):
-        """
-        A simple method for storing an error called by all default
+        """A simple method for storing an error called by all default
         parse/generate methods.
 
         If you want to customize the default method for storing results,
@@ -535,8 +527,7 @@ class Commando:
         return True
 
     def append_parsed_results(self, device, results):
-        """
-        A simple method for appending results called by template parser
+        """A simple method for appending results called by template parser
         method.
 
         If you want to customize the default method for storing parsed
@@ -557,8 +548,7 @@ class Commando:
         return True
 
     def store_results(self, device, results):
-        """
-        A simple method for storing results called by all default
+        """A simple method for storing results called by all default
         parse/generate methods.
 
         If you want to customize the default method for storing results,
@@ -576,14 +566,14 @@ class Commando:
         return True
 
     def map_parsed_results(self, command=None, fsm=None):
-        """Return a dict of ``{command: fsm, ...}``"""
+        """Return a dict of ``{command: fsm, ...}``."""
         if fsm is None:
             fsm = {}
 
         return {command: fsm}
 
     def map_results(self, commands=None, results=None):
-        """Return a dict of ``{command: result, ...}``"""
+        """Return a dict of ``{command: result, ...}``."""
         if commands is None:
             commands = self.commands
         if results is None:
@@ -594,15 +584,14 @@ class Commando:
 
     @property
     def reactor_running(self):
-        """Return whether reactor event loop is running or not"""
+        """Return whether reactor event loop is running or not."""
         from twisted.internet import reactor
 
         log.msg(f"Reactor running? {reactor.running}")
         return reactor.running
 
     def _stop(self):
-        """Stop the reactor event loop"""
-
+        """Stop the reactor event loop."""
         if self.stop_reactor:
             log.msg("Stop reactor enabled: stopping reactor...")
             from twisted.internet import reactor
@@ -615,7 +604,7 @@ class Commando:
                 print("stopping reactor... except not really.")
 
     def _start(self):
-        """Start the reactor event loop"""
+        """Start the reactor event loop."""
         log.msg("starting reactor. maybe.")
         if self.verbose:
             print("starting reactor. maybe.")
@@ -632,8 +621,7 @@ class Commando:
                 print(msg)
 
     def run(self):
-        """
-        Nothing happens until you execute this to perform the actual work.
+        """Nothing happens until you execute this to perform the actual work.
         """
         self._add_worker()
         self._start()
@@ -655,9 +643,9 @@ class Commando:
     # Vendor-specific generate (to_)/parse (from_) methods
     # =======================================
     def to_juniper(self, device, commands=None, extra=None):
+        """This just creates a series of ``<command>foo</command>`` elements to
+        pass along to execute_junoscript().
         """
-        This just creates a series of ``<command>foo</command>`` elements to
-        pass along to execute_junoscript()"""
         commands = commands or self.commands
 
         # If we've set force_cli, use to_base() instead
@@ -674,8 +662,7 @@ class Commando:
 
 
 class ReactorlessCommando(Commando):
-    """
-    A reactor-less Commando subclass.
+    """A reactor-less Commando subclass.
 
     This allows multiple instances to coexist, with the side-effect that you
     have to manage the reactor start/stop manually.
@@ -712,18 +699,17 @@ class ReactorlessCommando(Commando):
     """
 
     def _start(self):
-        """Initializes ``all_done`` instead of starting the reactor"""
+        """Initializes ``all_done`` instead of starting the reactor."""
         log.msg("._start() called")
         self.all_done = False
 
     def _stop(self):
-        """Sets ``all_done`` to True instead of stopping the reactor"""
+        """Sets ``all_done`` to True instead of stopping the reactor."""
         log.msg("._stop() called")
         self.all_done = True
 
     def run(self):
-        """
-        We've overloaded the run method to return a Deferred task object.
+        """We've overloaded the run method to return a Deferred task object.
         """
         log.msg(".run() called")
 
@@ -746,8 +732,7 @@ class ReactorlessCommando(Commando):
         return d
 
     def monitor_result(self, result, reactor):
-        """
-        Loop periodically or until the factory stops to check if we're
+        """Loop periodically or until the factory stops to check if we're
         ``all_done`` and then return the results.
         """
         # Once we're done, return the results
@@ -759,8 +744,7 @@ class ReactorlessCommando(Commando):
 
 
 class NetACLInfo(Commando):
-    """
-    Class to fetch and parse interface information. Exposes a config
+    """Class to fetch and parse interface information. Exposes a config
     attribute which is a dictionary of devices passed to the constructor and
     their interface information.
 
@@ -825,10 +809,11 @@ class NetACLInfo(Commando):
     def __init__(self, **args):
         try:
             import pyparsing as pp
-        except ImportError:
+        except ImportError as err:
+            msg = "You must install ``pyparsing==1.5.7`` to use NetACLInfo"
             raise RuntimeError(
-                "You must install ``pyparsing==1.5.7`` to use NetACLInfo"
-            )
+                msg,
+            ) from err
         self.config = {}
         self.skip_disabled = args.pop("skip_disabled", True)
         super().__init__(**args)
@@ -847,43 +832,40 @@ class NetACLInfo(Commando):
 
     def to_cisco(self, dev, commands=None, extra=None):
         """This is the "show me all interface information" command we pass to
-        IOS devices"""
+        IOS devices.
+        """
         if dev.is_cisco_asa():
             return [
-                "show running-config | include ^(interface | ip address | nameif | description |access-group|!)"
+                "show running-config | include ^(interface | ip address | nameif | description |access-group|!)",
             ]
-        elif dev.is_cisco_nexus():
+        if dev.is_cisco_nexus():
             return [
-                'show running-config | include "^(interface |  ip address |  ip access-group |  description |!)"'
+                'show running-config | include "^(interface |  ip address |  ip access-group |  description |!)"',
             ]
-        else:
-            return [
-                "show configuration | include ^(interface | ip address | ip access-group | description|!)"
-            ]
+        return [
+            "show configuration | include ^(interface | ip address | ip access-group | description|!)",
+        ]
 
     def to_arista(self, dev, commands=None, extra=None):
-        """
-        Similar to IOS, but:
+        """Generate commands for Arista, similar to IOS.
 
-           + Arista has no "show conf" so we have to do "show run"
-           + The regex used in the CLI for Arista is more "precise" so we have
-             to change the pattern a little bit compared to the on in
-             generate_ios_cmd
-
+        + Arista has no "show conf" so we have to do "show run"
+        + The regex used in the CLI for Arista is more "precise" so we have
+          to change the pattern a little bit compared to the on in
+          generate_ios_cmd
         """
         return [
-            "show running-config | include (^interface | ip address | ip access-group | description |!)"
+            "show running-config | include (^interface | ip address | ip access-group | description |!)",
         ]
 
     def to_force10(self, dev, commands=None, extra=None):
-        """
-        Similar to IOS, but:
-            + You only get the "grep" ("include" equivalent) when using "show
-              run".
-            + The regex must be quoted.
+        """Similar to IOS, but:
+        + You only get the "grep" ("include" equivalent) when using "show
+          run".
+        + The regex must be quoted.
         """
         return [
-            'show running-config | grep "^(interface | ip address | ip access-group | description|!)"'
+            'show running-config | grep "^(interface | ip address | ip access-group | description|!)"',
         ]
 
     # Other IOS-like vendors are Cisco-enough
@@ -891,18 +873,18 @@ class NetACLInfo(Commando):
     to_foundry = to_cisco
 
     def from_cisco(self, data, device, commands=None):
-        """Parse IOS config based on EBNF grammar"""
+        """Parse IOS config based on EBNF grammar."""
         self.results[device.nodeName] = data  # "MY OWN IOS DATA"
         alld = data[0]
 
         log.msg("Parsing interface data (%d bytes)" % len(alld))
         if not device.is_cisco_asa():
             self.config[device] = _parse_ios_interfaces(
-                alld, skip_disabled=self.skip_disabled
+                alld, skip_disabled=self.skip_disabled,
             )
         else:
             self.config[device] = {
-                "unsupported": "ASA ACL parsing unsupported this release"
+                "unsupported": "ASA ACL parsing unsupported this release",
             }
 
         return True
@@ -915,7 +897,8 @@ class NetACLInfo(Commando):
 
     def to_juniper(self, dev, commands=None, extra=None):
         """Generates an etree.Element object suitable for use with
-        JunoScript"""
+        JunoScript.
+        """
         cmd = Element("get-configuration", database="committed", inherit="inherit")
 
         SubElement(SubElement(cmd, "configuration"), "interfaces")
@@ -927,7 +910,7 @@ class NetACLInfo(Commando):
         return lambda elt, tag: elt.findall("./" + ns + tag)
 
     def from_juniper(self, data, device, commands=None):
-        """Do all the magic to parse Junos interfaces"""
+        """Do all the magic to parse Junos interfaces."""
         self.results[device.nodeName] = data  # "MY OWN JUNOS DATA"
 
         ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
@@ -966,7 +949,7 @@ class NetACLInfo(Commando):
                             # Junos 9.x changes to 'filter/xput/filter-name'
                             if acl is not None and "    " in acl.text:
                                 acl = family2.find(
-                                    f"{ns}filter/{ns}{inout}put/{ns}filter-name"
+                                    f"{ns}filter/{ns}{inout}put/{ns}filter-name",
                                 )
 
                             # Pushes text as variable name.  Must be a better way to do this?
@@ -979,7 +962,7 @@ class NetACLInfo(Commando):
                                 acl = [
                                     i.text
                                     for i in family2.findall(
-                                        f"{ns}filter/{ns}{inout}put-list"
+                                        f"{ns}filter/{ns}{inout}put-list",
                                     )
                                 ]
                                 # if acl: print 'got filter list'
@@ -1002,10 +985,9 @@ class NetACLInfo(Commando):
 
 
 def _parse_ios_interfaces(
-    data, acls_as_list=True, auto_cleanup=True, skip_disabled=True
+    data, acls_as_list=True, auto_cleanup=True, skip_disabled=True,
 ):
-    """
-    Walks through a IOS interface config and returns a dict of parts.
+    """Walks through a IOS interface config and returns a dict of parts.
 
     Intended for use by `~trigger.cmds.NetACLInfo.ios_parse()` but was written
     to be portable.
@@ -1036,7 +1018,7 @@ def _parse_ios_interfaces(
     # using SkipTO instead now
 
     # foundry example:
-    # telnet@olse1-dc5#show  configuration | include ^(interface | ip address | ip access-group | description|!)
+    # telnet@olse1-dc5#show  configuration | include ^(interface | ip address | ip access-group | description|!)  # noqa: ERA001
     #!
     # Startup-config data location is flash memory
     #!
@@ -1052,7 +1034,6 @@ def _parse_ios_interfaces(
     interface_keyword = pp.Keyword("interface")
     unwanted = pp.SkipTo(interface_keyword, include=False).suppress()
 
-    # unwanted = pp.ZeroOrMore(bang ^ comment ^ aaa_line ^ module_line ^ startup_line ^ ver_line)
 
     octet = pp.Word(pp.nums, max=3)
     ipaddr = pp.Combine(octet + "." + octet + "." + octet + "." + octet)
@@ -1077,7 +1058,7 @@ def _parse_ios_interfaces(
     # foundry matches on cidr and cisco matches on netmask
     # netmask converted to cidr in cleanup
     ip_tuple = pp.Group(address + (cidr ^ netmask)).setResultsName(
-        "addr", listAllMatches=True
+        "addr", listAllMatches=True,
     )
     negotiated = pp.Literal("negotiated")  # Seen on Cisco 886
     ip_address = ipaddr_keyword + (negotiated ^ ip_tuple) + pp.Optional(secondary)
@@ -1144,9 +1125,9 @@ def _parse_ios_interfaces(
 
 
 def _cleanup_interface_results(results, skip_disabled=True):
-    """
-    Takes ParseResults dictionary-like object and returns an actual dict of
-    populated interface details.  The following is performed:
+    """Take ParseResults dict-like object and return an actual dict of interface details.
+
+    The following is performed:
 
         * Ensures all expected fields are populated
         * Down/un-addressed interfaces are skipped
@@ -1176,7 +1157,7 @@ def _cleanup_interface_results(results, skip_disabled=True):
 
         new_int["addr"] = _make_ipy(iface_info.get("addr", []))
         new_int["subnets"] = _make_cidrs(
-            iface_info.get("subnets", iface_info.get("addr", []))
+            iface_info.get("subnets", iface_info.get("addr", [])),
         )
         new_int["acl_in"] = list(iface_info.get("acl_in", []))
         new_int["acl_out"] = list(iface_info.get("acl_out", []))
@@ -1187,24 +1168,26 @@ def _cleanup_interface_results(results, skip_disabled=True):
 
 def _make_ipy(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list of
-    IP address objects"""
+    IP address objects.
+    """
     return [IP(addr) for addr, mask in nets]
 
 
 def _make_cidrs(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list CIDR
-    blocks"""
+    blocks.
+    """
     return [IP(addr).make_net(mask) for addr, mask in nets]
 
 
 def _dump_interfaces(idict):
-    """Prints a dict of parsed interface results info for use in debugging"""
+    """Prints a dict of parsed interface results info for use in debugging."""
     for name, info in idict.items():
         print(">>>", name)
         print(
             "\t",
         )
-        if idict[name]:
+        if info:
             if hasattr(info, "keys"):
                 keys = info.keys()
                 print(keys)

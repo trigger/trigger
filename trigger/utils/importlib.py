@@ -1,11 +1,11 @@
-"""
-Utils to import modules.
+"""Utils to import modules.
 
 Taken verbatim from ``django.utils.importlib`` in Django 1.4.
 """
 
 import os
 import sys
+from pathlib import Path
 
 # Exports
 __all__ = ("import_module", "import_module_from_path")
@@ -15,19 +15,20 @@ __all__ = ("import_module", "import_module_from_path")
 def _resolve_name(name, package, level):
     """Return the absolute name of the module to be imported."""
     if not hasattr(package, "rindex"):
-        raise ValueError("'package' not set to a string")
+        msg = "'package' not set to a string"
+        raise ValueError(msg)
     dot = len(package)
-    for x in range(level, 1, -1):
+    for _x in range(level, 1, -1):
         try:
             dot = package.rindex(".", 0, dot)
-        except ValueError:
-            raise ValueError("attempted relative import beyond top-level package")
+        except ValueError as err:  # noqa: PERF203
+            msg = "attempted relative import beyond top-level package"
+            raise ValueError(msg) from err
     return f"{package[:dot]}.{name}"
 
 
 def import_module(name, package=None):
-    """
-    Import a module and return the module object.
+    """Import a module and return the module object.
 
     The ``package`` argument is required when performing a relative import. It
     specifies the package to use as the anchor point from which to resolve the
@@ -36,7 +37,8 @@ def import_module(name, package=None):
     """
     if name.startswith("."):
         if not package:
-            raise TypeError("relative imports require the 'package' argument")
+            msg = "relative imports require the 'package' argument"
+            raise TypeError(msg)
         level = 0
         for character in name:
             if character != ".":
@@ -48,8 +50,7 @@ def import_module(name, package=None):
 
 
 def import_module_from_path(full_path, global_name):
-    """
-    Import a module from a file path and return the module object.
+    """Import a module from a file path and return the module object.
 
     Allows one to import from anywhere, something ``__import__()`` does not do.
     The module is added to ``sys.modules`` as ``global_name``.
@@ -62,15 +63,17 @@ def import_module_from_path(full_path, global_name):
         confusion, the global_name should be the same as the variable to which
         you're assigning the returned module.
     """
-    path, filename = os.path.split(full_path)
-    module, ext = os.path.splitext(filename)
+    full = Path(full_path)
+    path = str(full.parent)
+    module = full.stem
     sys.path.append(path)
 
     try:
         mymodule = __import__(module)
         sys.modules[global_name] = mymodule
-    except ImportError:
-        raise ImportError(f"Module could not be imported from {full_path}.")
+    except ImportError as err:
+        msg = f"Module could not be imported from {full_path}."
+        raise ImportError(msg) from err
     finally:
         del sys.path[-1]
 

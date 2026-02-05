@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-"""
-aclconv - Converts an ACL, or a list of ACLs, from one format to another.
+"""aclconv - Converts an ACL, or a list of ACLs, from one format to another.
 """
 
 __version__ = "1.11"
 
 import optparse
 import sys
+from pathlib import Path
 
 from trigger import acl
 
@@ -29,7 +29,7 @@ Input format is determined automatically.  Output format can be given
 with -f or with one of -i/-o/-j/-x.
 
 The name of the output ACL is determined automatically, or it can be
-specified with -n."""
+specified with -n.""",
     )
     optp.add_option("-f", "--format", choices=list(formats.keys()))
     for format, t in formats.items():
@@ -52,7 +52,7 @@ specified with -n."""
         files = ["/dev/fd/0"]
 
     for fname in files:
-        with open(fname) as f:
+        with Path(fname).open() as f:
             a = acl.parse(f)
 
         if opts.aclname is not None:

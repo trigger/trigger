@@ -8,6 +8,7 @@ Only tests SQLite for now.
 
 import os
 import tempfile
+from pathlib import Path
 
 from trigger.conf import settings
 
@@ -79,7 +80,7 @@ class TestAclQueue(unittest.TestCase):
     def test_03_insert_integrated_failure_acl(self):
         """Test insert devices w/ no ACL association"""
         self.assertRaises(
-            exceptions.TriggerError, self.q.insert, "bogus", self.device_list
+            exceptions.TriggerError, self.q.insert, "bogus", self.device_list,
         )
 
     def test_04_list_integrated_success(self):
@@ -153,7 +154,7 @@ class TestAclQueue(unittest.TestCase):
 
     def test_ZZ_cleanup_db(self):
         """Cleanup the temp database file"""
-        self.assertTrue(os.remove(db_file) is None)
+        self.assertTrue(Path(db_file).unlink() is None)
 
     def tearDown(self):
         NetDevices._Singleton = None

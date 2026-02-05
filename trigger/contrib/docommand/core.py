@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-Do It (Next Generation)
+"""Do It (Next Generation).
 
 Uses Trigger framework to run commands or load configs on netdevices
 
@@ -48,6 +47,7 @@ import re
 import sys
 import tempfile
 from optparse import OptionParser
+from pathlib import Path
 
 from twisted.python import log
 
@@ -80,8 +80,7 @@ __all__ = (
 
 # Functions
 def main(action_class=None):
-    """
-    void = main(CommandoClass action_class)
+    """Void = main(CommandoClass action_class).
     """
     if action_class is None:
         sys.exit("You must specify a docommand action class.")
@@ -90,15 +89,15 @@ def main(action_class=None):
         log.startLogging(sys.stdout, setStdout=False)
 
     # Always log all the activity to a file!
-    logfile = tempfile.mktemp() + "_run_cmds"
-    log.startLogging(open(logfile, "a"), setStdout=False)
+    fd, _logfile = tempfile.mkstemp(suffix="_run_cmds")
+    log.startLogging(os.fdopen(fd, "a"), setStdout=False)
     log.msg(
         'User %s (uid:%d) executed "%s"'
-        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv))
+        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv)),
     )
 
     # Description comes from a class attribute on the action_class
-    opts, args = parse_args(sys.argv, description=action_class.description)
+    opts, _args = parse_args(sys.argv, description=action_class.description)
     work = get_jobs(opts)
     results = do_work(work, action_class)
     print_results(results)
@@ -106,8 +105,7 @@ def main(action_class=None):
 
 
 def get_jobs(opts):
-    """
-    list jobs = get_jobs(dict opts)
+    """List jobs = get_jobs(dict opts).
 
     Based on which arguments are provided, figure out what is loaded/run on
     which devices and create a list of objects matching the 2::
@@ -158,8 +156,7 @@ def get_jobs(opts):
 
 
 def get_devices_from_path(path):
-    """
-    list devicenames = get_devices_from_path(str path)
+    """List devicenames = get_devices_from_path(str path).
 
     If path specified for devices/configs, then the list of filenames
     in dir will correspond to the list of devices.
@@ -175,13 +172,11 @@ def get_devices_from_path(path):
     if DEBUG:
         print(f"-->get_devices_from_path({path!r})")
 
-    devs = os.listdir(path)
-    return devs
+    return [p.name for p in Path(path).iterdir()]
 
 
 def get_list_from_file(path):
-    """
-    list text = get_list_from_file(str path)
+    """List text = get_list_from_file(str path).
 
     Specified file (path) will contain a list of newline-separated items. This
     function is used for loading both configs/cmds as well as devices.
@@ -189,15 +184,13 @@ def get_list_from_file(path):
     if DEBUG:
         print(f"-->get_list_from_file({path!r})")
     ret = []
-    with open(path) as fr:
+    with Path(path).open() as fr:
         ret = fr.readlines()
-    ret = [x.strip() for x in ret]
-    return ret
+    return [x.strip() for x in ret]
 
 
 def get_devices_from_opts(opts):
-    """
-    list devicenames = get_devices_from_opts(dict opts)
+    """List devicenames = get_devices_from_opts(dict opts).
 
     User specified on cmdline either a path to a file containing a list of
     devices or an actual list. Return the list!
@@ -221,8 +214,7 @@ def get_devices_from_opts(opts):
 
 
 def get_commands_from_opts(opts):
-    """
-    list commands = get_commands_from_opts(dict opts)
+    """List commands = get_commands_from_opts(dict opts).
 
     User specified on cmdline either a path to a file containing a list of
     commands/config or an actual list. Return the list!
@@ -244,7 +236,7 @@ def get_commands_from_opts(opts):
 
 
 def do_work(work=None, action_class=None):
-    """list results = do_work(list work)"""
+    """List results = do_work(list work)."""
     """
     Cycle through the list of jobs and then actually
     load the config onto the devices.
@@ -253,7 +245,6 @@ def do_work(work=None, action_class=None):
         work = []
     if DEBUG:
         print(f"-->do_work({work!r})")
-    # work = [{'d':[],'c':[],'f':[]}]
     ret = []
     if VERBOSE:
         print_work(work)
@@ -292,8 +283,7 @@ def do_work(work=None, action_class=None):
 
 
 def print_work(work=None):
-    """
-    void = do_work(list work)
+    """Void = do_work(list work).
 
     Cycle through the list of jobs and then display the work to be done.
     """
@@ -327,7 +317,7 @@ def print_work(work=None):
 
 
 def print_results(results=None):
-    """binary success = print_results(list results)"""
+    """Binary success = print_results(list results)."""
     if results is None:
         results = []
     if DEBUG:
@@ -350,19 +340,18 @@ def print_results(results=None):
 
 
 def stage_tftp(acls, nonce):
-    """
-    Need to edit this for cmds, not just acls, but
+    """Need to edit this for cmds, not just acls, but
     the basic idea is borrowed from ``bin/load_acl``.
     """
-    for device in devices:
+    for _device in devices:
         source = settings.FIREWALL_DIR + f"/acl.{acl}"
         dest = settings.TFTPROOT_DIR + f"/acl.{acl}.{nonce}"
         try:
-            os.stat(dest)
+            Path(dest).stat()
         except OSError:
             try:
                 copyfile(source, dest)
-                os.chmod(dest, 0o644)
+                Path(dest).chmod(0o644)
             except:
                 return None
     return True
@@ -382,7 +371,7 @@ def parse_args(argv, description=None):
             setattr(parser.values, option.dest, values)
 
     parser = OptionParser(
-        usage="%prog [options]", description=description, version=__version__
+        usage="%prog [options]", description=description, version=__version__,
     )
     # Options to collect lists of devices and commands
     parser.add_option(
@@ -477,10 +466,10 @@ def parse_args(argv, description=None):
         help="Force CLI execution, skipping the API.",
     )
     parser.add_option(
-        "-v", "--verbose", action="store_true", default=False, help="verbose output."
+        "-v", "--verbose", action="store_true", default=False, help="verbose output.",
     )
     parser.add_option(
-        "-V", "--debug", action="store_true", default=False, help="debug output."
+        "-V", "--debug", action="store_true", default=False, help="debug output.",
     )
     parser.add_option(
         "--push",
@@ -506,8 +495,7 @@ def parse_args(argv, description=None):
 
 
 def verify_opts(opts):
-    """
-    Validate opts and return whether they are ok.
+    """Validate opts and return whether they are ok.
 
     returns True if all is good, otherwise (False, errormsg)
     """
@@ -519,25 +507,23 @@ def verify_opts(opts):
     iscf = len(opts.config_file) > 0
     isp = opts.device_path is not None
     if isp:
-        if not os.path.isdir(opts.device_path):
+        if not Path(opts.device_path).is_dir():
             return False, f"ERROR: {opts.device_path!r} is not a valid directory\n"
-        else:
-            return True, ""
-    elif isdf or iscf or isd or isc:
-        # return False, "ERROR: Sorry, but only --device-path is supported at this time\n"
+        return True, ""
+    if isdf or iscf or isd or isc:
         pass
 
     # Validate opts.device_file
     if isdf:
         for df in opts.device_file:
-            if not os.path.exists(df):
+            if not Path(df).exists():
                 ok = False
                 err += f"ERROR: Device file {df!r} does not exist\n"
 
     # Validate opts.config_file
     if iscf:
         for cf in opts.config_file:
-            if not os.path.exists(cf):
+            if not Path(cf).exists():
                 ok = False
                 err += f"ERROR: Config file {cf!r} does not exist\n"
 

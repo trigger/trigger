@@ -5,8 +5,10 @@ __maintainer__ = "Jathan McCollum"
 __copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com"
 __version__ = "2.0"
 
+import contextlib
 import unittest
 from io import StringIO
+from pathlib import Path
 
 from trigger import acl, exceptions
 
@@ -91,7 +93,7 @@ class CheckACLNames(unittest.TestCase):
         for name in ("", "x" * 25):
             try:
                 acl.ACL(name=name)
-            except exceptions.ACLNameError:
+            except exceptions.ACLNameError:  # noqa: PERF203
                 pass
             else:
                 self.fail('expected ACLNameError on "' + name + '"')
@@ -131,7 +133,7 @@ class CheckTerms(unittest.TestCase):
         for name in ("", "x" * 300):
             try:
                 acl.Term(name=name)
-            except exceptions.BadTermName:
+            except exceptions.BadTermName:  # noqa: PERF203
                 pass
             else:
                 self.fail('expected BadTermNameon "' + name + '"')
@@ -170,10 +172,10 @@ class CheckTerms(unittest.TestCase):
         ):
             try:
                 acl.Term(action=action)
-            except exceptions.ActionError:
+            except exceptions.ActionError:  # noqa: PERF203
                 pass
             else:
-                self.fail(f'expected ActionError on "{str(action)}"')
+                self.fail(f'expected ActionError on "{action!s}"')
 
     def testOkModifiers(self):
         """Test valid filter action modifiers"""
@@ -210,10 +212,10 @@ class CheckTerms(unittest.TestCase):
         ):
             try:
                 acl.Term(action=action)
-            except exceptions.ActionError:
+            except exceptions.ActionError:  # noqa: PERF203
                 pass
             else:
-                self.fail(f'expected ActionError on "{str(action)}"')
+                self.fail(f'expected ActionError on "{action!s}"')
 
     def testOkMatches(self):
         """Test valid match conditions"""
@@ -307,7 +309,7 @@ class CheckOutput(unittest.TestCase):
         self.t2.match["protocol"] = ["tcp"]
         self.t2.match["source-address"] = ["192.0.2.0/24"]
         # Python 3: range() returns a range object, convert to list for concatenation
-        self.t2.match["destination-port"] = list(range(135, 139)) + [445]
+        self.t2.match["destination-port"] = [*list(range(135, 139)), 445]
         self.t2.action = "reject"
         self.t2.modifiers["syslog"] = True
         self.a.terms.append(self.t2)
@@ -346,10 +348,8 @@ filter 100j {
     def testIOS(self):
         """Test conversion of ACLs and terms to IOS classic format"""
         self.a.name = 100
-        try:
+        with contextlib.suppress(KeyError):
             del self.t1.modifiers["count"]
-        except KeyError:
-            pass
         output = """\
 access-list 100 permit 99 any any
 access-list 100 deny tcp 192.0.2.0 0.0.0.255 any range 135 138 log
@@ -359,10 +359,8 @@ access-list 100 deny tcp 192.0.2.0 0.0.0.255 any eq 445 log"""
     def testIOSExtended(self):
         """Test conversion of ACLs and terms to IOS extended format"""
         self.a.name = "BLAHBLAH"
-        try:
+        with contextlib.suppress(KeyError):
             del self.t1.modifiers["count"]
-        except KeyError:
-            pass
         output = """\
 ip access-list extended BLAHBLAH
  permit 99 any any
@@ -373,10 +371,8 @@ ip access-list extended BLAHBLAH
     def testIOSXR(self):
         """Test conversion of ACLs and terms to IOS XR format"""
         self.a.name = "BLAHBLAH"
-        try:
+        with contextlib.suppress(KeyError):
             del self.t1.modifiers["count"]
-        except KeyError:
-            pass
         self.t1.name = self.t2.name = None
         output = """\
 ipv4 access-list BLAHBLAH
@@ -475,7 +471,7 @@ class CheckJunOSExamples(unittest.TestCase):
     def testJunOSExamples(self):
         """Test examples from JunOS documentation."""
         # Python 3: file() removed, use open()
-        with open(EXAMPLES_FILE) as f:
+        with Path(EXAMPLES_FILE).open() as f:
             examples = f.read().expandtabs().split("\n\n")
         # Skip the last two because they use the unimplemented "except"
         # feature in address matches.
@@ -602,10 +598,6 @@ filter 100 {
     }
 }"""
         self.assertRaises(exceptions.ParserSyntaxError, lambda: acl.parse(x))
-        ###y = ['access-list 100 permit tcp any any eq 80']
-        ###a = acl.parse(x)
-        ###a.comments = a.terms[0].comments = []
-        ###self.assertEqual(a.output_ios(), y)
 
     def testRanges(self):
         """Test JunOS ICMP and protocol ranges (regression)."""
@@ -702,7 +694,7 @@ class CheckMiscIOS(unittest.TestCase):
         t.match["icmp-type"] = types
         # Python 3: map() returns an iterator, convert to list for comparison
         self.assertEqual(
-            t.output_ios(), list(map(lambda x: "permit icmp any any %d" % x, types))
+            t.output_ios(), list(map(lambda x: "permit icmp any any %d" % x, types)),
         )
 
     def testCounterSuppression(self):

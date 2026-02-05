@@ -1,5 +1,4 @@
-"""
-Plugin for gathering info from devices. Only Cisco currently (including ASA).
+"""Plugin for gathering info from devices. Only Cisco currently (including ASA).
 
 Will try to parse as much info from commands and place as key-values under
 host results. Currently only being done via ``show version`` output. Will
@@ -60,11 +59,10 @@ task_name = "gather_info"
 
 
 def xmlrpc_gather_info(*args, **kwargs):
-    """Gather info on specified devices"""
+    """Gather info on specified devices."""
     log.msg("Creating GatherInfo")
     gi = GatherInfo(*args, **kwargs)
-    d = gi.run()
-    return d
+    return gi.run()
 
 
 class GatherInfo(Commando):
@@ -86,7 +84,7 @@ class GatherInfo(Commando):
         .*?^Processor\sboard\sID\s      (?# Skip until 'Processor board')
         (?P<serial_no>\S*)\s            (?# Capture serial number)
         """,
-        re.M | re.S | re.X,
+        re.MULTILINE | re.DOTALL | re.VERBOSE,
     )
     asa_shver_parse = re.compile(
         r"""
@@ -101,12 +99,12 @@ class GatherInfo(Commando):
         .*?^Serial\sNumber:\s           (?# Match up to Serial Number)
         (?P<serial_no>\S*)\s            (?# Capture the serial number)
         """,
-        re.M | re.S | re.X,
+        re.MULTILINE | re.DOTALL | re.VERBOSE,
     )
 
     def to_cisco(self, device, commands=None, extra=None):
         """We want different information depending on whether the device
-        is a switch, router, or firewall
+        is a switch, router, or firewall.
         """
         if device.is_cisco_asa():
             return [
@@ -135,9 +133,10 @@ class GatherInfo(Commando):
                 "show switch detail",
                 "show run | i ip domain-name",
             ]
+        return None
 
     def from_cisco(self, results, device, commands=None):
-        """Parses output of certain commands and add to ``self.results``
+        """Parses output of certain commands and add to ``self.results``.
 
         A lot of good information can be retrieved from show version. Method
         of parsing differs from IOS to ASA.

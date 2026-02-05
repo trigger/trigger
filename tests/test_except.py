@@ -1,8 +1,9 @@
 # a test for except processing
 import os
 import sys
+from pathlib import Path
 
-sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(str(Path(__file__).parent / ".."))
 from trigger import acl
 
 PARSIT = """
@@ -33,4 +34,3 @@ y = acl.parse(PARSIT)
 print(y.terms[0].match)
 print("\n".join(acl.parse(PARSIT).output_junos()))
 # following should fail
-# print('\n'.join(acl.parse(PARSIT).output_ios()))

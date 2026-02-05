@@ -1,5 +1,4 @@
-"""
-This module controls how bounce windows get auto-applied to network devices.
+"""This module controls how bounce windows get auto-applied to network devices.
 
 This is primarily used by `~trigger.changemgmt`.
 
@@ -39,14 +38,13 @@ try:
     from _bounce_module import bounce
 except ImportError:
     msg = f"Bounce mappings could not be found in {bounce_mpath}. using default!"
-    warnings.warn(msg, RuntimeWarning)
+    warnings.warn(msg, RuntimeWarning, stacklevel=2)
     from . import BounceWindow
 
     DEFAULT_BOUNCE = BounceWindow(green="5-7", yellow="0-4, 8-15", red="16-23")
 
     def bounce(device, default=DEFAULT_BOUNCE):
-        """
-        Return the bounce window for a given device.
+        """Return the bounce window for a given device.
 
         :param device:
             A `~trigger.netdevices.NetDevice` object.

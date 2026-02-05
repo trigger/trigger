@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-find_access - Like check_access but reports on networks inside of networks.
+"""find_access - Like check_access but reports on networks inside of networks.
 """
 
 __version__ = "1.6"
@@ -43,7 +42,7 @@ This works in reverse, if the input is 172.16.1.0/24 and a term contains
     parser.add_option("-h", "--help", action="store_true")
     parser.add_option("-s", "--source-network", help="Supply a source network to find")
     parser.add_option(
-        "-d", "--destination-network", help="Supply a destination network to find"
+        "-d", "--destination-network", help="Supply a destination network to find",
     )
     parser.add_option(
         "-p",
@@ -84,10 +83,7 @@ def match_term(term, data, type, opts):
         return True
 
     if "port" in type:
-        for port in data:
-            if port in term.match[type]:
-                return True
-        return False
+        return any(port in term.match[type] for port in data)
 
     for data_in_term in term.match[type]:
         for data_entry in data:
@@ -116,17 +112,17 @@ def match_terms(acl, sources, dests, ports, opts):
 
 
 def permits_from_any(term):
-    """Returns True if action is "accept" and term has no 'source-address'"""
+    """Returns True if action is "accept" and term has no 'source-address'."""
     return term.action[0] == "accept" and not term.match.get("source-address")
 
 
 def any_source(term):
-    """Returns True term has no 'source-address'"""
+    """Returns True term has no 'source-address'."""
     return not term.match.get("source-address")
 
 
 def any_dest(term):
-    """Returns True term has no 'destination-address'"""
+    """Returns True term has no 'destination-address'."""
     return not term.match.get("destination-address")
 
 
@@ -137,20 +133,18 @@ def do_work(acl_files, opts):
     ports = []
 
     if opts.source_network:
-        for x in opts.source_network.split(","):
-            sources.append(TIP(x))
+        sources.extend(TIP(x) for x in opts.source_network.split(","))
 
     if opts.destination_network:
-        for x in opts.destination_network.split(","):
-            dests.append(TIP(x))
+        dests.extend(TIP(x) for x in opts.destination_network.split(","))
 
     if opts.ports:
-        for x in opts.ports.split(","):
-            ports.append(int(x))
+        ports.extend(int(x) for x in opts.ports.split(","))
 
     for acl_file in acl_files:
         try:
-            acl = parse(open(acl_file))
+            with open(acl_file) as fh:  # noqa: PTH123
+                acl = parse(fh)
         except ParserSyntaxError as e:
             etxt = str(e).split()
             sys.exit(etxt)
@@ -171,7 +165,7 @@ def print_report(data):
         for term in terms:
             for o in term.output(format=aclobj.format, acl_name=aclobj.name):
                 print(o)
-        print("")
+        print()
 
 
 def main():
@@ -180,7 +174,7 @@ def main():
 
     acls_to_check = args[1:]
 
-    if not opts.source_network and not opts.destination_network or not acls_to_check:
+    if (not opts.source_network and not opts.destination_network) or not acls_to_check:
         sys.exit("ERROR: No source or destination networks defined. Try -h for help.")
 
     data = do_work(acls_to_check, opts)

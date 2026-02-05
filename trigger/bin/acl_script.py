@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-acl_script - CLI interface to simplify complex modification to access-lists.
+"""acl_script - CLI interface to simplify complex modification to access-lists.
 """
 
 
@@ -15,6 +14,7 @@ import os
 import re
 import sys
 from optparse import OptionParser
+from pathlib import Path
 
 import trigger.acl.tools as acl_tools
 from trigger.acl.parser import TIP, Comment, parse
@@ -31,10 +31,10 @@ def parse_args(argv):
     )
     parser.add_option("-h", "--help", action="store_false")
     parser.add_option(
-        "-a", "--acl", action="append", type="string", help="specify the acl file"
+        "-a", "--acl", action="append", type="string", help="specify the acl file",
     )
     parser.add_option(
-        "-n", "--no-changes", action="store_true", help="don't make the changes"
+        "-n", "--no-changes", action="store_true", help="don't make the changes",
     )
     parser.add_option(
         "--show-mods",
@@ -42,7 +42,7 @@ def parse_args(argv):
         help="show modifications being made in a simple format.",
     )
     parser.add_option(
-        "--no-worklog", action="store_true", help="don't make a worklog entry"
+        "--no-worklog", action="store_true", help="don't make a worklog entry",
     )
     parser.add_option(
         "-N",
@@ -306,29 +306,25 @@ NOTE when using --replace-defined:
     for i in opts.destination_port_range:
         opts.destination_port.append(i)
 
-    cnt = 0
-    for i in opts.source_address:
+    for cnt, i in enumerate(opts.source_address):
         opts.source_address[cnt] = TIP(i)
-        cnt += 1
 
-    cnt = 0
-    for i in opts.destination_address:
+    for cnt, i in enumerate(opts.destination_address):
         opts.destination_address[cnt] = TIP(i)
-        cnt += 1
     for i in opts.destination_address_from_file:
-        f = open(i)
-        line = f.readline()
-        while line:
-            line = line.rstrip()
-            opts.destination_address.append(TIP(line))
+        with Path(i).open() as f:
             line = f.readline()
+            while line:
+                line = line.rstrip()
+                opts.destination_address.append(TIP(line))
+                line = f.readline()
     for i in opts.source_address_from_file:
-        f = open(i)
-        line = f.readline()
-        while line:
-            line = line.rstrip()
-            opts.source_address.append(TIP(line))
+        with Path(i).open() as f:
             line = f.readline()
+            while line:
+                line = line.rstrip()
+                opts.source_address.append(TIP(line))
+                line = f.readline()
 
     if len(argv) == 1 or not opts.acl or opts.help:
         parser.print_help()
@@ -346,31 +342,29 @@ def log_term(term, msg="ADDING"):
     for k, v in term.match.items():
         for x in v:
             print(f"KEY:{k} VAL:{x},", end=" ")
-    print("")
+    print()
 
 
 def wedge_acl(acl, new_term, between, opts):
     if not between:
         # ugg, don't deal with this yet.
         return
-    elif isinstance(between, tuple):
+    if isinstance(between, tuple):
         found_start = False
         found_end = False
         start_offset = 0
         end_offset = 0
-        offset = 0
-        for term in acl.terms:
+        for offset, term in enumerate(acl.terms):
             for comment in term.comments:
                 if found_start and between[1] in comment:
                     end_offset = offset
                     found_end = True
                     break
-                elif not found_start and between[0] in comment:
+                if not found_start and between[0] in comment:
                     start_offset = offset
                     found_start = True
             if found_start and found_end:
                 break
-            offset += 1
         if found_start and found_end:
             # everthing before the start of the modify
             head_terms = acl.terms[0:start_offset]
@@ -399,7 +393,7 @@ def wedge_acl(acl, new_term, between, opts):
                 # just insert the new entries at the bottom...
                 if to_insert:
                     to_insert[0].comments.append(
-                        Comment("Added by acl_script on <date>")
+                        Comment("Added by acl_script on <date>"),
                     )
                 for toins in to_insert:
                     if opts.show_mods:
@@ -436,7 +430,7 @@ def wedge_acl(acl, new_term, between, opts):
                             if opts.show_mods:
                                 for x in v:
                                     print(
-                                        f">>ADDING<< KEY:{k} VAL:{x}, TERM:{term.name}"
+                                        f">>ADDING<< KEY:{k} VAL:{x}, TERM:{term.name}",
                                     )
                             term.match[k] = v
                         else:
@@ -451,7 +445,7 @@ def wedge_acl(acl, new_term, between, opts):
                                 if x not in term.match[k]:
                                     if opts.show_mods:
                                         print(
-                                            f">>ADDING<< KEY:{k} VAL:{x}, TERM:{term.name}"
+                                            f">>ADDING<< KEY:{k} VAL:{x}, TERM:{term.name}",
                                         )
                                     term.match[k].append(x)
                 break
@@ -459,13 +453,13 @@ def wedge_acl(acl, new_term, between, opts):
 
 def main():
     """Main entry point for the CLI tool."""
-    opts, args = parse_args(sys.argv)
+    opts, _args = parse_args(sys.argv)
     for acl_file in opts.acl:
         rcs = RCS(acl_file, create=False)
         rcs.lock_loop()
 
         try:
-            with open(acl_file) as f:
+            with Path(acl_file).open() as f:
                 acl = parse(f)
         # TODO (jathan): Improve this naked except
         except Exception:
@@ -514,8 +508,7 @@ def main():
         if not diff:
             print(f"No changes made to {acl_file}")
             rcs.unlock()
-            os.remove(tempfile)
-            # sys.exit(0)
+            Path(tempfile).unlink()
             continue
 
         prestr = ""
@@ -528,19 +521,16 @@ def main():
             print(f"{prestr}{l}")
         print(f"{prestr}END OF CHANGES =================")
 
-        if not opts.no_input:
-            if not yesno("Do you want to save changes?"):
-                rcs.unlock()
-                os.remove(tempfile)
-                # sys.exit(1)
-                continue
+        if not opts.no_input and not yesno("Do you want to save changes?"):
+            rcs.unlock()
+            Path(tempfile).unlink()
+            continue
 
         if not opts.no_changes:
             import shutil
 
             shutil.copy(tempfile, acl_file)  # opts.acl)
 
-            # rcs.checkin() #message=opts.comment)
             pats = (re.compile(r"^\+.*!+(.*)"), re.compile(r"^\+.*/\*(.*)\*/"))
             logstr = "From acl_script\n"
             for line in diff.split("\n"):
@@ -554,20 +544,19 @@ def main():
             if logstr:
                 print("Autodetected log message:")
                 print(logstr)
-                print("")
+                print()
             else:
                 logstr = ""
             # TODO (jathan): Replace this with rcs.checkin()
             os.spawnlp(
-                os.P_WAIT, "ci", "ci", "-u", "-m" + logstr, acl_file
+                os.P_WAIT, "ci", "ci", "-u", "-m" + logstr, acl_file,
             )  # old_file)
-            # os.remove(tmpfile)
 
             if not opts.no_worklog:
                 acl_tools.worklog(short_acl, diff, log_string="updated by acl_script")
 
         rcs.unlock()
-        os.remove(tempfile)
+        Path(tempfile).unlink()
 
 
 if __name__ == "__main__":

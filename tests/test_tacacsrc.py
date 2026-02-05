@@ -9,6 +9,7 @@ __version__ = "2.0.1"
 import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from trigger.conf import settings
@@ -89,7 +90,7 @@ class TacacsrcTest(unittest.TestCase):
     def _get_perms(self, filename):
         """Get octal permissions for a filename"""
         # We only want the lower 4 bits (negative index)
-        return oct(os.stat(filename).st_mode)[-4:]
+        return oct(Path(filename).stat().st_mode)[-4:]
 
     def testWrite(self):
         """Test writing .tacacsrc."""
@@ -110,26 +111,26 @@ class TacacsrcTest(unittest.TestCase):
         self.assertEqual(output, ALL_TACACSRC)
 
         # And then compare it against the manually parsed value using
-        # miniparser()
-        with open(settings.TACACSRC) as fd:
+        # miniparser()  # noqa: ERA001
+        with Path(settings.TACACSRC).open() as fd:
             lines = fd.readlines()
             self.assertEqual(output, miniparser(lines, t))
-        os.remove(file_name)
+        Path(file_name).unlink()
 
     def test_brokenpw(self):
         self.assertRaises(
-            ValueError, MockTacacsrc, tacacsrc_file="tests/data/brokenpw_tacacsrc"
+            ValueError, MockTacacsrc, tacacsrc_file="tests/data/brokenpw_tacacsrc",
         )
 
     def test_emptypw(self):
-        devnull = open(os.devnull, "w")
-        with patch("trigger.tacacsrc.prompt_credentials", side_effect=KeyError):
-            with patch("sys.stdout", devnull):
-                self.assertRaises(
-                    KeyError,
-                    MockTacacsrc,
-                    tacacsrc_file="tests/data/emptypw_tacacsrc",
-                )
+        with Path(os.devnull).open("w") as devnull, \
+             patch("trigger.tacacsrc.prompt_credentials", side_effect=KeyError), \
+             patch("sys.stdout", devnull):
+            self.assertRaises(
+                KeyError,
+                MockTacacsrc,
+                tacacsrc_file="tests/data/emptypw_tacacsrc",
+            )
 
     def test_perms(self):
         """Test that permissions are being enforced."""
@@ -138,7 +139,7 @@ class TacacsrcTest(unittest.TestCase):
         # First make sure perms are set
         old_perms = self._get_perms(fname)
         self.assertEqual(old_perms, RIGHT_PERMS)
-        os.chmod(fname, 0o666)  # Make it world-writable
+        Path(fname).chmod(0o666)  # Make it world-writable
         new_perms = self._get_perms(fname)
         self.assertNotEqual(new_perms, RIGHT_PERMS)
 

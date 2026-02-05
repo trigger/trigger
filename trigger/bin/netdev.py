@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-netdev - Command-line search interface for NetDevices.
+"""netdev - Command-line search interface for NetDevices.
 """
 
 __version__ = "1.2"
@@ -14,7 +13,8 @@ from trigger.netdevices import NetDevices, device_match
 
 def parse_args(argv):
     """Parse arguments, duh. There is a better way to do this using Twisted's
-    usage module, but replacing it is not a high priority."""
+    usage module, but replacing it is not a high priority.
+    """
     parser = OptionParser(
         usage="%prog [options]",
         description="\nCommand-line search interface for 'NetDevices' metadata.",
@@ -179,7 +179,8 @@ def parse_args(argv):
 
 def search_builder(opts):
     """Builds a list comprehension from the options passed at command-line and
-    then evaluates it to return a list of matching device names."""
+    then evaluates it to return a list of matching device names.
+    """
     NetDevices(production_only=opts.nonprod)
 
     query = "[x for x in nd.all()"
@@ -194,7 +195,7 @@ def search_builder(opts):
     #
     # For explicit matches, use an equality (==) test instead.
 
-    # nodeName (hostname)
+    # nodeName (hostname)  # noqa: ERA001
     if opts.nodename:
         vars.append(f" '{opts.nodename.lower()}' in x.nodeName.lower()")
 
@@ -206,7 +207,7 @@ def search_builder(opts):
     if opts.oncall_team:
         vars.append(f" '{opts.oncall_team.lower()}' in x.onCallName.lower()")
 
-    # owningTeam (owning_team)
+    # owningTeam (owning_team)  # noqa: ERA001
     if opts.owning_team:
         vars.append(f" '{opts.owning_team.lower()}' in x.owningTeam.lower()")
 
@@ -245,10 +246,8 @@ def search_builder(opts):
     # coordinate/rack
     if opts.coordinate:
         vars.append(f" '{opts.coordinate.upper()}' in x.coordinate")
-    # if opts.aclname: vars.append(" '%s' in x.model" % opts.model)
 
-    # print vars
-    # print 'vlen =', len(vars)
+
 
     # Build a list comprehension based on the vars list.
     # so:
@@ -270,12 +269,12 @@ def search_builder(opts):
     # print query
 
     try:
-        devlist = eval(query)
+        devlist = eval(query)  # noqa: S307 - dynamic query construction from CLI args
     except TypeError:
         from trigger.conf import settings
 
         print(
-            f"A required field in {settings.NETDEVICES_SOURCE} is missing or invalid.  Please fix the data and try again."
+            f"A required field in {settings.NETDEVICES_SOURCE} is missing or invalid.  Please fix the data and try again.",
         )
         sys.exit(1)
 
@@ -296,21 +295,20 @@ def search_builder(opts):
         for acl in dump:
             print(acl)
     # Print devices
+    elif devlist:
+        for dev in devlist:
+            print(dev)
     else:
-        if devlist:
-            for dev in devlist:
-                print(dev)
-        else:
-            squery = []
-            for key, value in opts_dict.items():
-                if key not in ("search", "nonprod") and value:
-                    squery.append(key + "=" + value)
-            print("No matches for the query {}.".format(" and ".join(squery)))
+        squery = []
+        for key, value in opts_dict.items():
+            if key not in ("search", "nonprod") and value:
+                squery.append(key + "=" + value)
+        print("No matches for the query {}.".format(" and ".join(squery)))
 
 
 def main():
     """Main entry point for the CLI tool."""
-    opts, args = parse_args(sys.argv)
+    _opts, _args = parse_args(sys.argv)
 
 
 if __name__ == "__main__":

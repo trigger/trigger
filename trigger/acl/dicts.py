@@ -1,5 +1,4 @@
-"""
-This code is originally from parser.py. It contains all the simple data definitions in
+"""This code is originally from parser.py. It contains all the simple data definitions in
 form of dictionaries and lists and such. This file is not meant to by used by itself.
 Imported into support.py.
 
@@ -238,7 +237,7 @@ address_matches = {
     "destination-prefix-list",
 }
 
-for match in list(address_matches):
+for match in list(address_matches):  # noqa: PERF101 - need copy to avoid mutation during iteration
     address_matches.add(match + "-except")
 
 # Not all of these are in /etc/services even as of RHEL 4; for example, it

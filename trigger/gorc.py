@@ -1,5 +1,4 @@
-"""
-This is used by :doc:`../usage/scripts/go` to execute commands upon login to a
+"""This is used by :doc:`../usage/scripts/go` to execute commands upon login to a
 device. A user may specify a list of commands to execute for each vendor. If
 the file is not found, or the syntax is bad, no commands will be passed to the
 device.
@@ -46,24 +45,23 @@ object's method of the same name) to override anything specified in a user's
 import configparser
 import os
 import sys
+from pathlib import Path
 
 from twisted.python import log
 
 from trigger.conf import settings
 
 # Constants
-GORC_PATH = os.path.expanduser(settings.GORC_FILE)
+GORC_PATH = str(Path(settings.GORC_FILE).expanduser())
 INIT_COMMANDS_SECTION = "init_commands"
 
 
 # Exports
-# __all__ = ('get_init_commands',)
 
 
 # Functions
 def read_config(filepath=GORC_PATH):
-    """
-    Read the .gorc file
+    """Read the .gorc file.
 
     :param filepath: The path to the .gorc file
     :returns: A parsed ConfigParser object
@@ -80,12 +78,12 @@ def read_config(filepath=GORC_PATH):
     else:
         return config
 
-    raise RuntimeError("Something went crazy wrong with read_config()")
+    msg = "Something went crazy wrong with read_config()"
+    raise RuntimeError(msg)
 
 
 def filter_commands(cmds, allowed_commands=None):
-    """
-    Filters root commands from ``cmds`` that are not explicitly allowed.
+    """Filters root commands from ``cmds`` that are not explicitly allowed.
 
     Allowed commands are defined using :setting:`GORC_ALLOWED_COMMANDS`.
 
@@ -111,8 +109,7 @@ def filter_commands(cmds, allowed_commands=None):
 
 
 def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
-    """
-    Fetch the init commands.
+    """Fetch the init commands.
 
     :param vendors:
         A vendor name (e.g. 'juniper')
@@ -140,15 +137,14 @@ def parse_commands(vendor, section=INIT_COMMANDS_SECTION, config=None):
         return []
     else:
         cmds = (c for c in cmdstr.splitlines() if c != "")
-        cmds = filter_commands(cmds)
-        return cmds
+        return filter_commands(cmds)
 
-    raise RuntimeError("Something went crazy wrong with get_init_commands()")
+    msg = "Something went crazy wrong with get_init_commands()"
+    raise RuntimeError(msg)
 
 
 def get_init_commands(vendor):
-    """
-    Return a list of init commands for a given vendor name. In all failure
+    """Return a list of init commands for a given vendor name. In all failure
     cases it will return an empty list.
 
     :param vendor:
@@ -162,7 +158,6 @@ def get_init_commands(vendor):
 
 
 if __name__ == "__main__":
-    # os.environ['DEBUG'] = '1'
     if os.environ.get("DEBUG", None) is not None:
         log.startLogging(sys.stdout, setStdout=False)
 

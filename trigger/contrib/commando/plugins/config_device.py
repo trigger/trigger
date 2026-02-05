@@ -1,6 +1,7 @@
 import os.path
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from socket import gethostbyname
 from xml.etree.ElementTree import Element, SubElement
 
@@ -20,8 +21,7 @@ if not hasattr(settings, "TFTP_HOST"):
 
 def xmlrpc_config_device(*args, **kwargs):
     c = ConfigDevice(*args, **kwargs)
-    d = c.run()
-    return d
+    return c.run()
 
 
 class ConfigDevice(CommandoApplication):
@@ -30,7 +30,7 @@ class ConfigDevice(CommandoApplication):
     tftp_ip = gethostbyname(tftp_host)
 
     def __init__(
-        self, action="replace", files=None, commands=None, debug=False, **kwargs
+        self, action="replace", files=None, commands=None, debug=False, **kwargs,
     ):
         if commands is None:
             commands = []
@@ -109,10 +109,9 @@ class ConfigDevice(CommandoApplication):
         if action == "overwrite":
             action = "override"
         for fname in files:
-            # log.msg("fname: %s" % fname)
             filecontents = ""
-            if not os.path.isfile(fname):
-                fname = tftp_dir + fname
+            if not Path(fname).is_file():
+                fname = tftp_dir + fname  # noqa: PLW2901
             try:
                 filecontents = file(fname).read()
             except OSError:
@@ -132,7 +131,7 @@ class ConfigDevice(CommandoApplication):
         return cmds
 
     def from_juniper(self, data, device, commands=None):
-        """Do all the magic to parse Junos interfaces"""
+        """Do all the magic to parse Junos interfaces."""
         # print 'device:', device
         # print 'data len:', len(data)
         self.raw = data

@@ -1,5 +1,4 @@
-"""
-Settings and configuration for Trigger.
+"""Settings and configuration for Trigger.
 
 Values will be read from the module specified by the ``TRIGGER_SETTINGS``
 environment variable, and then from trigger.conf.global_settings; see the
@@ -36,7 +35,7 @@ SETTINGS_FILE = os.environ.get(ENVIRONMENT_VARIABLE, DEFAULT_LOCATION)
 
 
 # Exports
-__all__ = ("settings", "DummySettings", "BaseSettings", "Settings")
+__all__ = ("BaseSettings", "DummySettings", "Settings", "settings")
 
 
 # Classes
@@ -50,8 +49,7 @@ class DummySettings:
 # BaseSettings and Settings concepts were lifted from Django's objects of the
 # same name, except our implementation is simplified. (See: django.conf.__init__.py)
 class BaseSettings:
-    """
-    Common logic for settings whether set by a module or by the user.
+    """Common logic for settings whether set by a module or by the user.
     """
 
     def __setattr__(self, name, value):
@@ -90,5 +88,5 @@ try:
     settings = Settings(SETTINGS_FILE)
 except ImportError as err:
     # Complain loudly but carry on with defaults
-    warnings.warn(str(err) + " Using default global settings.", RuntimeWarning)
+    warnings.warn(str(err) + " Using default global settings.", RuntimeWarning, stacklevel=2)
     settings = global_settings

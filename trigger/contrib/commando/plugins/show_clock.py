@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
@@ -11,11 +12,10 @@ task_name = "show_clock"
 
 
 def xmlrpc_show_clock(*args, **kwargs):
-    """Run 'show clock' on the specified list of `devices`"""
+    """Run 'show clock' on the specified list of `devices`."""
     log.msg("Creating ShowClock")
     sc = ShowClock(*args, **kwargs)
-    d = sc.run()
-    return d
+    return sc.run()
 
 
 class ShowClock(CommandoApplication):
@@ -28,17 +28,17 @@ class ShowClock(CommandoApplication):
         return ["show clock", "show uptime"]
 
     def to_juniper(self, dev, commands=None, extra=None):
-        """Generates an etree.Element object suitable for use with JunoScript"""
+        """Generates an etree.Element object suitable for use with JunoScript."""
         cmd = Element("get-system-uptime-information")
         self.commands = [cmd]
         return self.commands
 
     def from_cisco(self, data, device, commands=None):
-        """Parse Cisco time"""
+        """Parse Cisco time."""
         # => '16:18:21.763 GMT Thu Jun 28 2012\n'
         fmt = "%H:%M:%S.%f %Z %a %b %d %Y\n"
         ## Need to structure this into a common json structure
-        ## {"current-time":""}
+        ## {"current-time":""}  # noqa: ERA001
         results = []
         for res in data:
             r = self._parse_datetime(res, fmt)
@@ -47,8 +47,7 @@ class ShowClock(CommandoApplication):
         self.store_results(device, results)
 
     def from_brocade(self, data, device, commands=None):
-        """
-        Parse Brocade time. Brocade switches and routers behave
+        """Parse Brocade time. Brocade switches and routers behave
         differently...
         """
         if device.is_router():
@@ -59,7 +58,7 @@ class ShowClock(CommandoApplication):
             data = [res.split(": ", 1)[-1] for res in data]
             fmt = "%Y-%m-%d %H:%M:%S Etc/GMT+0\n"
         ## Need to structure this into a common json structure
-        ## {"current-time":""}
+        ## {"current-time":""}  # noqa: ERA001
         results = []
         for res in data:
             r = self._parse_datetime(res, fmt)
@@ -68,7 +67,7 @@ class ShowClock(CommandoApplication):
         self.store_results(device, results)
 
     def from_juniper(self, data, device, commands=None):
-        """Do all the magic to parse Junos interfaces"""
+        """Do all the magic to parse Junos interfaces."""
         self.raw = data
         results = []
         for xml in data:
@@ -82,12 +81,10 @@ class ShowClock(CommandoApplication):
             if "system-uptime-information" in jdata["rpc-reply"]:
                 sysupinfo = jdata["rpc-reply"]["system-uptime-information"]
             elif "multi-routing-engine-results" in jdata["rpc-reply"]:
-                try:
+                with contextlib.suppress(BaseException):
                     sysupinfo = jdata["rpc-reply"]["multi-routing-engine-results"][
                         "multi-routing-engine-item"
                     ]["system-uptime-information"]
-                except:
-                    pass
             if sysupinfo is None:
                 currtime = "Unable to parse"
                 ## need to turn this into an error
@@ -97,7 +94,6 @@ class ShowClock(CommandoApplication):
             fmt = "%Y-%m-%d %H:%M:%S %Z"
             r = self._parse_datetime(currtime, fmt)
             jdata = {"current-time": r}
-            # self.data.append({'device':device,'data':jdata})
             results.append(jdata)
         self.store_results(device, results)
         ## UGH
@@ -108,13 +104,11 @@ class ShowClock(CommandoApplication):
     ##  This method should move to trigger.utils or elsewhere
     ##
     def _parse_datetime(self, datestr, fmt):
-        """
-        Given a date string and a format, try to parse and return
+        """Given a date string and a format, try to parse and return
         datetime.datetime object.
         """
         try:
             d = datetime.datetime.strptime(datestr, fmt)
-            dstr = d.isoformat()
-            return dstr
+            return d.isoformat()
         except ValueError:
             return datestr

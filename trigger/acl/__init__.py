@@ -1,5 +1,4 @@
-"""
-Trigger's ACL parser.
+"""Trigger's ACL parser.
 
 This library contains various modules that allow for parsing, manipulation,
 and management of network access control lists (ACLs). It will parse a complete
@@ -18,7 +17,7 @@ import os
 
 from trigger.conf import settings
 
-__all__ = ["parser", "acl_exists"]
+__all__ = ["acl_exists", "parser"]
 
 # Parser
 from . import parser

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-optimizer - ACL Optimizer
+"""optimizer - ACL Optimizer.
 
 Optimizes filters (usually best on Juniper filters) using
 various algorithms to determine which filters can be merged
@@ -16,6 +15,7 @@ import signal
 import sys
 import time
 from optparse import OptionParser
+from pathlib import Path
 
 from simpleparse.error import ParserSyntaxError
 
@@ -25,7 +25,7 @@ stop_all = False
 
 # Logger
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s",
 )
 log = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ is set to 0 (or off).
         help="This will turn off the destination-port optimization",
     )
     parser.add_option(
-        "-v", "--verbose", action="store_true", help="Turn on verbose/debug output"
+        "-v", "--verbose", action="store_true", help="Turn on verbose/debug output",
     )
     parser.add_option(
         "",
@@ -158,10 +158,7 @@ class ProgressMeter:
         self.count = min(self.count, self.total)
         if self.last_update:
             delta = now - float(self.last_update)
-            if delta:
-                rate = count / delta
-            else:
-                rate = count
+            rate = count / delta if delta else count
             self.rate_history[self.rate_history_idx] = rate
             self.rate_history_idx += 1
             self.rate_history_idx %= self.rate_history_len
@@ -178,8 +175,7 @@ class ProgressMeter:
         self.last_update = now
         # Device Total by meter division
         value = int(self.count / self.meter_division)
-        if value > self.meter_value:
-            self.meter_value = value
+        self.meter_value = max(self.meter_value, value)
         if self.last_refresh:
             if (now - self.last_refresh) > self.rate_refresh or (
                 self.count >= self.total
@@ -212,8 +208,7 @@ class ProgressMeter:
 
 
 def focus_terms(pcount, terms):
-    """
-    Generates a list of term names that have a port count
+    """Generates a list of term names that have a port count
     greater than pcount for the optimizer to 'focus' in on.
     """
     focused = dict()
@@ -262,7 +257,7 @@ rej_keys = ["reject", "deny", "discard"]
 
 
 def optimize_terms(terms, focused, which, opts):
-    global stop_all
+    global stop_all  # noqa: PLW0602
     to_delete = dict()
     other = ""
     total = 0
@@ -315,7 +310,7 @@ def optimize_terms(terms, focused, which, opts):
 
             log.debug(
                 "Comparing term %s to term %s [%d terms deleted]"
-                % (term1.name, term2.name, len(to_delete))
+                % (term1.name, term2.name, len(to_delete)),
             )
             if focused and term2.name not in focused:
                 continue
@@ -371,7 +366,7 @@ def optimize_terms(terms, focused, which, opts):
             if which != "destination-port":
                 # make sure that both destination-ports match up.
                 if len(term1.match["destination-port"]) != len(
-                    term2.match["destination-port"]
+                    term2.match["destination-port"],
                 ):
                     breaker = True
                     continue
@@ -422,36 +417,29 @@ def optimize_terms(terms, focused, which, opts):
                 ips.append(str(to_add))
 
             cmt = Comment(
-                "merged [({}) {}] from {}".format(which, ",".join(ips), term1.name)
+                "merged [({}) {}] from {}".format(which, ",".join(ips), term1.name),
             )
 
             term2.comments.append(cmt)
 
             to_delete[term1.name] = 1
 
-    new_terms = []
-    for term in terms:
-        if term.name not in to_delete:
-            new_terms.append(term)
-
-    return new_terms
+    return [term for term in terms if term.name not in to_delete]
 
 
 def terms_unchunk(chunks):
     terms = []
 
     for chunk in chunks:
-        for term in chunk:
-            terms.append(term)
+        terms.extend(chunk)
 
     return terms
 
 
 def terms_chunker(terms):
-    """
-    In order to achieve true optimization we must break our filter up
-    into chunks that are the aggregate of the same modifier. What this
-    means is if we have the following term structure:
+    """Break filter into chunks that are the aggregate of the same modifier.
+
+    What this means is if we have the following term structure:
 
     term1 { accept }
     term2 { accept }
@@ -493,7 +481,7 @@ def terms_chunker(terms):
 
 
 def optimize(opts, terms, focused):
-    global stop_all
+    global stop_all  # noqa: PLW0602
 
     terms_old = terms
     mtypes = []
@@ -518,20 +506,16 @@ def optimize(opts, terms, focused):
         if stop_all:
             return terms
 
-        chunk_count = 0
-
-        for chunk in chunks:
+        for chunk_count, chunk in enumerate(chunks):
             log.info("Optimizing %s [Chunk %d]" % (type, chunk_count))
             chunks[chunk_count] = optimize_terms(chunk, focused, type, opts)
             log.info("TCount: %d/%d" % (len(terms_old), len(terms)))
-            chunk_count += 1
 
-    terms = terms_unchunk(chunks)
-    return terms
+    return terms_unchunk(chunks)
 
 
 def do_work(opts, files):
-    global stop_all
+    global stop_all  # noqa: PLW0602
     for acl_file in files:
         focused = None
         out_file = acl_file + ".optimized"
@@ -542,7 +526,8 @@ def do_work(opts, files):
         log.info(f"Parsing {acl_file}")
 
         try:
-            acl = parse(open(acl_file))
+            with Path(acl_file).open() as fh:
+                acl = parse(fh)
         except ParserSyntaxError as e:
             etxt = str(e).split()
             log.error(etxt)
@@ -615,10 +600,9 @@ def do_work(opts, files):
         new_acl.name = acl.name
         new_acl.terms = terms
 
-        out = open(out_file, "w")
-
-        for x in new_acl.output(replace=True):
-            print(x, file=out)
+        with Path(out_file).open("w") as out:
+            for x in new_acl.output(replace=True):
+                print(x, file=out)
 
 
 def main():

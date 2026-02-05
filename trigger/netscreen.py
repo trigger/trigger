@@ -1,5 +1,4 @@
-"""
-Parses and manipulates firewall policy for Juniper NetScreen firewall devices.
+"""Parses and manipulates firewall policy for Juniper NetScreen firewall devices.
 Broken apart from acl.parser because the approaches are vastly different from each
 other.
 """
@@ -29,22 +28,21 @@ from trigger.acl.tools import create_trigger_term
 
 # TODO (jathan): Implement __all__
 __all__ = (
-    "NSRawPolicy",
-    "NSRawGroup",
-    "NetScreen",
-    "NSGroup",
-    "NSServiceBook",
-    "NSAddressBook",
     "NSAddress",
-    "NSService",
+    "NSAddressBook",
+    "NSGroup",
     "NSPolicy",
+    "NSRawGroup",
+    "NSRawPolicy",
+    "NSService",
+    "NSServiceBook",
+    "NetScreen",
 )
 
 
 # Classes
 class NetScreen:
-    """
-    Parses and generates NetScreen firewall policy.
+    """Parses and generates NetScreen firewall policy.
     """
 
     def __init__(self):
@@ -95,7 +93,7 @@ class NetScreen:
                 '"protocol", ws, protocol, ws, "src-port", ws, portrange, ws,'
                 '"dst-port", ws, portrange',
                 lambda x: NSService(
-                    name=x[0], protocol=x[1], source_port=x[2], destination_port=x[3]
+                    name=x[0], protocol=x[1], source_port=x[2], destination_port=x[3],
                 ),
             ),
             S("address"): (
@@ -148,7 +146,7 @@ class NetScreen:
                 '"set", ws, "policy", ws,'
                 "((global, ws)?, (policy_id, ws)?, (name, ws)?)?,"
                 'policy_set_id_grp / policy_rule / "exit"',
-                lambda x: NSRawPolicy(x),
+                NSRawPolicy,
             ),
             "address_group": (
                 'kw_address, ws, ns_word, ws, ns_word, (ws, "add", ws, ns_word)?'
@@ -189,13 +187,13 @@ class NetScreen:
         if success and nextchar == len(string):
             assert len(children) == 1
             return children[0]
-        else:
-            line = string[:nextchar].count("\n") + 1
-            column = len(string[string[nextchar].rfind("\n") : nextchar]) + 2
-            print("Error at: ", string[nextchar:])
-            raise exceptions.ParseError(
-                "Could not match syntax. Please report as a bug.", line, column
-            )
+        line = string[:nextchar].count("\n") + 1
+        column = len(string[string[nextchar].rfind("\n") : nextchar]) + 2
+        print("Error at: ", string[nextchar:])
+        msg = "Could not match syntax. Please report as a bug."
+        raise exceptions.ParseError(
+            msg, line, column,
+        )
 
     def concatenate_grp(self, x):
         """Used by NetScreen class when grouping policy members."""
@@ -209,7 +207,7 @@ class NetScreen:
         return ret
 
     def netmask2cidr(self, iptuple):
-        """Converts dotted-quad netmask to cidr notation"""
+        """Converts dotted-quad netmask to cidr notation."""
         if len(iptuple) == 2:
             addr, mask = iptuple
             ipstr = addr.strNormal() + "/" + mask.strNormal()
@@ -217,8 +215,7 @@ class NetScreen:
         return TIP(iptuple[0].strNormal())
 
     def handle_raw_netscreen(self, rows):
-        """
-        The parser will hand it's final output to this function, which decodes
+        """The parser will hand it's final output to this function, which decodes
         and puts everything in the right place.
         """
         for node in rows:
@@ -360,24 +357,19 @@ class NetScreen:
                 if not subset:
                     self.policies.append(found)
             else:
-                raise f"Unknown node type {str(type(node))}"
+                raise f"Unknown node type {type(node)!s}"
 
     def output(self):
-        ret = []
-        for ent in self.address_book.output():
-            ret.append(ent)
-        for ent in self.service_book.output():
-            ret.append(ent)
+        ret = list(self.address_book.output())
+        ret.extend(self.service_book.output())
         for ent in self.policies:
-            for line in ent.output():
-                ret.append(line)
+            ret.extend(ent.output())
         return ret
 
     def output_terms(self):
         ret = []
         for ent in self.policies:
-            for term in ent.output_terms():
-                ret.append(term)
+            ret.extend(ent.output_terms())
         return ret
 
 
@@ -385,8 +377,7 @@ class NetScreen:
 # Policy/Service/Group stuff
 ############################
 class NSRawGroup:
-    """
-    Container for group definitions.
+    """Container for group definitions.
     """
 
     def __init__(self, data):
@@ -405,8 +396,7 @@ class NSRawGroup:
 
 
 class NSGroup(NetScreen):
-    """
-    Container for address/service groups.
+    """Container for address/service groups.
     """
 
     def __init__(self, name=None, group_type="address", zone=None):
@@ -462,8 +452,7 @@ class NSGroup(NetScreen):
     def get_real(self):
         ret = []
         for i in self.nodes:
-            for real in i.get_real():
-                ret.append(real)
+            ret.extend(i.get_real())
         return ret
 
     def output(self):
@@ -477,8 +466,7 @@ class NSGroup(NetScreen):
 
 
 class NSServiceBook(NetScreen):
-    """
-    Container for built-in service entries and their defaults.
+    """Container for built-in service entries and their defaults.
 
     Example:
         service = NSService(name="stupid_http")
@@ -523,14 +511,11 @@ class NSServiceBook(NetScreen):
                     source_port=src,
                     destination_port=dst,
                     predefined=True,
-                )
+                ),
             )
 
     def has_key(self, key):
-        for entry in self.entries:
-            if key == entry.name:
-                return True
-        return False
+        return any(key == entry.name for entry in self.entries)
 
     def __iter__(self):
         return self.entries.__iter__()
@@ -540,7 +525,8 @@ class NSServiceBook(NetScreen):
             if item == entry.name:
                 return entry
 
-        raise KeyError("%s", item)
+        msg = "%s"
+        raise KeyError(msg, item)
 
     def append(self, item):
         if isinstance(item, NSService):
@@ -555,14 +541,12 @@ class NSServiceBook(NetScreen):
     def output(self):
         ret = []
         for ent in self.entries:
-            for line in ent.output():
-                ret.append(line)
+            ret.extend(ent.output())
         return ret
 
 
 class NSAddressBook(NetScreen):
-    """
-    Container for address book entries.
+    """Container for address book entries.
     """
 
     def __init__(self, name="ANY", zone=None):
@@ -603,23 +587,19 @@ class NSAddressBook(NetScreen):
                 if isinstance(entry, NSAddress):
                     return [entry.addr]
                 if isinstance(entry, NSGroup):
-                    ret = []
-                    for ent in entry:
-                        ret.append(ent.addr)
-                    return ret
+                    return [ent.addr for ent in entry]
+        return None
 
     def output(self):
         ret = []
-        for zone, addrs in self.entries.items():
+        for addrs in self.entries.values():
             for addr in addrs:
-                for x in addr.output():
-                    ret.append(x)
+                ret.extend(addr.output())
         return ret
 
 
 class NSAddress(NetScreen):
-    """
-    Container for individual address items.
+    """Container for individual address items.
     """
 
     def __init__(self, name=None, zone=None, addr=None, comment=None):
@@ -672,8 +652,7 @@ class NSAddress(NetScreen):
 
 
 class NSService(NetScreen):
-    """
-    Container for individual service items.
+    """Container for individual service items.
     """
 
     def __init__(
@@ -743,7 +722,7 @@ class NSService(NetScreen):
         self.timeout = timeout
 
     def set_protocol(self, protocol):
-        if isinstance(protocol, str) or isinstance(protocol, int):
+        if isinstance(protocol, (str, int)):
             self.protocol = Protocol(protocol)
         if isinstance(protocol, Protocol):
             self.protocol = protocol
@@ -777,8 +756,7 @@ class NSService(NetScreen):
 
 
 class NSRawPolicy:
-    """
-    Container for policy definitions.
+    """Container for policy definitions.
     """
 
     def __init__(self, data, isglobal=0):
@@ -791,15 +769,14 @@ class NSRawPolicy:
 
 
 class NSPolicy(NetScreen):
-    """
-    Container for individual policy definitions.
+    """Container for individual policy definitions.
     """
 
     def __init__(
         self,
         name=None,
-        address_book=NSAddressBook(),
-        service_book=NSServiceBook(),
+        address_book=None,
+        service_book=None,
         address_groups=None,
         service_groups=None,
         source_zone="Untrust",
@@ -808,6 +785,10 @@ class NSPolicy(NetScreen):
         action="permit",
         isglobal=False,
     ):
+        if address_book is None:
+            address_book = NSAddressBook()
+        if service_book is None:
+            service_book = NSServiceBook()
         self.service_book = service_book
         self.address_book = address_book
         self.service_groups = service_groups or []
@@ -839,7 +820,7 @@ class NSPolicy(NetScreen):
 
     def add_source_address(self, address):
         self.add_address(
-            address, self.source_zone, self.address_book, self.source_addresses
+            address, self.source_zone, self.address_book, self.source_addresses,
         )
 
     def add_destination_address(self, address):
@@ -851,7 +832,7 @@ class NSPolicy(NetScreen):
         )
 
     def add_service(
-        self, protocol, source_port=(1, 65535), destination_port=(1, 65535)
+        self, protocol, source_port=(1, 65535), destination_port=(1, 65535),
     ):
         found = None
         if not protocol:
@@ -907,12 +888,10 @@ class NSPolicy(NetScreen):
         serv_hash = {}
 
         for i in self.source_addresses:
-            for addr in i.get_real():
-                source_addrs.append(addr)
+            source_addrs.extend(i.get_real())
 
         for i in self.destination_addresses:
-            for addr in i.get_real():
-                dest_addrs.append(addr)
+            dest_addrs.extend(i.get_real())
 
         for i in self.services:
             for serv in i.get_real():
@@ -922,11 +901,10 @@ class NSPolicy(NetScreen):
                 if not serv_hash.has_key(p):
                     serv_hash[p] = {s: [d]}
 
+                elif not serv_hash[p].has_key(s):
+                    serv_hash[p][s] = [d]
                 else:
-                    if not serv_hash[p].has_key(s):
-                        serv_hash[p][s] = [d]
-                    else:
-                        serv_hash[p][s].append(d)
+                    serv_hash[p][s].append(d)
 
                 dest_serv.append(serv)
 
@@ -959,23 +937,18 @@ class NSPolicy(NetScreen):
         serv_hash = {}
 
         for i in self.source_addresses:
-            for addr in i.get_real():
-                source_addrs.append(addr)
+            source_addrs.extend(i.get_real())
 
         for i in self.destination_addresses:
-            for addr in i.get_real():
-                dest_addrs.append(addr)
+            dest_addrs.extend(i.get_real())
 
         for i in self.services:
             for serv in i.get_real():
                 s, d, p = serv
-                if not serv_hash.has_key(p):
+                if not serv_hash.has_key(p) or not serv_hash[p].has_key(s):
                     serv_hash[p] = {s: [d]}
                 else:
-                    if not serv_hash[p].has_key(s):
-                        serv_hash[p] = {s: [d]}
-                    else:
-                        serv_hash[p][s].append(d)
+                    serv_hash[p][s].append(d)
 
                 dest_serv.append(serv)
 
@@ -1024,7 +997,6 @@ class NSPolicy(NetScreen):
                 "dst-address": self.destination_addresses[1:],
                 "service": self.services[1:],
             }.items():
-                for item in v:
-                    toret.append(f' set {k} "{item.name}"')
+                toret.extend(f' set {k} "{item.name}"' for item in v)
             toret.append("exit")
         return toret

@@ -1,5 +1,4 @@
-"""
-Event objects for the notification system.
+"""Event objects for the notification system.
 
 These are intended to be used within event handlers such as
 `~trigger.utils.notifications.handlers.email_handler()`.
@@ -17,13 +16,12 @@ __copyright__ = "Copyright 2012-2012, AOL Inc."
 from trigger.conf import settings
 
 # Exports
-__all__ = ("Event", "Notification", "EmailEvent")
+__all__ = ("EmailEvent", "Event", "Notification")
 
 
 # Classes
 class Event:
-    """
-    Base class for events.
+    """Base class for events.
 
     It just populates the attribute dict with all keyword arguments thrown at
     the constructor.
@@ -44,18 +42,19 @@ class Event:
         local_vars = self.__dict__
         for var, value in local_vars.items():
             if var in self.required_args and value is None:
-                raise SyntaxError(f"`{var}` is a required argument")
+                msg = f"`{var}` is a required argument"
+                raise SyntaxError(msg)
 
     def __repr__(self):
         return f"<{self.__class__.__name__}>"
 
     def handle(self):
-        raise NotImplementedError("Define me in your subclass!")
+        msg = "Define me in your subclass!"
+        raise NotImplementedError(msg)
 
 
 class Notification(Event):
-    """
-    Base class for notification events.
+    """Base class for notification events.
 
     The ``title`` and ``message`` arguments are the only two that are required.
     This is to simplify the interface when sending notifications and will cause
@@ -111,7 +110,8 @@ class Notification(Event):
 
         # We want to know whether we're sending a failure or success email
         if event_status not in self.status_map:
-            raise SyntaxError("`event_status` must be in `status_map`")
+            msg = "`event_status` must be in `status_map`"
+            raise SyntaxError(msg)
         self.event_status = event_status
 
         # If recipients aren't specified, use the global success/failure
@@ -125,8 +125,7 @@ class Notification(Event):
 
 
 class EmailEvent(Notification):
-    """
-    An email notification event.
+    """An email notification event.
     """
 
     default_sender = settings.EMAIL_SENDER

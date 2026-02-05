@@ -1,5 +1,4 @@
-"""
-Various tools for use in scripts or other modules. Heavy lifting from tools
+"""Various tools for use in scripts or other modules. Heavy lifting from tools
 that have matured over time have been moved into this module.
 """
 
@@ -13,6 +12,7 @@ import os
 import re
 import tempfile
 from collections import defaultdict
+from pathlib import Path
 
 import IPy
 
@@ -27,32 +27,44 @@ DEFAULT_EXPIRE = 6 * 30  # 6 months
 
 # Exports
 __all__ = (
-    "create_trigger_term",
-    "create_access",
-    "check_access",
     "ACLScript",
-    "process_bulk_loads",
+    "check_access",
+    "create_access",
+    "create_new_acl",
+    "create_trigger_term",
+    "diff_files",
     "get_bulk_acls",
     "get_comment_matches",
-    "write_tmpacl",
-    "diff_files",
-    "worklog",
     "insert_term_into_acl",
-    "create_new_acl",
+    "process_bulk_loads",
+    "worklog",
+    "write_tmpacl",
 )
 
 
 # Functions
 def create_trigger_term(
-    source_ips=[],
-    dest_ips=[],
-    source_ports=[],
-    dest_ports=[],
-    protocols=[],
-    action=["accept"],
+    source_ips=None,
+    dest_ips=None,
+    source_ports=None,
+    dest_ports=None,
+    protocols=None,
+    action=None,
     name="generated_term",
 ):
     """Constructs & returns a Term object from constituent parts."""
+    if action is None:
+        action = ["accept"]
+    if protocols is None:
+        protocols = []
+    if dest_ports is None:
+        dest_ports = []
+    if source_ports is None:
+        source_ports = []
+    if dest_ips is None:
+        dest_ips = []
+    if source_ips is None:
+        source_ips = []
     term = Term()
     term.action = action
     term.name = name
@@ -72,8 +84,7 @@ def create_trigger_term(
 
 
 def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=None):
-    """
-    Determine whether access is permitted by a given ACL (list of terms).
+    """Determine whether access is permitted by a given ACL (list of terms).
 
     Tests a new term against a list of terms. Return True if access in new term
     is permitted, or False if not.
@@ -105,8 +116,7 @@ def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=
     }
 
     def _permitted_in_term(term, comment=" check_access: PERMITTED HERE"):
-        """
-        A little closure to re-use internally that returns a Boolean based
+        """A little closure to re-use internally that returns a Boolean based
         on the given Term object's action.
         """
         action = term.action[0]
@@ -151,21 +161,20 @@ def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=
             # Complicated checks should set hit=False unless you want
             # them to display and potentially confuse end-users
             # TODO (jathan): Factor this into a "better way"
-            else:
-                # Does the term have 'port' defined?
-                if "port" in t.match:
-                    port_match = t.match.get("port")
-                    match_fields = (matches["destination-port"], matches["source-port"])
+            # Does the term have 'port' defined?
+            elif "port" in t.match:
+                port_match = t.match.get("port")
+                match_fields = (matches["destination-port"], matches["source-port"])
 
-                    # Iterate the fields, and then the ports for each field. If
-                    # one of the port numbers is within port_match, check if
-                    # the action permits/denies and set the permitted flag.
-                    for field in match_fields:
-                        for portnum in field:
-                            if portnum in port_match:
-                                permitted = _permitted_in_term(t)
-                            else:
-                                hit = False
+                # Iterate the fields, and then the ports for each field. If
+                # one of the port numbers is within port_match, check if
+                # the action permits/denies and set the permitted flag.
+                for field in match_fields:
+                    for portnum in field:
+                        if portnum in port_match:
+                            permitted = _permitted_in_term(t)
+                        else:
+                            hit = False
 
                 # Other complicated checks would go here...
 
@@ -181,8 +190,7 @@ def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=
 
 
 def create_access(terms_to_check, new_term):
-    """
-    Breaks a new_term up into separate constituent parts so that they can be
+    """Breaks a new_term up into separate constituent parts so that they can be
     compared in a check_access test.
 
     Returns a list of terms that should be inserted.
@@ -218,8 +226,7 @@ def create_access(terms_to_check, new_term):
 
 # note, following code is -not currently used-
 def insert_term_into_acl(new_term, aclobj, debug=False):
-    """
-    Return a new ACL object with the new_term added in the proper place based
+    """Return a new ACL object with the new_term added in the proper place based
     on the aclobj. Intended to recursively append to an interim ACL object
     based on a list of Term objects.
 
@@ -266,13 +273,12 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
             if k not in new_term.match:
                 complicated = True
                 continue
-            else:
-                for test in new_term.match[k]:
-                    if test not in v:
-                        hit = False
-                        break
+            for test in new_term.match[k]:
+                if test not in v:
+                    hit = False
+                    break
 
-            if not hit and k in (
+            if not hit and k in (  # noqa: SIM102
                 "source-port",
                 "destination-port",
                 "source-address",
@@ -289,7 +295,7 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
         # Check whether access in new_term is permitted (a la check_access(),
         # track whether it's already been added into new_acl, and then add it
         # in the "right place".
-        if hit and not t.inactive and not already_added:
+        if hit and not t.inactive and not already_added:  # noqa: SIM102
             if not complicated and permitted is None:
                 for comment in t.comments:
                     if (
@@ -304,14 +310,10 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
                     "reject",
                 ):
                     permitted = False
-                elif t.action[0] in ("discard", "reject"):
-                    permitted = False
-                    new_acl.terms.append(new_term)
-                    already_added = True
-                elif t.action[0] == "accept" and new_term.action[0] in (
+                elif t.action[0] in ("discard", "reject") or (t.action[0] == "accept" and new_term.action[0] in (
                     "discard",
                     "reject",
-                ):
+                )):
                     permitted = False
                     new_acl.terms.append(new_term)
                     already_added = True
@@ -329,8 +331,10 @@ def insert_term_into_acl(new_term, aclobj, debug=False):
 def create_new_acl(old_file, terms_to_be_added):
     """Given a list of Term objects call insert_term_into_acl() to determine
     what needs to be added in based on the contents of old_file. Returns a new
-    ACL object."""
-    aclobj = parse(open(old_file))  # Start with the original ACL contents
+    ACL object.
+    """
+    with Path(old_file).open() as fh:
+        aclobj = parse(fh)  # Start with the original ACL contents
     new_acl = None
     for new_term in terms_to_be_added:
         new_acl = insert_term_into_acl(new_term, aclobj)
@@ -339,8 +343,7 @@ def create_new_acl(old_file, terms_to_be_added):
 
 
 def get_bulk_acls():
-    """
-    Returns a dict of acls with an applied count over settings.AUTOLOAD_BULK_THRESH
+    """Returns a dict of acls with an applied count over settings.AUTOLOAD_BULK_THRESH.
     """
     from trigger.netdevices import NetDevices
 
@@ -350,17 +353,15 @@ def get_bulk_acls():
         for acl in dev.acls:
             all_acls[acl] += 1
 
-    bulk_acls = {}
-    for acl, count in all_acls.items():
-        if count >= settings.AUTOLOAD_BULK_THRESH and acl != "":
-            bulk_acls[acl] = count
-
-    return bulk_acls
+    return {
+        acl: count
+        for acl, count in all_acls.items()
+        if count >= settings.AUTOLOAD_BULK_THRESH and acl != ""
+    }
 
 
 def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk=False):
-    """
-    Formerly "process --ones".
+    """Formerly "process --ones".
 
     Processes work dict and determines tuple of (prefix, site) for each device.  Stores
     tuple as a dict key in prefix_hits. If prefix_hits[(prefix, site)] is greater than max_hits,
@@ -377,7 +378,6 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
     You may override max_hits to increase the num. of devices on which to load a bulk acl.
     You may pass force_bulk=True to treat all loads as bulk loads.
     """
-
     prefix_pat = re.compile(r"^([a-z]+)\d{0,2}-([a-z0-9]+)")
     prefix_hits = defaultdict(int)
     import trigger.acl.db as adb
@@ -393,16 +393,12 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
         if DEBUG:
             print("Doing", dev)
 
-        # testacls = dev.bulk_acls
-        # if force_bulk:
-        #    testacls = dev.acls
         testacls = dev.acls if force_bulk else dev.bulk_acls
 
         for acl in (
             testacls
         ):  # only look at each acl once, but look at all acls if bulk load forced
             if acl in work[dev]:
-                # if acl in work[router]:
                 if DEBUG:
                     (
                         print("Determining threshold for acl "),
@@ -436,7 +432,6 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
 
                     # Remove that acl from being loaded, but still load on that device
                     work[dev].remove(acl)
-                    # work[router].remove(acl)
 
     # done with all the devices
     return work
@@ -450,7 +445,6 @@ def get_comment_matches(aclobj, requests):
             for c in t.comments:
                 if req in c:
                     matches.add(t)
-            # [matches.add(t) for c in t.comments if req in c]
 
     return matches
 
@@ -483,51 +477,48 @@ def update_expirations(matches, numdays=DEFAULT_EXPIRE):
             # print 'Before:\n' + comment.data + '\n'
             print(f"Updated date for term: {term.name}")
             comment.data = comment.data.replace(
-                date, datetime.datetime.strftime(new_date, DATE_FORMAT)
+                date, datetime.datetime.strftime(new_date, DATE_FORMAT),
             )
             # print 'After:\n' + comment.data
 
 
 def write_tmpacl(acl, process_name="_tmpacl"):
-    """Write a temporary file to disk from an Trigger acl.ACL object & return the filename"""
-    tmpfile = tempfile.mktemp() + process_name
-    f = open(tmpfile, "w")
-    for x in acl.output(acl.format, replace=True):
-        f.write(x)
-        f.write("\n")
-    f.close()
+    """Write a temporary file to disk from an Trigger acl.ACL object & return the filename."""
+    fd, tmpfile = tempfile.mkstemp(suffix=process_name)
+    with os.fdopen(fd, "w") as f:
+        for x in acl.output(acl.format, replace=True):
+            f.write(x)
+            f.write("\n")
 
     return tmpfile
 
 
 def diff_files(old, new):
-    """Return a unified diff between two files"""
+    """Return a unified diff between two files."""
     return os.popen(f"diff -Naur {old} {new}").read()
 
 
 def worklog(title, diff, log_string="updated by express-gen"):
-    """Save a diff to the ACL worklog"""
+    """Save a diff to the ACL worklog."""
     from time import localtime, strftime
 
     from trigger.utils.rcs import RCS
 
     date = strftime("%Y%m%d", localtime())
-    file = os.path.join(settings.FIREWALL_DIR, "workdocs", "workdoc." + date)
+    file = str(Path(settings.FIREWALL_DIR) / "workdocs" / ("workdoc." + date))
     rcs = RCS(file)
 
-    if not os.path.isfile(file):
+    if not Path(file).is_file():
         print(f"Creating new worklog {file}")
-        f = open(file, "w")
-        f.write("# vi:noai:\n\n")
-        f.close()
+        with Path(file).open("w") as f:
+            f.write("# vi:noai:\n\n")
         rcs.checkin(".")
 
     print(f"inserting the diff into the worklog {file}")
     rcs.lock_loop()
-    fd = open(file, "a")
-    fd.write(f'"{title}"\n')
-    fd.write(diff)
-    fd.close()
+    with Path(file).open("a") as fd:
+        fd.write(f'"{title}"\n')
+        fd.write(diff)
 
     print(f"inserting {title} into the load queue")
     rcs.checkin(log_string)
@@ -538,8 +529,7 @@ def worklog(title, diff, log_string="updated by express-gen"):
 
 # Classes
 class ACLScript:
-    """
-    Interface to generating or modifying access-lists. Intended for use in
+    """Interface to generating or modifying access-lists. Intended for use in
     creating command-line utilities using the ACL API.
     """
 
@@ -569,7 +559,7 @@ class ACLScript:
 
     def cleanup(self):
         for file in self.tempfiles:
-            os.remove(file)
+            Path(file).unlink()
 
     def genargs(self, interactive=False):
         if not self.acl:
@@ -605,16 +595,15 @@ class ACLScript:
         }.items():
             if len(v) == 0:
                 continue
-            tmpf = tempfile.mktemp() + "_genacl"
+            fd, tmpf = tempfile.mkstemp(suffix="_genacl")
             self.tempfiles.append(tmpf)
             try:
-                f = open(tmpf, "w")
-            except:
+                with os.fdopen(fd, "w") as f:
+                    f.writelines(f"{x.strNormal()}\n" for x in v)
+            except Exception as err:
                 print("UNABLE TO OPEN TMPFILE")
-                raise "YIKES!"
-            for x in v:
-                f.write(f"{x.strNormal()}\n")
-            f.close()
+                msg = "YIKES!"
+                raise RuntimeError(msg) from err
 
             argz.append(f"{k} {tmpf}")
 
@@ -622,23 +611,18 @@ class ACLScript:
             if not len(v):
                 continue
 
-            for x in v:
-                argz.append("%s %d" % (k, x))
+            argz.extend("%s %d" % (k, x) for x in v)
 
         if len(self.modify_terms) and len(self.bcomments):
             print("Can only define either modify_terms or between comments")
             raise "Can only define either modify_terms or between comments"
 
         if self.modify_terms:
-            for x in self.modify_terms:
-                argz.append(f"-t {x}")
+            argz.extend(f"-t {x}" for x in self.modify_terms)
         else:
-            for x in self.bcomments:
-                b, e = x
-                argz.append(f'-c "{b}" "{e}"')
+            argz.extend(f'-c "{b}" "{e}"' for b, e in self.bcomments)
 
-        for proto in self.protocol:
-            argz.append(f"--protocol {proto}")
+        argz.extend(f"--protocol {proto}" for proto in self.protocol)
 
         return argz
 
@@ -664,7 +648,7 @@ class ACLScript:
         errors = ""
         for l in log:
             if "%%ERROR%%" in l:
-                l = l.spit("%%ERROR%%")[1]
+                l = l.spit("%%ERROR%%")[1]  # noqa: PLW2901
                 errors += l[1:] + "\n"
         return errors
 
@@ -672,7 +656,7 @@ class ACLScript:
         diff = ""
         for l in log:
             if "%%DIFF%%" in l:
-                l = l.split("%%DIFF%%")[1]
+                l = l.split("%%DIFF%%")[1]  # noqa: PLW2901
                 diff += l[1:] + "\n"
         return diff
 
@@ -684,18 +668,16 @@ class ACLScript:
             for x in src:
                 if IPy.IP(x) not in to:
                     to.append(IPy.IP(x))
-        else:
-            if IPy.IP(src) not in to:
-                to.append(IPy.IP(src))
+        elif IPy.IP(src) not in to:
+            to.append(IPy.IP(src))
 
     def _add_port(self, to, src):
         if isinstance(src, list):
             for x in src:
                 if x not in to:
                     to.append(int(x))
-        else:
-            if int(src) not in to:
-                to.append(int(src))
+        elif int(src) not in to:
+            to.append(int(src))
 
     def add_protocol(self, src):
         to = self.protocol
@@ -703,9 +685,8 @@ class ACLScript:
             for x in src:
                 if x not in to:
                     to.append(x)
-        else:
-            if src not in to:
-                to.append(src)
+        elif src not in to:
+            to.append(src)
 
     def add_src_host(self, data):
         self._add_addr(self.source_ips, data)

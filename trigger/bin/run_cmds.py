@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Uses Trigger libraries to run commands on network devices.
+"""Uses Trigger libraries to run commands on network devices.
 
 Please see `~trigger.contrib.docommand.CommandRunner` for details.
 """

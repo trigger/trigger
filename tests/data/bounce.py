@@ -84,6 +84,5 @@ def bounce(device, default=DEFAULT_BOUNCE):
         return default
 
     # Try to get the bounce window by site, or fallback to default
-    mybounce = windows.get(device.site, default)
+    return windows.get(device.site, default)
 
-    return mybounce

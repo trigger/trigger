@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-check_syntax - Determines if ACL passes parsing check
+"""check_syntax - Determines if ACL passes parsing check.
 """
 
 __version__ = "1.0"
@@ -10,6 +9,7 @@ import optparse
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 from twisted.python import log
 
@@ -34,24 +34,25 @@ def main():
     """Main entry point for the CLI tool."""
     global opts
 
-    tmpfile = tempfile.mktemp() + "_parsing_check"
-    log.startLogging(open(tmpfile, "a"), setStdout=False)
+    fd, _tmpfile = tempfile.mkstemp(suffix="_parsing_check")
+    log.startLogging(os.fdopen(fd, "a"), setStdout=False)
     log.msg(
         'User %s (uid:%d) executed "%s"'
-        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv))
+        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv)),
     )
 
     opts, args = parse_args(sys.argv)
 
     for file in args[1:]:
-        if not os.path.exists(file):
+        if not Path(file).exists():
             print(f"Moving on.  File does not exist: {file}")
             continue
-        if not os.path.isfile(file):
+        if not Path(file).is_file():
             print(f"Moving on.  Not a normal file: {file}")
             continue
         # Calling `read()` on the fd immediately closes it
-        file_contents = open(file).read()
+        with Path(file).open() as fh:
+            file_contents = fh.read()
 
         try:
             acl_parse(file_contents)
@@ -59,7 +60,7 @@ def main():
         except Exception as e:
             print(f"File {file} FAILED the syntax check.  Here is the error:")
             print(e)
-            print("")
+            print()
 
 
 if __name__ == "__main__":

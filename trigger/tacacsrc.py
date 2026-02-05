@@ -17,6 +17,7 @@ import sys
 from base64 import decodebytes as decodestring
 from base64 import encodebytes as encodestring
 from collections import namedtuple
+from pathlib import Path
 from time import localtime, strftime
 
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
@@ -36,13 +37,13 @@ except ImportError:
 
 # Exports
 __all__ = (
-    "get_device_password",
-    "prompt_credentials",
-    "convert_tacacsrc",
-    "update_credentials",
-    "validate_credentials",
     "Credentials",
     "Tacacsrc",
+    "convert_tacacsrc",
+    "get_device_password",
+    "prompt_credentials",
+    "update_credentials",
+    "validate_credentials",
 )
 
 # Credential object stored in Tacacsrc.creds
@@ -72,8 +73,7 @@ class VersionMismatch(TacacsrcError):
 
 # Functions
 def get_device_password(device=None, tcrc=None):
-    """
-    Fetch the password for a device/realm or create a new entry for it.
+    """Fetch the password for a device/realm or create a new entry for it.
     If device is not passed, ``settings.DEFAULT_REALM`` is used, which is default
     realm for most devices.
 
@@ -99,14 +99,14 @@ def get_device_password(device=None, tcrc=None):
 
 
 def prompt_credentials(device, user=None):
-    """
-    Prompt for username, password and return them as Credentials namedtuple.
+    """Prompt for username, password and return them as Credentials namedtuple.
 
     :param device: Device or realm name to store
     :param user: (Optional) If set, use as default username
     """
     if not device:
-        raise MissingRealmName("You must specify a device/realm name.")
+        msg = "You must specify a device/realm name."
+        raise MissingRealmName(msg)
 
     creds = ()
     # Make sure we can even get tty i/o!
@@ -138,8 +138,7 @@ def prompt_credentials(device, user=None):
 
 
 def update_credentials(device, username=None):
-    """
-    Update the credentials for a given device/realm. Assumes the same username
+    """Update the credentials for a given device/realm. Assumes the same username
     that is already cached unless it is passed.
 
     This may seem redundant at first compared to Tacacsrc.update_creds() but we
@@ -166,8 +165,7 @@ def update_credentials(device, username=None):
 
 
 def validate_credentials(creds=None):
-    """
-    Given a set of credentials, try to return a `~trigger.tacacsrc.Credentials`
+    """Given a set of credentials, try to return a `~trigger.tacacsrc.Credentials`
     object.
 
     If ``creds`` is unset it will fetch from ``.tacacsrc``.
@@ -201,11 +199,12 @@ def validate_credentials(creds=None):
         return Credentials(username, password, realm)
 
     # Or just make it go...
-    elif len(creds) == 3:
+    if len(creds) == 3:
         log.msg("Creds is a 3-tuple, making into namedtuple...")
         return Credentials(*creds)
 
-    raise RuntimeError("THIS SHOULD NOT HAVE HAPPENED!!")
+    msg = "THIS SHOULD NOT HAVE HAPPENED!!"
+    raise RuntimeError(msg)
 
 
 def convert_tacacsrc():
@@ -218,8 +217,7 @@ def convert_tacacsrc():
 
 
 def _perl_unhex_old(c):
-    """
-    Emulate Crypt::TripleDES's bizarre handling of keys, which relies on
+    """Emulate Crypt::TripleDES's bizarre handling of keys, which relies on
     the fact that you can pass Perl's pack('H*') a string that contains
     anything, not just hex digits.  "The result for bytes "g".."z" and
     "G".."Z" is not well-defined", says perlfunc(1).  Smash!
@@ -234,8 +232,7 @@ def _perl_unhex_old(c):
 
 
 def _perl_pack_Hstar_old(s):
-    """
-    Used with _perl_unhex_old(). Ghetto hack.
+    """Used with _perl_unhex_old(). Ghetto hack.
 
     This function can be safely removed once GPG is fully supported.
     """
@@ -250,8 +247,7 @@ def _perl_pack_Hstar_old(s):
 
 # Classes
 class Tacacsrc:
-    """
-    Encrypts, decrypts and returns credentials for use by network devices and
+    """Encrypts, decrypts and returns credentials for use by network devices and
     other tools.
 
     Pass use_gpg=True to force GPG, otherwise it relies on
@@ -262,10 +258,9 @@ class Tacacsrc:
     """
 
     def __init__(
-        self, tacacsrc_file=None, use_gpg=settings.USE_GPG_AUTH, generate_new=False
+        self, tacacsrc_file=None, use_gpg=settings.USE_GPG_AUTH, generate_new=False,
     ):
-        """
-        Open .tacacsrc (tacacsrc_file or $TACACSRC or ~/.tacacsrc), or create
+        """Open .tacacsrc (tacacsrc_file or $TACACSRC or ~/.tacacsrc), or create
         a new file if one cannot be found on disk.
 
         If settings.USE_GPG_AUTH is enabled, tries to use GPG (.tacacsrc.gpg).
@@ -283,10 +278,9 @@ class Tacacsrc:
 
         # If we're not generating a new file and gpg is enabled, turn it off if
         # the right files can't be found.
-        if not self.generate_new:
-            if self.use_gpg and not self.user_has_gpg():
-                log.msg(".tacacsrc.gpg not setup, disabling GPG", debug=True)
-                self.use_gpg = False
+        if not self.generate_new and self.use_gpg and not self.user_has_gpg():
+            log.msg(".tacacsrc.gpg not setup, disabling GPG", debug=True)
+            self.use_gpg = False
 
         log.msg(f"Using GPG method: {self.use_gpg!r}", debug=True)
         log.msg(f"Got username: {self.username!r}", debug=True)
@@ -300,7 +294,7 @@ class Tacacsrc:
                 self.file_name += ".gpg"
 
         # Check if the file exists
-        if not os.path.exists(self.file_name):
+        if not Path(self.file_name).exists():
             print(f"{self.file_name} not found, generating a new one!")
             self.generate_new = True
 
@@ -310,7 +304,7 @@ class Tacacsrc:
                 self.creds = self._parse()
             else:
                 self.creds[settings.DEFAULT_REALM] = prompt_credentials(
-                    device="tacacsrc"
+                    device="tacacsrc",
                 )
                 self.write()
         else:
@@ -322,7 +316,7 @@ class Tacacsrc:
                 # Python 3 requires encoding string to bytes before hashing
                 if isinstance(passphrase, str):
                     passphrase = passphrase.encode("utf-8")
-                key = hashlib.md5(passphrase).hexdigest()[:24]  # 24 bytes
+                key = hashlib.md5(passphrase).hexdigest()[:24]  # noqa: S324 - MD5 used for legacy key derivation, not security
                 self.key = key
             # Otherwise read from keyfile.
             else:
@@ -336,7 +330,7 @@ class Tacacsrc:
                     self.write()
             else:
                 self.creds[settings.DEFAULT_REALM] = prompt_credentials(
-                    device="tacacsrc"
+                    device="tacacsrc",
                 )
                 self.write()
 
@@ -347,13 +341,14 @@ class Tacacsrc:
     def _get_key_old(self, keyfile):
         """Of course, encrypting something in the filesystem using a key
         in the filesystem really doesn't buy much.  This is best referred
-        to as obfuscation of the .tacacsrc."""
+        to as obfuscation of the .tacacsrc.
+        """
         try:
-            with open(keyfile) as kf:
+            with Path(keyfile).open() as kf:
                 key = kf.readline().strip()
-        except OSError:
+        except OSError as err:
             msg = f"Keyfile at {keyfile} not found. Please create it."
-            raise CouldNotParse(msg)
+            raise CouldNotParse(msg) from err
 
         if not key:
             msg = f"Keyfile at {keyfile} must contain a passphrase."
@@ -372,33 +367,36 @@ class Tacacsrc:
 
         # Cleanup the rawdata
         for idx, line in enumerate(self.rawdata):
-            line = line.strip()  # eat \n
+            line = line.strip()  # noqa: PLW2901 - eat \n
             lineno = idx + 1  # increment index for actual lineno
 
             # Skip blank lines and comments
             if any((line.startswith("#"), line == "")):
                 log.msg(f"skipping {line!r}", debug=True)
                 continue
-            # log.msg('parsing %r' % line, debug=True)
 
             if line.count(" = ") > 1:
-                raise CouldNotParse(f"Malformed line {line!r} at line {lineno}")
+                msg = f"Malformed line {line!r} at line {lineno}"
+                raise CouldNotParse(msg)
 
-            key, sep, val = line.partition(" = ")
+            key, _sep, val = line.partition(" = ")
             if val == "":
                 continue  # Don't add a key with a missing value
-                raise CouldNotParse(f"Missing value for key {key!r} at line {lineno}")
+                msg = f"Missing value for key {key!r} at line {lineno}"
+                raise CouldNotParse(msg)
 
             # Check for version
             if key == "version":
                 if val != self.version:
-                    raise VersionMismatch(f"Bad .tacacsrc version ({v})")
+                    msg = f"Bad .tacacsrc version ({v})"
+                    raise VersionMismatch(msg)
                 continue
 
             # Make sure tokens can be parsed
             realm, token, end = key.split("_")
             if end != "" or (realm, token) in data:
-                raise CouldNotParse(f"Could not parse {line!r} at line {lineno}")
+                msg = f"Could not parse {line!r} at line {lineno}"
+                raise CouldNotParse(msg)
 
             data[(realm, token)] = self._decrypt_old(val)
             del key, val, line
@@ -407,23 +405,21 @@ class Tacacsrc:
         for (realm, key), val in data.items():
             if key == "uname":
                 try:
-                    # creds[realm] = Credentials(val, data[(realm, 'pwd')])
                     creds[realm] = Credentials(val, data[(realm, "pwd")], realm)
                 except KeyError:
                     print(f"\nMissing password for {realm!r}, initializing...")
                     self.update_creds(creds=creds, realm=realm, user=val)
-                    # raise MissingPassword('Missing password for %r' % realm)
             elif key == "pwd":
                 pass
             else:
-                raise CouldNotParse(f"Unknown .tacacsrc entry ({realm}_{val})")
+                msg = f"Unknown .tacacsrc entry ({realm}_{val})"
+                raise CouldNotParse(msg)
 
         self.data = data
         return creds
 
     def update_creds(self, creds, realm, user=None):
-        """
-        Update username/password for a realm/device and set self.creds_updated
+        """Update username/password for a realm/device and set self.creds_updated
         bit to trigger .write().
 
         :param creds: Dictionary of credentials keyed by realm
@@ -443,7 +439,7 @@ class Tacacsrc:
         plaintext = s if isinstance(s, bytes) else s.encode("latin-1")
 
         des = TripleDES(key)
-        cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
+        cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)  # noqa: S305 - legacy credential handling requires ECB mode
         encryptor = cipher.encryptor()
 
         # Crypt::TripleDES pads with *spaces*!  How 1960. Pad it so the
@@ -464,7 +460,7 @@ class Tacacsrc:
         # Ensure key is bytes for cryptography library
         key = self.key if isinstance(self.key, bytes) else self.key.encode("latin-1")
         des = TripleDES(key)
-        cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)
+        cipher = ciphers.Cipher(des, ciphers.modes.ECB(), backend=openssl_backend)  # noqa: S305 - legacy credential handling requires ECB mode
         decryptor = cipher.decryptor()
         # Ensure s is bytes for base64.decodebytes
         s_bytes = s if isinstance(s, bytes) else s.encode("ascii")
@@ -476,23 +472,22 @@ class Tacacsrc:
     def _read_file_old(self):
         """Read old style file and return the raw data."""
         self._update_perms()
-        with open(self.file_name) as f:
+        with Path(self.file_name).open() as f:
             return f.readlines()
 
     def _write_old(self):
         """Write old style to disk. Newlines provided by _encrypt_old(), so don't fret!"""
         out = [
             "# Saved by {} at {}\n\n".format(
-                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime())
-            )
+                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()),
+            ),
         ]
 
         for realm, (uname, pwd, _) in self.creds.items():
-            # log.msg('encrypting %r' % ((uname, pwd),), debug=True)
             out.append(f"{realm}_uname_ = {self._encrypt_old(uname)}")
             out.append(f"{realm}_pwd_ = {self._encrypt_old(pwd)}")
 
-        with open(self.file_name, "w+") as fd:
+        with Path(self.file_name).open("w+") as fd:
             fd.writelines(out)
 
         self._update_perms()
@@ -501,15 +496,15 @@ class Tacacsrc:
         """Decrypt file using GPG and return the raw data."""
         ret = []
         for x in os.popen(f"gpg2 --no-tty --quiet -d {self.file_name}"):
-            x = x.rstrip()
+            x = x.rstrip()  # noqa: PLW2901
             ret.append(x)
 
         return ret
 
     def _encrypt_and_write(self):
         """Encrypt using GPG and dump password data to disk."""
-        fin, fout = os.popen2(
-            f"gpg2 --yes --quiet -r {self.username} -e -o {self.file_name}"
+        fin, _fout = os.popen2(
+            f"gpg2 --yes --quiet -r {self.username} -e -o {self.file_name}",
         )
         for line in self.rawdata:
             print(line, file=fin)
@@ -518,8 +513,8 @@ class Tacacsrc:
         """Replace self.rawdata with current password details."""
         out = [
             "# Saved by {} at {}\n\n".format(
-                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime())
-            )
+                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()),
+            ),
         ]
 
         for realm, (uname, pwd, _) in self.creds.items():
@@ -538,8 +533,8 @@ class Tacacsrc:
         return self._write_old()
 
     def _update_perms(self):
-        """Enforce -rw------- on the creds file"""
-        os.chmod(self.file_name, 0o600)
+        """Enforce -rw------- on the creds file."""
+        Path(self.file_name).chmod(0o600)
 
     def _parse(self):
         """Parses .tacacsrc.gpg and returns dictionary of credentials."""
@@ -547,38 +542,34 @@ class Tacacsrc:
         creds = {}
         for line in self.rawdata:
             if line.find("#") != -1:
-                line = line[: line.find("#")]
-            line = line.strip()
+                line = line[: line.find("#")]  # noqa: PLW2901
+            line = line.strip()  # noqa: PLW2901
             if len(line):
                 k, v = line.split(" = ")
                 if k == "version":
                     if v != self.version:
-                        raise VersionMismatch(f"Bad .tacacsrc version ({v})")
+                        msg = f"Bad .tacacsrc version ({v})"
+                        raise VersionMismatch(msg)
                 else:
-                    realm, s, junk = k.split("_")
-                    # assert(junk == '')
+                    realm, s, _junk = k.split("_")
                     assert (realm, s) not in data
-                    data[(realm, s)] = v  # self._decrypt(v)
+                    data[(realm, s)] = v
 
         for (realm, k), v in data.items():
             if k == "uname":
-                # creds[realm] = (v, data[(realm, 'pwd')])
-                # creds[realm] = Credentials(v, data[(realm, 'pwd')])
                 creds[realm] = Credentials(v, data[(realm, "pwd")], realm)
             elif k == "pwd":
                 pass
             else:
-                raise CouldNotParse(f"Unknown .tacacsrc entry ({realm}_{v})")
+                msg = f"Unknown .tacacsrc entry ({realm}_{v})"
+                raise CouldNotParse(msg)
 
         return creds
 
     def user_has_gpg(self):
         """Checks if user has .gnupg directory and .tacacsrc.gpg file."""
-        gpg_dir = os.path.join(self.user_home, ".gnupg")
-        tacacsrc_gpg = os.path.join(self.user_home, ".tacacsrc.gpg")
+        gpg_dir = Path(self.user_home) / ".gnupg"
+        tacacsrc_gpg = Path(self.user_home) / ".tacacsrc.gpg"
 
         # If not generating new .tacacsrc.gpg, we want both to be True
-        if os.path.isdir(gpg_dir) and os.path.isfile(tacacsrc_gpg):
-            return True
-
-        return False
+        return bool(gpg_dir.is_dir() and tacacsrc_gpg.is_file())

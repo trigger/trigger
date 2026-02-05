@@ -1,5 +1,4 @@
-"""
-All custom exceptions used by Trigger. Where possible built-in exceptions are
+"""All custom exceptions used by Trigger. Where possible built-in exceptions are
 used, but sometimes we need more descriptive errors.
 """
 
@@ -11,7 +10,7 @@ __version__ = "1.9"
 
 
 # Imports
-from simpleparse.error import ParserSyntaxError  # noqa: F401
+from simpleparse.error import ParserSyntaxError
 
 
 # Exceptions
@@ -31,8 +30,7 @@ class ACLError(TriggerError):
 
 
 class ParseError(ACLError):
-    """
-    Raised when there is an error parsing/normalizing an ACL that tries to tell
+    """Raised when there is an error parsing/normalizing an ACL that tries to tell
     you where it failed.
     """
 
@@ -50,15 +48,13 @@ class ParseError(ACLError):
 
 # ACL validation/formating errors
 class BadTermName(ACLError):
-    """
-    Raised when an invalid name is assigned to a `~trigger.acl.parser.Term`
-    object
+    """Raised when an invalid name is assigned to a `~trigger.acl.parser.Term`
+    object.
     """
 
 
 class MissingTermName(ACLError):
-    """
-    Raised when a an un-named Term is output to a format that requires Terms to
+    """Raised when a an un-named Term is output to a format that requires Terms to
     be named (e.g. Juniper).
     """
 
@@ -86,15 +82,13 @@ class ActionError(ACLError):
 
 
 class UnknownActionName(ActionError):
-    """
-    Raised when an action assigned to a ~trigger.acl.parser.Term` object is
+    """Raised when an action assigned to a ~trigger.acl.parser.Term` object is
     unknown.
     """
 
 
 class BadRoutingInstanceName(ActionError):
-    """
-    Raised when a routing-instance name specified in an action is invalid.
+    """Raised when a routing-instance name specified in an action is invalid.
     """
 
 
@@ -120,15 +114,13 @@ class BadPolicerName(ActionError):
 
 # Argument matching errors
 class MatchError(ACLError):
-    """
-    A base exception for all errors related to Term
+    """A base exception for all errors related to Term
     `~trigger.acl.parser.Matches` objects.
     """
 
 
 class BadMatchArgRange(MatchError):
-    """
-    Raised when a match condition argument does not fall within a specified
+    """Raised when a match condition argument does not fall within a specified
     range.
     """
 
@@ -226,8 +218,7 @@ class CommandTimeout(TwisterError):
 
 
 class CommandFailure(TwisterError):
-    """
-    Raised when a command fails to execute, such as when it results in an
+    """Raised when a command fails to execute, such as when it results in an
     error.
     """
 

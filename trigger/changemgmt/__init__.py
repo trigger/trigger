@@ -1,5 +1,4 @@
-"""
-Abstract interface to bounce windows and moratoria.
+"""Abstract interface to bounce windows and moratoria.
 """
 
 __author__ = "Jathan McCollum, Mark Thomas, Michael Shields"
@@ -32,8 +31,7 @@ __all__ = ("BounceStatus", "BounceWindow", "bounce")
 
 # Classes
 class BounceStatus:
-    """
-    An object that represents a bounce window risk-level status.
+    """An object that represents a bounce window risk-level status.
 
     + green: Low risk
     + yellow: Medium risk
@@ -98,8 +96,7 @@ class BounceStatus:
 
 
 class BounceWindow:
-    """
-    Build a bounce window of 24 `~trigger.changemgmt.BounceStatus` objects.
+    """Build a bounce window of 24 `~trigger.changemgmt.BounceStatus` objects.
 
     You may either specify your own list of 24
     `~trigger.changemgmt.BounceStatus` objects using ``status_by_hour``, or you
@@ -204,7 +201,7 @@ class BounceWindow:
             # We need a list indexed by hour (0-23) for subscripting
             status_by_hour = [self.hour_map[i] for i in range(24)]
 
-        if not len(status_by_hour) == 24:
+        if len(status_by_hour) != 24:
             msg = "There must be exactly 24 hours defined for this BounceWindow."
             raise exceptions.InvalidBounceWindow(msg)
 
@@ -220,8 +217,7 @@ class BounceWindow:
         return f"{self.__class__.__name__}(green={self._green!r}, yellow={self._yellow!r}, red={self._red!r}, default={self.default!r})"
 
     def status(self, when=None):
-        """
-        Return a `~trigger.changemgmt.BounceStatus` object for the specified
+        """Return a `~trigger.changemgmt.BounceStatus` object for the specified
         time or now.
 
         :param when:
@@ -232,18 +228,16 @@ class BounceWindow:
         # Return default during weekend moratorium, otherwise look it up.
         if (
             when_et.weekday() >= 5
-            or when_et.weekday() == 0
-            and when_et.hour < 4
-            or when_et.weekday() == 4
-            and when_et.hour >= 12
+            or (when_et.weekday() == 0
+            and when_et.hour < 4)
+            or (when_et.weekday() == 4
+            and when_et.hour >= 12)
         ):
             return BounceStatus(BOUNCE_DEFAULT_COLOR)
-        else:
-            return self._status_by_hour[when_et.hour]
+        return self._status_by_hour[when_et.hour]
 
     def next_ok(self, status, when=None):
-        """
-        Return the next time at or after the specified time (default now) that
+        """Return the next time at or after the specified time (default now) that
         it the bounce status will be at equal to or less than the given status.
 
         For example, ``next_ok('yellow')`` will return the time that the bounce
@@ -265,12 +259,11 @@ class BounceWindow:
         return when
 
     def dump(self):
-        """Dump a mapping of hour to status"""
+        """Dump a mapping of hour to status."""
         return self.hour_map
 
     def _get_bounces(self, hours, color):
-        """
-        Return a list of hours mapped to bounce objects
+        """Return a list of hours mapped to bounce objects.
 
         :param hours:
             A list of integers representing hours
@@ -278,11 +271,10 @@ class BounceWindow:
         :param color:
             The risk-level color name.
         """
-        return zip(hours, [self.BOUNCE_STATUS[color]] * len(hours))
+        return zip(hours, [self.BOUNCE_STATUS[color]] * len(hours), strict=False)
 
     def _map_bounces(self, hdict, default=None):
-        """
-        Map a dictionary of colors and hours into a dictionary keyed by hour and
+        """Map a dictionary of colors and hours into a dictionary keyed by hour and
         the appropriate BounceStatus object.
 
         :param hdict:
@@ -305,8 +297,7 @@ class BounceWindow:
         return dict(status)
 
     def _parse_hours(self, hs):
-        """
-        Parse hour strings into lists of hours. Or if a list of hours is passed
+        """Parse hour strings into lists of hours. Or if a list of hours is passed
         in, just return it as is.
 
         >>> parse_hours('0-3, 23')
@@ -338,11 +329,11 @@ class BounceWindow:
             elif len(parts) == 2:
                 parts[1] += 1
             else:
-                raise RuntimeError("This should not have happened!")
+                msg = "This should not have happened!"
+                raise RuntimeError(msg)
 
             # Return the individual hours
-            for i in range(*parts):
-                myhours.append(i)
+            myhours.extend(range(*parts))
 
         return myhours
 

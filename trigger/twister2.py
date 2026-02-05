@@ -1,5 +1,4 @@
-"""
-Login and basic command-line interaction support using the Twisted asynchronous
+"""Login and basic command-line interaction support using the Twisted asynchronous
 I/O framework. The Trigger Twister is just like the Mersenne Twister, except
 not at all.
 """
@@ -51,7 +50,7 @@ def generate_endpoint(device):
     """
     creds = tacacsrc.get_device_password(device.nodeName)
     return TriggerSSHShellClientEndpointBase.newConnection(
-        reactor, creds.username, device, password=creds.password
+        reactor, creds.username, device, password=creds.password,
     )
 
 
@@ -115,12 +114,11 @@ class _TriggerShellChannel(SSHChannel):
         endpoint to load the shell subsystem.
         """
         pr = session.packRequest_pty_req(
-            os.environ["TERM"], self._get_window_size(), ""
+            os.environ["TERM"], self._get_window_size(), "",
         )
         self.conn.sendRequest(self, "pty-req", pr)
 
         command = self.conn.sendRequest(self, "shell", "", wantReply=True)
-        # signal.signal(signal.SIGWINCH, self._window_resized)
         command.addCallbacks(self._execSuccess, self._execFailure)
 
     def _window_resized(self, *args):
@@ -146,7 +144,7 @@ class _TriggerShellChannel(SSHChannel):
                 self.conn.transport.transport.getPeer(),
                 self.conn.transport.creator.username,
                 self._command,
-            )
+            ),
         )
         self._bind_protocol_data()
         self._protocol.makeConnection(self)
@@ -172,7 +170,6 @@ class _TriggerShellChannel(SSHChannel):
         Once data is received in the channel we defer to the protocol level dataReceived method.
         """
         self._protocol.dataReceived(data)
-        # SSHChannel.dataReceived(self, data)
 
 
 class _TriggerUserAuth(_UserAuth):
@@ -187,8 +184,7 @@ class _TriggerUserAuth(_UserAuth):
         return defer.succeed(self.password)
 
     def getGenericAnswers(self, name, information, prompts):
-        """
-        Send along the password when authentication mechanism is not 'password'
+        """Send along the password when authentication mechanism is not 'password'
         This is most commonly the case with 'keyboard-interactive', which even
         when configured within self.preferredOrder, does not work using default
         getPassword() method.
@@ -200,18 +196,17 @@ class _TriggerUserAuth(_UserAuth):
         # of the prompts list
         response = [""] * len(prompts)
         for idx, prompt_tuple in enumerate(prompts):
-            prompt, echo = prompt_tuple  # e.g. [('Password: ', False)]
+            prompt, _echo = prompt_tuple  # e.g. [('Password: ', False)]
             if "assword" in prompt:
                 log.msg(
-                    f"Got password prompt: {prompt!r}, sending password!", debug=True
+                    f"Got password prompt: {prompt!r}, sending password!", debug=True,
                 )
                 response[idx] = self.password
 
         return defer.succeed(response)
 
     def ssh_USERAUTH_FAILURE(self, packet):
-        """
-        An almost exact duplicate of SSHUserAuthClient.ssh_USERAUTH_FAILURE
+        """An almost exact duplicate of SSHUserAuthClient.ssh_USERAUTH_FAILURE
         modified to forcefully disconnect. If we receive authentication
         failures, instead of looping until the server boots us and performing a
         sendDisconnect(), we raise a `~trigger.exceptions.LoginFailure` and
@@ -232,19 +227,17 @@ class _TriggerUserAuth(_UserAuth):
             self.authenticatedWith.append(self.lastAuth)
 
         def orderByPreference(meth):
-            """
-            Invoked once per authentication method in order to extract a
+            """Invoked once per authentication method in order to extract a
             comparison key which is then used for sorting.
             @param meth: the authentication method.
             @type meth: C{str}
             @return: the comparison key for C{meth}.
-            @rtype: C{int}
+            @rtype: C{int}.
             """
             if meth in self.preferredOrder:
                 return self.preferredOrder.index(meth)
-            else:
-                # put the element at the end of the list.
-                return len(self.preferredOrder)
+            # put the element at the end of the list.
+            return len(self.preferredOrder)
 
         canContinue = sorted(
             [
@@ -260,9 +253,9 @@ class _TriggerUserAuth(_UserAuth):
         return self._cbUserauthFailure(None, iter(canContinue))
 
     def _cbUserauthFailure(self, result, iterator):
-        """Callback for ssh_USERAUTH_FAILURE"""
+        """Callback for ssh_USERAUTH_FAILURE."""
         if result:
-            return
+            return None
         try:
             method = iterator.next()
         except StopIteration:
@@ -282,8 +275,7 @@ class _TriggerUserAuth(_UserAuth):
 
 class _TriggerCommandTransport(_CommandTransport):
     def connectionMade(self):
-        """
-        Once the connection is up, set the ciphers but don't do anything else!
+        """Once the connection is up, set the ciphers but don't do anything else!
         """
         self.currentEncryptions = transport.SSHCiphers("none", "none", "none", "none")
         self.currentEncryptions.setKeys("", "", "", "", "", "")
@@ -291,8 +283,7 @@ class _TriggerCommandTransport(_CommandTransport):
     # FIXME(jathan): Make sure that this isn't causing a regression to:
     # https://github.com/trigger/trigger/pull/198
     def dataReceived(self, data):
-        """
-        Explicity override version detection for edge cases where "SSH-"
+        """Explicity override version detection for edge cases where "SSH-"
         isn't on the first line of incoming data.
         """
         # Store incoming data in a local buffer until we've detected the
@@ -317,8 +308,7 @@ class _TriggerCommandTransport(_CommandTransport):
             _CommandTransport.connectionMade(self)
 
     def connectionSecure(self):
-        """
-        When the connection is secure, start the authentication process.
+        """When the connection is secure, start the authentication process.
         """
         self._state = b"AUTHENTICATING"
 
@@ -349,8 +339,7 @@ class _TriggerSessionTransport(_TriggerCommandTransport):
 
 
 class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
-    """
-    Return object used for establishing an async session rather than executing
+    """Return object used for establishing an async session rather than executing
     a single command.
     """
 
@@ -391,8 +380,7 @@ class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
 
 
 class TriggerEndpointClientFactory(protocol.Factory):
-    """
-    Factory for all clients. Subclass me.
+    """Factory for all clients. Subclass me.
     """
 
     def __init__(self, creds=None, init_commands=None):
@@ -417,7 +405,6 @@ class TriggerEndpointClientFactory(protocol.Factory):
         log.msg(f"Client connection lost. Reason: {reason}")
         if self.err:
             log.msg(f"Got err: {self.err!r}")
-            # log.err(self.err)
             self.d.errback(self.err)
         else:
             log.msg(f"Got results: {self.results!r}")
@@ -428,8 +415,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
         log.msg("All done!")
 
     def _init_commands(self, protocol):
-        """
-        Execute any initial commands specified.
+        """Execute any initial commands specified.
 
         :param protocol: A Protocol instance (e.g. action) to which to write
         the commands.
@@ -439,8 +425,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
             for next_init in self.init_commands:
                 log.msg(f"Sending: {next_init!r}", debug=True)
                 protocol.write(next_init + "\r\n")
-            else:
-                self.initialized = True
+            self.initialized = True
 
     def connection_success(self, conn, transport):
         log.msg("Connection success.")
@@ -450,8 +435,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
 
 
 class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
-    """
-    Base class for SSH endpoints.
+    """Base class for SSH endpoints.
 
     Subclass me when you want to create a new ssh client.
     """
@@ -562,8 +546,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
 
 
 class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
-    """
-    Action for use with TriggerTelnet as a state machine.
+    """Action for use with TriggerTelnet as a state machine.
 
     Take a list of commands, and send them to the device until we run out or
     one errors. Wait for a prompt after each.
@@ -591,7 +574,6 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.results = self.factory.results = []
         self.data = ""
         log.msg(f"[{self.device}] connectionMade, data: {self.data!r}")
-        # self.factory._init_commands(self)
 
     def connectionLost(self, reason):
         self.finished.callback(None)
@@ -627,7 +609,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # Either initial state or we are ready to execute more commands.
         if results or self.done is None or self.done.called:
             log.msg(
-                f"SCHEDULING THE FOLLOWING {commands} :: {self.done} WAS PREVIOUS RESULTS"
+                f"SCHEDULING THE FOLLOWING {commands} :: {self.done} WAS PREVIOUS RESULTS",
             )
             self.commands = commands
             self.commanditer = iter(commands)
@@ -638,7 +620,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         return d
 
     def add_commands(self, commands, on_error):
-        """Add commands to abstract list of outstanding commands to execute
+        """Add commands to abstract list of outstanding commands to execute.
 
         The public method for `~trigger.netdevices.NetDevice` to use for appending more commands
         onto the device loop.
@@ -650,8 +632,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         """
         # Exception handler to be used in case device throws invalid command warning.
         self.on_error.addCallback(on_error)
-        d = self.doneLock.run(self._schedule_commands, None, commands)
-        return d
+        return self.doneLock.run(self._schedule_commands, None, commands)
 
     def dataReceived(self, bytes):
         """Do this when we get data."""
@@ -668,7 +649,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg(f"[{self.device}] Got confirmation prompt: {self.data!r}")
                 prompt_idx = self.data.find(bytes)
             else:
-                return None
+                return
         else:
             # Or just use the matched regex object...
             prompt_idx = m.start()
@@ -691,7 +672,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         else:
             if self.command_interval:
                 log.msg(
-                    f"[{self.device}] Waiting {self.command_interval} seconds before sending next command"
+                    f"[{self.device}] Waiting {self.command_interval} seconds before sending next command",
                 )
 
             reactor.callLater(self.command_interval, self._send_next)
@@ -708,11 +689,10 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 log.msg(f"[{self.device}] Sending initialize command: {next_init!r}")
                 self.transport.write(next_init.strip() + self.device.delimiter)
                 return None
-            else:
-                log.msg(
-                    f"[{self.device}] Successfully initialized for command execution"
-                )
-                self.initialized = True
+            log.msg(
+                f"[{self.device}] Successfully initialized for command execution",
+            )
+            self.initialized = True
 
         if self.incremental:
             self.incremental(self.results)
@@ -728,8 +708,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 d = self.todo.pop()
                 d.callback(payload)
                 return d
-            else:
-                return
+            return None
 
         if next_command is None:
             self.results.append(None)
@@ -737,6 +716,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         else:
             log.msg(f"[{self.device}] Sending command {next_command!r}")
             self.transport.write(next_command + "\n")
+        return None
 
     def timeoutConnection(self):
         """Do this when we timeout."""
