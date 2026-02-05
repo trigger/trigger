@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-autoacl.py - This file controls when ACLs get auto-applied to network devices,
+"""autoacl.py - This file controls when ACLs get auto-applied to network devices,
 in addition to what is explicitly specified in :class:`~trigger.acl.db.AclsDB`.
 
 After editing this file, run ``python autoacl.py`` to make sure the
@@ -32,8 +31,7 @@ OWNERS = settings.VALID_OWNERS
 
 
 def autoacl(dev, explicit_acls=None):
-    """
-    Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We require
+    """Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We require
     a device object so that we don't have circular dependencies between netdevices
     and autoacl.
 

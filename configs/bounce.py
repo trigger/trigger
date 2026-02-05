@@ -1,5 +1,4 @@
-"""
-This file controls when bounce windows get auto-applied to network devices.
+"""This file controls when bounce windows get auto-applied to network devices.
 
 This module is expected to provide a ``bounce()`` function that takes a
 `~trigger.netdevice.NetDevice` as the mandatory first argument and returns a
@@ -62,8 +61,7 @@ DEFAULT_BOUNCE = BOUNCE_MAP[DEFAULT_BOUNCE_TEAM][DEFAULT_BOUNCE_SITE]
 
 
 def bounce(device, default=DEFAULT_BOUNCE):
-    """
-    Return the bounce window for a given device.
+    """Return the bounce window for a given device.
 
     :param device:
         A `~trigger.netdevices.NetDevice` object.
@@ -71,7 +69,6 @@ def bounce(device, default=DEFAULT_BOUNCE):
     :param default:
         A `~trigger.changemgmt.BounceWindow` object.
     """
-
     # First try OOB, since it's special
     if "ilo" in device.nodeName or "oob" in device.nodeName:
         windows = OOB
@@ -84,6 +81,4 @@ def bounce(device, default=DEFAULT_BOUNCE):
         return default
 
     # Try to get the bounce window by site, or fallback to default
-    mybounce = windows.get(device.site, default)
-
-    return mybounce
+    return windows.get(device.site, default)

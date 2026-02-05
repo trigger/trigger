@@ -191,6 +191,10 @@ convention = "google"
     "S606",  # start-process-with-no-shell
     "S607",  # start-process-with-partial-path
 ]
+"configs/**/*.py" = [
+    "ERA001",  # commented-out code (serves as user documentation/examples)
+    "PTH",     # pathlib (settings values are strings by design)
+]
 "docs/conf.py" = [
     "D",     # docstrings not enforced
     "E402",  # module-level imports not at top

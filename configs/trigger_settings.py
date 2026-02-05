@@ -30,7 +30,7 @@ TACACSRC_USE_PASSPHRASE = False
 
 # Use this passphrase to encrypt credentials.CHANGE THIS IN YOUR FILE BEFORE
 # USING THIS IN YOUR ENVIRONMENT.
-TACACSRC_PASSPHRASE = "bacon is awesome, son."  # NYI  # noqa: S105
+TACACSRC_PASSPHRASE = "bacon is awesome, son."  # NYI
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc
@@ -293,7 +293,7 @@ NETDEVICES_LOADERS = (
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
 NETDEVICES_SOURCE = os.environ.get(
-    "NETDEVICES_SOURCE", os.path.join(PREFIX, "netdevices.json")
+    "NETDEVICES_SOURCE", os.path.join(PREFIX, "netdevices.json"),
 )
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
@@ -301,7 +301,7 @@ TEXTFSM_VENDOR_MAPPINGS = {"cisco": ["ios", "nxos"], "arista": ["eos"]}
 
 # TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates")
+    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates"),
 )
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
@@ -309,12 +309,12 @@ TEXTFSM_VENDOR_MAPPINGS = {"cisco": ["ios", "nxos"], "arista": ["eos"]}
 
 # TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates")
+    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates"),
 )
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.
-RANCID_RECURSE_SUBDIRS = os.environ.get("RANCID_RECURSE_SUBDIRS", False)
+RANCID_RECURSE_SUBDIRS = os.environ.get("RANCID_RECURSE_SUBDIRS")
 
 # Valid owning teams (e.g. device.owningTeam) go here. These are examples and should be
 # changed to match your environment.
