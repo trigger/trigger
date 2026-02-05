@@ -1,5 +1,4 @@
-"""Functions that perform network-based things like ping, port tests, etc.
-"""
+"""Functions that perform network-based things like ping, port tests, etc."""
 
 import os
 import shlex
@@ -132,7 +131,11 @@ def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):  # noqa: PT
     False
     """
     return test_tcp_port(
-        host, port, timeout, check_result=True, expected_result=version,
+        host,
+        port,
+        timeout,
+        check_result=True,
+        expected_result=version,
     )
 
 

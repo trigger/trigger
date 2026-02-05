@@ -229,9 +229,7 @@ class Commando:
         return True
 
     def _setup_jobs(self):
-        """"Maps device hostnames to `~trigger.netdevices.NetDevice` objects and
-        populates the job queue.
-        """
+        """Maps device hostnames to `~trigger.netdevices.NetDevice` objects and populates the job queue."""
         for dev in self.devices:
             log.msg("Adding", dev)
             if self.verbose:
@@ -456,7 +454,8 @@ class Commando:
                     re_table = load_cmd_template(command, dev_type=device_type)
                     fsm = get_textfsm_object(re_table, results[idx])
                     self.append_parsed_results(
-                        device, self.map_parsed_results(command, fsm),
+                        device,
+                        self.map_parsed_results(command, fsm),
                     )
                 except:
                     log.msg(
@@ -621,8 +620,7 @@ class Commando:
                 print(msg)
 
     def run(self):
-        """Nothing happens until you execute this to perform the actual work.
-        """
+        """Nothing happens until you execute this to perform the actual work."""
         self._add_worker()
         self._start()
 
@@ -709,8 +707,7 @@ class ReactorlessCommando(Commando):
         self.all_done = True
 
     def run(self):
-        """We've overloaded the run method to return a Deferred task object.
-        """
+        """We've overloaded the run method to return a Deferred task object."""
         log.msg(".run() called")
 
         # This is the default behavior
@@ -880,7 +877,8 @@ class NetACLInfo(Commando):
         log.msg("Parsing interface data (%d bytes)" % len(alld))
         if not device.is_cisco_asa():
             self.config[device] = _parse_ios_interfaces(
-                alld, skip_disabled=self.skip_disabled,
+                alld,
+                skip_disabled=self.skip_disabled,
             )
         else:
             self.config[device] = {
@@ -985,7 +983,10 @@ class NetACLInfo(Commando):
 
 
 def _parse_ios_interfaces(
-    data, acls_as_list=True, auto_cleanup=True, skip_disabled=True,
+    data,
+    acls_as_list=True,
+    auto_cleanup=True,
+    skip_disabled=True,
 ):
     """Walks through a IOS interface config and returns a dict of parts.
 
@@ -1034,7 +1035,6 @@ def _parse_ios_interfaces(
     interface_keyword = pp.Keyword("interface")
     unwanted = pp.SkipTo(interface_keyword, include=False).suppress()
 
-
     octet = pp.Word(pp.nums, max=3)
     ipaddr = pp.Combine(octet + "." + octet + "." + octet + "." + octet)
     address = ipaddr
@@ -1058,7 +1058,8 @@ def _parse_ios_interfaces(
     # foundry matches on cidr and cisco matches on netmask
     # netmask converted to cidr in cleanup
     ip_tuple = pp.Group(address + (cidr ^ netmask)).setResultsName(
-        "addr", listAllMatches=True,
+        "addr",
+        listAllMatches=True,
     )
     negotiated = pp.Literal("negotiated")  # Seen on Cisco 886
     ip_address = ipaddr_keyword + (negotiated ^ ip_tuple) + pp.Optional(secondary)

@@ -223,8 +223,7 @@ class Modifiers(MyDict):
         super().__setitem__(key, value)
 
     def output_junos(self):
-        """Output the modifiers to the only supported format!
-        """
+        """Output the modifiers to the only supported format!"""
         # Python 3: dict.keys() returns a view, convert to list and sort
         keys = sorted(self.keys())
         return [k + ((self[k] and " " + str(self[k])) or "") + ";" for k in keys]
@@ -317,7 +316,7 @@ class RangeList:
             return [(l[0], l[-1])]
         if n == 0:
             return [l[0], *self._collapse(l[1:])]
-        return [(l[0], l[n]), *self._collapse(l[n + 1:])]
+        return [(l[0], l[n]), *self._collapse(l[n + 1 :])]
 
     def _do_collapse(self):
         self.data = self._collapse(self._expand(self.data))
@@ -570,8 +569,7 @@ class TIP(IPy.IP):
         return rs
 
     def __contains__(self, item):
-        """Containment logic, including except.
-        """
+        """Containment logic, including except."""
         item = TIP(item)
         # Calculate XOR
         xor = self.negated ^ item.negated
@@ -583,8 +581,7 @@ class TIP(IPy.IP):
 
 
 class Comment:
-    """Container for inline comments.
-    """
+    """Container for inline comments."""
 
     def __init__(self, data):
         self.data = data
@@ -639,7 +636,12 @@ class ACL:
     """
 
     def __init__(
-        self, name=None, terms=None, format=None, family=None, interface_specific=False,
+        self,
+        name=None,
+        terms=None,
+        format=None,
+        family=None,
+        interface_specific=False,
     ):
         check_name(name, exceptions.ACLNameError, max_len=24)
         self.name = name
@@ -662,8 +664,7 @@ class ACL:
         return "\n".join(self.output(format=self.format, family=self.family))
 
     def output(self, format=None, *largs, **kwargs):
-        """Output the ACL data in the specified format.
-        """
+        """Output the ACL data in the specified format."""
         if format is None:
             format = self.format
         return getattr(self, "output_" + format)(*largs, **kwargs)
@@ -1049,7 +1050,6 @@ class Term:
 
 class TermList(list):
     """Container class for Term objects within an ACL object."""
-
 
 
 class Protocol:

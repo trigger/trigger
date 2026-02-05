@@ -88,8 +88,7 @@ class UnknownActionName(ActionError):
 
 
 class BadRoutingInstanceName(ActionError):
-    """Raised when a routing-instance name specified in an action is invalid.
-    """
+    """Raised when a routing-instance name specified in an action is invalid."""
 
 
 class BadRejectCode(ActionError):

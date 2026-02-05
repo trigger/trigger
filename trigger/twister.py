@@ -170,7 +170,12 @@ def stop_reactor():
 
 
 def pty_connect(
-    device, action, creds=None, display_banner=None, ping_test=False, init_commands=None,
+    device,
+    action,
+    creds=None,
+    display_banner=None,
+    ping_test=False,
+    init_commands=None,
 ):
     """Connect to a ``device`` and log in. Use SSHv2 or telnet as appropriate.
 
@@ -221,7 +226,12 @@ def pty_connect(
             creds = tacacsrc.get_device_password(device.nodeName)
 
         factory = TriggerSSHPtyClientFactory(
-            d, action, creds, display_banner, init_commands, device=device,
+            d,
+            action,
+            creds,
+            display_banner,
+            init_commands,
+            device=device,
         )
         port = device.nodePort or settings.SSH_PORT
         log.msg(f"Trying SSH to {device}:{port}", debug=True)
@@ -230,7 +240,11 @@ def pty_connect(
     elif settings.TELNET_ENABLED:
         log.msg(f"[{device}] SSH connection test FAILED, falling back to telnet")
         factory = TriggerTelnetClientFactory(
-            d, action, creds, init_commands=init_commands, device=device,
+            d,
+            action,
+            creds,
+            init_commands=init_commands,
+            device=device,
         )
         port = device.nodePort or settings.TELNET_PORT
         log.msg(f"Trying telnet to {device}:{port}", debug=True)
@@ -307,7 +321,9 @@ def connect(
 
     try:
         d = pty_connect(
-            device, Interactor(log_to=output_logger), init_commands=init_commands,
+            device,
+            Interactor(log_to=output_logger),
+            init_commands=init_commands,
         )
         d.addErrback(login_errback)
         d.addErrback(log.err)
@@ -644,7 +660,12 @@ def execute_ioslike_telnet(
 
     d = defer.Deferred()
     action = IoslikeSendExpect(
-        device, commands, incremental, with_errors, timeout, command_interval,
+        device,
+        commands,
+        incremental,
+        with_errors,
+        timeout,
+        command_interval,
     )
     factory = TriggerTelnetClientFactory(d, action, creds, loginpw, enablepw)
 
@@ -707,7 +728,13 @@ def execute_ioslike_ssh(
     # Test if device requires shell + pty-req
     if device.requires_async_pty:
         return execute_async_pty_ssh(
-            device, commands, creds, incremental, with_errors, timeout, command_interval,
+            device,
+            commands,
+            creds,
+            incremental,
+            with_errors,
+            timeout,
+            command_interval,
         )
     # Or fallback to generic
     method = "IOS-like"
@@ -833,8 +860,7 @@ def execute_pica8(
 
 
 class TriggerClientFactory(protocol.ClientFactory):
-    """Factory for all clients. Subclass me.
-    """
+    """Factory for all clients. Subclass me."""
 
     def __init__(self, deferred, creds=None, init_commands=None):
         self.d = deferred
@@ -982,8 +1008,7 @@ class TriggerSSHTransport(transport.SSHClientTransport):
         return defer.succeed(True)
 
     def connectionMade(self):
-        """Once the connection is up, set the ciphers but don't do anything else!
-        """
+        """Once the connection is up, set the ciphers but don't do anything else!"""
         self.currentEncryptions = transport.SSHCiphers("none", "none", "none", "none")
         self.currentEncryptions.setKeys("", "", "", "", "", "")
 
@@ -1086,7 +1111,8 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
             prompt, _echo = prompt_tuple  # e.g. [('Password: ', False)]
             if "assword" in prompt:
                 log.msg(
-                    f"Got password prompt: {prompt!r}, sending password!", debug=True,
+                    f"Got password prompt: {prompt!r}, sending password!",
+                    debug=True,
                 )
                 response[idx] = self.transport.factory.creds.password
 
@@ -1215,14 +1241,12 @@ class TriggerSSHMultiplexConnection(TriggerSSHConnection):
         self.send_command()
 
     def channelClosed(self, channel):
-        """Close the channel when we're done. But not the transport connection.
-        """
+        """Close the channel when we're done. But not the transport connection."""
         log.msg(f"CHANNEL {channel.id} closed")
         SSHConnection.channelClosed(self, channel)
 
     def send_command(self):
-        """Send the next command in the stack once the previous channel has closed.
-        """
+        """Send the next command in the stack once the previous channel has closed."""
         try:
             command = self.work.pop(0)
         except IndexError:
@@ -1312,15 +1336,16 @@ class Interactor(protocol.Protocol):
 
 
 class TriggerSSHPtyChannel(channel.SSHChannel):
-    """Used by pty_connect() to turn up an interactive SSH pty channel.
-    """
+    """Used by pty_connect() to turn up an interactive SSH pty channel."""
 
     name = "session"
 
     def channelOpen(self, data):
         """Setup the terminal when the channel opens."""
         pr = session.packRequest_pty_req(
-            settings.TERM_TYPE, self._get_window_size(), "",
+            settings.TERM_TYPE,
+            self._get_window_size(),
+            "",
         )
         self.conn.sendRequest(self, "pty-req", pr)
         self.conn.sendRequest(self, "shell", "")
@@ -1512,8 +1537,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
         self.conn.transport.loseConnection()
 
     def timeoutConnection(self):
-        """Do this when the connection times out.
-        """
+        """Do this when the connection times out."""
         log.msg(f"[{self.device}] Timed out while sending commands")
         self.factory.err = exceptions.CommandTimeout("Timed out while sending commands")
         self.loseConnection()
@@ -1579,8 +1603,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         d.addErrback(self._ebShellOpen)
 
     def _gotResponse(self, _):
-        """If the shell never establishes, this won't be called.
-        """
+        """If the shell never establishes, this won't be called."""
         log.msg(f"[{self.device}] CHANNEL {self.id}: Exec finished.")
         self.conn.sendEOF(self)
 
@@ -1803,8 +1826,7 @@ class IncrementalXMLTreeBuilder(TreeBuilder):
 
 
 class TriggerTelnetClientFactory(TriggerClientFactory):
-    """Factory for a telnet connection.
-    """
+    """Factory for a telnet connection."""
 
     def __init__(
         self,

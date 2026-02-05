@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""find_access - Like check_access but reports on networks inside of networks.
-"""
+"""find_access - Like check_access but reports on networks inside of networks."""
 
 __version__ = "1.6"
 
@@ -42,7 +41,9 @@ This works in reverse, if the input is 172.16.1.0/24 and a term contains
     parser.add_option("-h", "--help", action="store_true")
     parser.add_option("-s", "--source-network", help="Supply a source network to find")
     parser.add_option(
-        "-d", "--destination-network", help="Supply a destination network to find",
+        "-d",
+        "--destination-network",
+        help="Supply a destination network to find",
     )
     parser.add_option(
         "-p",

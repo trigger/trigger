@@ -328,8 +328,7 @@ def handle_output(all_rows, opts):
 
 
 def print_table(rows, labels=None):
-    """Print the interface table for a device.
-    """
+    """Print the interface table for a device."""
     if labels is None:
         labels = ROW_LABELS
 
@@ -409,7 +408,9 @@ def main():
         sys.exit(1)
 
     main_data = get_interface_data(
-        devices=routers, production_only=opts.nonprod, opts=opts,
+        devices=routers,
+        production_only=opts.nonprod,
+        opts=opts,
     )
     all_rows, subnet_table = build_output(main_data, opts)
     handle_output(all_rows, opts)

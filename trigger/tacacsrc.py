@@ -258,7 +258,10 @@ class Tacacsrc:
     """
 
     def __init__(
-        self, tacacsrc_file=None, use_gpg=settings.USE_GPG_AUTH, generate_new=False,
+        self,
+        tacacsrc_file=None,
+        use_gpg=settings.USE_GPG_AUTH,
+        generate_new=False,
     ):
         """Open .tacacsrc (tacacsrc_file or $TACACSRC or ~/.tacacsrc), or create
         a new file if one cannot be found on disk.
@@ -479,7 +482,8 @@ class Tacacsrc:
         """Write old style to disk. Newlines provided by _encrypt_old(), so don't fret!"""
         out = [
             "# Saved by {} at {}\n\n".format(
-                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()),
+                self.__module__,
+                strftime("%Y-%m-%d %H:%M:%S %Z", localtime()),
             ),
         ]
 
@@ -513,7 +517,8 @@ class Tacacsrc:
         """Replace self.rawdata with current password details."""
         out = [
             "# Saved by {} at {}\n\n".format(
-                self.__module__, strftime("%Y-%m-%d %H:%M:%S %Z", localtime()),
+                self.__module__,
+                strftime("%Y-%m-%d %H:%M:%S %Z", localtime()),
             ),
         ]
 

@@ -30,7 +30,12 @@ class ConfigDevice(CommandoApplication):
     tftp_ip = gethostbyname(tftp_host)
 
     def __init__(
-        self, action="replace", files=None, commands=None, debug=False, **kwargs,
+        self,
+        action="replace",
+        files=None,
+        commands=None,
+        debug=False,
+        **kwargs,
     ):
         if commands is None:
             commands = []

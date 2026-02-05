@@ -126,12 +126,16 @@ class Queue:
                     raise exceptions.TriggerError(msg)
 
                 self.create_task(
-                    queue="integrated", acl=acl, router=router, escalation=escalation,
+                    queue="integrated",
+                    acl=acl,
+                    router=router,
+                    escalation=escalation,
                 )
 
             self.vprint(
                 "ACL {} injected into integrated load queue for {}".format(
-                    acl, ", ".join(dev[: dev.find(".")] for dev in routers),
+                    acl,
+                    ", ".join(dev[: dev.find(".")] for dev in routers),
                 ),
             )
 
@@ -179,12 +183,15 @@ class Queue:
         if devs:
             for dev in devs:
                 m.delete().where(
-                    m.acl == acl, m.router == dev, m.loaded >> None,
+                    m.acl == acl,
+                    m.router == dev,
+                    m.loaded >> None,
                 ).execute()
 
             self.vprint(
                 "ACL {} cleared from integrated load queue for {}".format(
-                    acl, ", ".join(dev[: dev.find(".")] for dev in devs),
+                    acl,
+                    ", ".join(dev[: dev.find(".")] for dev in devs),
                 ),
             )
             return True
@@ -212,7 +219,9 @@ class Queue:
         for acl in acls:
             now = datetime.datetime.now()
             m.update(loaded=now).where(
-                m.acl == acl, m.router == device, m.loaded >> None,
+                m.acl == acl,
+                m.router == device,
+                m.loaded >> None,
             ).execute()
 
         self.vprint(f"Marked the following ACLs as complete for {device}:")
@@ -247,7 +256,9 @@ class Queue:
             loaded = "-infinity"  # See: http://bit.ly/15f0J3z
         for router in routers:
             m.update(loaded=loaded).where(
-                m.acl == acl, m.router == router, m.loaded >> None,
+                m.acl == acl,
+                m.router == router,
+                m.loaded >> None,
             ).execute()
 
         self.vprint(f"Marked the following devices as removed for ACL {acl}: ")

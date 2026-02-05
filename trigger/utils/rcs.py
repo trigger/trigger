@@ -1,5 +1,4 @@
-"""Provides a CVS like wrapper for local RCS (Revision Control System) with common commands.
-"""
+"""Provides a CVS like wrapper for local RCS (Revision Control System) with common commands."""
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"

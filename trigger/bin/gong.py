@@ -32,7 +32,10 @@ Automatically log into network devices using cached TACACS credentials.
     )
 
     parser.add_option(
-        "-o", "--oob", action="store_true", help="Connect to device out of band first.",
+        "-o",
+        "--oob",
+        action="store_true",
+        help="Connect to device out of band first.",
     )
 
     opts, args = parser.parse_args(argv)

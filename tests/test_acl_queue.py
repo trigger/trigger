@@ -80,7 +80,10 @@ class TestAclQueue(unittest.TestCase):
     def test_03_insert_integrated_failure_acl(self):
         """Test insert devices w/ no ACL association"""
         self.assertRaises(
-            exceptions.TriggerError, self.q.insert, "bogus", self.device_list,
+            exceptions.TriggerError,
+            self.q.insert,
+            "bogus",
+            self.device_list,
         )
 
     def test_04_list_integrated_success(self):

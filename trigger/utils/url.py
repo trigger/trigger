@@ -1,5 +1,4 @@
-"""Utilities for parsing/handling URLs.
-"""
+"""Utilities for parsing/handling URLs."""
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"

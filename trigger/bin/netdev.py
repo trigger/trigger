@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""netdev - Command-line search interface for NetDevices.
-"""
+"""netdev - Command-line search interface for NetDevices."""
 
 __version__ = "1.2"
 
@@ -246,8 +245,6 @@ def search_builder(opts):
     # coordinate/rack
     if opts.coordinate:
         vars.append(f" '{opts.coordinate.upper()}' in x.coordinate")
-
-
 
     # Build a list comprehension based on the vars list.
     # so:

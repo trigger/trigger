@@ -1,5 +1,4 @@
-"""Basic functions for sending notifications.
-"""
+"""Basic functions for sending notifications."""
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"

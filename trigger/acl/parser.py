@@ -127,8 +127,6 @@ class ACLParser(Parser):
         return ACLProcessor()
 
 
-
-
 def parse(input_data):
     """Parse a complete ACL and return an ACL object. This should be the only
     external interface to the parser.
@@ -158,5 +156,7 @@ def parse(input_data):
     column = len(data[data[nextchar].rfind("\n") : nextchar]) + 1
     msg = "Could not match syntax.  Please report as a bug."
     raise exceptions.ParseError(
-        msg, line, column,
+        msg,
+        line,
+        column,
     )

@@ -179,7 +179,8 @@ NETDEVICES_LOADERS = (
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
 NETDEVICES_SOURCE = os.environ.get(
-    "NETDEVICES_SOURCE", str(Path(PREFIX) / "netdevices.xml"),
+    "NETDEVICES_SOURCE",
+    str(Path(PREFIX) / "netdevices.xml"),
 )
 
 # Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility

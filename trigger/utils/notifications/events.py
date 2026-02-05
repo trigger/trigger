@@ -125,8 +125,7 @@ class Notification(Event):
 
 
 class EmailEvent(Notification):
-    """An email notification event.
-    """
+    """An email notification event."""
 
     default_sender = settings.EMAIL_SENDER
     status_map = {

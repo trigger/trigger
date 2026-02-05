@@ -1,5 +1,4 @@
-"""Templating functions for unstructured CLI output.
-"""
+"""Templating functions for unstructured CLI output."""
 
 __author__ = "Thomas Cuthbert"
 __maintainer__ = "Thomas Cuthbert"
