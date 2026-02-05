@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v2.0.3 (2026-02-05)
+
+### Bug Fixes
+
+- **release**: Skip PyPI upload if version already exists
+  ([`cce1a8c`](https://github.com/trigger/trigger/commit/cce1a8c8d6d8af18e277bd7c286456c69de326f5))
+
+Prevents publish job from failing when re-running a release that was already partially published
+  (e.g. after a prior push failure).
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+
 ## v2.0.2 (2026-02-05)
 
 ### Bug Fixes
