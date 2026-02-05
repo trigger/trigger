@@ -1,98 +1,264 @@
-# Changelog
+# CHANGELOG
 
-All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## v2.0.1 (2026-02-05)
 
-## [Unreleased]
+### Bug Fixes
 
-## [2.0.0] - 2026-01-26
+- Address PR review feedback
+  ([`b89cff9`](https://github.com/trigger/trigger/commit/b89cff965eb76782c3c3d7f8df5406af9b556d77))
 
-This is a major release that migrates Trigger from Python 2.7 to Python 3.10+.
+- Remove unreachable `return False` after `return True` in confirm_tables() - Remove unused tuple
+  unpacking in parser.py processor function
 
-**Python 2.7 support ended with v1.6.0.** This release requires Python 3.10 or 3.11.
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
-See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed upgrade instructions.
+- Apply ruff lint fixes to configs/ directory
+  ([`133b66d`](https://github.com/trigger/trigger/commit/133b66d6bab8633acfeb806083cc0fe04404eb4d))
 
-### Added
+The CI lint job checks configs/ in addition to trigger/ and tests/. Fix docstring formatting,
+  trailing commas, unnecessary variable before return, and invalid env var default type. Add
+  per-file-ignores for configs/ (PTH, ERA001) since settings templates use string paths by design
+  and commented-out code serves as user documentation.
 
-- **Python 3.10+ support**: Complete migration from Python 2.7 to Python 3.10-3.11
-- **Modern packaging**: Migrated from setup.py to pyproject.toml (PEP 621)
-- **CLI tools as entry points**: All 14 CLI tools (acl, netdev, gong, etc.) now installed as proper console entry points
-- **GitHub Actions CI/CD**: Replaced Travis CI with GitHub Actions using uv for faster builds
-- **Modern test infrastructure**: Migrated to pytest with conftest.py configuration
-- **Code formatting**: Applied black formatter and isort to entire codebase
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
-### Changed
+- **ci**: Fix release preview branch detection in PR context
+  ([`b830812`](https://github.com/trigger/trigger/commit/b830812a93dc324384d3d8dcc8d43e28ecf61f22))
 
-- **Python version**: Now requires Python 3.10 or 3.11 (Python 3.12+ not yet supported due to SimpleParse)
-- **CLI tool invocation**: Tools now installed as entry points instead of bin/ scripts
-  - Old: `./bin/acl --help`
-  - New: `acl --help`
-- **Test runner**: `python setup.py test` → `pytest`
-- **Build system**: `python setup.py install` → `pip install .`
-- **Package name change**: `gtextfsm` → `textfsm`
-- **Documentation**: Converted RST documentation to Markdown (README, LICENSE, AUTHORS, etc.)
-- **Updated vendored packages**: peewee v2.1.4 → v3.17.0, tftpy Python 3 compatibility
-- **Updated dependencies**:
-  - Twisted: 15.5.0-16.x → ≥22.10.0
-  - cryptography: ≥1.4 → ≥41.0.0
-  - crochet: 1.5.0 → ≥2.0.0
-  - pyparsing: ~2.2.0 → ≥3.1.0
-  - redis: any → ≥5.0.0
+python-semantic-release requires the current branch to match the configured branch pattern ('main').
+  PR checkouts are detached HEAD at the merge ref, so branch matching fails and reports "No version
+  change". Fix by creating a local 'main' branch at the merge commit so semantic-release properly
+  detects conventional commits.
 
-### Removed
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
-- setup.py, setup.cfg, requirements-dev.txt (use pyproject.toml)
-- .travis.yml (use GitHub Actions)
-- Python 2.7 support
+### Refactoring
 
-### Fixed
+- Enable comprehensive ruff lint rules and fix all violations
+  ([`4877e7a`](https://github.com/trigger/trigger/commit/4877e7a3b131b09c9d9ce79ba64c5908e7e5c414))
 
-- 200+ print statement conversions to print() functions
-- 37 dictionary iterator methods (.iteritems → .items, etc.)
-- 50+ old-style exception handlers
-- 15 .has_key() calls → 'in' operator
-- 13 basestring references → str
-- Multiple import errors (StringIO, ConfigParser, urlparse)
-- raise statement syntax in tftpy vendored package
-- 48 deprecated metadata declarations from CLI tools
+Expand ruff configuration from 5 rule groups (F/E/W/I/UP) to 22, enforcing modern Python best
+  practices across the codebase. Fix all 1,484 violations with zero behavioral changes — 129 tests
+  pass.
 
-### Notes
+Key improvements: - Migrate os.path/open() to pathlib (108 fixes) - Add proper exception chaining
+  with raise-from (23 fixes) - Remove commented-out dead code (100 fixes) - Add trailing commas, fix
+  docstring formatting (760+ auto-fixes) - Replace deprecated tempfile.mktemp with mkstemp (5 fixes)
+  - Fix mutable argument defaults, zip-without-strict, and more - Extract exception message strings
+  per EM101/EM102
 
-- **String/bytes handling**: Python 3's strict str/bytes separation may require code changes in custom integrations
-- **Configuration compatibility**: All configuration files remain compatible (settings.py, netdevices.xml/json, autoacl.py, bounce.py, .tacacsrc, environment variables)
+Net result: 484 fewer lines of code, cleaner and more idiomatic Python.
 
-## [1.6.0] - 2017-03-08
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
-### Added
 
-- Remote execution on devices running Cumulus Linux is now officially supported
-- New configuration setting `DEFAULT_ADMIN_STATUS` (defaults to `PRODUCTION`)
-- CLI-tool `gnng` now uses PTable instead of the old indent function
-- Added -a/--listen-address option to the XMLRPC Server
+## v2.0.0 (2026-02-03)
 
-### Changed
+### Bug Fixes
 
-- PyCrypto has been replaced with the cryptography library
-- The default NetDevices loader is now `JSONLoader`
-- ACL support is now disabled by default (`WITH_ACLS = False`)
-- The `conf` directory renamed to `configs` to avoid confusion with `trigger.conf`
+- **release**: Fix v2.0.0 release pipeline
+  ([`069707e`](https://github.com/trigger/trigger/commit/069707e6d704784db93dd9c95e23ba4bcac30ba3))
 
-### Fixed
+- Restore version to 2.0.0 (was incorrectly overwritten to 1.7.0 by semantic-release) - Fix
+  release.yml to use official python-semantic-release GitHub Action - Fix missing step id that
+  prevented build/publish from ever running - Remove obsolete tests.yml workflow (superseded by
+  ci.yml)
 
-- Fixed a bug in Cumulus Linux prompt patterns
-- Disabled execution of `sudo vtysh` by default on Cumulus
-- Bugfixes for handling esoteric SSH server implementations
-- Bugfixes for the TextFSM parsed results bucket
-- Fixed a bug on Arista EOS devices with prompt inclusion in results
-- Use pyparsing~=2.2.0 for compat w/ setuptools>=34.0.0
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
----
+- **release**: Trigger publish on tag push, not just branch push
+  ([`5068e4e`](https://github.com/trigger/trigger/commit/5068e4e7c02958b3e4bf17ed984fcf363dcf871f))
 
-For changes prior to v1.6.0, see [docs/changelog.rst](docs/changelog.rst).
+The release workflow only triggered on branch pushes to main, so pushing a v* tag did nothing. Split
+  into two jobs: - release: runs semantic-release on branch pushes (future automated releases) -
+  publish: builds and publishes to PyPI on tag pushes OR after semantic-release
 
-[Unreleased]: https://github.com/trigger/trigger/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/trigger/trigger/compare/v1.6.0...v2.0.0
-[1.6.0]: https://github.com/trigger/trigger/releases/tag/v1.6.0
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+
+## v1.7.0 (2026-02-03)
+
+### Bug Fixes
+
+- Fix remaining Python 3 compatibility issues
+  ([`fe6a7a2`](https://github.com/trigger/trigger/commit/fe6a7a2c1cb7ea45ec2332445fd3c88fc973a647))
+
+Fixed 3 critical bugs introduced during Python 3 migration:
+
+1. Missing ParserSyntaxError import from simpleparse.error - Added import to trigger/exceptions.py
+  for test compatibility - Fixes testCommentStress test failure
+
+2. Broken IP address formatting in JunOS ACL output - trigger/acl/support.py: Reverted junos_str()
+  to percent formatting - .format(*pair) was unpacking IP objects incorrectly - Was outputting
+  "192.0.2.0-192.0.2.1" instead of "192.0.2.0/24" - Fixes testJunOS test failure
+
+3. Broken Peewee ORM queries in ACL queue - trigger/acl/queue.py: Reverted 'not m.done' to 'm.done
+  == False' - Python 'not' operator doesn't translate to SQL in Peewee ORM - Added noqa:E712 to
+  suppress ruff warnings (intentional) - Fixes test_12_list_manual_success test failure
+
+All 129 tests now passing (100% pass rate).
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Fix ruff linting issues.
+  ([`e5455bf`](https://github.com/trigger/trigger/commit/e5455bfff84fabda0f95d86e503e32c488b20592))
+
+- Python 3 compatibility fixes and modernization
+  ([`e760af2`](https://github.com/trigger/trigger/commit/e760af2d9226429d17993d7acfa97c8abfe60707))
+
+- Fixed Python 2 exception syntax (except X, e → except X as e) - Fixed Python 2 builtins (raw_input
+  → input, file → open) - Auto-fixed 1223 style issues (imports, formatting, etc.) - Configured ruff
+  for Python 3.10+ compatibility checking - Limited ruff scope to trigger/, tests/, configs/ (not
+  examples/) - Added pragmatic ignores for legacy code patterns
+
+Critical fixes: - trigger/acl/tools.py: except ValueError as err - trigger/bin/find_access.py:
+  open() and except as - trigger/bin/load_acl.py: input() and except as - trigger/acl/db.py: open()
+  instead of file() - trigger/netscreen.py: except Exception as e - docs/conf.py: removed encoding
+  declarations
+
+All ruff checks now pass on main codebase.
+
+- Restore missing settings import in trigger/acl/junos.py
+  ([`3153851`](https://github.com/trigger/trigger/commit/3153851617900c0d96857ad04042b780ba4f0ead))
+
+The settings import was incorrectly removed during auto-fixing. Added explicit import for
+  trigger.conf.settings which is used in juniper_multiline_comments() function.
+
+- Restore opaque_braced_group string in junos.py grammar
+  ([`0c93245`](https://github.com/trigger/trigger/commit/0c93245701182f2bad17cb5ba4773dfe05fd748e))
+
+The auto-fix had removed quotes around 'opaque_braced_group' reference in the grammar string.
+  Restored it to fix recursive grammar reference.
+
+- **ci**: Exclude configs dir from ruff and fix preview warnings
+  ([`17d9792`](https://github.com/trigger/trigger/commit/17d9792613701066b2f12e1981d83b704bfc9b77))
+
+- **ci**: Remove uv cache and fix ruff commands
+  ([`ce63a4c`](https://github.com/trigger/trigger/commit/ce63a4ca7597f3db8770fed2a792aff62e5f5de8))
+
+- Remove enable-cache from setup-uv (no uv.lock file) - Change ruff commands to use . instead of
+  explicit paths - Ruff will read pyproject.toml configuration automatically - This applies
+  configured ignores and exclusions
+
+- **configs**: Modernize Python 3 syntax and fix all ruff errors
+  ([`78fffa3`](https://github.com/trigger/trigger/commit/78fffa37b538a344254f0ed284735dadb5155d00))
+
+- Convert Python 2 print statements to Python 3 functions - Remove unnecessary UTF-8 encoding
+  declarations (UP009) - Modernize percent formatting to f-strings (UP031) - Remove unused imports
+  and fix import sorting - Fix ambiguous unicode quotes in comments (RUF003) - Add noqa comment for
+  example password in trigger_settings.py - Remove BW alias, use full BounceWindow name (N817) - Fix
+  operator precedence with parentheses (RUF021) - Apply ruff formatting for consistent style
+
+All configs/ files now pass ruff check and are Python 3 compatible. Do not exclude configs/ from
+  ruff checks - these are user-facing examples.
+
+### Chores
+
+- Add .worktrees/ and .venv to .gitignore
+  ([`4d157a8`](https://github.com/trigger/trigger/commit/4d157a8138d3ffa265736d2eb58d6b77bd747383))
+
+- Add ruff configuration and dependencies
+  ([`1c591fe`](https://github.com/trigger/trigger/commit/1c591fef0a0d592797f94a96defbd30c36a82c7d))
+
+- Add ruff to dev dependencies - Add python-semantic-release to dev dependencies - Configure ruff
+  for Python 3.10+ with 88 char line length - Exclude trigger/packages directory - Enable
+  comprehensive linting rules: - E/W: pycodestyle errors and warnings - F: pyflakes - I: isort - N:
+  pep8-naming - UP: pyupgrade - B: flake8-bugbear - S: flake8-bandit (security) - PT:
+  flake8-pytest-style - C4: flake8-comprehensions - SIM: flake8-simplify - RUF: Ruff-specific rules
+  - Add pragmatic ignores for line length, pytest asserts, subprocess usage - Configure per-file
+  ignores for tests and CLI tools - Configure isort with trigger as first-party import - Replace
+  black, isort, and flake8 configuration with unified ruff config
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+### Continuous Integration
+
+- Add automated release workflow
+  ([`fa5519e`](https://github.com/trigger/trigger/commit/fa5519e290d7ec64c126d96de5a098db2f4b8775))
+
+- Run python-semantic-release on push to main - Determine version from conventional commits -
+  Generate changelog and update CHANGELOG.md - Create git tag and GitHub release - Build package
+  with uv build - Publish to PyPI using OIDC trusted publisher - Requires 'release' environment for
+  deployment protection
+
+- Add continuous integration workflow
+  ([`5f6c384`](https://github.com/trigger/trigger/commit/5f6c384d7b1c46d9bb5e9eb82beabbda3811853d))
+
+- Test on Python 3.10 and 3.11 - Run ruff linting and formatting checks - Build package and verify
+  build succeeds - Upload build artifacts for inspection - Runs on all pushes and PRs to main
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Add python-semantic-release configuration
+  ([`5b92d2d`](https://github.com/trigger/trigger/commit/5b92d2d3b7b08aefd4fffeb221e2d99e16b91461))
+
+- Configure semantic versioning from conventional commits - Set main branch as release branch -
+  Enable PyPI upload and GitHub releases - Use uv build for package building - Configure changelog
+  generation to CHANGELOG.md
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Add release preview workflow
+  ([`7d8ad45`](https://github.com/trigger/trigger/commit/7d8ad4511c26c23af4e371a4e1519329618ee62e))
+
+- Show next version on pull requests - Preview changelog based on commits - Post comment with
+  version and changes - Remind developers about conventional commit format - Helps reviewers
+  understand release impact
+
+### Documentation
+
+- Add comprehensive v2.0.0 changelog entry
+  ([`faf43e6`](https://github.com/trigger/trigger/commit/faf43e655a6fd5ed7676b9198b5af2dda86c2a55))
+
+- Document breaking changes (Python 3.10-3.11 required) - List all major dependency updates -
+  Emphasize configuration compatibility - Link to migration guide - Document all features and
+  internal changes
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Add Read the Docs configuration
+  ([`1a30a49`](https://github.com/trigger/trigger/commit/1a30a49b7f0f68ad8b70e2543026e6ea0e555a7f))
+
+- Configure RTD to use Python 3.11 - Install package with dev dependencies using uv - Build PDF and
+  EPUB formats - Use docs/conf.py for Sphinx configuration - Enables versioned documentation builds
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Add v2.0.0 release design document
+  ([`e5546a4`](https://github.com/trigger/trigger/commit/e5546a4f4406d582812e1a4f9de25f2cc2981bd9))
+
+Add comprehensive design document for v2.0.0 release including: - Single branch strategy (main only,
+  deprecate develop) - Conventional commits + python-semantic-release automation - GitHub Actions
+  CI/CD pipeline (ci, release-preview, release) - PyPI trusted publisher setup (OIDC, no tokens) -
+  Read the Docs version management - Complete implementation steps and verification strategy
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Convert migration guide from Markdown to RST
+  ([`3d5ce6d`](https://github.com/trigger/trigger/commit/3d5ce6dc15645bad8e5b32f7636180a1191f665f))
+
+- Convert MIGRATION_GUIDE.md to docs/migration.rst - Add migration guide to docs/index.rst toctree -
+  Enables linking to published RTD documentation - Verified docs build successfully
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Update README with v2.0.0 information
+  ([`3c5c8cb`](https://github.com/trigger/trigger/commit/3c5c8cbb47aa05902ad000b25b66fb9ae303c3b5))
+
+- Clarify Python 3.10-3.11 requirement - Add link to migration guide for v1.6.0 users - Update all
+  documentation links to use HTTPS - Ensure migration guide points to ReadTheDocs
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+### Features
+
+- Add dynamic version management using importlib.metadata
+  ([`929d5c0`](https://github.com/trigger/trigger/commit/929d5c0763b01c8a740800e28c3e92c3649ef283))
+
+- Use importlib.metadata to read version from installed package - Update trigger.__init__.py with
+  version fallback for dev mode - Update docs/conf.py to dynamically read version - Eliminates need
+  for manual version bumps
+
+
+## v1.6.0 (2017-03-08)
