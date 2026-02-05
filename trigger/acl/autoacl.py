@@ -1,5 +1,4 @@
-"""
-This module controls when ACLs get auto-applied to network devices,
+"""This module controls when ACLs get auto-applied to network devices,
 in addition to what is specified in acls.db.
 
 This is primarily used by :class:`~trigger.acl.db.AclsDB` to populate the
@@ -44,11 +43,10 @@ try:
     from _autoacl_module import autoacl
 except ImportError:
     msg = f"Function autoacl() could not be found in {module_path}, using default!"
-    warnings.warn(msg, RuntimeWarning)
+    warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
     def autoacl(dev, explicit_acls=None):
-        """
-        Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We
+        """Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We
         require a device object so that we don't have circular dependencies
         between netdevices and autoacl.
 

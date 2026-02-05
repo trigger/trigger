@@ -1,5 +1,4 @@
-"""
-Built-in Loader objects for loading `~trigger.netdevices.NetDevice` metadata
+"""Built-in Loader objects for loading `~trigger.netdevices.NetDevice` metadata
 from the filesystem.
 """
 
@@ -11,6 +10,7 @@ __version__ = "1.1"
 
 import itertools
 import os
+from pathlib import Path
 
 from trigger import rancid
 from trigger.conf import settings
@@ -32,8 +32,7 @@ except ImportError:
 
 
 class JSONLoader(BaseLoader):
-    """
-    Wrapper for loading metadata via JSON from the filesystem.
+    """Wrapper for loading metadata via JSON from the filesystem.
 
     Parse 'netdevices.json' and return list of JSON objects.
     """
@@ -41,22 +40,21 @@ class JSONLoader(BaseLoader):
     is_usable = True
 
     def get_data(self, data_source):
-        with open(data_source) as contents:
+        with Path(data_source).open() as contents:
             # TODO (jathan): Can we somehow return an generator like the other
             # _parse methods? Maybe using JSONDecoder?
-            data = json.load(contents)
-        return data
+            return json.load(contents)
 
     def load_data_source(self, data_source, **kwargs):
         try:
             return self.get_data(data_source)
         except Exception as err:
-            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
+            msg = f"Tried {data_source!r}; and failed: {err!r}"
+            raise LoaderFailed(msg) from err
 
 
 class XMLLoader(BaseLoader):
-    """
-    Wrapper for loading metadata via XML from the filesystem.
+    """Wrapper for loading metadata via XML from the filesystem.
 
     Parse 'netdevices.xml' and return a list of node 2-tuples (key, value).
     These are as good as a dict without the extra dict() call.
@@ -71,20 +69,19 @@ class XMLLoader(BaseLoader):
 
         # This is a generator within a generator. Trust me, it works in _populate()
         # Python 3.9+: getchildren() removed, use list(node) instead
-        data = (((e.tag, e.text) for e in list(node)) for node in xml)
+        return (((e.tag, e.text) for e in list(node)) for node in xml)
 
-        return data
 
     def load_data_source(self, data_source, **kwargs):
         try:
             return self.get_data(data_source)
         except Exception as err:
-            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
+            msg = f"Tried {data_source!r}; and failed: {err!r}"
+            raise LoaderFailed(msg) from err
 
 
 class RancidLoader(BaseLoader):
-    """
-    Wrapper for loading metadata via RANCID from the filesystem.
+    """Wrapper for loading metadata via RANCID from the filesystem.
 
     Parse RANCID's ``router.db`` and return a generator of node 2-tuples (key,
     value).
@@ -93,8 +90,7 @@ class RancidLoader(BaseLoader):
     is_usable = True
 
     def get_data(self, data_source, recurse_subdirs=None):
-        data = rancid.parse_rancid_data(data_source, recurse_subdirs=recurse_subdirs)
-        return data
+        return rancid.parse_rancid_data(data_source, recurse_subdirs=recurse_subdirs)
 
     def load_data_source(self, data_source, **kwargs):
         # We want to make sure that we've set this variable
@@ -102,12 +98,12 @@ class RancidLoader(BaseLoader):
         try:
             return self.get_data(data_source, recurse_subdirs)
         except Exception as err:
-            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
+            msg = f"Tried {data_source!r}; and failed: {err!r}"
+            raise LoaderFailed(msg) from err
 
 
 class SQLiteLoader(BaseLoader):
-    """
-    Wrapper for loading metadata via SQLite from the filesystem.
+    """Wrapper for loading metadata via SQLite from the filesystem.
 
     Parse 'netdevices.sql' and return a list of stuff.
     """
@@ -130,21 +126,20 @@ class SQLiteLoader(BaseLoader):
 
         # Another generator within a generator, which structurally is a list of
         # lists containing 2-tuples (key, value).
-        data = (itertools.izip(columns, row) for row in devrows)
+        return (itertools.izip(columns, row) for row in devrows)
 
-        return data
 
     def load_data_source(self, data_source, **kwargs):
         table_name = kwargs.get("table_name", "netdevices")
         try:
             return self.get_data(data_source, table_name)
         except Exception as err:
-            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
+            msg = f"Tried {data_source!r}; and failed: {err!r}"
+            raise LoaderFailed(msg) from err
 
 
 class CSVLoader(BaseLoader):
-    """
-    Wrapper for loading metadata via CSV from the filesystem.
+    """Wrapper for loading metadata via CSV from the filesystem.
 
     This leverages the functionality from the `~trigger.rancid`` library.
 
@@ -162,11 +157,11 @@ class CSVLoader(BaseLoader):
 
     def get_data(self, data_source):
         root_dir, filename = os.path.split(data_source)
-        data = rancid.parse_rancid_file(root_dir, filename, delimiter=",")
-        return data
+        return rancid.parse_rancid_file(root_dir, filename, delimiter=",")
 
     def load_data_source(self, data_source, **kwargs):
         try:
             return self.get_data(data_source)
         except Exception as err:
-            raise LoaderFailed(f"Tried {data_source!r}; and failed: {err!r}")
+            msg = f"Tried {data_source!r}; and failed: {err!r}"
+            raise LoaderFailed(msg) from err

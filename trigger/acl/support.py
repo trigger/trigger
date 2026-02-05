@@ -1,5 +1,4 @@
-"""
-This code is originally from parser.py. It consists of a lot of classes which
+"""This code is originally from parser.py. It consists of a lot of classes which
 support the various modules for parsing. This file is not meant to by used by itself.
 
 # Functions
@@ -34,6 +33,8 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
+import contextlib
+
 import IPy
 
 from trigger import exceptions
@@ -53,8 +54,7 @@ Comments = []
 
 
 def check_name(name, exc, max_len=255, extra_chars=" -_."):
-    """
-    Test whether something is a valid identifier (for any vendor).
+    """Test whether something is a valid identifier (for any vendor).
     This means letters, numbers, and other characters specified in the
     @extra_chars argument.  If the string is invalid, throw the specified
     exception.
@@ -67,7 +67,8 @@ def check_name(name, exc, max_len=255, extra_chars=" -_."):
     if name is None:
         return
     if name == "":
-        raise exc("Name cannot be null string")
+        msg = "Name cannot be null string"
+        raise exc(msg)
     if len(name) > max_len:
         raise exc('Name "%s" cannot be longer than %d characters' % (name, max_len))
     for char in name:
@@ -77,7 +78,8 @@ def check_name(name, exc, max_len=255, extra_chars=" -_."):
             or (char >= "A" and char <= "Z")
             or (char >= "0" and char <= "9")
         ):
-            raise exc(f'Invalid character "{char}" in name "{name}"')
+            msg = f'Invalid character "{char}" in name "{name}"'
+            raise exc(msg)
 
 
 def check_range(values, min, max):
@@ -85,11 +87,11 @@ def check_range(values, min, max):
         try:
             for subvalue in value:
                 check_range([subvalue], min, max)
-        except TypeError:
+        except TypeError as err:  # noqa: PERF203
             if not min <= value <= max:
                 raise exceptions.BadMatchArgRange(
-                    "match arg %s must be between %d and %d" % (str(value), min, max)
-                )
+                    "match arg %s must be between %d and %d" % (str(value), min, max),
+                ) from err
 
 
 # Having this take the dictionary itself instead of a function is very slow.
@@ -106,15 +108,15 @@ def do_lookup(lookup_func, arg):
     # Ok, look it up by name.
     try:
         return lookup_func(arg)
-    except KeyError:
-        raise exceptions.UnknownMatchArg(f'match argument "{arg}" not known')
+    except KeyError as err:
+        msg = f'match argument "{arg}" not known'
+        raise exceptions.UnknownMatchArg(msg) from err
 
 
 def do_protocol_lookup(arg):
     if isinstance(arg, tuple):
         return (Protocol(arg[0]), Protocol(arg[1]))
-    else:
-        return Protocol(arg)
+    return Protocol(arg)
 
 
 def do_port_lookup(arg):
@@ -138,8 +140,7 @@ def do_dscp_lookup(arg):
 
 
 def make_inverse_mask(prefixlen):
-    """
-    Return an IP object of the inverse mask of the CIDR prefix.
+    """Return an IP object of the inverse mask of the CIDR prefix.
 
     :param prefixlen:
         CIDR prefix
@@ -150,7 +151,7 @@ def make_inverse_mask(prefixlen):
 
 def strip_comments(tags):
     if tags is None:
-        return
+        return None
     noncomments = []
     for tag in tags:
         if isinstance(tag, Comment):
@@ -161,8 +162,7 @@ def strip_comments(tags):
 
 
 class MyDict(dict):
-    """
-    A dictionary subclass to collect common behavior changes used in container
+    """A dictionary subclass to collect common behavior changes used in container
     classes for the ACL components: Modifiers, Matches.
     """
 
@@ -175,7 +175,7 @@ class MyDict(dict):
             self.update(kwargs)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {str(self)}>"
+        return f"<{self.__class__.__name__}: {self!s}>"
 
     def __str__(self):
         return ", ".join([f"{k} {v}" for k, v in self.items()])
@@ -187,8 +187,7 @@ class MyDict(dict):
 
 
 class Modifiers(MyDict):
-    """
-    Container class for modifiers. These are only supported by JunOS format
+    """Container class for modifiers. These are only supported by JunOS format
     and are ignored by all others.
     """
 
@@ -196,12 +195,14 @@ class Modifiers(MyDict):
         # Handle argument-less modifiers first.
         if key in ("log", "sample", "syslog", "port-mirror"):
             if value not in (None, True):
-                raise exceptions.ActionError(f'"{key}" action takes no argument')
+                msg = f'"{key}" action takes no argument'
+                raise exceptions.ActionError(msg)
             super().__setitem__(key, None)
             return
         # Everything below requires an argument.
         if value is None:
-            raise exceptions.ActionError(f'"{key}" action requires an argument')
+            msg = f'"{key}" action requires an argument'
+            raise exceptions.ActionError(msg)
         if key == "count":
             # JunOS 7.3 docs say this cannot contain underscores and that
             # it must be 24 characters or less, but this appears to be false.
@@ -213,7 +214,8 @@ class Modifiers(MyDict):
             check_name(value, exceptions.BadIPSecSAName)
         elif key == "loss-priority":
             if value not in ("low", "high"):
-                raise exceptions.ActionError('"loss-priority" must be "low" or "high"')
+                msg = '"loss-priority" must be "low" or "high"'
+                raise exceptions.ActionError(msg)
         elif key == "policer":
             check_name(value, exceptions.BadPolicerName)
         else:
@@ -221,17 +223,15 @@ class Modifiers(MyDict):
         super().__setitem__(key, value)
 
     def output_junos(self):
-        """
-        Output the modifiers to the only supported format!
+        """Output the modifiers to the only supported format!
         """
         # Python 3: dict.keys() returns a view, convert to list and sort
         keys = sorted(self.keys())
-        return [k + (self[k] and " " + str(self[k]) or "") + ";" for k in keys]
+        return [k + ((self[k] and " " + str(self[k])) or "") + ";" for k in keys]
 
 
 class RangeList:
-    """
-    A type which stores ordered sets, with efficient handling of
+    """A type which stores ordered sets, with efficient handling of
     ranges.  It can also store non-incrementable terms as an sorted set
     without collapsing into ranges.
 
@@ -255,9 +255,9 @@ class RangeList:
         self._do_collapse()
 
     def _cleanup(self, L):
-        """
-        Prepare a potential list of lists, tuples, digits for collapse. Does
-        the following::
+        """Prepare a potential list of lists, tuples, digits for collapse.
+
+        Does the following::
 
         1. Sort & Convert all inner lists to tuples
         2. Convert all tuples w/ only 1 item into single item
@@ -284,9 +284,8 @@ class RangeList:
         return sorted(set(ret))
 
     def _collapse(self, l):
-        """
-        Reduce a sorted list of elements to ranges represented as tuples;
-        e.g. [1, 2, 3, 4, 10] -> [(1, 4), 10]
+        """Reduce a sorted list of elements to ranges represented as tuples;
+        e.g. [1, 2, 3, 4, 10] -> [(1, 4), 10].
         """
         l = self._cleanup(l)  # Remove duplicates
 
@@ -317,16 +316,16 @@ class RangeList:
         except IndexError:  # entire list collapses to one range
             return [(l[0], l[-1])]
         if n == 0:
-            return [l[0]] + self._collapse(l[1:])
-        else:
-            return [(l[0], l[n])] + self._collapse(l[n + 1 :])
+            return [l[0], *self._collapse(l[1:])]
+        return [(l[0], l[n]), *self._collapse(l[n + 1:])]
 
     def _do_collapse(self):
         self.data = self._collapse(self._expand(self.data))
 
     def _expand(self, l):
         """Expand a list of elements and tuples back to discrete elements.
-        Opposite of _collapse()."""
+        Opposite of _collapse().
+        """
         if not l:
             return l
         try:
@@ -335,7 +334,7 @@ class RangeList:
         except AttributeError:  # not incrementable
             return l
         except (TypeError, IndexError):
-            return [l[0]] + self._expand(l[1:])
+            return [l[0], *self._expand(l[1:])]
 
     def expanded(self):
         """Return a list with all ranges converted to discrete elements."""
@@ -354,7 +353,7 @@ class RangeList:
         """Compare RangeList to another RangeList or a list."""
         if isinstance(other, RangeList):
             return self.data == other.data
-        elif isinstance(other, list):
+        if isinstance(other, list):
             return self.data == other
         return NotImplemented
 
@@ -367,37 +366,36 @@ class RangeList:
     def __lt__(self, other):
         if isinstance(other, RangeList):
             return self.data < other.data
-        elif isinstance(other, list):
+        if isinstance(other, list):
             return self.data < other
         return NotImplemented
 
     def __le__(self, other):
         if isinstance(other, RangeList):
             return self.data <= other.data
-        elif isinstance(other, list):
+        if isinstance(other, list):
             return self.data <= other
         return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, RangeList):
             return self.data > other.data
-        elif isinstance(other, list):
+        if isinstance(other, list):
             return self.data > other
         return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, RangeList):
             return self.data >= other.data
-        elif isinstance(other, list):
+        if isinstance(other, list):
             return self.data >= other
         return NotImplemented
 
     def __contains__(self, obj):
-        """
-        Performs voodoo to compare the following:
-            * Compare single ports to tuples (i.e. 1700 in (1700, 1800))
-            * Compare tuples to tuples (i.e. (1700,1800) in (0,65535))
-            * Comparing tuple to integer ALWAYS returns False!!
+        """Performs voodoo to compare the following:
+        * Compare single ports to tuples (i.e. 1700 in (1700, 1800))
+        * Compare tuples to tuples (i.e. (1700,1800) in (0,65535))
+        * Comparing tuple to integer ALWAYS returns False!!
         """
         for elt in self.data:
             if isinstance(elt, tuple):
@@ -408,20 +406,18 @@ class RangeList:
                     rng = range(elt[0], elt[1] + 1)
                     if obj[0] in rng and obj[1] in rng:
                         return True
-                else:
-                    if elt[0] <= obj <= elt[1]:
-                        return True
+                elif elt[0] <= obj <= elt[1]:
+                    return True
 
             elif hasattr(elt, "__contains__"):
                 if obj in elt:
                     return True
-            else:
-                if elt == obj:
-                    return True
+            elif elt == obj:
+                return True
         return False
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {str(self.data)}>"
+        return f"<{self.__class__.__name__}: {self.data!s}>"
 
     def __str__(self):
         return str(self.data)
@@ -447,8 +443,7 @@ class RangeList:
 
 
 class TIP(IPy.IP):
-    """
-    Class based on IPy.IP, but with extensions for Trigger.
+    """Class based on IPy.IP, but with extensions for Trigger.
 
     Currently, only the only extension is the ability to negate a network
     block. Only used internally within the parser, as it's not complete
@@ -521,12 +516,8 @@ class TIP(IPy.IP):
         if self.negated == other.negated:
             return diff
         # Sort to make negated < not negated
-        if self.negated:
-            diff = -1
-        else:
-            diff = 1
+        return -1 if self.negated else 1
         # Return the base comparison
-        return diff
 
     def __lt__(self, other):
         return self._compare_to(other) < 0
@@ -570,7 +561,7 @@ class TIP(IPy.IP):
 
     def __str__(self):
         # IPy is not a new-style class, so the following doesn't work:
-        # return super(TIP, self).__str__()
+        # return super(TIP, self).__str__()  # noqa: ERA001
         rs = IPy.IP.__str__(self)
         if self.negated:
             rs += " except"
@@ -579,8 +570,7 @@ class TIP(IPy.IP):
         return rs
 
     def __contains__(self, item):
-        """
-        Containment logic, including except.
+        """Containment logic, including except.
         """
         item = TIP(item)
         # Calculate XOR
@@ -593,15 +583,14 @@ class TIP(IPy.IP):
 
 
 class Comment:
-    """
-    Container for inline comments.
+    """Container for inline comments.
     """
 
     def __init__(self, data):
         self.data = data
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {repr(self.data)}>"
+        return f"<{self.__class__.__name__}: {self.data!r}>"
 
     def __str__(self):
         return self.data
@@ -645,13 +634,12 @@ class Comment:
 
 
 class ACL:
-    """
-    An abstract access-list object intended to be created by the :func:`parse`
+    """An abstract access-list object intended to be created by the :func:`parse`
     function.
     """
 
     def __init__(
-        self, name=None, terms=None, format=None, family=None, interface_specific=False
+        self, name=None, terms=None, format=None, family=None, interface_specific=False,
     ):
         check_name(name, exceptions.ACLNameError, max_len=24)
         self.name = name
@@ -674,16 +662,14 @@ class ACL:
         return "\n".join(self.output(format=self.format, family=self.family))
 
     def output(self, format=None, *largs, **kwargs):
-        """
-        Output the ACL data in the specified format.
+        """Output the ACL data in the specified format.
         """
         if format is None:
             format = self.format
         return getattr(self, "output_" + format)(*largs, **kwargs)
 
     def output_junos(self, replace=False, family=None):
-        """
-        Output the ACL in JunOS format.
+        """Output the ACL in JunOS format.
 
         :param replace: If set the ACL is wrapped in a
             ``firewall { replace: ... }`` section.
@@ -691,7 +677,8 @@ class ACL:
             ``family inet { ...}`` section.
         """
         if self.name is None:
-            raise exceptions.MissingACLName("JunOS format requires a name")
+            msg = "JunOS format requires a name"
+            raise exceptions.MissingACLName(msg)
 
         # Make sure we properly set 'family' so it's automatically used for
         # printing.
@@ -732,29 +719,32 @@ class ACL:
             body = ["replace:"] + ["    " + x for x in out]
             tail = ["}"]
             if family is not None:
-                body = [f"family {family} {{"] + body + tail
+                body = [f"family {family} {{", *body, *tail]
                 body = ["    " + x for x in body]
             out = head + body + tail
 
         return out
 
     def output_ios(self, replace=False):
-        """
-        Output the ACL in IOS traditional format.
+        """Output the ACL in IOS traditional format.
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
         if self.name is None:
-            raise exceptions.MissingACLName("IOS format requires a name")
+            msg = "IOS format requires a name"
+            raise exceptions.MissingACLName(msg)
         try:
             x = int(self.name)
             if not (100 <= x <= 199 or 2000 <= x <= 2699):
-                raise exceptions.BadACLName("IOS ACLs are 100-199 or 2000-2699")
-        except (TypeError, ValueError):
-            raise exceptions.BadACLName("IOS format requires a number as name")
+                msg = "IOS ACLs are 100-199 or 2000-2699"
+                raise exceptions.BadACLName(msg)
+        except (TypeError, ValueError) as err:
+            msg = "IOS format requires a number as name"
+            raise exceptions.BadACLName(msg) from err
         out = [c.output_ios() for c in self.comments]
         if self.policers:
-            raise exceptions.VendorSupportLacking("policers not supported in IOS")
+            msg = "policers not supported in IOS"
+            raise exceptions.VendorSupportLacking(msg)
         if replace:
             out.append("no access-list " + self.name)
         prefix = f"access-list {self.name} "
@@ -763,8 +753,7 @@ class ACL:
         return out
 
     def output_ios_brocade(self, replace=False, receive_acl=False):
-        """
-        Output the ACL in Brocade-flavored IOS format.
+        """Output the ACL in Brocade-flavored IOS format.
 
         The difference between this and "traditional" IOS are:
 
@@ -791,16 +780,17 @@ class ACL:
         return out
 
     def output_ios_named(self, replace=False):
-        """
-        Output the ACL in IOS named format.
+        """Output the ACL in IOS named format.
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         """
         if self.name is None:
-            raise exceptions.MissingACLName("IOS format requires a name")
+            msg = "IOS format requires a name"
+            raise exceptions.MissingACLName(msg)
         out = [c.output_ios_named() for c in self.comments]
         if self.policers:
-            raise exceptions.VendorSupportLacking("policers not supported in IOS")
+            msg = "policers not supported in IOS"
+            raise exceptions.VendorSupportLacking(msg)
         if replace:
             out.append("no ip access-list extended " + self.name)
         out.append(f"ip access-list extended {self.name}")
@@ -809,16 +799,17 @@ class ACL:
         return out
 
     def output_iosxr(self, replace=False):
-        """
-        Output the ACL in IOS XR format.
+        """Output the ACL in IOS XR format.
 
         :param replace: If set the ACL is preceded by a ``no ipv4 access-list`` line.
         """
         if self.name is None:
-            raise exceptions.MissingACLName("IOS XR format requires a name")
+            msg = "IOS XR format requires a name"
+            raise exceptions.MissingACLName(msg)
         out = [c.output_iosxr() for c in self.comments]
         if self.policers:
-            raise exceptions.VendorSupportLacking("policers not supported in IOS")
+            msg = "policers not supported in IOS"
+            raise exceptions.VendorSupportLacking(msg)
         if replace:
             out.append("no ipv4 access-list " + self.name)
         out.append("ipv4 access-list " + self.name)
@@ -835,10 +826,12 @@ class ACL:
                         raise exceptions.BadTermName("Term %d out of range" % counter)
                     line = t.output_iosxr()
                     if len(line) > 1:
-                        raise exceptions.VendorSupportLacking("one name per line")
+                        msg = "one name per line"
+                        raise exceptions.VendorSupportLacking(msg)
                     out += [" " + line[0]]
-                except ValueError:
-                    raise exceptions.BadTermName("IOS XR requires numbered terms")
+                except ValueError as err:
+                    msg = "IOS XR requires numbered terms"
+                    raise exceptions.BadTermName(msg) from err
         return out
 
     def name_terms(self):
@@ -857,7 +850,7 @@ class ACL:
 
 
 class Term:
-    """An individual term from which an ACL is made"""
+    """An individual term from which an ACL is made."""
 
     def __init__(
         self,
@@ -915,8 +908,9 @@ class Term:
         if isinstance(action, str):
             action = (action,)
         if len(action) > 2:
+            msg = f'too many arguments to action "{action!s}"'
             raise exceptions.ActionError(
-                f'too many arguments to action "{str(action)}"'
+                msg,
             )
         action = tuple(action)
         if action in (("accept",), ("discard",), ("reject",), ("next", "term")):
@@ -935,7 +929,8 @@ class Term:
             check_name(action[1], exceptions.BadRoutingInstanceName)
             self.__action = action
         else:
-            raise exceptions.UnknownActionName(f'unknown action "{str(action)}"')
+            msg = f'unknown action "{action!s}"'
+            raise exceptions.UnknownActionName(msg)
 
     def delaction(self):
         self.action = "accept"
@@ -943,8 +938,7 @@ class Term:
     action = property(getaction, setaction, delaction)
 
     def set_action_or_modifier(self, action):
-        """
-        Add or replace a modifier, or set the primary action. This method exists
+        """Add or replace a modifier, or set the primary action. This method exists
         for the convenience of parsers.
         """
         try:
@@ -952,15 +946,13 @@ class Term:
         except exceptions.UnknownActionName:
             if not isinstance(action, tuple):
                 self.modifiers[action] = None
+            elif len(action) == 1:
+                self.modifiers[action[0]] = None
             else:
-                if len(action) == 1:
-                    self.modifiers[action[0]] = None
-                else:
-                    self.modifiers[action[0]] = action[1]
+                self.modifiers[action[0]] = action[1]
 
     def output(self, format, *largs, **kwargs):
-        """
-        Output the term to the specified format
+        """Output the term to the specified format.
 
         :param format: The desired output format.
         """
@@ -969,8 +961,9 @@ class Term:
     def output_junos(self, *args, **kwargs):
         """Convert the term to JunOS format."""
         if self.name is None:
-            raise exceptions.MissingTermName("JunOS requires terms to be named")
-        out = ["{}term {} {{".format(self.inactive and "inactive: " or "", self.name)]
+            msg = "JunOS requires terms to be named"
+            raise exceptions.MissingTermName(msg)
+        out = ["{}term {} {{".format((self.inactive and "inactive: ") or "", self.name)]
         out += ["    " + c.output_junos() for c in self.comments if c]
         if self.extra:
             blah = str(self.extra)
@@ -992,32 +985,33 @@ class Term:
 
     def _ioslike(self, prefix=""):
         if self.inactive:
-            raise exceptions.VendorSupportLacking("inactive terms not supported by IOS")
+            msg = "inactive terms not supported by IOS"
+            raise exceptions.VendorSupportLacking(msg)
         action = ""
         if self.action == ("accept",):
             action = "permit "
-        # elif self.action == ('reject',):
         elif self.action in (("reject",), ("discard",)):
             action = "deny "
         else:
+            msg = '"{}" action not supported by IOS'.format(" ".join(self.action))
             raise VendorSupportLacking(
-                '"{}" action not supported by IOS'.format(" ".join(self.action))
+                msg,
             )
         suffix = ""
-        for k, v in self.modifiers.items():
+        for k in self.modifiers:
             if k == "syslog":
                 suffix += " log"
             elif k == "count":
                 pass  # counters are implicit in IOS
             else:
+                msg = f'"{k}" modifier not supported by IOS'
                 raise exceptions.VendorSupportLacking(
-                    f'"{k}" modifier not supported by IOS'
+                    msg,
                 )
         return [prefix + action + x + suffix for x in self.match.output_ios()]
 
     def output_ios(self, prefix=None, acl_name=None):
-        """
-        Output term to IOS traditional format.
+        """Output term to IOS traditional format.
 
         :param prefix: Prefix to use, default: 'access-list'
         :param acl_name: Name of access-list to display
@@ -1056,12 +1050,10 @@ class Term:
 class TermList(list):
     """Container class for Term objects within an ACL object."""
 
-    pass
 
 
 class Protocol:
-    """
-    A protocol object used for access membership tests in :class:`Term` objects.
+    """A protocol object used for access membership tests in :class:`Term` objects.
     Acts like an integer, but stringify into a name if possible.
     """
 
@@ -1097,11 +1089,10 @@ class Protocol:
     def __str__(self):
         if self.value in Protocol.num2name:
             return Protocol.num2name[self.value]
-        else:
-            return str(self.value)
+        return str(self.value)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {str(self)}>"
+        return f"<{self.__class__.__name__}: {self!s}>"
 
     def _get_compare_value(self, other):
         """Helper to get comparison value from other."""
@@ -1156,8 +1147,7 @@ class Protocol:
 
 
 class Matches(MyDict):
-    """
-    Container class for Term.match object used for membership tests on
+    """Container class for Term.match object used for membership tests on
     access checks.
     """
 
@@ -1175,10 +1165,12 @@ class Matches(MyDict):
             "source-class",
             "destination-class",
         ):
-            raise NotImplementedError(f"match on {key} not implemented")
+            msg = f"match on {key} not implemented"
+            raise NotImplementedError(msg)
 
         if arg is None:
-            raise exceptions.MatchError("match must have an argument")
+            msg = "match must have an argument"
+            raise exceptions.MatchError(msg)
 
         negated = False
         if key.endswith("-except"):
@@ -1207,10 +1199,8 @@ class Matches(MyDict):
             try:
                 self["icmp-code"] = [arg[1]]
             except IndexError:
-                try:
+                with contextlib.suppress(KeyError):
                     del self["icmp-code"]
-                except KeyError:
-                    pass
             return
         elif key == "packet-length":
             arg = list(map(int, arg))
@@ -1233,12 +1223,11 @@ class Matches(MyDict):
             check_range(arg, 0, 255)
         elif key in ("first-fragment", "is-fragment"):
             arg = []
-        elif key == "dscp":
-            pass
-        elif key == "precedence":
+        elif key in {"dscp", "precedence"}:
             pass
         else:
-            raise exceptions.UnknownMatchType(f'unknown match type "{key}"')
+            msg = f'unknown match type "{key}"'
+            raise exceptions.UnknownMatchType(msg)
 
         arg = RangeList(arg)
 
@@ -1248,18 +1237,15 @@ class Matches(MyDict):
                 for sd in ("source", "destination"):
                     replacing += [sd + "-" + type, sd + "-" + type + "-except"]
         for k in replacing:
-            try:
+            with contextlib.suppress(KeyError):
                 del self[k]
-            except KeyError:
-                pass
         if negated:
             super().__setitem__(key + "-except", arg)
         else:
             super().__setitem__(key, arg)
 
     def junos_str(self, pair):
-        """
-        Convert a 2-tuple into a hyphenated string, e.g. a range of ports. If
+        """Convert a 2-tuple into a hyphenated string, e.g. a range of ports. If
         not a tuple, tries to treat it as IPs or failing that, casts it to a
         string.
 
@@ -1269,16 +1255,13 @@ class Matches(MyDict):
         try:
             return "%s-%s" % pair  # Tuples back to ranges.
         except TypeError:
-            try:
+            with contextlib.suppress(AttributeError):
                 # Make it print prefixes for /32, /128
                 pair.NoPrefixForSingleIp = False
-            except AttributeError:
-                pass
         return str(pair)
 
     def ios_port_str(self, ports):
-        """
-        Convert a list of tuples back to ranges, then to strings.
+        """Convert a list of tuples back to ranges, then to strings.
 
         :param ports:
             A list of port tuples, e.g. [(0,65535), (1,2)].
@@ -1296,12 +1279,11 @@ class Matches(MyDict):
                 else:
                     a.append("range {} {}".format(*port))
             except TypeError:
-                a.append(f"eq {str(port)}")
+                a.append(f"eq {port!s}")
         return a
 
     def ios_address_str(self, addrs):
-        """
-        Convert a list of addresses to IOS-style stupid strings.
+        """Convert a list of addresses to IOS-style stupid strings.
 
         :param addrs:
             List of IP address objects.
@@ -1310,8 +1292,9 @@ class Matches(MyDict):
         for addr in addrs:
             # xxx flag negated addresses?
             if addr.negated:
+                msg = "negated addresses are not supported in IOS"
                 raise exceptions.VendorSupportLacking(
-                    "negated addresses are not supported in IOS"
+                    msg,
                 )
             if addr.prefixlen() == 0:
                 a.append("any")
@@ -1347,9 +1330,9 @@ class Matches(MyDict):
                 except KeyError:
                     pass
             if len(matches) == 1:
-                s += " " + matches[0]
+                s += " " + matches[0]  # noqa: PLW2901
             elif len(matches) > 1:
-                s += " [ " + " ".join(matches) + " ]"
+                s += " [ " + " ".join(matches) + " ]"  # noqa: PLW2901
             a.append(s + ";")
         return a
 
@@ -1380,7 +1363,7 @@ class Matches(MyDict):
                         for code in self["icmp-code"]:
                             try:
                                 destports.append(ios_icmp_names[(type, code)])
-                            except KeyError:
+                            except KeyError:  # noqa: PERF203
                                 destports.append("%d %d" % (type, code))
                     else:
                         try:
@@ -1389,15 +1372,18 @@ class Matches(MyDict):
                             destports.append(str(type))
             elif key == "icmp-code":
                 if "icmp-type" not in self:
-                    raise exceptions.VendorSupportLacking("need ICMP code w/type")
+                    msg = "need ICMP code w/type"
+                    raise exceptions.VendorSupportLacking(msg)
             elif key == "tcp-flags":
                 if arg != [tcp_flag_specials["tcp-established"]]:
+                    msg = 'IOS supports only "tcp-flags established"'
                     raise exceptions.VendorSupportLacking(
-                        'IOS supports only "tcp-flags established"'
+                        msg,
                     )
                 trailers += ["established"]
             else:
-                raise exceptions.VendorSupportLacking(f'"{key}" not in IOS')
+                msg = f'"{key}" not in IOS'
+                raise exceptions.VendorSupportLacking(msg)
         if not protos:
             protos = ["ip"]
         if not sources:

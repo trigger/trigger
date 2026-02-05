@@ -1,6 +1,5 @@
-"""
-Wrapper for loading metadata from storage of some sort (e.g. filesystem,
-database)
+"""Wrapper for loading metadata from storage of some sort (e.g. filesystem,
+database).
 
 This uses NETDEVICE_LOADERS settings, which is a list of loaders to use.
 Each loader is expected to have this interface::
@@ -43,26 +42,21 @@ class BaseLoader:
         return self.load_data(data_source, **kwargs)
 
     def load_data(self, data_source, **kwargs):
-        data = self.load_data_source(data_source, **kwargs)
-        return data
+        return self.load_data_source(data_source, **kwargs)
 
     def load_data_source(self, data_source, **kwargs):
-        """
-        Returns an iterable of key/value pairs for the given ``data_source``.
+        """Returns an iterable of key/value pairs for the given ``data_source``.
         """
         raise NotImplementedError
 
     def reset(self):
+        """Resets any state maintained by the loader instance.
         """
-        Resets any state maintained by the loader instance.
-        """
-        pass
 
 
 # Functions
 def find_data_loader(loader):
-    """
-    Given a ``loader`` string/list/tuple, try to unpack, load it, and return the
+    """Given a ``loader`` string/list/tuple, try to unpack, load it, and return the
     callable loader object.
 
     If ``loader`` is specified as string, treat it as the fully-qualified
@@ -89,12 +83,12 @@ def find_data_loader(loader):
         try:
             mod = import_module(module)
         except ImportError as err:
-            raise ImproperlyConfigured(err_template % (loader, err))
+            raise ImproperlyConfigured(err_template % (loader, err)) from err
 
         try:
             DataLoader = getattr(mod, attr)
         except AttributeError as err:
-            raise ImproperlyConfigured(err_template % (loader, err))
+            raise ImproperlyConfigured(err_template % (loader, err)) from err
 
         if hasattr(DataLoader, "load_data_source"):
             func = DataLoader(*args)
@@ -102,8 +96,9 @@ def find_data_loader(loader):
             # Try loading module the old-fashioned way where string is full
             # path to callabale.
             if args:
+                msg = f"Error importing data source loader {loader}: Can't pass arguments to function-based loader!"
                 raise ImproperlyConfigured(
-                    f"Error importing data source loader {loader}: Can't pass arguments to function-based loader!"
+                    msg,
                 )
             func = DataLoader
 
@@ -111,15 +106,14 @@ def find_data_loader(loader):
             import warnings
 
             warnings.warn(
-                f"Your NETDEVICES_LOADERS setting includes {loader!r}, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS."
+                f"Your NETDEVICES_LOADERS setting includes {loader!r}, but your Python installation doesn't support that type of data loading. Consider removing that line from NETDEVICES_LOADERS.", stacklevel=2,
             )
             return None
-        else:
-            return func
-    else:
-        raise ImproperlyConfigured(
-            'Loader does not define a "load_data" callable data source loader.'
-        )
+        return func
+    msg = 'Loader does not define a "load_data" callable data source loader.'
+    raise ImproperlyConfigured(
+        msg,
+    )
 
 
 #: Namedtuple that holds loader instance and device metadata
@@ -127,8 +121,7 @@ LoaderMetadata = namedtuple("LoaderMetadata", "loader metadata")
 
 
 def load_metadata(data_source, **kwargs):
-    """
-    Iterate thru data loaders to load metadata.
+    """Iterate thru data loaders to load metadata.
 
     Loaders should return an iterable of dict/2-tuples or ``None``. It will try
     each one until it can return data. The first one to return data wins.
@@ -166,9 +159,9 @@ def load_metadata(data_source, **kwargs):
             if data is not None:
                 log.msg(f"LOADERS TRIED: {tried!r}")
                 return LoaderMetadata(loader, data)
-            else:
-                tried.append(loader)
-                continue
+            tried.append(loader)
+            continue
 
     # All loaders failed. We don't want to get to this point!
-    raise RuntimeError(f"No data loaders succeeded. Tried: {tried!r}")
+    msg = f"No data loaders succeeded. Tried: {tried!r}"
+    raise RuntimeError(msg)

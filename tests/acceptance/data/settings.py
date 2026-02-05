@@ -3,6 +3,7 @@
 
 import os
 import socket
+from pathlib import Path
 
 import IPy
 
@@ -21,7 +22,7 @@ USE_GPG_AUTH = False
 # This is used for old auth method. It sucks and needs to die.
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
 # the default and only method.
-TACACSRC_KEYFILE = os.path.join(PREFIX, ".tackf")
+TACACSRC_KEYFILE = str(Path(PREFIX) / ".tackf")
 TACACSRC_PASSPHRASE = "bacon is awesome, son."  # NYI
 
 # Default login realm to store user credentials (username, password) for
@@ -157,7 +158,7 @@ IOSLIKE_VENDORS = (
 
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
-AUTOACL_FILE = os.environ.get("AUTOACL_FILE", os.path.join(PREFIX, "autoacl.py"))
+AUTOACL_FILE = os.environ.get("AUTOACL_FILE", str(Path(PREFIX) / "autoacl.py"))
 
 # A tuple of data loader classes, specified as strings. Optionally, a tuple can
 # be used instead of a string. The first item in the tuple should be the
@@ -171,14 +172,14 @@ NETDEVICES_LOADERS = (
     "trigger.netdevices.loaders.filesystem.RancidLoader",
     # Example of a database loader where the db information is sent along as an
     # argument. The args can be anything you want.
-    # ['trigger.netdevices.loaders.mysql.Loader', {'dbuser': 'root', 'dbpass': 'abc123', 'dbhost': 'localhost', 'dbport': 3306}, 'bacon'],
+    # ['trigger.netdevices.loaders.mysql.Loader', {'dbuser': 'root', 'dbpass': 'abc123', 'dbhost': 'localhost', 'dbport': 3306}, 'bacon'],  # noqa: ERA001
 )
 
 # A path or URL to netdevices device metadata source data, which is used to
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
 NETDEVICES_SOURCE = os.environ.get(
-    "NETDEVICES_SOURCE", os.path.join(PREFIX, "netdevices.xml")
+    "NETDEVICES_SOURCE", str(Path(PREFIX) / "netdevices.xml"),
 )
 
 # Assign NETDEVICES_SOURCE to NETDEVICES_FILE for backwards compatibility
@@ -186,7 +187,7 @@ NETDEVICES_FILE = NETDEVICES_SOURCE
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.
-RANCID_RECURSE_SUBDIRS = os.environ.get("RANCID_RECURSE_SUBDIRS", False)
+RANCID_RECURSE_SUBDIRS = bool(os.environ.get("RANCID_RECURSE_SUBDIRS", ""))
 
 # Valid owning teams (e.g. device.owningTeam) go here. These are examples and should be
 # changed to match your environment.
@@ -211,7 +212,7 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 
 # Path of the explicit module file for bounce.py containing custom bounce
 # window mappings.
-BOUNCE_FILE = os.environ.get("BOUNCE_FILE", os.path.join(PREFIX, "bounce.py"))
+BOUNCE_FILE = os.environ.get("BOUNCE_FILE", str(Path(PREFIX) / "bounce.py"))
 
 # Default bounce timezone. All BounceWindow objects are configured using
 # US/Eastern for now.
@@ -277,7 +278,7 @@ NONMOD_ACLS = [
 # Mapping of real IP to external NAT. This is used by load_acl in the event
 # that a TFTP or connection from a real IP fails or explicitly when passing the
 # --no-vip flag.
-# format: {local_ip: external_ip}
+# format: {local_ip: external_ip}  # noqa: ERA001
 VIPS = {
     "10.20.21.151": "5.60.17.81",
     "10.10.18.157": "5.60.71.81",
@@ -342,7 +343,7 @@ BULK_MAX_HITS_DEFAULT = 1
 # this:
 #
 # {'username': 'joegineer',
-#  'name': 'Joe Engineer',
+#  'name': 'Joe Engineer',  # noqa: ERA001
 #  'email': 'joe.engineer@example.notreal'}
 def get_current_oncall():
     """fetch current on-call info"""
@@ -358,7 +359,7 @@ def get_current_oncall():
 
 # If you don't want to return this information, have it return None.
 GET_CURRENT_ONCALL = lambda x=None: x
-# GET_CURRENT_ONCALL = get_current_oncall
+# GET_CURRENT_ONCALL = get_current_oncall  # noqa: ERA001
 
 
 # ===============================
@@ -369,7 +370,7 @@ GET_CURRENT_ONCALL = lambda x=None: x
 # TODO (jathan): Improve this interface so that it is more intuitive.
 def create_cm_ticket(acls, oncall, service="load_acl"):
     """Create a CM ticket and return the ticket number or None"""
-    # from somewhere import create_cm_ticket
+    # from somewhere import create_cm_ticket  # noqa: ERA001
 
     devlist = ""
     for dev, aclset in acls.items():
@@ -419,7 +420,7 @@ SUCCESS_RECIPIENTS = [
 
 # Destinations (hostnames, addresses) to notify when things go not well.
 FAILURE_RECIPIENTS = [
-    # socket.gethostname(), # The fqdn for the localhost
+    # socket.gethostname(), # The fqdn for the localhost  # noqa: ERA001
 ]
 
 # This is a list of fully-qualified paths. Each path should end with a callable

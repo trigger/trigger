@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-"Makes working with XML feel like you are working with JSON"
+"""Makes working with XML feel like you are working with JSON."""
 
+import contextlib
 from xml.parsers import expat
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
@@ -65,7 +66,7 @@ class _DictSAXHandler:
         self.strip_whitespace = strip_whitespace
 
     def startElement(self, name, attrs):
-        attrs = self.dict_constructor(zip(attrs[0::2], attrs[1::2]))
+        attrs = self.dict_constructor(zip(attrs[0::2], attrs[1::2], strict=False))
         self.path.append((name, attrs or None))
         if len(self.path) > self.item_depth:
             self.stack.append((self.item, self.data))
@@ -85,7 +86,7 @@ class _DictSAXHandler:
                 item = self.data
             should_continue = self.item_callback(self.path, item)
             if not should_continue:
-                raise ParsingInterrupted()
+                raise ParsingInterrupted
         if len(self.stack):
             item, data = self.item, self.data
             self.item, self.data = self.stack.pop()
@@ -220,14 +221,15 @@ def _emit(
     if not isinstance(value, (list, tuple)):
         value = [value]
     if root and len(value) > 1:
-        raise ValueError("document with multiple roots")
+        msg = "document with multiple roots"
+        raise ValueError(msg)
     for v in value:
         if v is None:
-            v = OrderedDict()
+            v = OrderedDict()  # noqa: PLW2901
         elif not isinstance(v, dict):
-            v = _unicode(v)
+            v = _unicode(v)  # noqa: PLW2901
         if isinstance(v, _basestring):
-            v = OrderedDict(((cdata_key, v),))
+            v = OrderedDict(((cdata_key, v),))  # noqa: PLW2901
         cdata = None
         attrs = OrderedDict()
         children = []
@@ -267,11 +269,10 @@ def unparse(item, output=None, encoding="utf-8", **kwargs):
     content_handler.endDocument()
     if must_return:
         value = output.getvalue()
-        try:  # pragma no cover
+        with contextlib.suppress(AttributeError):  # pragma no cover
             value = value.decode(encoding)
-        except AttributeError:  # pragma no cover
-            pass
         return value
+    return None
 
 
 if __name__ == "__main__":  # pragma: no cover

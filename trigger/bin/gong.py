@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-gong (go ng) - Command-line client to log in to network devices using TACACS credentials.
+"""gong (go ng) - Command-line client to log in to network devices using TACACS credentials.
 
 An optional .gorc file may be used to specify user preferences.
 
@@ -33,7 +32,7 @@ Automatically log into network devices using cached TACACS credentials.
     )
 
     parser.add_option(
-        "-o", "--oob", action="store_true", help="Connect to device out of band first."
+        "-o", "--oob", action="store_true", help="Connect to device out of band first.",
     )
 
     opts, args = parser.parse_args(argv)

@@ -1,5 +1,4 @@
-"""
-This code is originally from parser.py. This is the basic grammar and rules
+"""This code is originally from parser.py. This is the basic grammar and rules
 from which the other specific grammars are built. This file is not meant to by used by itself.
 Imported into the specific grammar files.
 
@@ -33,8 +32,7 @@ subtagged = set()
 
 
 def S(prod):
-    """
-    Wrap your grammar token in this to call your helper function with a list
+    """Wrap your grammar token in this to call your helper function with a list
     of each parsed subtag, instead of the raw text. This is useful for
     performing modifiers.
 
@@ -56,7 +54,7 @@ def update(d, **kwargs):
     # allowed at AOL.  For example, a Juniper term can have two different
     # 'destination-address' clauses, which means that the first will be
     # ignored.  This led to an outage on 2006-10-11.
-    for key in kwargs.keys():
+    for key in kwargs:
         if key in d:
             raise exceptions.ParseError("duplicate %s" % key)
     d.update(kwargs)

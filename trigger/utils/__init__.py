@@ -1,5 +1,4 @@
-"""
-A collection of CLI tools and utilities used by Trigger.
+"""A collection of CLI tools and utilities used by Trigger.
 """
 
 __author__ = "Jathan McCollum, Mike Biancaniello"
@@ -14,8 +13,7 @@ from .cli import get_user
 
 
 def crypt_md5(passwd):
-    """
-    Returns an md5-crypt hash of a clear-text password.
+    """Returns an md5-crypt hash of a clear-text password.
 
     To get md5-crypt from ``crypt(3)`` you must pass an 8-char string starting with
     '$1$' and ending with '$', resulting in a 12-char salt. This only works on
@@ -31,16 +29,17 @@ def crypt_md5(passwd):
         import hashlib
         import time
 
-        salt = "$1$" + hashlib.md5(str(time.time())).hexdigest()[0:8] + "$"
+        salt = "$1$" + hashlib.md5(str(time.time())).hexdigest()[0:8] + "$"  # noqa: S324 - MD5 used for salt generation, not security
         crypted = crypt.crypt(passwd, salt)
 
     else:
         try:
             from passlib.hash import md5_crypt
-        except ImportError:
+        except ImportError as err:
+            msg = """When not using Linux, generating md5-crypt password hashes requires the `passlib` module."""
             raise RuntimeError(
-                """When not using Linux, generating md5-crypt password hashes requires the `passlib` module."""
-            )
+                msg,
+            ) from err
         else:
             crypted = md5_crypt.encrypt(passwd)
 
@@ -51,8 +50,7 @@ JuniperElement = namedtuple("JuniperElement", "key value")
 
 
 def strip_juniper_namespace(path, key, value):
-    """
-    Given a Juniper XML element, strip the namespace and return a 2-tuple.
+    """Given a Juniper XML element, strip the namespace and return a 2-tuple.
 
     This is designed to be used as a ``postprocessor`` with
     `~trigger.utils.xmltodict.parse()`.
@@ -75,14 +73,10 @@ NodePort = namedtuple("HostPort", "nodeName nodePort")
 
 
 def parse_node_port(nodeport, delimiter=":"):
-    """
-    Parse a string in format 'hostname' or 'hostname:port'  and return them
+    """Parse a string in format 'hostname' or 'hostname:port'  and return them
     as a 2-tuple.
     """
     node, _, port = nodeport.partition(delimiter)
-    if port.isdigit():
-        port = int(port)
-    else:
-        port = None
+    port = int(port) if port.isdigit() else None
 
     return NodePort(str(node), port)

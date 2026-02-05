@@ -1,5 +1,4 @@
-"""
-trigger.contrib.commando.plugins
+"""trigger.contrib.commando.plugins.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This package provides facilities for running commands on devices using the CLI.

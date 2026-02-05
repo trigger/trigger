@@ -1,5 +1,4 @@
-"""
-Parse and manipulate network access control lists.
+"""Parse and manipulate network access control lists.
 
 This library doesn't completely follow the border of the valid/invalid ACL
 set, which is determined by multiple vendors and not completely documented
@@ -28,7 +27,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from simpleparse.common import comments, strings  # noqa: F401
+from simpleparse.common import comments, strings
 from simpleparse.dispatchprocessor import DispatchProcessor, dispatch, dispatchList
 from simpleparse.parser import Parser
 
@@ -40,20 +39,9 @@ from .support import *
 
 # Exports
 __all__ = (
-    # Constants,
-    "ports",
-    # Functions
-    "check_range",
-    "default_processor",
-    "do_port_lookup",
-    "do_protocol_lookup",
-    "literals",
-    "make_nondefault_processor",
-    "parse",
-    "strip_comments",
-    "S",
     # Classes
     "ACL",
+    "TIP",
     "ACLParser",
     "ACLProcessor",
     "Comment",
@@ -63,9 +51,20 @@ __all__ = (
     "Protocol",
     "RangeList",
     "Remark",
+    "S",
     "Term",
     "TermList",
-    "TIP",
+    # Functions
+    "check_range",
+    "default_processor",
+    "do_port_lookup",
+    "do_protocol_lookup",
+    "literals",
+    "make_nondefault_processor",
+    "parse",
+    # Constants,
+    "ports",
+    "strip_comments",
 )
 
 # Temporary resting place for comments, so the rest of the parser can
@@ -82,13 +81,12 @@ class ACLProcessor(DispatchProcessor):
 
 
 def default_processor(self, tag_info, buffer):
-    tag, start, stop, subtags = tag_info
+    _tag, start, stop, subtags = tag_info
     if not subtags:
         return buffer[start:stop]
-    elif len(subtags) == 1:
+    if len(subtags) == 1:
         return dispatch(self, subtags[0], buffer)
-    else:
-        return dispatchList(self, subtags, buffer)
+    return dispatchList(self, subtags, buffer)
 
 
 def make_nondefault_processor(action):
@@ -101,13 +99,12 @@ def make_nondefault_processor(action):
                     getattr(self, subtag[0])(subtag, buffer) for subtag in subtags
                 ]
                 return action(strip_comments(results))
-            else:
-                return action(buffer[start:stop])
+            return action(buffer[start:stop])
 
     else:
 
         def processor(self, tag_info, buffer):
-            tag, start, stop, subtags = tag_info
+            _tag, _start, _stop, _subtags = tag_info
             return action
 
     return processor
@@ -131,12 +128,10 @@ class ACLParser(Parser):
         return ACLProcessor()
 
 
-###parser = ACLParser(grammar)
 
 
 def parse(input_data):
-    """
-    Parse a complete ACL and return an ACL object. This should be the only
+    """Parse a complete ACL and return an ACL object. This should be the only
     external interface to the parser.
 
     >>> from trigger.acl import parse
@@ -160,9 +155,9 @@ def parse(input_data):
     if success and nextchar == len(data):
         assert len(children) == 1
         return children[0]
-    else:
-        line = data[:nextchar].count("\n") + 1
-        column = len(data[data[nextchar].rfind("\n") : nextchar]) + 1
-        raise exceptions.ParseError(
-            "Could not match syntax.  Please report as a bug.", line, column
-        )
+    line = data[:nextchar].count("\n") + 1
+    column = len(data[data[nextchar].rfind("\n") : nextchar]) + 1
+    msg = "Could not match syntax.  Please report as a bug."
+    raise exceptions.ParseError(
+        msg, line, column,
+    )

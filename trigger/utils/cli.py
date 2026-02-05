@@ -1,5 +1,4 @@
-"""
-Command-line interface utilities for Trigger tools. Intended for re-usable
+"""Command-line interface utilities for Trigger tools. Intended for re-usable
 pieces of code like user prompts, that don't fit in other utils modules.
 """
 
@@ -22,23 +21,22 @@ from pytz import UTC, timezone
 
 # Exports
 __all__ = (
-    "yesno",
-    "get_terminal_width",
-    "get_terminal_size",
-    "Whirlygig",
     "NullDevice",
-    "print_severed_head",
+    "Whirlygig",
+    "get_terminal_size",
+    "get_terminal_width",
+    "get_user",
     "min_sec",
     "pretty_time",
+    "print_severed_head",
     "proceed",
-    "get_user",
+    "yesno",
 )
 
 
 # Functions
 def yesno(prompt, default=False, autoyes=False):
-    """
-    Present a yes-or-no prompt, get input, and return a boolean.
+    """Present a yes-or-no prompt, get input, and return a boolean.
 
     The ``default`` argument is ignored if ``autoyes`` is set.
 
@@ -86,18 +84,17 @@ def yesno(prompt, default=False, autoyes=False):
         yn = sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSANOW, attr)
-        print("")
+        print()
 
     if yn in ("y", "Y"):
         return True
-    elif yn in ("n", "N"):
+    if yn in ("n", "N"):
         return False
-    else:
-        return default
+    return default
 
 
 def proceed():
-    """Present a proceed prompt. Return ``True`` if Y, else ``False``"""
+    """Present a proceed prompt. Return ``True`` if Y, else ``False``."""
     return input("\nDo you wish to proceed? [y/N] ").lower().startswith("y")
 
 
@@ -112,8 +109,8 @@ def get_terminal_width():
 
 
 def get_terminal_size():
-    """Find and return stdouts terminal size as (height, width)"""
-    rows, cols = os.popen("stty size", "r").read().split()
+    """Find and return stdouts terminal size as (height, width)."""
+    rows, cols = os.popen("stty size", "r").read().split()  # noqa: S607
     return rows, cols
 
 
@@ -123,8 +120,7 @@ def get_user():
 
 
 def print_severed_head():
-    """
-    Prints a demon holding a severed head. Best used when things go wrong, like
+    """Prints a demon holding a severed head. Best used when things go wrong, like
     production-impacting network outages caused by fat-fingered ACL changes.
 
     Thanks to Jeff Sullivan for this best error message ever.
@@ -157,8 +153,7 @@ def print_severed_head():
 
 
 def pretty_time(t):
-    """
-    Print a pretty version of timestamp, including timezone info. Expects
+    """Print a pretty version of timestamp, including timezone info. Expects
     the incoming datetime object to have proper tzinfo.
 
     :param t:
@@ -198,17 +193,15 @@ def pretty_time(t):
     thisweek = midnight + datetime.timedelta(6)
     if ct < midnight:
         return t.strftime("%H:%M %Z")
-    elif ct < tomorrow:
+    if ct < tomorrow:
         return t.strftime("tomorrow %H:%M %Z")
-    elif ct < thisweek:
+    if ct < thisweek:
         return t.strftime("%A %H:%M %Z")
-    else:
-        return t.strftime("%Y-%m-%d %H:%M %Z")
+    return t.strftime("%Y-%m-%d %H:%M %Z")
 
 
 def min_sec(secs):
-    """
-    Takes an epoch timestamp and returns string of minutes:seconds.
+    """Takes an epoch timestamp and returns string of minutes:seconds.
 
     :param secs:
         Timestamp (in seconds)
@@ -224,8 +217,7 @@ def min_sec(secs):
 
 
 def setup_tty_for_pty(func):
-    """
-    Sets up tty for raw mode while retaining original tty settings and then
+    """Sets up tty for raw mode while retaining original tty settings and then
     starts the reactor to connect to the pty. Upon exiting pty, restores
     original tty settings.
 
@@ -259,14 +251,13 @@ def setup_tty_for_pty(func):
 
 
 def update_password_and_reconnect(hostname):
-    """
-    Prompts the user to update their password and reconnect to the target
-    device
+    """Prompts the user to update their password and reconnect to the target
+    device.
 
     :param hostname: Hostname of the device to connect to.
     """
     if yesno(
-        "Authentication failed, would you like to update your password?", default=True
+        "Authentication failed, would you like to update your password?", default=True,
     ):
         from trigger import tacacsrc
 
@@ -285,8 +276,7 @@ def update_password_and_reconnect(hostname):
 
 # Classes
 class NullDevice:
-    """
-    Used to supress output to ``sys.stdout`` (aka ``print``).
+    """Used to supress output to ``sys.stdout`` (aka ``print``).
 
     Example::
 
@@ -308,8 +298,7 @@ class NullDevice:
 
 
 class Whirlygig:
-    """
-    Prints a whirlygig for use in displaying pending operation in a command-line tool.
+    """Prints a whirlygig for use in displaying pending operation in a command-line tool.
     Guaranteed to make the user feel warm and fuzzy and be 1000% bug-free.
 
     :param start_msg: The status message displayed to the user (e.g. "Doing stuff:")

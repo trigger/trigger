@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-gnng - Fetches network devices interfaces and displays them in a table view.
+"""gnng - Fetches network devices interfaces and displays them in a table view.
 
 Fetches interface information from routing and firewall devices. This includes
 network and IP information along with the inbound and outbound filters that
@@ -16,6 +15,7 @@ import os
 import sys
 from collections import namedtuple
 from optparse import OptionParser
+from pathlib import Path
 from sqlite3 import dbapi2 as sqlite
 
 import prettytable
@@ -28,7 +28,6 @@ from trigger.netdevices import NetDevices, device_match
 
 settings.WITH_ACLS = False
 
-# log.startLogging(sys.stdout, setStdout=False)
 
 # Constants
 DEBUG = os.getenv("DEBUG")
@@ -115,7 +114,8 @@ default. Works on Cisco, Foundry, Juniper, and NetScreen devices.""",
 
 def fetch_router_list(args, opts):
     """Turns a list of device names into device objects, skipping unsupported,
-    invalid, or filtered devices."""
+    invalid, or filtered devices.
+    """
     nd = NetDevices(production_only=opts.nonprod)
     ret = []
     blocked_groups = []
@@ -140,21 +140,16 @@ def fetch_router_list(args, opts):
 
 def pass_filters(device, opts):
     """Used by fetch_router_list() to filter a device based on command-line arguments."""
-    if opts.filter_on_group:
-        if device.owningTeam not in opts.filter_on_group:
-            return False
-    if opts.filter_on_type:
-        if device.deviceType not in opts.filter_on_type:
-            return False
-
-    return True
+    if opts.filter_on_group and device.owningTeam not in opts.filter_on_group:
+        return False
+    return not (opts.filter_on_type and device.deviceType not in opts.filter_on_type)
 
 
 def write_sqldb(sqlfile, dev, rows):
-    """Write device fields to sqlite db"""
+    """Write device fields to sqlite db."""
     create_table = False
 
-    if not os.path.isfile(sqlfile):
+    if not Path(sqlfile).is_file():
         create_table = True
 
     connection = sqlite.connect(sqlfile)
@@ -198,7 +193,7 @@ def write_sqldb(sqlfile, dev, rows):
             VALUES (
                 '{dev}', '{iface}', '{addrs}',
                 '{snets}', '{inacl}', '{outacl}', '{desc}'
-            );"""
+            );""",
         )
 
     connection.commit()
@@ -207,8 +202,7 @@ def write_sqldb(sqlfile, dev, rows):
 
 
 def get_interface_data(devices, production_only=True, max_conns=MAX_CONNS, opts=None):
-    """
-    Fetch interface information from ``devices`` and return it as a dict.
+    """Fetch interface information from ``devices`` and return it as a dict.
 
     :param devices:
         List of device hostnames
@@ -234,8 +228,7 @@ def get_interface_data(devices, production_only=True, max_conns=MAX_CONNS, opts=
 
 
 def build_output(main_data, opts, labels=None):
-    """
-    Iterate the interface data, then build and return row data.
+    """Iterate the interface data, then build and return row data.
 
     :param main_data:
         Dictionary of interface data
@@ -282,8 +275,7 @@ def build_output(main_data, opts, labels=None):
             addresses = []
             subnets = []
 
-            for a in addrs:
-                addresses.append(a.strNormal())
+            addresses = [a.strNormal() for a in addrs]
 
             for s in subns:
                 subnets.append(s.strNormal())
@@ -304,7 +296,7 @@ def build_output(main_data, opts, labels=None):
                     "\n".join(acls_in),
                     "\n".join(acls_out),
                     desctext,
-                ]
+                ],
             )
 
         all_rows[dev.nodeName] = rows
@@ -313,8 +305,7 @@ def build_output(main_data, opts, labels=None):
 
 
 def handle_output(all_rows, opts):
-    """
-    Do stuff with the output data.
+    """Do stuff with the output data.
 
     :param all_rows:
         A list of lists of row data
@@ -326,7 +317,7 @@ def handle_output(all_rows, opts):
         if opts.csv:
             writer = csv.writer(sys.stdout)
             for row in rows:
-                writer.writerow([dev] + row)
+                writer.writerow([dev, *row])
         elif opts.dotty:
             continue
         elif opts.sqldb:
@@ -337,8 +328,7 @@ def handle_output(all_rows, opts):
 
 
 def print_table(rows, labels=None):
-    """
-    Print the interface table for a device
+    """Print the interface table for a device.
     """
     if labels is None:
         labels = ROW_LABELS
@@ -350,23 +340,22 @@ def print_table(rows, labels=None):
     output_table.hrules = prettytable.prettytable.HEADER
 
     for row in rows:
-        row = [x.strip() for x in row]
+        row = [x.strip() for x in row]  # noqa: PLW2901
         output_table.add_row(row)
 
     print(output_table)
-    print("")
+    print()
 
 
 def output_dotty(subnet_table, display=True):
-    """
-    Output and return dotty config for a ``subnet_table``
+    """Output and return dotty config for a ``subnet_table``.
 
     :param subnet_table:
         Dict mapping subnets to devices and interfaces
     """
     links = {}
 
-    for ip, devs in subnet_table.items():
+    for devs in subnet_table.values():
         if len(devs) > 1:
             router1 = devs[0][0]
             router2 = devs[1][0]
@@ -399,7 +388,6 @@ def output_dotty(subnet_table, display=True):
     for leaf, subleaves in links.items():
         for subleaf in subleaves:
             graph += f'"{leaf.shortName}"--"{subleaf.shortName}"\n'
-        # print >>sys.stderr, leaf,"connects to: ",','.join(subleaves)
     graph += "\n}"
 
     if display:
@@ -421,7 +409,7 @@ def main():
         sys.exit(1)
 
     main_data = get_interface_data(
-        devices=routers, production_only=opts.nonprod, opts=opts
+        devices=routers, production_only=opts.nonprod, opts=opts,
     )
     all_rows, subnet_table = build_output(main_data, opts)
     handle_output(all_rows, opts)

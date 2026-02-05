@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-check_access - Determines whether access is permitted by a given ACL.
+"""check_access - Determines whether access is permitted by a given ACL.
 """
 
 __version__ = "1.2"
@@ -35,14 +34,8 @@ end with an explicit deny.""",
 
     source = dest = protocol = port = []
 
-    if args[1] == "any":
-        source = []
-    else:
-        source = [TIP(args[1])]
-    if args[2] == "any":
-        dest = []
-    else:
-        dest = [TIP(args[2])]
+    source = [] if args[1] == "any" else [TIP(args[1])]
+    dest = [] if args[2] == "any" else [TIP(args[2])]
 
     if len(args) <= 3:
         protocol = []
@@ -70,14 +63,15 @@ end with an explicit deny.""",
     new_term.comments.append(Comment("check_access: ADD THIS TERM"))
 
     try:
-        acl = parse(open(acl_file))
+        with open(acl_file) as fh:  # noqa: PTH123
+            acl = parse(fh)
         permitted = None
     except ParserSyntaxError as e:
         etxt = str(e).split()
         sys.exit(f"Cannot parse {acl_file}:" + " ".join(etxt[1:]))
 
     permitted = check_access(
-        acl.terms, new_term, opts.quiet, format=acl.format, acl_name=acl.name
+        acl.terms, new_term, opts.quiet, format=acl.format, acl_name=acl.name,
     )
 
     if permitted and not opts.quiet:

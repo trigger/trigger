@@ -5,7 +5,7 @@ Licensed from John DeRosa, Source: http://bit.ly/19Lmnxx
 Modified for Trigger by Jathan McCollum
 """
 
-__all__ = ("Redis", "MockRedis", "install")
+__all__ = ("MockRedis", "Redis", "install")
 
 
 import re
@@ -33,7 +33,7 @@ class MockRedisLock:
 
     def release(self):  # pylint: disable=R0201
         """Emulate release."""
-        return None
+        return
 
 
 class MockRedisPipeline:
@@ -51,7 +51,6 @@ class MockRedisPipeline:
         Emulate the execute method. All piped commands are executed immediately
         in this mock, so this is a no-op.
         """
-        pass
 
     def delete(self, key):
         """Emulate a pipelined delete."""
@@ -77,7 +76,6 @@ class MockRedis:
 
     def __init__(self):
         """Initialize the object."""
-        pass
 
     def delete(self, key):  # pylint: disable=R0201
         """Emulate delete."""
@@ -91,14 +89,12 @@ class MockRedis:
     def get(self, key):  # pylint: disable=R0201
         """Emulate get."""
         # Override the default dict
-        result = "" if key not in MockRedis.redis else MockRedis.redis[key]
-        return result
+        return MockRedis.redis.get(key, "")
 
     def hget(self, hashkey, attribute):  # pylint: disable=R0201
         """Emulate hget."""
         # Return '' if the attribute does not exist
-        result = MockRedis.redis[hashkey].get(attribute, "")
-        return result
+        return MockRedis.redis[hashkey].get(attribute, "")
 
     def hgetall(self, hashkey):  # pylint: disable=R0201
         """Emulate hgetall."""
@@ -125,9 +121,8 @@ class MockRedis:
         regex = "^" + pattern.replace("*", ".*") + "$"
 
         # Find every key that matches the pattern
-        result = [key for key in MockRedis.redis.keys() if re.match(regex, key)]
+        return [key for key in list(MockRedis.redis.keys()) if re.match(regex, key)]
 
-        return result
 
     def lock(self, key, timeout=0, sleep=0):  # pylint: disable=W0613
         """Emulate lock."""
@@ -152,12 +147,10 @@ class MockRedis:
 
     def srem(self, key, value):
         """Emulate srem."""
-        # Does the set at this key already exist?
-        if key in MockRedis.redis:
-            # Yes, remove it from the set
-            if value in MockRedis.redis[key]:
-                MockRedis.redis[key].discard(value)
-                return True
+        # Does the set at this key already exist? If so, remove value from it
+        if key in MockRedis.redis and value in MockRedis.redis[key]:
+            MockRedis.redis[key].discard(value)
+            return True
         return False
 
     def smembers(self, key):  # pylint: disable=R0201

@@ -1,5 +1,4 @@
-"""
-Handlers for event notifications.
+"""Handlers for event notifications.
 
 Handlers are specified by full module path within
 ``settings.NOTIFICATION_HANDLERS``. These are then imported and registered
@@ -45,8 +44,7 @@ __all__ = ("email_handler", "notify")
 
 # Functions
 def email_handler(*args, **kwargs):
-    """
-    Default email notification handler.
+    """Default email notification handler.
     """
     try:
         event = events.EmailEvent(*args, **kwargs)
@@ -57,8 +55,7 @@ def email_handler(*args, **kwargs):
 
 
 def _register_handlers():
-    """
-    Walk thru the handlers specified in ``settings.NOTIFICATION_HANDLERS`` and
+    """Walk thru the handlers specified in ``settings.NOTIFICATION_HANDLERS`` and
     register them internally.
 
     Any built-in event handlers need to be defined above this function.
@@ -70,26 +67,29 @@ def _register_handlers():
         # Get the module and func name
         try:
             h_module, h_funcname = handler_path.rsplit(".", 1)
-        except ValueError:
+        except ValueError as err:
+            msg = f"{handler_path} isn't a handler module"
             raise exceptions.ImproperlyConfigured(
-                f"{handler_path} isn't a handler module"
-            )
+                msg,
+            ) from err
 
         # Import the module and get the module object
         try:
             mod = import_module(h_module)
         except ImportError as err:
+            msg = f'Error importing handler {h_module}: "{err}"'
             raise exceptions.ImproperlyConfigured(
-                f'Error importing handler {h_module}: "{err}"'
-            )
+                msg,
+            ) from err
 
         # Get the handler function
         try:
             handler = getattr(mod, h_funcname)
-        except AttributeError:
+        except AttributeError as err:
+            msg = f'Handler module "{h_module}" does not define a "{h_funcname}" function'
             raise exceptions.ImproperlyConfigured(
-                f'Handler module "{h_module}" does not define a "{h_funcname}" function'
-            )
+                msg,
+            ) from err
 
         # Register the handler function
         if handler not in _registered_handlers:
@@ -102,8 +102,7 @@ _register_handlers()  # Do this on init
 
 
 def notify(*args, **kwargs):
-    """
-    Iterate thru registered handlers to handle events and send notifications.
+    """Iterate thru registered handlers to handle events and send notifications.
 
     Handlers should return ``True`` if they have performed the desired action
     or ``None`` if they have not.
@@ -116,14 +115,14 @@ def notify(*args, **kwargs):
         # print 'Sending %s, %s to %s' % (args, kwargs, handler)
         try:
             result = handler(*args, **kwargs)
-        except Exception:
+        except Exception:  # noqa: PERF203
             # print 'Got exception: %s' % err
             continue
         else:
             if result is not None:
                 return True  # Event was handled!
-            else:
-                continue
+            continue
 
     # We don't want to get to this point
-    raise RuntimeError(f"No handlers succeeded for this event: {event}")
+    msg = f"No handlers succeeded for this event: {event}"
+    raise RuntimeError(msg)

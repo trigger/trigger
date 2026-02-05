@@ -1,5 +1,4 @@
-"""
-trigger.contrib.commando
+"""trigger.contrib.commando.
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Simple command running for Trigger meant to be used with a
@@ -45,8 +44,7 @@ if os.getenv("DEBUG"):
 
 # Classes
 class CommandoApplication(Commando):
-    """
-    Commando subclass to be used in an application where the reactor is always
+    """Commando subclass to be used in an application where the reactor is always
     running (e.g. twistd or an application server).
 
     Stores results as a list of dictionaries ideal for serializing to JSON.
@@ -61,18 +59,18 @@ class CommandoApplication(Commando):
         super().__init__(*args, **kwargs)
 
         if not self.devices:
+            msg = "You must specify some `devices` to interact with!"
             raise exceptions.ImproperlyConfigured(
-                "You must specify some `devices` to interact with!"
+                msg,
             )
         # Commenting out because sometimes the cmds come in the to_<vendor> methods
-        # if not self.commands:
-        #    raise exceptions.ImproperlyConfigured('You must specify some `commands` to execute!')
 
         # Make sure that the specified containers are not passed in as strings.
         container_types = ["commands", "devices"]
         for container in container_types:
             if isinstance(getattr(self, container), str):
-                raise SyntaxError(f"{container!r} cannot be a string!")
+                msg = f"{container!r} cannot be a string!"
+                raise SyntaxError(msg)
 
         # In Python 3, all strings are unicode by default, so no conversion needed
         # Commands that get deserialized from JSON are already strings
@@ -84,12 +82,12 @@ class CommandoApplication(Commando):
         self.deferred = defer.Deferred()
 
     def from_base(self, results, device, commands=None):
-        """Call store_results directly"""
+        """Call store_results directly."""
         log.msg(f"Received {results!r} from {device}")
         self.store_results(device, results)
 
     def from_juniper(self, results, device, commands=None):
-        """(Maybe) convert Juniper XML results into a strings"""
+        """(Maybe) convert Juniper XML results into a strings."""
         # If we've set force_cli, use to_base() instead
         if self.force_cli:
             return self.from_base(results, device, commands)
@@ -99,10 +97,10 @@ class CommandoApplication(Commando):
         log.msg(f"Got XML from {device}")
         results = [tostring(r) for r in results]
         self.store_results(device, results)
+        return None
 
     def store_error(self, device, error):
-        """
-        Called when an errback is fired.
+        """Called when an errback is fired.
 
         Should do somethign meaningful with the errors, but for now just stores
         it as it would a result.
@@ -120,16 +118,14 @@ class CommandoApplication(Commando):
         return True
 
     def device_object(self, device_name, **kwargs):
-        """
-        Create a basic device dictionary with optional data.
+        """Create a basic device dictionary with optional data.
         """
         devobj = dict(device=device_name, **kwargs)
         log.msg(f"Got device object: {devobj!r}")
         return devobj
 
     def store_results(self, device, results):
-        """
-        Called by the parse (from) methods to store command output.
+        """Called by the parse (from) methods to store command output.
 
         :device:
             A `~trigger.netdevices.NetDevice` object
@@ -152,8 +148,7 @@ class CommandoApplication(Commando):
         return True
 
     def map_results(self, commands=None, results=None):
-        """
-        Return a list of command objects.
+        """Return a list of command objects.
 
         [{'command': 'foo', 'result': 'bar'}, ...]
         """
@@ -167,7 +162,7 @@ class CommandoApplication(Commando):
         for cmd, res in itertools.zip_longest(commands, results):
             if type(Element("")) == type(cmd):
                 # XML must die a very horrible death
-                cmd = ET.tostring(cmd)
+                cmd = ET.tostring(cmd)  # noqa: PLW2901
             cmdobj = dict(command=cmd, result=res)
             log.msg(f"Got command object: {cmdobj!r}")
             cmd_list.append(cmdobj)
@@ -175,17 +170,12 @@ class CommandoApplication(Commando):
 
     def _start(self):
         log.msg("._start() called")
-        # self.all_done = False
-        # from twisted.internet import reactor
-        # reactor.run()
 
     def _stop(self):
         log.msg("._stop() called")
         log.msg(f"MY RESULTS ARE: {self.results!r}")
         log.msg(f"MY  ERRORS ARE: {self.errors!r}")
         self.all_done = True
-        # from twisted.internet import reactor
-        # reactor.stop()
 
     def run(self):
         log.msg(".run() called")
@@ -200,8 +190,7 @@ class CommandoApplication(Commando):
         return d
 
     def monitor_result(self, result, reactor):
-        """
-        Loop periodically or until the factory stops to monitor the results
+        """Loop periodically or until the factory stops to monitor the results
         and return them.
         """
         log.msg(">>>>> monitor_result() called")
@@ -209,6 +198,5 @@ class CommandoApplication(Commando):
         if self.all_done:
             log.msg(f">>>>> SENDING RESULTS: {self.results!r}")
             log.msg(f">>>>> SENDING  ERRORS: {self.errors!r}")
-            # return self.results
             return dict(result=self.results, errors=self.errors)
         return task.deferLater(reactor, 0.5, self.monitor_result, result, reactor)

@@ -1,5 +1,4 @@
-"""
-Database interface for automated ACL queue. Used primarily by ``load_acl`` and
+"""Database interface for automated ACL queue. Used primarily by ``load_acl`` and
 ``acl``` commands for manipulating the work queue.
 
     >>> from trigger.acl.queue import Queue
@@ -34,8 +33,7 @@ __all__ = ("Queue",)
 
 # Classes
 class Queue:
-    """
-    Interacts with firewalls database to insert/remove items into the queue.
+    """Interacts with firewalls database to insert/remove items into the queue.
 
     :param verbose:
         Toggle verbosity
@@ -50,8 +48,7 @@ class Queue:
         self.login = get_user()
 
     def vprint(self, msg):
-        """
-        Print something if ``verbose`` instance variable is set.
+        """Print something if ``verbose`` instance variable is set.
 
         :param msg:
             The string to print
@@ -60,8 +57,7 @@ class Queue:
             print(msg)
 
     def get_model(self, queue):
-        """
-        Given a queue name, return its DB model.
+        """Given a queue name, return its DB model.
 
         :param queue:
             Name of the queue whose object you want
@@ -69,8 +65,7 @@ class Queue:
         return models.MODEL_MAP.get(queue, None)
 
     def create_task(self, queue, *args, **kwargs):
-        """
-        Create a task in the specified queue.
+        """Create a task in the specified queue.
 
         :param queue:
             Name of the queue whose object you want
@@ -79,8 +74,7 @@ class Queue:
         model.create(*args, **kwargs)
 
     def _normalize(self, arg, prefix=""):
-        """
-        Remove ``prefix`` from ``arg``, and set "escalation" bit.
+        """Remove ``prefix`` from ``arg``, and set "escalation" bit.
 
         :param arg:
             Arg (typically an ACL filename) to trim
@@ -88,8 +82,7 @@ class Queue:
         :param prefix:
             Prefix to trim from arg
         """
-        if arg.startswith(prefix):
-            arg = arg[len(prefix) :]
+        arg = arg.removeprefix(prefix)
         escalation = False
         if arg.upper().endswith(" ESCALATION"):
             escalation = True
@@ -97,8 +90,7 @@ class Queue:
         return (escalation, arg)
 
     def insert(self, acl, routers, escalation=False):
-        """
-        Insert an ACL and associated devices into the ACL load queue.
+        """Insert an ACL and associated devices into the ACL load queue.
 
         Attempts to insert into integrated queue. If ACL test fails, then
         item is inserted into manual queue.
@@ -113,8 +105,9 @@ class Queue:
             Whether this is an escalated task
         """
         if not acl:
+            msg = "You must specify an ACL to insert into the queue"
             raise exceptions.ACLQueueError(
-                "You must specify an ACL to insert into the queue"
+                msg,
             )
         if not routers:
             routers = []
@@ -124,22 +117,22 @@ class Queue:
             for router in routers:
                 try:
                     dev = self.nd.find(router)
-                except KeyError:
+                except KeyError as err:
                     msg = f"Could not find device {router}"
-                    raise exceptions.TriggerError(msg)
+                    raise exceptions.TriggerError(msg) from err
 
                 if acl not in dev.acls:
                     msg = f"Could not find {acl} in ACL list for {router}"
                     raise exceptions.TriggerError(msg)
 
                 self.create_task(
-                    queue="integrated", acl=acl, router=router, escalation=escalation
+                    queue="integrated", acl=acl, router=router, escalation=escalation,
                 )
 
             self.vprint(
                 "ACL {} injected into integrated load queue for {}".format(
-                    acl, ", ".join(dev[: dev.find(".")] for dev in routers)
-                )
+                    acl, ", ".join(dev[: dev.find(".")] for dev in routers),
+                ),
             )
 
         else:
@@ -147,8 +140,7 @@ class Queue:
             self.vprint(f'"{acl}" injected into manual load queue')
 
     def delete(self, acl, routers=None, escalation=False):
-        """
-        Delete an ACL from the firewall database queue.
+        """Delete an ACL from the firewall database queue.
 
         Attempts to delete from integrated queue. If ACL test fails
         or if routers are not specified, the item is deleted from manual queue.
@@ -163,11 +155,12 @@ class Queue:
             Whether this is an escalated task
         """
         if not acl:
+            msg = "You must specify an ACL to delete from the queue"
             raise exceptions.ACLQueueError(
-                "You must specify an ACL to delete from the queue"
+                msg,
             )
 
-        escalation, acl = self._normalize(acl)
+        _escalation, acl = self._normalize(acl)
         m = self.get_model("integrated")
 
         if routers is not None:
@@ -186,28 +179,26 @@ class Queue:
         if devs:
             for dev in devs:
                 m.delete().where(
-                    m.acl == acl, m.router == dev, m.loaded >> None
+                    m.acl == acl, m.router == dev, m.loaded >> None,
                 ).execute()
 
             self.vprint(
                 "ACL {} cleared from integrated load queue for {}".format(
-                    acl, ", ".join(dev[: dev.find(".")] for dev in devs)
-                )
+                    acl, ", ".join(dev[: dev.find(".")] for dev in devs),
+                ),
             )
             return True
 
-        else:
-            m = self.get_model("manual")
-            if m.delete().where(m.q_name == acl, m.done == False).execute():  # noqa: E712
-                self.vprint(f"{acl!r} cleared from manual load queue")
-                return True
+        m = self.get_model("manual")
+        if m.delete().where(m.q_name == acl, m.done == False).execute():  # noqa: E712 - peewee requires == for query
+            self.vprint(f"{acl!r} cleared from manual load queue")
+            return True
 
         self.vprint(f"{acl!r} not found in any queues")
         return False
 
     def complete(self, device, acls):
-        """
-        Mark a device and its ACLs as complete using current timestamp.
+        """Mark a device and its ACLs as complete using current timestamp.
 
         (Integrated queue only.)
 
@@ -221,15 +212,14 @@ class Queue:
         for acl in acls:
             now = datetime.datetime.now()
             m.update(loaded=now).where(
-                m.acl == acl, m.router == device, m.loaded >> None
+                m.acl == acl, m.router == device, m.loaded >> None,
             ).execute()
 
         self.vprint(f"Marked the following ACLs as complete for {device}:")
         self.vprint(", ".join(acls))
 
     def remove(self, acl, routers, escalation=False):
-        """
-        Integrated queue only.
+        """Integrated queue only.
 
         Mark an ACL and associated devices as "removed" (loaded=0). Intended
         for use when performing manual actions on the load queue when
@@ -246,8 +236,9 @@ class Queue:
             Whether this is an escalated task
         """
         if not acl:
+            msg = "You must specify an ACL to remove from the queue"
             raise exceptions.ACLQueueError(
-                "You must specify an ACL to remove from the queue"
+                msg,
             )
 
         m = self.get_model("integrated")
@@ -256,15 +247,14 @@ class Queue:
             loaded = "-infinity"  # See: http://bit.ly/15f0J3z
         for router in routers:
             m.update(loaded=loaded).where(
-                m.acl == acl, m.router == router, m.loaded >> None
+                m.acl == acl, m.router == router, m.loaded >> None,
             ).execute()
 
         self.vprint(f"Marked the following devices as removed for ACL {acl}: ")
         self.vprint(", ".join(routers))
 
     def list(self, queue="integrated", escalation=False, q_names=QUEUE_NAMES):
-        """
-        List items in the specified queue, defauls to integrated queue.
+        """List items in the specified queue, defauls to integrated queue.
 
         :param queue:
             Name of the queue to list
@@ -288,9 +278,9 @@ class Queue:
                 .where(m.loaded >> None, m.escalation == escalation)
             )
         elif queue == "manual":
-            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(m.done == False)  # noqa: E712
+            result = m.select(m.q_name, m.login, m.q_ts, m.done).where(m.done == False)  # noqa: E712 - peewee requires == for query
         else:
-            raise RuntimeError("This should never happen!!")
+            msg = "This should never happen!!"
+            raise RuntimeError(msg)
 
-        all_data = list(result.tuples())
-        return all_data
+        return list(result.tuples())

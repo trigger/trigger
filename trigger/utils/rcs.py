@@ -1,5 +1,4 @@
-"""
-Provides a CVS like wrapper for local RCS (Revision Control System) with common commands.
+"""Provides a CVS like wrapper for local RCS (Revision Control System) with common commands.
 """
 
 __author__ = "Jathan McCollum"
@@ -9,6 +8,7 @@ __copyright__ = "Copyright 2009-2011, AOL Inc."
 
 import os
 import time
+from pathlib import Path
 
 import commands
 
@@ -18,8 +18,7 @@ __all__ = ("RCS",)
 
 # Classes
 class RCS:
-    """
-    Simple wrapper for CLI ``rcs`` command. An instance is bound to a file.
+    r"""Simple wrapper for CLI ``rcs`` command. An instance is bound to a file.
 
     :param file: The filename (or path) to use
     :param create: If set, create the file if it doesn't exist
@@ -58,21 +57,20 @@ class RCS:
         self.locked = False
         self.filename = filename
 
-        if not os.path.exists(filename):
+        if not Path(filename).exists():
             if not create:
                 self.filename = None
-                return None
+                return
             try:
-                f = open(self.filename, "w")
+                with Path(self.filename).open("w"):
+                    pass
             except:
-                return None
-            f.close()
+                return
             if not self.checkin(initial=True):
-                return None
+                return
 
     def checkin(self, logmsg="none", initial=False, verbose=False):
-        """
-        Perform an RCS checkin. If successful this also unlocks the file, so
+        """Perform an RCS checkin. If successful this also unlocks the file, so
         there is no need to unlock it afterward.
 
         :param logmsg: The RCS commit message
@@ -91,14 +89,10 @@ class RCS:
         if verbose:
             print(output)
 
-        if status > 0:
-            return False
-
-        return True
+        return not status > 0
 
     def lock(self, verbose=False):
-        """
-        Perform an RCS checkout with lock. Returns boolean of whether lock
+        """Perform an RCS checkout with lock. Returns boolean of whether lock
         was sucessful.
 
         :param verbose: Print command output
@@ -119,8 +113,7 @@ class RCS:
         return True
 
     def unlock(self, verbose=False):
-        """
-        Perform an RCS checkout with unlock (for cancelling changes).
+        """Perform an RCS checkout with unlock (for cancelling changes).
 
         :param verbose: Print command output
 
@@ -140,8 +133,7 @@ class RCS:
         return True
 
     def lock_loop(self, callback=None, timeout=5, verbose=False):
-        """
-        Keep trying to lock the file until a lock is obtained.
+        """Keep trying to lock the file until a lock is obtained.
 
         :param callback: The function to call after lock is complete
         :param timeout: How long to sleep between lock attempts

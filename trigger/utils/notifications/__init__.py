@@ -1,5 +1,4 @@
-"""
-Pluggable event notification system for Trigger.
+"""Pluggable event notification system for Trigger.
 """
 
 __author__ = "Jathan McCollum"

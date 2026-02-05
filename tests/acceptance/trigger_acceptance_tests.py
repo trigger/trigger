@@ -24,8 +24,8 @@ class NetDevicesTest(unittest.TestCase):
     def setUp(self):
         self.nd = NetDevices(with_acls=False)
         print(list(self.nd.values()))
-        self.nodename = list(self.nd.keys())[0]
-        self.nodeobj = list(self.nd.values())[0]
+        self.nodename = next(iter(self.nd.keys()))
+        self.nodeobj = next(iter(self.nd.values()))
 
     def testBasics(self):
         """Basic test of NetDevices functionality."""

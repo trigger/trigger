@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-fe - the File Editor. Uses RCS to maintain ACL policy versioning.
+"""fe - the File Editor. Uses RCS to maintain ACL policy versioning.
 """
 
 __version__ = "1.2.1"
@@ -10,6 +9,7 @@ __version__ = "1.2.1"
 import os
 import re
 import sys
+from pathlib import Path
 
 from simpleparse.error import ParserSyntaxError
 
@@ -51,7 +51,6 @@ def gsr_checks(a):
 
 def normalize(a):
     """Fix up the ACL, and return False if there are problems."""
-
     if isinstance(a, acl.PolicerGroup):
         return True
 
@@ -68,9 +67,8 @@ def normalize(a):
                 names.add(t.name)
 
     # GSR checks.
-    if a.format == "ios":  # not ios_named
-        if not gsr_checks(a):
-            ok = False
+    if a.format == "ios" and not gsr_checks(a):  # not ios_named
+        ok = False
 
     # Check for 10/8.
     for t in a.terms:
@@ -90,24 +88,24 @@ def normalize(a):
 
 
 def edit(editfile):
-    """
-    Edits the file and calls normalize(). Loops until it passes or the user
+    """Edits the file and calls normalize(). Loops until it passes or the user
     confirms they want to bypass failed normalization. Returns a file object of
     the diff output.
     """
     editor = os.environ.get("EDITOR", "vim")
     if editor.startswith("vi"):
         os.spawnlp(
-            os.P_WAIT, editor, editor, "+set sw=4", "+set softtabstop=4", editfile
+            os.P_WAIT, editor, editor, "+set sw=4", "+set softtabstop=4", editfile,
         )
     else:
         os.spawnlp(os.P_WAIT, editor, editor, editfile)
 
-    if os.path.basename(editfile):  # .startswith('acl.'):
+    if Path(editfile).name:  # .startswith('acl.'):
         print("Normalizing ACL...")
         a = None
         try:
-            a = acl.parse(open(editfile))
+            with Path(editfile).open() as fh:
+                a = acl.parse(fh)
         except ParserSyntaxError as e:
             print(e)
         except TypeError as e:
@@ -116,10 +114,10 @@ def edit(editfile):
             print("ACL parse failed: ", sys.exc_info()[0], ":", e)
         if a and normalize(a):
             output = "\n".join(a.output(replace=True)) + "\n"
-            open(editfile, "w").write(output)
-        else:
-            if yesno("Re-edit?"):
-                return edit(editfile)
+            with Path(editfile).open("w") as fh:
+                fh.write(output)
+        elif yesno("Re-edit?"):
+            return edit(editfile)
 
     # should use a list version of popen
     return os.popen("rcsdiff -u -b -q " + editfile).read()
@@ -133,7 +131,7 @@ def main():
 
     for editfile in sys.argv[1:]:
         try:
-            stat = os.stat(editfile)
+            stat = Path(editfile).stat()
         except OSError:
             stat = None
 
@@ -153,16 +151,16 @@ def main():
                 print("No changes made.")
                 os.spawnlp(os.P_WAIT, "rcs", "rcs", "-u", editfile)
                 # When no changes are made, ci leaves the file writable.
-                os.chmod(editfile, stat.st_mode & 0o555)
+                Path(editfile).chmod(stat.st_mode & 0o555)
                 continue
 
-            print("")
-            print(f'"{os.path.basename(editfile)}"')
+            print()
+            print(f'"{Path(editfile).name}"')
             print("BEGINNING OF CHANGES========================")
             print(diff, end="")
             print("END OF CHANGES==============================")
-            print("")
-            print("")
+            print()
+            print()
 
             if not yesno("Do you want to save changes?"):
                 print("Restoring original file")
@@ -183,7 +181,7 @@ def main():
             if log:
                 print("Autodetected log message:")
                 print(log)
-                print("")
+                print()
                 if not yesno("Use this?"):
                     log = ""
 

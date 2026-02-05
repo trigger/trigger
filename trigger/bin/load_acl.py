@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-load_acl - Unified automatic ACL loader.
+"""load_acl - Unified automatic ACL loader.
 
 By default, ACLs will be loaded on all the devices they apply to (using
 acls.db/autoacls).  With ``-f``, that list will be used instead.  With ``-Q``,
@@ -14,6 +13,7 @@ automatically load eligible devices from the queue and email results.
 __version__ = "1.9.2"
 
 # Dist imports
+import contextlib
 import curses
 import datetime
 import fnmatch
@@ -25,6 +25,7 @@ import tempfile
 import time
 from collections import defaultdict
 from optparse import OptionParser
+from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement
 
 import pytz
@@ -62,8 +63,7 @@ output_cache = {}
 
 
 def draw_screen(s, work, active, failures, start_qlen, start_time):
-    """
-    Curses-based status board for displaying progress during interactive
+    """Curses-based status board for displaying progress during interactive
     mode.
 
     :param work:
@@ -81,7 +81,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
     :param start_time:
         The epoch time at startup (to calculate progress)
     """
-    global output_cache
+    global output_cache  # noqa: PLW0602
 
     if not s:
         # this is stuff if we don't have a ncurses handle.
@@ -100,11 +100,11 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
     # DO NOT cache the result of s.getmaxyx(), or you cause race conditions
     # which can create exceptions when the window is resized.
     def maxx():
-        y, x = s.getmaxyx()
+        _y, x = s.getmaxyx()
         return x
 
     def maxy():
-        y, x = s.getmaxyx()
+        y, _x = s.getmaxyx()
         return y
 
     # Display progress bar at top (#/devices, elapsed time)
@@ -131,7 +131,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
 
     # If we get failures, report them
     if failures:
-        count, plural = len(failures), (len(failures) > 1 and "s" or "")
+        count, plural = len(failures), ((len(failures) > 1 and "s") or "")
         s.addstr(
             2,
             0,
@@ -140,9 +140,9 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
         )
 
     # Update device name
-    for y, (dev, status) in zip(range(3, maxy()), active.items()):
+    for y, (dev, status) in zip(range(3, maxy()), active.items(), strict=False):
         s.addstr(y, 0, (f"{dev}: {status}")[: maxx()], curses.A_BOLD)
-    for y, (dev, acls) in zip(range(3 + len(active), maxy()), work.items()):
+    for y, (dev, acls) in zip(range(3 + len(active), maxy()), work.items(), strict=False):
         s.addstr(y, 0, ("{}: {}".format(dev, " ".join(acls)))[: maxx()])
 
     s.move(maxy() - 1, maxx() - 1)
@@ -150,8 +150,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):
 
 
 def parse_args(argv):
-    """
-    Parses the args and returns opts, args back to caller. Defaults to
+    """Parses the args and returns opts, args back to caller. Defaults to
     ``sys.argv``, but Optinally takes a custom one if you so desire.
 
     :param argv:
@@ -209,16 +208,16 @@ def parse_args(argv):
         help="load escalated ACLs from integrated load queue",
     )
     parser.add_option(
-        "--severed-head", action="store_true", help="display severed head"
+        "--severed-head", action="store_true", help="display severed head",
     )
     parser.add_option(
-        "--no-db", action="store_true", help="disable database access (for outages)"
+        "--no-db", action="store_true", help="disable database access (for outages)",
     )
     parser.add_option(
-        "--bouncy", action="store_true", help="load out of bounce (override checks)"
+        "--bouncy", action="store_true", help="load out of bounce (override checks)",
     )
     parser.add_option(
-        "--no-vip", action="store_true", help="TFTP from green address, not blue VIP"
+        "--no-vip", action="store_true", help="TFTP from green address, not blue VIP",
     )
     parser.add_option(
         "--bulk",
@@ -228,7 +227,7 @@ def parse_args(argv):
         "execution of load_acl.",
     )
     parser.add_option(
-        "--no-cm", action="store_true", help="do not open up a CM ticket for this load"
+        "--no-cm", action="store_true", help="do not open up a CM ticket for this load",
     )
     parser.add_option(
         "--no-curses",
@@ -269,8 +268,7 @@ def debug_fakeout():
 
 
 def get_work(opts, args):
-    """
-    Determine the set of devices to load on, and what ACLs to load on
+    """Determine the set of devices to load on, and what ACLs to load on
     each.  Processes extra CLI arguments to modify the work queue. Return a
     dictionary of ``{nodeName: set(acls)}``.
 
@@ -282,15 +280,14 @@ def get_work(opts, args):
     """
     # removing acl. assumption from files
     aclargs = set(
-        args[1:]
+        args[1:],
     )  # set([x.startswith('acl.') and x[4:] or x for x in args[1:]])
 
     work = {}
     bulk_acls = get_bulk_acls()
 
     def add_work(dev_name, acls):
-        """
-        A closure for the purpose of adding/updating ACLS for a given device.
+        """A closure for the purpose of adding/updating ACLS for a given device.
         """
         try:
             dev = nd[dev_name]
@@ -304,7 +301,7 @@ def get_work(opts, args):
 
     # Get the initial list, from whatever source.
     if opts.file:
-        for line in open(opts.file):
+        for line in Path(opts.file).open():  # noqa: SIM115
             if len(line) == 0 or line[0].isspace():
                 # Lines with leading whitespace are wrapped pasted "acl" output
                 continue
@@ -344,7 +341,6 @@ def get_work(opts, args):
                     if acl not in settings.AUTOLOAD_BLACKLIST:
                         add_work(router, [acl])
                     else:
-                        # filtered_acls = True
                         filtered_acls.add(acl)
                 else:
                     add_work(router, [acl])
@@ -369,15 +365,15 @@ def get_work(opts, args):
     if opts.exclude:
         # print 'stuff'
         exclude = set(opts.exclude)
-        for dev in work.keys():
+        for dev in work:
             for ex in exclude:
                 if fnmatch.fnmatchcase(dev.nodeName, ex) or dev.nodeName.startswith(
-                    ex + "."
+                    ex + ".",
                 ):
                     del work[dev]
                     break
         for dev, acls in work.items():
-            acls -= exclude
+            acls -= exclude  # noqa: PLW2901
             if len(acls) == 0:
                 del work[dev]
 
@@ -398,13 +394,13 @@ def get_work(opts, args):
                 dev_acls = ", ".join(work[dev])
                 print(
                     "Skipping {} on {} (window starts at {})".format(
-                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev])
-                    )
+                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]),
+                    ),
                 )
                 log.msg(
                     "Skipping {} on {} (window starts at {})".format(
-                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev])
-                    )
+                        dev_acls, dev.nodeName.split(".")[0], pretty_time(next_ok[dev]),
+                    ),
                 )
                 del work[dev]
             print("\nUse --bouncy to forcefully load on these devices anyway.")
@@ -419,8 +415,7 @@ def get_work(opts, args):
 
 
 def junoscript_cmds(acls_content, tftp_paths, dev):
-    """
-    Return a list of Junoscript commands to load the given ACLs, and a
+    """Return a list of Junoscript commands to load the given ACLs, and a
     matching list of tuples (acls remaining, human-readable status message).
 
     :param acls:
@@ -451,8 +446,7 @@ def junoscript_cmds(acls_content, tftp_paths, dev):
 
 
 def ioslike_cmds(tftp_paths, dev, opts):  # , nonce):
-    """
-    Return a list of IOS-like commands to load the given ACLs, and a matching
+    """Return a list of IOS-like commands to load the given ACLs, and a matching
     list of tuples (acls remaining, human-readable status message).
 
     :param acls:
@@ -492,8 +486,7 @@ def ioslike_cmds(tftp_paths, dev, opts):  # , nonce):
 
 
 def group(dev):
-    """
-    Helper for select_next_device().  Uses name heuristics to guess whether
+    """Helper for select_next_device().  Uses name heuristics to guess whether
     devices are "together".  Based loosely upon naming convention that is not
     the "strictest". Expect to need to tweak this.!
 
@@ -520,8 +513,7 @@ def group(dev):
 
 
 def select_next_device(work, active):
-    """
-    Select another device for the active queue.  Don't select a device
+    """Select another device for the active queue.  Don't select a device
     if there is another of that "group" already there.
 
     :param work:
@@ -530,23 +522,22 @@ def select_next_device(work, active):
     :param active:
         Dictionary mapping running devs to human-readable status
     """
-    active_groups = set([group(dev) for dev in active.keys()])
-    for dev in work.keys():
+    active_groups = set([group(dev) for dev in active])
+    for dev in work:
         if group(dev) not in active_groups:
             return dev
     return None
 
 
 def clear_load_queue(dev, acls):
-    """Logical wrapper around queue.complete(dev, acls)"""
+    """Logical wrapper around queue.complete(dev, acls)."""
     if debug_fakeout():
         return
     queue.complete(dev, acls)
 
 
 def activate(work, active, failures, jobs, redraw, opts):
-    """
-    Refill the active work queue based on number of current active jobs.
+    """Refill the active work queue based on number of current active jobs.
 
     :param work:
         The work dictionary (device to acls)
@@ -563,9 +554,8 @@ def activate(work, active, failures, jobs, redraw, opts):
     :param redraw:
         The redraw closure passed along from the caller
     """
-    if not active and not work:
-        if reactor.running:
-            reactor.stop()
+    if not active and not work and reactor.running:
+        reactor.stop()
 
     while work and len(active) < jobs:
         dev = select_next_device(work, active)
@@ -580,10 +570,8 @@ def activate(work, active, failures, jobs, redraw, opts):
         # values (using the default argument trick) 'dev', 'acls', and
         # 'status', because they vary through this loop.
         def update_board(results, dev, status):
-            try:
+            with contextlib.suppress(IndexError):
                 active[dev] = status[len(results)]
-            except IndexError:
-                pass
 
         def complete(results, dev, acls):
             if queue:
@@ -636,7 +624,7 @@ def activate(work, active, failures, jobs, redraw, opts):
 
             if dev.vendor in ("brocade", "foundry"):
                 handled_second = dev.execute(
-                    cmds, incremental=incremental, command_interval=1
+                    cmds, incremental=incremental, command_interval=1,
                 )
             else:
                 handled_second = dev.execute(cmds, incremental=incremental)
@@ -651,8 +639,7 @@ def activate(work, active, failures, jobs, redraw, opts):
 
 
 def run(stdscr, work, jobs, failures, opts):
-    """
-    Runs the show. Starts the curses status board & starts the reactor loop.
+    """Runs the show. Starts the curses status board & starts the reactor loop.
 
     :param stdscr:
         The starting curses screen (usually None)
@@ -673,7 +660,7 @@ def run(stdscr, work, jobs, failures, opts):
     start_time = time.time()
 
     def redraw():
-        """A closure to redraw the screen with current environment"""
+        """A closure to redraw the screen with current environment."""
         draw_screen(stdscr, work, active, failures, start_qlen, start_time)
 
     activate(work, active, failures, jobs, redraw, opts)
@@ -714,15 +701,15 @@ def main():
         sys.exit(0)
 
     print("You are about to perform the following loads:")
-    print("")
+    print()
     devs = work.items()
     devs.sort()
     for dev, acls in devs:
-        acls = list(work[dev])
+        acls = list(work[dev])  # noqa: PLW2901
         acls.sort()
         print("%-32s %s" % (dev, " ".join(acls)))
     acl_count = len(acls)
-    print("")
+    print()
     if debug_fakeout():
         print("DEBUG FAKEOUT ENABLED")
         failures = {}
@@ -732,7 +719,7 @@ def main():
     if not opts.auto:
         if opts.bouncy:
             print(
-                "NOTE: Parallel jobs disabled for out of bounce loads, this will take longer than usual."
+                "NOTE: Parallel jobs disabled for out of bounce loads, this will take longer than usual.",
             )
             print()
 
@@ -741,13 +728,13 @@ def main():
             print("LOAD CANCELLED")
             log.msg("LOAD CANCELLED")
             sys.exit(1)
-        print("")
+        print()
         # Don't let the credential prompts get hidden behind curses
         Tacacsrc()
     else:
         log.msg("Auto option thrown, checking if credential file exists")
         tacacsrc_file = settings.TACACSRC
-        if not os.path.exists(tacacsrc_file):
+        if not Path(tacacsrc_file).exists():
             log.msg(f"No {tacacsrc_file} file exists and auto option enabled.")
             sys.exit(1)
         log.msg(f"Credential file {tacacsrc_file} exists, moving on")
@@ -758,7 +745,7 @@ def main():
         if not oncall:
             if opts.auto:
                 send_notification(
-                    "LOAD_ACL FAILURE", "Unable to get current ON-CALL information!"
+                    "LOAD_ACL FAILURE", "Unable to get current ON-CALL information!",
                 )
             log.err("Unable to get on-call information!", logLevel=logging.CRITICAL)
             sys.exit(1)
@@ -806,8 +793,8 @@ def main():
     failed_count = 0
     for dev, reason in failures.items():
         failed_count += 1
-        log.err(f"LOAD FAILED ON {dev}: {str(reason)}")
-        sys.stderr.write(f"LOAD FAILED ON {dev}: {str(reason)}")
+        log.err(f"LOAD FAILED ON {dev}: {reason!s}")
+        sys.stderr.write(f"LOAD FAILED ON {dev}: {reason!s}")
 
     if failures and not opts.auto:
         print_severed_head()
@@ -832,10 +819,10 @@ def main():
 
 
 if __name__ == "__main__":
-    tmpfile = tempfile.mktemp() + "_load_acl"
-    log.startLogging(open(tmpfile, "a"), setStdout=False)
+    fd, tmpfile = tempfile.mkstemp(suffix="_load_acl")
+    log.startLogging(os.fdopen(fd, "a"), setStdout=False)
     log.msg(
         'User %s (uid:%d) executed "%s"'
-        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv))
+        % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv)),
     )
     main()

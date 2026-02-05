@@ -1,5 +1,4 @@
-"""
-Trigger Twisted XMLRPC server with an SSH manhole. Supports SSL.
+"""Trigger Twisted XMLRPC server with an SSH manhole. Supports SSL.
 
 This provides a daemonized Twisted reactor loop, Trigger and client
 applications do not have to co-habitate. Using the XMLRPC server model, all
@@ -30,8 +29,7 @@ if os.getenv("DEBUG"):
 
 
 class TriggerXMLRPCServer(xmlrpc.XMLRPC):
-    """
-    Twisted XMLRPC server front-end for Commando
+    """Twisted XMLRPC server front-end for Commando.
     """
 
     def __init__(self, *args, **kwargs):
@@ -44,8 +42,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         self.addHandlers(self._handlers)
 
     def lookupProcedure(self, procedurePath):
-        """
-        Lookup a method dynamically.
+        """Lookup a method dynamically.
 
         1. First, see if it's provided by a sub-handler.
         2. Or try a self-defined method (prefixed with `xmlrpc_`)
@@ -59,7 +56,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             handler = self.getSubHandler(prefix)
             if handler is None:
                 raise xmlrpc.NoSuchFunction(
-                    self.NOT_FOUND, f"no such subHandler {prefix}"
+                    self.NOT_FOUND, f"no such subHandler {prefix}",
                 )
             return handler.lookupProcedure(procedurePath)
 
@@ -72,23 +69,21 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
         if not f:
             raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND, f"procedure {procedurePath} not found"
+                self.NOT_FOUND, f"procedure {procedurePath} not found",
             )
-        elif not callable(f):
+        if not callable(f):
             raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND, f"procedure {procedurePath} not callable"
+                self.NOT_FOUND, f"procedure {procedurePath} not callable",
             )
-        else:
-            return f
+        return f
 
     def addHandlers(self, handlers):
-        """Add multiple handlers"""
+        """Add multiple handlers."""
         for handler in handlers:
             self.addHandler(handler)
 
     def addHandler(self, handler):
-        """
-        Add a handler and bind it to an XMLRPC procedure.
+        """Add a handler and bind it to an XMLRPC procedure.
 
         Handler must a be a function or an instance of an object with handler
         methods.
@@ -100,11 +95,10 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         # If it's a function, bind it as its own internal name.
         if type(handler) in (types.BuiltinFunctionType, types.FunctionType):
             name = handler.__name__
-            if name.startswith("xmlrpc_"):
-                name = name[7:]  # If it starts w/ 'xmlrpc_', slice it out!
+            name = name.removeprefix("xmlrpc_")  # If it starts w/ 'xmlrpc_', slice it out!
             log.msg(f"Mapping function {name}...")
             self._procedure_map[name] = handler
-            return None
+            return
 
         # Otherwise, walk the methods on any class objects and bind them by
         # their attribute name.
@@ -114,12 +108,11 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
                 self._procedure_map[method] = getattr(handler, method)
 
     def listProcedures(self):
-        """Return a list of the registered procedures"""
+        """Return a list of the registered procedures."""
         return self._procedure_map.keys()
 
     def xmlrpc_add_handler(self, mod_name, task_name, force=False):
-        """
-        Add a handler object from a remote call.
+        """Add a handler object from a remote call.
         """
         module = None
         if mod_name in sys.modules:
@@ -131,7 +124,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
             else:
                 # If not forcing reload, don't bother with the rest
                 log.msg(f"{mod_name!r} already loaded")
-                return None
+                return
         else:
             log.msg(f"Trying to add handler: {task_name!r}")
             try:
@@ -143,51 +136,43 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 
         if not module:
             log.msg(f"    Unable to load module: {mod_name}")
-            return None
-        else:
-            handler = getattr(module, "xmlrpc_" + task_name)
+            return
+        handler = getattr(module, "xmlrpc_" + task_name)
 
-            # XMLRPC methods will not accept kwargs. Instead, we pass 2 position
-            # args: args and kwargs, to a shell method (dummy) that will explode
-            # them when sending to the user defined method (handler).
-            def dummy(self, args, kwargs):
-                return handler(*args, **kwargs)
+        # XMLRPC methods will not accept kwargs. Instead, we pass 2 position
+        # args: args and kwargs, to a shell method (dummy) that will explode
+        # them when sending to the user defined method (handler).
+        def dummy(self, args, kwargs):
+            return handler(*args, **kwargs)
 
-            # TODO (jathan): Make this work!!
-            # This just simply does not work.  I am not sure why, but it results in a
-            # "<Fault 8001: 'procedure config_device not found'>" error!
-            # # Bind the dummy shell method to TriggerXMLRPCServer. The function's
-            # # name will be used to map it to the "dummy" handler object.
-            # dummy.__name__ = task_name
-            # self.addHandler(dummy)
+        # TODO (jathan): Make this work!!
+        # This just simply does not work.  I am not sure why, but it results in a
+        # "<Fault 8001: 'procedure config_device not found'>" error!
 
-            # This does work.
-            # Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_' + task_name
-            setattr(TriggerXMLRPCServer, "xmlrpc_" + task_name, dummy)
+        # This does work.
+        # Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_' + task_name
+        setattr(TriggerXMLRPCServer, "xmlrpc_" + task_name, dummy)
 
     def xmlrpc_list_subhandlers(self):
         return list(self.subHandlers)
 
     def xmlrpc_execute_commands(self, args, kwargs):
-        """Execute ``commands`` on ``devices``"""
+        """Execute ``commands`` on ``devices``."""
         c = CommandoApplication(*args, **kwargs)
-        d = c.run()
-        return d
+        return c.run()
 
     def xmlrpc_add(self, x, y):
-        """Adds x and y"""
+        """Adds x and y."""
         return x + y
 
     def xmlrpc_fault(self):
-        """
-        Raise a Fault indicating that the procedure should not be used.
+        """Raise a Fault indicating that the procedure should not be used.
         """
         raise xmlrpc.Fault(123, "The fault procedure is faulty.")
 
     def _ebRender(self, failure):
-        """
-        Custom exception rendering.
-        Ref: https://netzguerilla.net/iro/dev/_modules/iro/view/xmlrpc.html
+        """Custom exception rendering.
+        Ref: https://netzguerilla.net/iro/dev/_modules/iro/view/xmlrpc.html.
         """
         if isinstance(failure.value, Exception):
             msg = f"""{failure.type.__name__}: {failure.value.args[0]}"""
@@ -198,7 +183,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
 # XXX (jathan): Note that this is out-of-sync w/ the twistd plugin and is
 # probably broken.
 def main():
-    """To daemonize as a twistd plugin! Except this doesn't work and these"""
+    """To daemonize as a twistd plugin! Except this doesn't work and these."""
     from twisted.application.internet import SSLServer
     from twisted.application.service import Application
     from twisted.internet import ssl
@@ -209,7 +194,6 @@ def main():
     server_factory = server.Site(rpc)
     application = Application("trigger_xmlrpc")
 
-    # xmlrpc_service = TCPServer(8000, server_factory)
     ctx = ssl.DefaultOpenSSLContextFactory("server.key", "cacert.pem")
     xmlrpc_service = SSLServer(8000, server_factory, ctx)
     xmlrpc_service.setServiceParent(application)

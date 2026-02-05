@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-Interface with the access-control list (ACL) database and task queue.
+"""Interface with the access-control list (ACL) database and task queue.
 
 This is a simple command to manage explicit ACL associations within the ACL
 database (acls.db), to search for both implicit and explicit ACL associations,
@@ -163,7 +162,7 @@ def main():
             print("Nothing in the integrated queue.")
 
     elif opts.mode == "listmanual":
-        for item, user, ts, done in queue.list(queue="manual"):
+        for item, user, ts, _done in queue.list(queue="manual"):
             print(item)
             print(f"\tadded by {user} on {ts}")
             print()
@@ -198,14 +197,14 @@ def main():
                 for acl in opts.add:
                     try:
                         print(aclsdb.add_acl(dev, acl))
-                    except exceptions.ACLSetError as err:
+                    except exceptions.ACLSetError as err:  # noqa: PERF203
                         print(err)
 
             elif opts.remove:
                 for acl in opts.remove:
                     try:
                         print(aclsdb.remove_acl(dev, acl))
-                    except exceptions.ACLSetError as err:
+                    except exceptions.ACLSetError as err:  # noqa: PERF203
                         # Check if it is an implicit ACL
                         if acl in aclsdb.get_acl_set(dev, "implicit"):
                             print(f"This ACL is associated via {settings.AUTOACL_FILE}")
@@ -218,7 +217,7 @@ def main():
     elif opts.display:
         # Pretty-print the device/acls justified to the terminal
         acl_data = get_matching_acls(
-            args, opts.exact, match_acl=(not opts.dev_only), match_device=True
+            args, opts.exact, match_acl=(not opts.dev_only), match_device=True,
         )
         if not acl_data:
             msg = f"No results for {args}" if not opts.quiet else 1

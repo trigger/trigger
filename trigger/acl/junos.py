@@ -1,6 +1,5 @@
-"""
-This code is originally from parser.py. This file is not meant to by used by itself.
-This is for JunOS like ACLs
+"""This code is originally from parser.py. This file is not meant to by used by itself.
+This is for JunOS like ACLs.
 
 #Constants
     junos_match_types
@@ -37,14 +36,14 @@ Comments = []
 
 
 class Policer:
-    """
-    Container class for policer policy definitions. This is a dummy class for
+    """Container class for policer policy definitions. This is a dummy class for
     now, that just passes it through as a string.
     """
 
     def __init__(self, name, data):
         if not name:
-            raise exceptions.ActionError("Policer requres name")
+            msg = "Policer requres name"
+            raise exceptions.ActionError(msg)
         self.name = name
         self.exceedings = []
         self.actions = []
@@ -76,17 +75,17 @@ class Policer:
     def str2bits(self, str):
         try:
             val = int(str)
-        except:
+        except Exception as err:
             if str[-1] == "k":
                 return int(str[0:-1]) * 1024
             if str[-1] == "m":
                 return int(str[0:-1]) * 1048576
-            else:
-                raise f"invalid bit definition {str}"
+            msg = f"invalid bit definition {str}"
+            raise ValueError(msg) from err
         return val
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {repr(self.name)}>"
+        return f"<{self.__class__.__name__}: {self.name!r}>"
 
     def __str__(self):
         return self.data
@@ -95,14 +94,11 @@ class Policer:
         output = [f"policer {self.name} {{"]
         if self.exceedings:
             output.append("    if-exceeding {")
-        for x in self.exceedings:
-            output.append(f"        {x[0]} {x[1]};")
-        if self.exceedings:
+            output.extend(f"        {x[0]} {x[1]};" for x in self.exceedings)
             output.append("    }")
         if self.actions:
             output.append("    then {")
-        for x in self.actions:
-            output.append(f"        {x};")
+            output.extend(f"        {x};" for x in self.actions)
 
         if self.actions:
             output.append("    }")
@@ -128,13 +124,11 @@ class PolicerGroup:
     def output_junos(self, replace=False):
         output = []
         for ent in self.policers:
-            for x in ent.output():
-                output.append(x)
+            output.extend(ent.output())
 
         if replace:
             return ["firewall {", "replace:"] + ["    " + x for x in output] + ["}"]
-        else:
-            return output
+        return output
 
 
 class QuotedString(str):
@@ -147,7 +141,6 @@ junos_match_types = []
 
 def braced_list(arg):
     """Returned braced output.  Will alert if comment is malformed."""
-    # return '("{", jws?, (%s, jws?)*, "}")' % arg
     return '("{{", jws?, ({}, jws?)*, "}}"!{})'.format(arg, errs["comm_start"])
 
 
@@ -208,8 +201,7 @@ range_match("vlan-ether-type", "alphanums")
 
 
 def handle_junos_acl(x):
-    """
-    Parse JUNOS ACL and return an ACL object populated with Term and Policer
+    """Parse JUNOS ACL and return an ACL object populated with Term and Policer
     objects.
 
     It's expected that x is a 2-tuple of (name, terms) returned from the
@@ -227,13 +219,13 @@ def handle_junos_acl(x):
         elif isinstance(elt, Policer):
             a.policers.append(elt)
         else:
-            raise RuntimeError(f"Bad Object: {repr(elt)}")
+            msg = f"Bad Object: {elt!r}"
+            raise RuntimeError(msg)
     return a
 
 
 def handle_junos_family_acl(x):
-    """
-    Parses a JUNOS acl that contains family information and sets the family
+    """Parses a JUNOS acl that contains family information and sets the family
     attribute for the ACL object.
 
     It's expected that x is a 2-tuple of (family, aclobj) returned from the
@@ -242,23 +234,24 @@ def handle_junos_family_acl(x):
     Don't forget to wrap your token in S()!
     """
     family, aclobj = x
-    setattr(aclobj, "family", family)
+    aclobj.family = family
     return aclobj
 
 
 def handle_junos_policers(x):
-    """Parse JUNOS policers and return a PolicerGroup object"""
+    """Parse JUNOS policers and return a PolicerGroup object."""
     p = PolicerGroup(format="junos")
     for elt in x:
         if isinstance(elt, Policer):
             p.policers.append(elt)
         else:
-            raise RuntimeError(f"bad object: {repr(elt)} in policer")
+            msg = f"bad object: {elt!r} in policer"
+            raise RuntimeError(msg)
     return p
 
 
 def handle_junos_term(d):
-    """Parse a JUNOS term and return a Term object"""
+    """Parse a JUNOS term and return a Term object."""
     if "modifiers" in d:
         d["modifiers"] = Modifiers(d["modifiers"])
     return Term(**d)
@@ -266,8 +259,7 @@ def handle_junos_term(d):
 
 # For multiline comments
 def juniper_multiline_comments():
-    """
-    Return appropriate multi-line comment grammar for Juniper ACLs.
+    """Return appropriate multi-line comment grammar for Juniper ACLs.
 
     This depends on ``settings.ALLOW_JUNIPER_MULTLIINE_COMMENTS``.
     """
@@ -282,16 +274,12 @@ rules.update(
     {
         "jword": "double_quoted / word",
         "double_quoted": ('"\\"", -[\\"]+, "\\""', lambda x: QuotedString(x[1:-1])),
-        #'>jws<':                    '(ws / jcomment)+',
-        # S('jcomment'):              ('"/*", ws?, jcomment_body, ws?, "*/"',
-        #                            lambda x: Comment(x[0])),
-        #'jcomment_body':            '-(ws?, "*/")*',
         ">jws<": "(ws / jcomment)+",
         S("jcomment"): ("jslashbang_comment", lambda x: Comment(x[0])),
         "<comment_start>": '"/*"',
         "<comment_stop>": '"*/"',
         ">jslashbang_comment<": "comment_start, jcomment_body, !{}, comment_stop".format(
-            errs["comm_stop"]
+            errs["comm_stop"],
         ),
         "jcomment_body": juniper_multiline_comments(),
         # Errors on missing ';', ignores multiple ;; and normalizes to one.
@@ -299,7 +287,7 @@ rules.update(
         "fragment_flag": literals(fragment_flag_names),
         "ip_option": "digits / " + literals(ip_option_names),
         "tcp_flag": literals(tcp_flag_names),
-    }
+    },
 )
 
 # Note there cannot be jws (including comments) before or after the "filter"
@@ -418,5 +406,5 @@ rules.update(
         "junos_arg_modifier_kw": (
             '"count" / "forwarding-class" / "ipsec-sa" /"loss-priority" / "policer"'
         ),
-    }
+    },
 )

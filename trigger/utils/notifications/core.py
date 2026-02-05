@@ -1,5 +1,4 @@
-"""
-Basic functions for sending notifications.
+"""Basic functions for sending notifications.
 """
 
 __author__ = "Jathan McCollum"
@@ -15,8 +14,7 @@ __all__ = ("send_email", "send_notification")
 
 # Functions
 def send_email(addresses, subject, body, sender, mailhost="localhost"):
-    """
-    Sends an email to a list of recipients. Returns ``True`` when done.
+    """Sends an email to a list of recipients. Returns ``True`` when done.
 
     :param addresses:
         List of email recipients
@@ -46,8 +44,7 @@ def send_email(addresses, subject, body, sender, mailhost="localhost"):
 
 
 def send_notification(*args, **kwargs):
-    """
-    Simple entry point into `~trigger.utils.notifications.handlers.notify` that
+    """Simple entry point into `~trigger.utils.notifications.handlers.notify` that
     takes any arguments and tries to handle them to send a notification.
 
     This relies on handlers to be definied within

@@ -1,5 +1,4 @@
-"""
-Database models for the task queue.
+"""Database models for the task queue.
 """
 
 import datetime
@@ -10,7 +9,8 @@ from trigger.conf import settings
 
 engine = settings.DATABASE_ENGINE
 if not engine:
-    raise RuntimeError("You must specify a database engine in settings.DATABASE_ENGINE")
+    msg = "You must specify a database engine in settings.DATABASE_ENGINE"
+    raise RuntimeError(msg)
 
 # We're hard-coding support for the BIG THREE database solutions for now,
 # because that's what the ``peewee`` library we are using as the ORM supports.
@@ -35,28 +35,29 @@ elif engine == "postgresql":
         password=settings.DATABASE_PASSWORD,
     )
 else:
-    raise RuntimeError(f"Unsupported database engine: {engine}")
+    msg = f"Unsupported database engine: {engine}"
+    raise RuntimeError(msg)
 
 
 class BaseModel(pw.Model):
-    """
-    Base model that inherits the database object determined above.
+    """Base model that inherits the database object determined above.
     """
 
     class Meta:
+        """Peewee Meta class for database configuration."""
+
         database = database
 
 
 class CustomCharField(pw.CharField):
-    """Overload default CharField to always return strings vs. UTF-8"""
+    """Overload default CharField to always return strings vs. UTF-8."""
 
     def coerce(self, value):
         return str(value or "")
 
 
 class IntegratedTask(BaseModel):
-    """
-    Tasks for "integrated" queue used by `~trigger.acl.queue.Queue`.
+    """Tasks for "integrated" queue used by `~trigger.acl.queue.Queue`.
 
     e.g. ``acl -l``
     """
@@ -70,13 +71,14 @@ class IntegratedTask(BaseModel):
     escalation = pw.BooleanField(default=False)
 
     class Meta:
+        """Peewee Meta class for integrated task table configuration."""
+
         # Python 3 / peewee v3+: db_table renamed to table_name
         table_name = "acl_queue"
 
 
 class ManualTask(BaseModel):
-    """
-    Tasks for "manual" queue used by `~trigger.acl.queue.Queue`.
+    """Tasks for "manual" queue used by `~trigger.acl.queue.Queue`.
 
     e.g. ``acl -m``
     """
@@ -90,6 +92,8 @@ class ManualTask(BaseModel):
     login = CustomCharField(null=False, default="")
 
     class Meta:
+        """Peewee Meta class for manual task table configuration."""
+
         table_name = "queue"
 
 
@@ -113,6 +117,5 @@ def confirm_tables():
     for q_name, model in MODEL_MAP.items():
         print(q_name.ljust(width), end=" ")
         print(model.table_exists())
-    else:
-        return True
+    return True
     return False

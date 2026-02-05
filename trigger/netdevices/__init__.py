@@ -1,5 +1,4 @@
-"""
-The heart and soul of Trigger, NetDevices is an abstract interface to network
+"""The heart and soul of Trigger, NetDevices is an abstract interface to network
 device metadata and ACL associations.
 
 Parses :setting:`NETDEVICES_SOURCE` and makes available a dictionary of
@@ -56,13 +55,12 @@ ET.SubElement(JUNIPER_COMMIT_FULL, "full")
 
 
 # Exports
-__all__ = ["device_match", "NetDevice", "NetDevices", "Vendor"]
+__all__ = ["NetDevice", "NetDevices", "Vendor", "device_match"]
 
 
 # Functions
 def _munge_source_data(data_source=settings.NETDEVICES_SOURCE):
-    """
-    Read the source data in the specified format, parse it, and return a
+    """Read the source data in the specified format, parse it, and return a.
 
     :param data_source:
         Absolute path to source data file
@@ -74,13 +72,11 @@ def _munge_source_data(data_source=settings.NETDEVICES_SOURCE):
 
 
 def _populate(netdevices, data_source, production_only, with_acls):
-    """
-    Populates the NetDevices with NetDevice objects.
+    """Populates the NetDevices with NetDevice objects.
 
     Abstracted from within NetDevices to prevent accidental repopulation of NetDevice
     objects.
     """
-    # start = time.time()
     loader, device_data = _munge_source_data(data_source=data_source)
     netdevices.set_loader(loader)
 
@@ -114,14 +110,12 @@ def _populate(netdevices, data_source, production_only, with_acls):
         # Add to dict
         netdevices.add_device(dev)
 
-    # end = time.time()
-    # print 'Took %f seconds' % (end - start)
 
 
 def device_match(name, production_only=True):
-    """
-    Return a matching :class:`~trigger.netdevices.NetDevice` object based on
-    partial name. Return `None` if no match or if multiple matches is
+    """Return a matching :class:`~trigger.netdevices.NetDevice` object based on partial name.
+
+    Return `None` if no match or if multiple matches is
     cancelled::
 
         >>> device_match('test')
@@ -170,9 +164,8 @@ def device_match(name, production_only=True):
 
 
 # Classes
-class NetDevice:
-    """
-    An object that represents a distinct network device and its metadata.
+class NetDevice:  # noqa: PLW1641
+    """An object that represents a distinct network device and its metadata.
 
     Almost all of the attributes are populated by
     `~trigger.netdevices._populate()` and are mostly dependent upon the source
@@ -264,8 +257,7 @@ class NetDevice:
         self._endpoint = None
 
     def _populate_data(self, data):
-        """
-        Populate the custom attribute data
+        """Populate the custom attribute data.
 
         :param data:
             An iterable of key/value pairs
@@ -298,7 +290,7 @@ class NetDevice:
             self.adminStatus = STATUS_MAP.get(self.deviceStatus, STATUS_MAP["up"])
 
     def _set_node_port(self):
-        """Set the freakin' TCP port"""
+        """Set the freakin' TCP port."""
         # If nodename is set, try to parse out a nodePort
         if self.nodeName is not None:
             nodeport_info = parse_node_port(self.nodeName)
@@ -311,21 +303,20 @@ class NetDevice:
             # If the port isn't set, set it
             if nodePort is not None:
                 self.nodePort = nodePort
-                return None
+                return
 
         # Make sure the port is an integer if it's not None
         if self.nodePort is not None and isinstance(self.nodePort, str):
             self.nodePort = int(self.nodePort)
 
     def _populate_deviceType(self):
-        """Try to make a guess what the device type is"""
+        """Try to make a guess what the device type is."""
         self.deviceType = settings.DEFAULT_TYPES.get(
-            self.vendor.name, settings.FALLBACK_TYPE
+            self.vendor.name, settings.FALLBACK_TYPE,
         )
 
     def _set_requires_async_pty(self):
-        """
-        Set whether a device requires an async pty (see:
+        """Set whether a device requires an async pty (see:
         `~trigger.twister.TriggerSSHAsyncPtyChannel`).
         """
         RULES = (
@@ -335,19 +326,16 @@ class NetDevice:
         return any(RULES)
 
     def _set_delimiter(self):
-        """
-        Set the delimiter to use for line-endings.
+        """Set the delimiter to use for line-endings.
         """
         default = "\n"
         delimiter_map = {
             "force10": "\r\n",
         }
-        delimiter = delimiter_map.get(self.vendor.name, default)
-        return delimiter
+        return delimiter_map.get(self.vendor.name, default)
 
     def _set_startup_commands(self):
-        """
-        Set the commands to run at startup. For now they are just ones to
+        """Set the commands to run at startup. For now they are just ones to
         disable pagination.
         """
 
@@ -355,12 +343,11 @@ class NetDevice:
             """Return the vendor name for startup commands lookup."""
             if self.is_brocade_vdx():
                 return "brocade_vdx"
-            elif self.is_cisco_asa():
+            if self.is_cisco_asa():
                 return "cisco_asa"
-            elif self.is_netscreen():
+            if self.is_netscreen():
                 return "netscreen"
-            else:
-                return self.vendor.name
+            return self.vendor.name
 
         paging_map = settings.STARTUP_COMMANDS_MAP
         cmds = paging_map.get(get_vendor_name())
@@ -371,40 +358,33 @@ class NetDevice:
         return []
 
     def _set_commit_commands(self):
-        """
-        Return the proper "commit" command. (e.g. write mem, etc.)
+        """Return the proper "commit" command. (e.g. write mem, etc.).
         """
         if self.is_ioslike():
             return self._ioslike_commit()
-        elif self.is_netscaler() or self.is_netscreen():
+        if self.is_netscaler() or self.is_netscreen():
             return ["save config"]
-        elif self.vendor == "juniper":
+        if self.vendor == "juniper":
             return self._juniper_commit()
-        elif self.vendor == "paloalto":
+        if self.vendor in {"paloalto", "pica8"}:
             return ["commit"]
-        elif self.vendor == "pica8":
-            return ["commit"]
-        elif self.vendor == "mrv":
+        if self.vendor == "mrv":
             return ["save configuration flash"]
-        elif self.vendor == "f5":
+        if self.vendor == "f5":
             return ["save sys config"]
-        else:
-            return []
+        return []
 
     def _ioslike_commit(self):
-        """
-        Return proper 'write memory' command for IOS-like devices.
+        """Return proper 'write memory' command for IOS-like devices.
         """
         if self.is_brocade_vdx() or self.vendor == "dell":
             return ["copy running-config startup-config", "y"]
-        elif self.is_cisco_nexus():
+        if self.is_cisco_nexus():
             return ["copy running-config startup-config"]
-        else:
-            return ["write memory"]
+        return ["write memory"]
 
     def _juniper_commit(self, fields=settings.JUNIPER_FULL_COMMIT_FIELDS):
-        """
-        Return proper ``commit-configuration`` element for a Juniper
+        """Return proper ``commit-configuration`` element for a Juniper
         device.
         """
         default = [JUNIPER_COMMIT]
@@ -413,15 +393,16 @@ class NetDevice:
 
         # Either it's a normal "commit-configuration"
         for attr, val in fields.items():
-            if not getattr(self, attr) == val:
+            if getattr(self, attr) != val:
                 return default
 
         # Or it's a "commit-configuration full"
         return [JUNIPER_COMMIT_FULL]
 
     def _bind_dynamic_methods(self):
-        """
-        Bind dynamic methods to the instance. Currently does these:
+        """Bind dynamic methods to the instance.
+
+        Currently does these:
 
             + Dynamically bind ~trigger.twister.excute` to .execute()
             + Dynamically bind ~trigger.twister.connect` to .connect()
@@ -434,14 +415,13 @@ class NetDevice:
         self.connect = twister.connect.__get__(self, self.__class__)
 
     def _populate_acls(self, aclsdb=None):
-        """
-        Populate the associated ACLs for this device.
+        """Populate the associated ACLs for this device.
 
         :param aclsdb:
             An `~trigger.acl.db.AclsDB` object.
         """
         if not aclsdb:
-            return None
+            return
 
         acls_dict = aclsdb.get_acl_dict(self)
         self.explicit_acls = acls_dict["explicit"]
@@ -547,7 +527,8 @@ class NetDevice:
         self._endpoint = self._get_endpoint()
 
         if self._endpoint is None:
-            raise ValueError("Endpoint has not been instantiated.")
+            msg = "Endpoint has not been instantiated."
+            raise ValueError(msg)
 
         self.d = self._endpoint.addCallback(inject_net_device_into_protocol)
 
@@ -562,12 +543,12 @@ class NetDevice:
             return proto
 
         if self._endpoint is None:
-            raise ValueError("Endpoint has not been instantiated.")
+            msg = "Endpoint has not been instantiated."
+            raise ValueError(msg)
 
         self._endpoint.addCallback(disconnect)
 
         self._connected = False
-        return
 
     def __enter__(self):
         self.open()
@@ -623,7 +604,7 @@ class NetDevice:
 
         def inject_commands_into_protocol(proto):
             result = proto.add_commands(commands, on_error)
-            result.addCallback(lambda results: d.callback(results))
+            result.addCallback(d.callback)
             result.addBoth(on_error)
             return proto
 
@@ -668,7 +649,7 @@ class NetDevice:
 
         def inject_commands_into_protocol(proto):
             result = proto.add_commands(commands, on_error)
-            result.addCallback(lambda results: d.callback(results))
+            result.addCallback(d.callback)
             result.addBoth(on_error)
             return proto
 
@@ -681,8 +662,7 @@ class NetDevice:
         return self._connected
 
     def allowable(self, action, when=None):
-        """
-        Return whether it's okay to perform the specified ``action``.
+        """Return whether it's okay to perform the specified ``action``.
 
         False means a bounce window conflict. For now ``'load-acl'`` is the
         only valid action and moratorium status is not checked.
@@ -697,8 +677,7 @@ class NetDevice:
         return self.bounce.status(when) == changemgmt.BounceStatus("green")
 
     def next_ok(self, action, when=None):
-        """
-        Return the next time at or after the specified time (default now)
+        """Return the next time at or after the specified time (default now)
         that it will be ok to perform the specified action.
 
         :param action:
@@ -754,20 +733,17 @@ class NetDevice:
         return self.vendor == "juniper" and is_ssg
 
     def is_ioslike(self):
-        """
-        Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
+        """Am I an IOS-like device (as determined by :setting:`IOSLIKE_VENDORS`)?
         """
         return self.vendor in settings.IOSLIKE_VENDORS
 
     def is_cumulus(self):
-        """
-        Am I running Cumulus?
+        """Am I running Cumulus?
         """
         return self.vendor == "cumulus"
 
     def is_brocade_vdx(self):
-        """
-        Am I a Brocade VDX switch?
+        """Am I a Brocade VDX switch?
 
         This is used to account for the disparity between the Brocade FCX
         switches (which behave like Foundry devices) and the Brocade VDX
@@ -785,8 +761,7 @@ class NetDevice:
         return self._is_brocade_vdx
 
     def is_cisco_asa(self):
-        """
-        Am I a Cisco ASA Firewall?
+        """Am I a Cisco ASA Firewall?
 
         This is used to account for slight differences in the commands that
         may be used between Cisco's ASA and IOS platforms. Cisco ASA is still
@@ -813,17 +788,13 @@ class NetDevice:
         return self._is_cisco_asa
 
     def is_cisco_nexus(self):
-        """
-        Am I a Cisco Nexus device?
+        """Am I a Cisco Nexus device?
         """
         words = (self.make, self.model)
         patterns = ("n.k", "nexus")  # Patterns to match
         pairs = itertools.product(patterns, words)
 
-        for pat, word in pairs:
-            if word and re.search(pat, word.lower()):
-                return True
-        return False
+        return any(word and re.search(pat, word.lower()) for pat, word in pairs)
 
     def _ssh_enabled(self, disabled_mapping):
         """Check whether vendor/type is enabled against the given mapping."""
@@ -835,8 +806,7 @@ class NetDevice:
         return network.test_ssh(self.nodeName)
 
     def _can_ssh(self, method):
-        """
-        Am I enabled to use SSH for the given method in Trigger settings, and
+        """Am I enabled to use SSH for the given method in Trigger settings, and
         if so do I even have SSH?
 
         :param method: One of ('pty', 'async')
@@ -892,8 +862,7 @@ class NetDevice:
 
 
 class Vendor:
-    """
-    Map a manufacturer name to Trigger's canonical name.
+    """Map a manufacturer name to Trigger's canonical name.
 
     Given a manufacturer name like 'CISCO SYSTEMS', this will attempt to map it
     to the canonical vendor name specified in ``settings.VENDOR_MAP``. If this
@@ -905,13 +874,13 @@ class Vendor:
     """
 
     def __init__(self, manufacturer=None):
-        """
-        :param manufacturer:
-            The literal or "internal" name for a vendor that is to be mapped to
-            its canonical name.
+        """:param manufacturer:
+        The literal or "internal" name for a vendor that is to be mapped to
+        its canonical name.
         """
         if manufacturer is None:
-            raise SyntaxError("You must specify a `manufacturer` name")
+            msg = "You must specify a `manufacturer` name"
+            raise SyntaxError(msg)
 
         self.manufacturer = manufacturer
         self.name = self.determine_vendor(manufacturer)
@@ -927,15 +896,13 @@ class Vendor:
                 if word in settings.SUPPORTED_VENDORS:
                     vendor = word
                     break
-                else:
-                    # Safe fallback to first word
-                    vendor = mparts[0]
+                # Safe fallback to first word
+                vendor = mparts[0]
 
         return vendor
 
     def _get_prompt_pattern(self, vendor, prompt_patterns=None):
-        """
-        Map the vendor name to the appropriate ``prompt_pattern`` defined in
+        """Map the vendor name to the appropriate ``prompt_pattern`` defined in
         :setting:`PROMPT_PATTERNS`.
         """
         if prompt_patterns is None:
@@ -981,8 +948,7 @@ _vendor_registry = {}
 
 
 def vendor_factory(vendor_name):
-    """
-    Given a full name of a vendor, retrieve or create the canonical
+    """Given a full name of a vendor, retrieve or create the canonical
     `~trigger.netdevices.Vendor` object.
 
     Vendor instances are cached to improve startup speed.
@@ -994,8 +960,7 @@ def vendor_factory(vendor_name):
 
 
 class NetDevices(MutableMapping):
-    """
-    Returns an immutable Singleton dictionary of
+    """Returns an immutable Singleton dictionary of
     `~trigger.netdevices.NetDevice` objects.
 
     By default it will only return devices for which
@@ -1013,8 +978,7 @@ class NetDevices(MutableMapping):
     _Singleton = None
 
     class _actual:
-        """
-        This is the real class that stays active upon instantiation. All
+        """This is the real class that stays active upon instantiation. All
         attributes are inherited by NetDevices from this object. This means you
         do NOT reference ``_actual`` itself, and instead call the methods from
         the parent object.
@@ -1046,8 +1010,7 @@ class NetDevices(MutableMapping):
             )
 
         def set_loader(self, loader):
-            """
-            Set the NetDevices loader and initialize internal dictionary.
+            """Set the NetDevices loader and initialize internal dictionary.
 
             :param loader:
                 A `~trigger.netdevices.loader.BaseLoader` plugin instance
@@ -1061,17 +1024,14 @@ class NetDevices(MutableMapping):
 
         @property
         def _dict(self):
-            """
-            If the loader has an inner _dict, store objects on that instead.
+            """If the loader has an inner _dict, store objects on that instead.
             """
             if hasattr(self.loader, "_dict"):
                 return self.loader._dict
-            else:
-                return self.__dict
+            return self.__dict
 
         def add_device(self, device):
-            """
-            Add a device object to the store.
+            """Add a device object to the store.
 
             :param device:
                 `~trigger.netdevices.NetDevice` object
@@ -1091,8 +1051,7 @@ class NetDevices(MutableMapping):
             return self._dict.values()
 
         def find(self, key):
-            """
-            Return either the exact nodename, or a unique dot-delimited
+            """Return either the exact nodename, or a unique dot-delimited
             prefix.  For example, if there is a node 'test1-abc.net.aol.com',
             then any of find('test1-abc') or find('test1-abc.net') or
             find('test1-abc.net.aol.com') will match, but not find('test1').
@@ -1110,7 +1069,7 @@ class NetDevices(MutableMapping):
                 return self.loader.find(key)
 
             # Or if there's a key, return that.
-            elif key in self:
+            if key in self:
                 return self[key]
 
             matches = [x for x in self.keys() if x.startswith(key + ".")]
@@ -1120,8 +1079,7 @@ class NetDevices(MutableMapping):
             raise KeyError(key)
 
         def all(self):
-            """
-            Returns all NetDevice objects.
+            """Returns all NetDevice objects.
 
             This method can be overloaded in NetDevices loader plugins to
             customize the behavior as dictated by the plugin.
@@ -1132,8 +1090,7 @@ class NetDevices(MutableMapping):
             return list(self.values())
 
         def search(self, token, field="nodeName"):
-            """
-            Returns a list of NetDevice objects where other is in
+            """Returns a list of NetDevice objects where other is in
             ``dev.nodeName``. The getattr call in the search will allow a
             ``AttributeError`` from a bogus field lookup so that you
             don't get an empty list thinking you performed a legit query.
@@ -1160,13 +1117,11 @@ class NetDevices(MutableMapping):
             # We could actually just make this call match() to make this
             # case-insensitive as well. But we won't yet because of possible
             # implications in outside dependencies.
-            # return self.match(**{field:token})
 
             return [x for x in self.all() if token in getattr(x, field)]
 
         def match(self, **kwargs):
-            """
-            Attempt to match values to all keys in @kwargs by dynamically
+            """Attempt to match values to all keys in @kwargs by dynamically
             building a list comprehension. Will throw errors if the keys don't
             match legit NetDevice attributes.
 
@@ -1214,8 +1169,8 @@ class NetDevices(MutableMapping):
 
             # Use list comp. to keep filtering out the devices.
             for attr, val in kwargs.items():
-                attr = map_attr(attr)
-                val = str(val).lower()
+                attr = map_attr(attr)  # noqa: PLW2901
+                val = str(val).lower()  # noqa: PLW2901
                 devices = [
                     d for d in devices if (val in str(getattr(d, attr, "")).lower())
                 ]
@@ -1223,28 +1178,26 @@ class NetDevices(MutableMapping):
             return devices
 
         def get_devices_by_type(self, devtype):
-            """
-            Returns a list of NetDevice objects with deviceType matching type.
+            """Returns a list of NetDevice objects with deviceType matching type.
 
             Known deviceTypes: ['FIREWALL', 'ROUTER', 'SWITCH']
             """
             return [x for x in self.values() if x.deviceType == devtype]
 
         def list_switches(self):
-            """Returns a list of NetDevice objects with deviceType of SWITCH"""
+            """Returns a list of NetDevice objects with deviceType of SWITCH."""
             return self.get_devices_by_type("SWITCH")
 
         def list_routers(self):
-            """Returns a list of NetDevice objects with deviceType of ROUTER"""
+            """Returns a list of NetDevice objects with deviceType of ROUTER."""
             return self.get_devices_by_type("ROUTER")
 
         def list_firewalls(self):
-            """Returns a list of NetDevice objects with deviceType of FIREWALL"""
+            """Returns a list of NetDevice objects with deviceType of FIREWALL."""
             return self.get_devices_by_type("FIREWALL")
 
     def __init__(self, production_only=True, with_acls=None):
-        """
-        :param production_only:
+        """:param production_only:
             Whether to require devices to have ``adminStatus=='PRODUCTION'``.
 
         :param with_acls:
@@ -1256,7 +1209,7 @@ class NetDevices(MutableMapping):
         classobj = self.__class__
         if classobj._Singleton is None:
             classobj._Singleton = classobj._actual(
-                production_only=production_only, with_acls=with_acls
+                production_only=production_only, with_acls=with_acls,
             )
 
     def __getattr__(self, attr):

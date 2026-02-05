@@ -4,6 +4,7 @@
 
 import os
 import socket
+from pathlib import Path
 
 import IPy
 
@@ -23,8 +24,8 @@ USE_GPG_AUTH = False
 # TODO (jathan): This is deprecated. Remove all references to this and make GPG
 # the default and only method.
 USER_HOME = os.getenv("HOME")
-TACACSRC = os.getenv("TACACSRC", os.path.join(USER_HOME, ".tacacsrc"))
-TACACSRC_KEYFILE = os.getenv("TACACSRC_KEYFILE", os.path.join(PREFIX, ".tackf"))
+TACACSRC = os.getenv("TACACSRC", str(Path(USER_HOME) / ".tacacsrc"))
+TACACSRC_KEYFILE = os.getenv("TACACSRC_KEYFILE", str(Path(PREFIX) / ".tackf"))
 
 # If set, use the TACACSRC_PASSPHRASE, otherwise default to TACACSRC_KEYFILE
 TACACSRC_USE_PASSPHRASE = False
@@ -217,7 +218,7 @@ STARTUP_COMMANDS_DEFAULT = ["terminal length 0"]
 # 'cisco_asa'). The platform-specific lookups are still done in code for now.
 STARTUP_COMMANDS_MAP = {
     "a10": STARTUP_COMMANDS_DEFAULT,
-    "arista": STARTUP_COMMANDS_DEFAULT + ["terminal width 999"],
+    "arista": [*STARTUP_COMMANDS_DEFAULT, "terminal width 999"],
     "aruba": ["no paging"],  # v6.2.x this is not necessary
     "brocade": ["skip-page-display"],
     "brocade_vdx": STARTUP_COMMANDS_DEFAULT,
@@ -290,7 +291,7 @@ DEFAULT_ADMIN_STATUS = "PRODUCTION"
 
 # Path to the explicit module file for autoacl.py so that we can still perform
 # 'from trigger.acl.autoacl import autoacl' without modifying sys.path.
-AUTOACL_FILE = os.environ.get("AUTOACL_FILE", os.path.join(PREFIX, "autoacl.py"))
+AUTOACL_FILE = os.environ.get("AUTOACL_FILE", str(Path(PREFIX) / "autoacl.py"))
 
 # A tuple of data loader classes, specified as strings. Optionally, a tuple can
 # be used instead of a string. The first item in the tuple should be the
@@ -308,7 +309,7 @@ NETDEVICES_LOADERS = (
 # populate trigger.netdevices.NetDevices. For more information on this, see
 # NETDEVICES_LOADERS.
 NETDEVICES_SOURCE = os.environ.get(
-    "NETDEVICES_SOURCE", os.path.join(PREFIX, "netdevices.json")
+    "NETDEVICES_SOURCE", str(Path(PREFIX) / "netdevices.json"),
 )
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM
@@ -318,7 +319,7 @@ TEXTFSM_VENDOR_MAPPINGS = {"cisco": ["ios", "nxos"], "arista": ["eos"]}
 # TextFSM Template Path. Commando will attempt to match a given show command
 # with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates")
+    "TEXTFSM_TEMPLATE_DIR", str(Path(PREFIX) / "vendor/ntc_templates"),
 )
 
 # TextFSM Vendor Mappings. Override this if you have defined your own TextFSM templates.
@@ -326,12 +327,12 @@ TEXTFSM_VENDOR_MAPPINGS = {"cisco": ["ios", "nxos"], "arista": ["eos"]}
 
 # TextFSM Template Path. Commando will attempt to match a given show command with a template within this folder.
 TEXTFSM_TEMPLATE_DIR = os.getenv(
-    "TEXTFSM_TEMPLATE_DIR", os.path.join(PREFIX, "vendor/ntc_templates")
+    "TEXTFSM_TEMPLATE_DIR", str(Path(PREFIX) / "vendor/ntc_templates"),
 )
 
 # Whether to treat the RANCID root as a normal instance, or as the root to
 # multiple instances. This is only checked when using RANCID as a data source.
-RANCID_RECURSE_SUBDIRS = os.environ.get("RANCID_RECURSE_SUBDIRS", False)
+RANCID_RECURSE_SUBDIRS = bool(os.environ.get("RANCID_RECURSE_SUBDIRS", ""))
 
 # Valid owning teams (e.g. device.owningTeam) go here. These are examples and
 # should be changed to match your environment.
@@ -346,8 +347,8 @@ VALID_OWNERS = (
 # The fields and values must match the objects exactly or it will fallback to
 # ``commit-configuration``.
 JUNIPER_FULL_COMMIT_FIELDS = {
-    #'deviceType': 'SWITCH',
-    #'make': 'EX4200',
+    #'deviceType': 'SWITCH',  # noqa: ERA001
+    #'make': 'EX4200',  # noqa: ERA001
 }
 
 # ===============================
@@ -357,7 +358,7 @@ JUNIPER_FULL_COMMIT_FIELDS = {
 # try to use IOSLIKE_PROMPT_PAT or fallback to DEFAULT_PROMPT_PAT.
 PROMPT_PATTERNS = {
     "aruba": r"\(\S+\)(?: \(\S+\))?\s?#$",  # ArubaOS 6.1
-    #'aruba': r'\S+(?: \(\S+\))?\s?#\s$', # ArubaOS 6.2
+    #'aruba': r'\S+(?: \(\S+\))?\s?#\s$', # ArubaOS 6.2  # noqa: ERA001
     "avocent": r"\S+[#\$]|->\s?$",
     "citrix": r"\sDone\n$",
     # This pattern is a regex "or" combination of the Cumulus bash login prompt
@@ -386,7 +387,7 @@ DEFAULT_PROMPT_PAT = r"\S+#\s?$"
 
 # Path of the explicit module file for bounce.py containing custom bounce
 # window mappings.
-BOUNCE_FILE = os.environ.get("BOUNCE_FILE", os.path.join(PREFIX, "bounce.py"))
+BOUNCE_FILE = os.environ.get("BOUNCE_FILE", str(Path(PREFIX) / "bounce.py"))
 
 # Default bounce timezone. All BounceWindow objects are configured using
 # US/Eastern for now.
@@ -448,7 +449,7 @@ NONMOD_ACLS = []
 # Mapping of real IP to external NAT. This is used by load_acl in the event
 # that a TFTP or connection from a real IP fails or explicitly when passing the
 # --no-vip flag.
-# format: {local_ip: external_ip}
+# format: {local_ip: external_ip}  # noqa: ERA001
 VIPS = {}
 
 # ===============================
@@ -471,7 +472,7 @@ AUTOLOAD_FILTER = AUTOLOAD_BLACKLIST
 # with a large of number of devices.
 #
 # Format:
-# { 'filter_name': threshold_count }
+# { 'filter_name': threshold_count }  # noqa: ERA001
 AUTOLOAD_FILTER_THRESH = {}
 
 # Any ACL applied on a number of devices >= to this number will be treated as
@@ -487,7 +488,7 @@ AUTOLOAD_BULK_THRESH = 10
 # etc.
 #
 # Format:
-# { 'filter_name': max_hits }
+# { 'filter_name': max_hits }  # noqa: ERA001
 BULK_MAX_HITS = {}
 
 # If an ACL is bulk but not in BULK_MAX_HITS, use this number as max_hits
@@ -503,15 +504,12 @@ BULK_MAX_HITS_DEFAULT = 1
 # input
 # list of file names, optional log file and boolean for sanitizing
 #
-# return
-# (
-#    [<list of string of file contents an each file to push>],
-#    [<list of the path to files on the tftp server to push>],
-#    [<list of files that failed to stage>]
-# )
+# returns a tuple of:
+#    - [<list of string of file contents an each file to push>]
+#    - [<list of the path to files on the tftp server to push>]
+#    - [<list of files that failed to stage>]
 def _stage_acls(acls, log=None, sanitize_acl=False):
-    """stage the new ACL files for load_acl"""
-
+    """Stage the new ACL files for load_acl."""
     import os
     import shutil
 
@@ -526,19 +524,19 @@ def _stage_acls(acls, log=None, sanitize_acl=False):
     for acl in acls:
         nonce = os.urandom(8).encode("hex")
         acl_nonce = f"{acl}.{nonce}"
-        src_file = os.path.join(settings.FIREWALL_DIR, acl)
-        dst_file = os.path.join(settings.TFTPROOT_DIR, acl_nonce)
+        src_file = str(Path(settings.FIREWALL_DIR) / acl)
+        dst_file = str(Path(settings.TFTPROOT_DIR) / acl_nonce)
 
-        if not os.path.exists(dst_file):
+        if not Path(dst_file).exists():
             try:
                 shutil.copyfile(src_file, dst_file)
             except Exception:
-                fails.append(f"Unable to stage TFTP File {str(acls)}")
+                fails.append(f"Unable to stage TFTP File {acls!s}")
                 continue
             else:
-                os.chmod(dst_file, 0o644)
+                Path(dst_file).chmod(0o644)
 
-        with open(src_file) as src_acl:
+        with Path(src_file).open() as src_acl:
             file_contents = src_acl.read()
         acl_contents.append(file_contents)
 
@@ -551,7 +549,7 @@ def _stage_acls(acls, log=None, sanitize_acl=False):
             aclobj = acl_parse(file_contents)
             aclobj.strip_comments()
             output = "\n".join(aclobj.output(replace=True)) + "\n"
-            with open(dst_file, "w") as dst_acl:
+            with Path(dst_file).open("w") as dst_acl:
                 dst_acl.write(output)
 
     return acl_contents, tftp_paths, fails
@@ -564,8 +562,7 @@ STAGE_ACLS = _stage_acls
 # Get the TFTP source
 # ===============================
 def _get_tftp_source(dev=None, no_vip=True):  # False): #True):
-    """
-    Determine the right TFTP source-address to use (public vs. private)
+    """Determine the right TFTP source-address to use (public vs. private)
     based on ``settings.VIPS``, and return that address.
 
     :param dev:
@@ -577,9 +574,7 @@ def _get_tftp_source(dev=None, no_vip=True):  # False): #True):
 
     host = socket.gethostbyname(socket.getfqdn())
 
-    if no_vip:
-        return host
-    elif host not in settings.VIPS:
+    if no_vip or host not in settings.VIPS:
         return host
 
     return settings.VIPS[host]
@@ -596,7 +591,7 @@ GET_TFTP_SOURCE = _get_tftp_source
 # this:
 #
 # {'username': 'joegineer',
-#  'name': 'Joe Engineer',
+#  'name': 'Joe Engineer',  # noqa: ERA001
 #  'email': 'joe.engineer@example.notreal'}
 #
 # If you want to disable it, just have it return a non-False value.
@@ -663,7 +658,7 @@ SUCCESS_RECIPIENTS = [
 
 # Destinations (hostnames, addresses) to notify when things go not well.
 FAILURE_RECIPIENTS = [
-    # socket.gethostname(), # The fqdn for the localhost
+    # socket.gethostname(), # The fqdn for the localhost  # noqa: ERA001
 ]
 
 # This is a list of fully-qualified paths. Each path should end with a callable

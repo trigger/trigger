@@ -10,10 +10,11 @@ __version__ = "1.1"
 import os
 import subprocess
 import unittest
+from pathlib import Path
 
 ACLCONV = "aclconv"  # Now an entry point, not a script in bin/
 
-os.environ["PYTHONPATH"] = os.getcwd()
+os.environ["PYTHONPATH"] = str(Path.cwd())
 
 # TODO (jathan): Add tests for all the scripts!!
 
@@ -30,7 +31,7 @@ class Aclconv(unittest.TestCase):
             stderr=subprocess.PIPE,
             text=True,
         )
-        output, errors = proc.communicate("access-list 100 deny ip any any")
+        output, _errors = proc.communicate("access-list 100 deny ip any any")
         self.assertEqual(proc.returncode, 0)
         correct_output = """\
 firewall {

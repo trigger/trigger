@@ -1,5 +1,4 @@
-"""
-Utilities for parsing/handling URLs
+"""Utilities for parsing/handling URLs.
 """
 
 __author__ = "Jathan McCollum"
@@ -12,8 +11,7 @@ from urllib.parse import parse_qsl, unquote, urlparse
 
 
 def _parse_url(url):
-    """
-    Guts for `~trigger.utils.url.parse_url`.
+    """Guts for `~trigger.utils.url.parse_url`.
 
     Based on Kombu's ``kombu.utils.url``.
     Source: http://bit.ly/11UFcfH
@@ -38,8 +36,7 @@ def _parse_url(url):
 
 
 def parse_url(url):
-    """
-    Given a ``url`` returns, a dict of its constituent parts.
+    """Given a ``url`` returns, a dict of its constituent parts.
 
     Based on Kombu's ``kombu.utils.url``.
     Source: http://bit.ly/11UFcfH

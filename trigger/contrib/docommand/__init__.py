@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-trigger.contrib.docommand
+"""trigger.contrib.docommand.
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This package provides facilities for running commands on devices using the CLI.
@@ -19,6 +18,7 @@ import os
 import re
 import socket
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
 from twisted.python import log
@@ -27,7 +27,7 @@ from trigger.cmds import Commando
 from trigger.conf import settings
 
 # Exports
-__all__ = ["DoCommandBase", "CommandRunner", "ConfigLoader", "xml_print", "core"]
+__all__ = ["CommandRunner", "ConfigLoader", "DoCommandBase", "core", "xml_print"]
 from core import *
 
 from . import core
@@ -37,8 +37,7 @@ __all__.extend(core.__all__)
 
 # Classes
 class DoCommandBase(Commando):
-    """
-    Base class for docommand action classes.
+    """Base class for docommand action classes.
 
     """
 
@@ -50,7 +49,7 @@ class DoCommandBase(Commando):
         return failure
 
     def from_base(self, results, device, commands=None):
-        """Call store_results without calling map_results"""
+        """Call store_results without calling map_results."""
         log.msg(f"Received {results!r} from {device}")
         self.store_results(device, results)
 
@@ -60,8 +59,7 @@ class DoCommandBase(Commando):
 # calling each action class separately. We need to account for this. See
 # https://gist.github.com/jathanism/4543974 for a possible solution.
 class CommandRunner(DoCommandBase):
-    """
-    Run commands on network devices.
+    """Run commands on network devices.
 
     Usage::
 
@@ -81,8 +79,7 @@ class CommandRunner(DoCommandBase):
     description = "Run commands on network devices."
 
     def __init__(self, files=None, commands=None, debug=False, timeout=30, **kwargs):
-        """
-        :param files:
+        """:param files:
             List of fully-qualified paths to command files
 
         :param commands:
@@ -112,20 +109,19 @@ class CommandRunner(DoCommandBase):
         super().__init__(**kwargs)
 
     def __loadCmdsFromFiles(self, skip_comments=True):
-        """
-        Reads in file contents and adds to self.commands list.
+        """Reads in file contents and adds to self.commands list.
 
         This is done to prevent having to read the list of cmds multiple times.
         """
         for fname in self.files:
-            with open(fname) as fr:
+            with Path(fname).open() as fr:
                 lines = fr.readlines()
 
             if skip_comments:
                 lines = [line for line in lines if not line.startswith("#")]
 
             for cmd in lines:
-                cmd = cmd.strip()
+                cmd = cmd.strip()  # noqa: PLW2901
                 self.commands.append(cmd)
 
     def store_results(self, device, results):
@@ -176,8 +172,7 @@ class CommandRunner(DoCommandBase):
 
 
 class ConfigLoader(Commando):
-    """
-    Load configuration changes on network devices.
+    """Load configuration changes on network devices.
 
     Usage::
 
@@ -226,8 +221,7 @@ class ConfigLoader(Commando):
     }
 
     def __init__(self, files=None, commands=None, debug=False, **kwargs):
-        """
-        :param files:
+        """:param files:
             List of filenames named after the FQDN of each device.
 
         :param commands:
@@ -247,8 +241,7 @@ class ConfigLoader(Commando):
         super().__init__(**kwargs)
 
     def to_juniper(self, device=None, commands=None, extra=None):
-        """
-        Configure a Juniper device using JunoScript.
+        """Configure a Juniper device using JunoScript.
 
         :returns:
             list
@@ -265,7 +258,6 @@ class ConfigLoader(Commando):
                 print("fname: " + fname)
             body.text = file(fname).read()
             cmds.append(lc)
-        # commands = self.commands
         if len(commands) > 0:
             lc = Element("load-configuration", action="replace", format="text")
             body = SubElement(lc, "configuration-text")
@@ -278,8 +270,7 @@ class ConfigLoader(Commando):
         return cmds
 
     def store_results(self, device, results):
-        """
-        Store the results from a commands.
+        """Store the results from a commands.
 
         If you'd rather just change the default method for storing results,
         overload this. All default parse/generate methods call this.
@@ -313,7 +304,7 @@ class ConfigLoader(Commando):
         error = 0
         msg = ""
         for res in confresxml.getiterator(ns + "load-configuration-results"):
-            for succ in res.getiterator(ns + "load-success"):
+            for _succ in res.getiterator(ns + "load-success"):
                 success += 1
                 msg = "Success!"
             for err in res.getiterator(ns + "error"):
@@ -329,19 +320,18 @@ class ConfigLoader(Commando):
                 msg = f"{msg} {emes} in {etok!r}\n    line: {elin}, col: {ecol}"
         if success:
             self.data[devname] = [
-                {"dev": device, "cmd": "load-configuration", "out": "Success"}
+                {"dev": device, "cmd": "load-configuration", "out": "Success"},
             ]
         if error:
             self.data[devname] = [
-                {"dev": device, "cmd": "load-configuration", "out": msg}
+                {"dev": device, "cmd": "load-configuration", "out": msg},
             ]
         return True
 
 
 # Functions
 def xml_print(xml, iterations=10):
-    """
-    Display XML in a tree format.
+    """Display XML in a tree format.
 
     :param xml:
         XML object to parse
@@ -370,9 +360,6 @@ def xml_print(xml, iterations=10):
 
     for child in children:
         ptxts = xml_print(child, iterations - 1)
-        for t in ptxts:
-            # Shows elements in a tree format
-            ret.append("  " + t)
-            # Show elements in a tag1 -> tag2 -> tag3 -> field:value format
-            # ret.append(tag+" -> "+t)
+        # Shows elements in a tree format
+        ret.extend("  " + t for t in ptxts)
     return ret
