@@ -18,6 +18,12 @@ jobs:
         with:
           fetch-depth: 0  # Full history for semantic-release
 
+      - name: Simulate merge to main
+        run: |
+          # PR checkout is a detached HEAD at the merge ref.
+          # semantic-release requires a branch matching 'main' to detect versions.
+          git checkout -B main
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
 
