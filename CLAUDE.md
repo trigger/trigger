@@ -256,6 +256,6 @@ Supported vendors include:
 
 ## Branch Strategy
 
-- **`develop`**: Default branch, generally stable but not production-ready
-- **`master`**: Stable production-ready branch
-- Release tags: Specific versions available as tag branches (e.g., `v1.6.0`)
+- **`main`**: Primary branch for all development and releases. All PRs target `main`.
+- **Do NOT use or target the `develop` branch.** It is a legacy branch that is out of sync and should be ignored entirely.
+- Release tags: Specific versions available as tag branches (e.g., `v2.0.1`)
