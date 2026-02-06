@@ -83,6 +83,22 @@ For users still requiring Python 2.7, use the v1.6.0 release:
 pip install trigger==1.6.0
 ```
 
+### Development Setup
+
+Contributing to Trigger? Set up pre-commit hooks to catch issues early:
+
+```bash
+# Install prek (fast pre-commit framework)
+uv tool install prek  # or: pip install prek
+
+# Enable hooks in your clone
+prek install
+
+# Hooks will now run automatically on git commit
+```
+
+See [CLAUDE.md](CLAUDE.md) for complete development documentation.
+
 ### Upgrading from v1.6.0?
 
 See the [Migration Guide](https://trigger.readthedocs.io/en/latest/migration.html) for detailed upgrade instructions.

@@ -1,0 +1,52 @@
+# Pre-commit hooks for Trigger - works with prek (https://prek.j178.dev/)
+# Also compatible with standard pre-commit (https://pre-commit.com/)
+
+repos:
+  # Ruff - Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Linter with auto-fix
+      - id: ruff
+        name: ruff check
+        args: [--fix]
+        files: ^(trigger|tests|configs)/
+        exclude: ^trigger/packages/
+
+      # Formatter in check-only mode
+      - id: ruff-format
+        name: ruff format
+        files: ^(trigger|tests|configs)/
+        exclude: ^trigger/packages/
+
+  # Built-in hooks (work offline with prek)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: no-commit-to-branch
+        args: [--branch, main]
+      - id: check-yaml
+        exclude: ^\.github/workflows/
+      - id: check-case-conflict
+      - id: end-of-file-fixer
+        exclude: ^trigger/packages/
+      - id: trailing-whitespace
+        exclude: ^trigger/packages/
+      - id: check-merge-conflict
+
+default_language_version:
+  python: python3.11
+
+files: \.(py|yaml|yml|md|txt|rst)$
+exclude: |
+  (?x)(
+    ^\.venv/|
+    ^\.worktrees/|
+    ^build/|
+    ^dist/|
+    ^\.eggs/|
+    ^\.pytest_cache/|
+    ^\.ruff_cache/|
+    ^trigger\.egg-info/|
+    ^trigger/packages/
+  )

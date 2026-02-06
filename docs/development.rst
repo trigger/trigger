@@ -68,6 +68,54 @@ to!) the following:
 
 .. _PEP-8: http://www.python.org/dev/peps/pep-0008/
 
+Pre-commit Hooks
+----------------
+
+Trigger uses `prek <https://prek.j178.dev/>`_, a fast Rust-based pre-commit
+framework, to automatically check code quality before commits.
+
+**Installation**::
+
+    # Using uv (recommended)
+    uv tool install prek
+
+    # Or using pip
+    pip install prek
+
+    # Or download standalone binary
+    # https://github.com/j178/prek/releases
+
+**Setup**::
+
+    # Enable hooks for this repository
+    cd /path/to/trigger
+    prek install
+
+**Usage**::
+
+    # Hooks run automatically on git commit
+    git commit -m "your changes"
+
+    # Manually run all hooks
+    prek run --all-files
+
+    # Run specific hook
+    prek run ruff
+
+The pre-commit hooks automatically check for:
+
+* Code style and linting with ruff (matching CI configuration)
+* Proper formatting with ruff format
+* YAML syntax errors
+* Trailing whitespace and file endings
+* Merge conflict markers
+* Accidental commits to the main branch
+
+**Performance:** prek is 7-10x faster than traditional pre-commit and uses
+approximately 50% less disk space, making it ideal for large codebases.
+
+For more information, see the `CLAUDE.md <../CLAUDE.md>`_ development guide.
+
 Branching/Repository Layout
 ===========================
 

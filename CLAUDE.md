@@ -42,16 +42,87 @@ pytest --cov=trigger tests/
 
 ### Linting
 
+Trigger uses [ruff](https://docs.astral.sh/ruff/) for fast Python linting and formatting.
+
+**Automated (recommended - pre-commit hooks):**
 ```bash
-# Check code style (excludes packages/ directory)
-flake8 trigger/ tests/ --exclude=trigger/packages --max-line-length=88
+# Install prek (one-time setup)
+uv tool install prek  # or: pip install prek
 
-# Check formatting with black
-black --check trigger/ tests/ --exclude 'trigger/packages'
+# Enable hooks for this repository
+prek install
 
-# Check import sorting
-isort --check-only trigger/ tests/ --skip trigger/packages
+# Hooks run automatically on git commit
+git commit -m "your changes"
 ```
+
+**Manual checks:**
+```bash
+# Check code style
+ruff check trigger/ tests/ configs/
+
+# Auto-fix safe issues
+ruff check trigger/ tests/ configs/ --fix
+
+# Check formatting
+ruff format --check trigger/ tests/ configs/
+
+# Auto-format code
+ruff format trigger/ tests/ configs/
+```
+
+**What gets checked:**
+- Ruff linting (matching CI configuration)
+- Ruff formatting (check-only in pre-commit)
+- YAML syntax, trailing whitespace, merge conflicts
+- Protection against commits to main branch
+
+### Pre-commit Hooks
+
+Trigger uses [prek](https://prek.j178.dev/) for fast pre-commit hooks that automatically check code before commits.
+
+**Install prek:**
+```bash
+# Using uv (recommended, fastest)
+uv tool install prek
+
+# Using pip
+pip install prek
+
+# Using pipx (isolated environment)
+pipx install prek
+
+# Or download standalone binary from https://github.com/j178/prek/releases
+```
+
+**Enable hooks:**
+```bash
+# First-time setup (run from repository root)
+prek install
+
+# Force reinstall if you've updated .pre-commit-config.yaml
+prek install -f
+```
+
+**Usage:**
+```bash
+# Hooks run automatically on git commit
+git commit -m "your changes"
+
+# Manually run all hooks on staged files
+prek run
+
+# Run all hooks on all files
+prek run --all-files
+
+# Run specific hook
+prek run ruff
+
+# Skip hooks for a commit (use sparingly!)
+git commit --no-verify
+```
+
+**Performance:** prek is 7-10x faster than traditional pre-commit and uses half the disk space.
 
 ### Building and Installing
 
