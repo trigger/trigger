@@ -1,6 +1,44 @@
 # CHANGELOG
 
 
+## v2.1.0 (2026-02-06)
+
+### Documentation
+
+- Add git worktrees guidance to CLAUDE.md ([#343](https://github.com/trigger/trigger/pull/343),
+  [`6f1489e`](https://github.com/trigger/trigger/commit/6f1489ece78cca00c47ebce02ce4f3ed061e6823))
+
+Instructs Claude Code to always use .worktrees/ for feature branches to keep the main working tree
+  clean.
+
+Co-authored-by: Claude Opus 4.6 <noreply@anthropic.com>
+
+### Features
+
+- **notifications**: Add SMTP_SSL support for secure email
+  ([#344](https://github.com/trigger/trigger/pull/344),
+  [`5ce484d`](https://github.com/trigger/trigger/commit/5ce484d2b9cb0241991eae071fdb5ea5f34b523c))
+
+* feat(notifications): add SMTP_SSL support for secure email
+
+Adds ssl, mailuser, and mailpass parameters to send_email() for secure SMTP communication via
+  smtplib.SMTP_SSL.
+
+Based on PR #336 by Ataf Fazledin Ahamed (OpenRefactory/OpenSSF Alpha-Omega).
+
+Co-Authored-By: Ataf Fazledin Ahamed <ataf@openrefactory.com>
+
+* style: fix ruff formatting for send_email signature
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+---------
+
+Co-authored-by: Ataf Fazledin Ahamed <ataf@openrefactory.com>
+
+Co-authored-by: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v2.0.3 (2026-02-05)
 
 ### Bug Fixes
