@@ -119,23 +119,16 @@ For more information, see the `CLAUDE.md <../CLAUDE.md>`_ development guide.
 Branching/Repository Layout
 ===========================
 
-While Trigger's development methodology isn't set in stone yet, the following
-items detail how we currently organize the Git repository and expect to perform
-merges and so forth. This will be chiefly of interest to those who wish to
-follow a specific Git branch instead of released versions, or to any
-contributors.
+All development happens on the ``main`` branch. There is no separate
+``develop`` or ``master`` branch. Pull requests should always target ``main``
+and are merged using rebase merges (no merge commits).
 
-* Completed feature work is merged into the ``master`` branch, and once enough
-  new features are done, a new release branch is created and optionally used to
-  create prerelease versions for testing -- or simply released as-is.
-* While we try our best not to commit broken code or change APIs without
-  warning, as with many other open-source projects we can only have a guarantee
-  of stability in the release branches. Only follow ``develop`` (or, even worse,
-  feature branches!) if you're willing to deal with a little pain.
-* Bugfixes are to be performed on release branches and then merged into
-  ``develop`` so that ``develop`` is always up-to-date (or nearly so; while it's
-  not mandatory to merge after every bugfix, doing so at least daily is a good
-  idea.)
+Releases are cut by tagging a commit on ``main`` (e.g. ``v2.0.1``). If you
+need a specific version, check out the corresponding tag.
+
+We use `conventional commits <https://www.conventionalcommits.org/>`_
+(enforced via prek/pre-commit hooks) which drive automated semantic
+versioning.
 
 Releases
 ========
