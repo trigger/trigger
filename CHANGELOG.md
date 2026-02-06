@@ -1,6 +1,30 @@
 # CHANGELOG
 
 
+## v2.1.1 (2026-02-06)
+
+### Bug Fixes
+
+- **security**: Replace deprecated tempfile.mktemp with mkstemp
+  ([`884ecdf`](https://github.com/trigger/trigger/commit/884ecdfb4ec2dac6cbcfb4fe8e800b7dd5f5a056))
+
+Replace unsafe `tempfile.mktemp()` with `tempfile.mkstemp()` in the remaining bin/ and tools/
+  scripts. Uses `os.fdopen(fd)` to properly manage the file descriptor, consistent with the pattern
+  established in trigger/acl/tools.py and trigger/contrib/docommand/core.py.
+
+The `mktemp()` function is deprecated due to a race condition vulnerability (TOCTOU) where the
+  temporary filename could be claimed by another process between creation of the name and opening
+  the file.
+
+Files fixed: - bin/check_syntax - bin/load_acl - tools/prepend_acl_dot
+
+Based-on: https://github.com/trigger/trigger/pull/335
+
+Co-Authored-By: Ataf Fazledin Ahamed <ataf@openrefactory.com>
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v2.1.0 (2026-02-06)
 
 ### Documentation
