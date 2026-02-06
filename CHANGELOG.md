@@ -1,6 +1,38 @@
 # CHANGELOG
 
 
+## v2.2.1 (2026-02-06)
+
+### Bug Fixes
+
+- Specify pyproject.toml for uv cache dependency glob
+  ([`1e05648`](https://github.com/trigger/trigger/commit/1e05648fee78e0e1a1bb7945f030e2ebeec07745))
+
+The enable-cache option defaults to looking for uv.lock files, but this project uses pyproject.toml
+  without a lockfile. Add the cache-dependency-glob parameter to specify pyproject.toml for cache
+  key generation.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Use uv's built-in caching instead of pip cache
+  ([`9a05f11`](https://github.com/trigger/trigger/commit/9a05f1180044f1580e4b44c1ad43133b74a74429))
+
+Replace cache: 'pip' on setup-python steps with enable-cache: true on setup-uv steps, per uv's
+  official documentation. The pip cache parameter doesn't work with uv's cache structure.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+### Continuous Integration
+
+- Enable pip caching in GitHub Actions workflows
+  ([`fc22313`](https://github.com/trigger/trigger/commit/fc2231332105808e18bd8c1d898779a368696c52))
+
+Add cache: 'pip' to all actions/setup-python@v5 steps across CI, release, and release-preview
+  workflows to speed up dependency installation via GitHub's built-in package caching.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+
 ## v2.2.0 (2026-02-06)
 
 ### Chores
