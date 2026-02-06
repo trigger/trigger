@@ -254,6 +254,15 @@ Supported vendors include:
 - **Vendor detection**: Based on device metadata, not auto-discovery; metadata must be accurate
 - **Test isolation**: Tests use conftest.py to set environment variables for mock data
 
+## Git Worktrees
+
+Always use git worktrees for feature branches. Worktrees live in `.worktrees/` (already gitignored).
+
+```bash
+# Create a worktree for a new feature branch
+git worktree add .worktrees/<branch-name> -b <branch-name>
+```
+
 ## Branch Strategy
 
 - **`main`**: Primary branch for all development and releases. All PRs target `main`.
