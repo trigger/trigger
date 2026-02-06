@@ -779,7 +779,7 @@ def main():
     log.msg('Elapsed time: %s' % min_sec(time.time() - start))
 
 if __name__ == '__main__':
-    tmpfile = tempfile.mktemp()+'_load_acl'
-    log.startLogging(open(tmpfile, 'a'), setStdout=False)
+    fd, tmpfile = tempfile.mkstemp(suffix='_load_acl')
+    log.startLogging(os.fdopen(fd, 'a'), setStdout=False)
     log.msg('User %s (uid:%d) executed "%s"' % (os.environ['LOGNAME'], os.getuid(), ' '.join(sys.argv)))
     main()
