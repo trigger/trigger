@@ -339,3 +339,4 @@ git worktree add .worktrees/<branch-name> -b <branch-name>
 - **`main`**: Primary branch for all development and releases. All PRs target `main`.
 - **Do NOT use or target the `develop` branch.** It is a legacy branch that is out of sync and should be ignored entirely.
 - Release tags: Specific versions available as tag branches (e.g., `v2.0.1`)
+- **Always rebase merge** when merging PRs. Do not create merge commits.
