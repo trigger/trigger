@@ -1,6 +1,6 @@
 # What is Trigger?
 
-[![Tests](https://github.com/trigger/trigger/workflows/Tests/badge.svg)](https://github.com/trigger/trigger/actions)
+[![CI](https://github.com/trigger/trigger/workflows/CI/badge.svg)](https://github.com/trigger/trigger/actions/workflows/ci.yml)
 [![Join the chat at https://gitter.im/trigger/trigger](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/trigger/trigger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Trigger is a robust network automation toolkit written in Python that was
