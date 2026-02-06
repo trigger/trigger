@@ -1,6 +1,69 @@
 # CHANGELOG
 
 
+## v2.2.2 (2026-02-06)
+
+### Bug Fixes
+
+- Add uv.lock to repo and update workflows to use explicit cache-dependency-glob
+  ([`3d8e34e`](https://github.com/trigger/trigger/commit/3d8e34e1a2265f317a9ab25e9c51c6d28c22729c))
+
+- Remove uv.lock from .gitignore and commit it to the repository - Add cache-dependency-glob:
+  "uv.lock" to all 6 workflow jobs for explicit cache key - Update test job to use "uv sync --locked
+  --all-extras --dev" for reproducible builds with lock file validation - Fixes error: "No file in
+  /home/runner/work/trigger/trigger matched to [**/uv.lock]"
+
+The uv.lock file was gitignored, causing GitHub Actions to fail when trying to cache dependencies.
+  Now the lock file is tracked and used explicitly for cache invalidation.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Remove cache-dependency-glob override and use uv sync for reproducible builds
+  ([`3c448f3`](https://github.com/trigger/trigger/commit/3c448f3e668ce689260c8709d0c9c23b5f0a9fd0))
+
+- Remove cache-dependency-glob parameter from all 6 workflow jobs to use setup-uv action's default
+  glob pattern - Default pattern includes **/pyproject.toml, **/uv.lock, and **/requirements*.txt
+  for proper cache invalidation - Switch test job from 'uv pip install --system -e ".[dev]"' to 'uv
+  sync --all-extras' for reproducible builds using uv.lock - Fixes cache errors: "Path(s) specified
+  in the action for caching do(es) not exist" - Ensures CI builds match local development when using
+  uv sync
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Remove invalid --dev flag from uv sync command
+  ([`ad8a498`](https://github.com/trigger/trigger/commit/ad8a498625840ef2525377612fa55f23ad8a37f1))
+
+The --dev flag does not exist in uv sync. Dev dependencies are included by default. Only --no-dev,
+  --only-dev, and --group flags exist for dependency group control.
+
+This was causing the lockfile validation error.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Update uv.lock and remove redundant cache-dependency-glob
+  ([`4503e4e`](https://github.com/trigger/trigger/commit/4503e4e494c23595e5be726713b6fc4916182d75))
+
+- Update uv.lock to sync with pyproject.toml (fixes --locked validation error) - Remove
+  cache-dependency-glob from all workflows (default already includes **/uv.lock) - Keep uv sync
+  --locked --all-extras --dev for reproducible builds with validation
+
+The default cache-dependency-glob pattern already includes: **/uv.lock, **/pyproject.toml,
+  **/*requirements*.txt, and more
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- Use --frozen instead of --locked for more lenient lock file validation
+  ([`b82d968`](https://github.com/trigger/trigger/commit/b82d96807852c3646f685e49c6014eb2efc00bc9))
+
+- Use uv run pytest to run tests in uv-managed environment
+  ([`3386869`](https://github.com/trigger/trigger/commit/3386869989a68854af295cb782c2c031b9412d03))
+
+### Testing
+
+- Add comment to trigger CI and test cache hits
+  ([`cc7f0b1`](https://github.com/trigger/trigger/commit/cc7f0b1db90f4ad16024f8657316927fff3b4665))
+
+
 ## v2.2.1 (2026-02-06)
 
 ### Bug Fixes
