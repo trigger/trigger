@@ -1,4 +1,5 @@
 name: CI
+# Test cache hit after first successful run
 
 on:
   push:
