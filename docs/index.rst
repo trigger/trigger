@@ -32,15 +32,10 @@ network devices with ease. Here are some of things that make Trigger tick:
   is permitted, or easily convert ACLs from one format to another.
 + Detailed support for timezones and maintenance windows.
 + A suite of tools for simplifying many common tasks.
-
-.. versionadded:: 1.2
-
 + Import your metadata from an existing `RANCID <http://www.shrubbery.net/rancid/>`_
-  installation to get up-and-running quickly!
-
-.. versionadded:: 1.3
-
+  installation to get up-and-running quickly! *(added in 1.2)*
 + Import your metadata from a CSV file and get up-and-running even quicker!
+  *(added in 1.3)*
 
 .. _documentation-index:
 
