@@ -204,7 +204,7 @@ Basic Configuration
 
 .. warning::
     For these steps you'll need to download the `Trigger tarball
-    <https://github.com/trigger/trigger/tarball/develop>`_, expand it, and then
+    <https://github.com/trigger/trigger/tarball/main>`_, expand it, and then
     navigate to the root directory (the same directory in which you'll find
     ``setup.py``).
 
@@ -288,7 +288,7 @@ Verifying Functionality
 
 .. warning::
     For these steps you'll still need to be at the root directory of the
-    `Trigger tarball <https://github.com/trigger/trigger/tarball/develop>`_. If
+    `Trigger tarball <https://github.com/trigger/trigger/tarball/main>`_. If
     you haven't already, download it,  expand it, and then navigate to the root
     directory (the same directory in which you'll find ``setup.py``).
 

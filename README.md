@@ -1,7 +1,6 @@
 # What is Trigger?
 
 [![CI](https://github.com/trigger/trigger/workflows/CI/badge.svg)](https://github.com/trigger/trigger/actions/workflows/ci.yml)
-[![Join the chat at https://gitter.im/trigger/trigger](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/trigger/trigger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Trigger is a robust network automation toolkit written in Python that was
 designed for interfacing with network devices and managing network
@@ -42,15 +41,8 @@ network devices with ease. Here are some of things that make Trigger tick:
 + Flexible access-list & firewall policy parser that can test access if access
   is permitted, or easily convert ACLs from one format to another.
 + Detailed support for timezones and maintenance windows.
++ Import your metadata from an existing [RANCID](http://shrubbery.net/rancid/) installation or a CSV file to get up-and-running quickly.
 + A suite of tools for simplifying many common tasks.
-
-New in version 1.2:
-
-+ Import your metadata from an existing [RANCID](http://shrubbery.net/rancid/) installation to get up-and-running quickly!
-
-New in version 1.3:
-
-+ Import your metadata from a CSV file and get up-and-running even quicker!
 
 ## Getting Started
 
@@ -105,21 +97,13 @@ See the [Migration Guide](https://trigger.readthedocs.io/en/latest/migration.htm
 
 ### Before you begin
 
-+ The [develop](https://github.com/trigger/trigger/tree/develop) branch is
-  the default branch that will be active when you clone this repository. While
-  it is generally stable this branch is not considered production-ready. Use at
-  your own risk!
-+ The [master](https://github.com/trigger/trigger/tree/master) branch is
-  the stable branch, and will reflect the latest production-ready changes. It
-  is recommended that this is the branch you use if you are installing Trigger
-  for the first time.
-+ Each point release of Trigger is maintained as a [tag branch](https://github.com/trigger/trigger/tags). If you require a
++ The [main](https://github.com/trigger/trigger/tree/main) branch is the
+  primary branch for all development and releases. All pull requests target
+  `main`.
++ Each point release of Trigger is maintained as a [tag](https://github.com/trigger/trigger/tags). If you require a
   specific Trigger version, please refer to these.
 
 ### Get in touch!
 
-If you run into any snags, have questions, feedback, or just want to talk shop:
-[contact us](https://trigger.readthedocs.io/en/latest/#getting-help)!
-
-**Pro tip**: Find us on IRC at `#trigger` on Freenode
-([irc://irc.freenode.net/trigger](irc://irc.freenode.net/trigger)).
+If you run into any snags, have questions, feedback, or just want to talk shop,
+please open an issue on [GitHub Issues](https://github.com/trigger/trigger/issues).

@@ -276,7 +276,7 @@ New Features
 
 + Remote execution on Avocent console servers is now officially supported.
 + Example `normalizer
-  <https://github.com/trigger/trigger/tree/develop/examples/normalizer>`_
+  <https://github.com/trigger/trigger/tree/main/examples/normalizer>`_
   project added to the ``examples`` directory at the root of the repository.
 
 Enhancements
