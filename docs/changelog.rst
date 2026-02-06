@@ -2,9 +2,116 @@
 Changelog
 =========
 
+.. _v2.2.2:
+
+2.2.2 (2026-02-06)
+==================
+
+Bug Fixes
+---------
+
++ Fixed GitHub Actions caching by tracking ``uv.lock`` and removing redundant
+  ``cache-dependency-glob`` overrides.
++ Switched CI test runner to ``uv sync --frozen --all-extras`` and
+  ``uv run pytest`` for reproducible builds.
+
+.. _v2.2.1:
+
+2.2.1 (2026-02-06)
+==================
+
+Bug Fixes
+---------
+
++ Fixed ``uv`` cache configuration in CI workflows — replaced ``pip`` cache
+  with ``uv``'s built-in ``enable-cache`` and specified ``pyproject.toml`` for
+  cache key generation.
+
+.. _v2.2.0:
+
+2.2.0 (2026-02-06)
+==================
+
+Features
+--------
+
++ Added `prek <https://prek.j178.dev/>`_ pre-commit hooks with ruff linting,
+  formatting checks, YAML validation, trailing whitespace fixes, and protection
+  against commits to ``main``.
+
+.. _v2.1.1:
+
+2.1.1 (2026-02-06)
+==================
+
+Bug Fixes
+---------
+
++ **Security**: Replaced deprecated ``tempfile.mktemp()`` with
+  ``tempfile.mkstemp()`` in ``bin/check_syntax``, ``bin/load_acl``, and
+  ``tools/prepend_acl_dot`` to fix a TOCTOU race condition vulnerability.
+
+.. _v2.1.0:
+
+2.1.0 (2026-02-06)
+==================
+
+Features
+--------
+
++ **Notifications**: Added ``SMTP_SSL`` support to ``send_email()`` with
+  ``ssl``, ``mailuser``, and ``mailpass`` parameters for secure SMTP
+  communication.
+
+.. _v2.0.3:
+
+2.0.3 (2026-02-05)
+==================
+
+Bug Fixes
+---------
+
++ **Release**: Skip PyPI upload if the version already exists, preventing
+  publish failures on re-runs.
+
+.. _v2.0.2:
+
+2.0.2 (2026-02-05)
+==================
+
+Bug Fixes
+---------
+
++ **Release**: Checkout the version-bumped tag for PyPI publish instead of the
+  PR merge commit, fixing builds that produced artifacts with the old version.
++ **Release**: Use a PAT (``RELEASE_TOKEN``) to bypass branch protection so
+  ``python-semantic-release`` can push version bumps and tags to ``main``.
+
+.. _v2.0.1:
+
+2.0.1 (2026-02-05)
+==================
+
+Bug Fixes
+---------
+
++ Removed unreachable code and unused tuple unpacking found during code review.
++ Fixed ruff lint violations in ``configs/`` directory (docstrings, trailing
+  commas, per-file ignores for ``PTH`` and ``ERA001``).
++ **CI**: Fixed release preview branch detection — create a local ``main``
+  branch at the merge commit so ``python-semantic-release`` properly detects
+  conventional commits in PR context.
+
+Refactoring
+-----------
+
++ Expanded ruff configuration from 5 rule groups to 22 and fixed all 1,484
+  violations with zero behavioral changes. Net result: 484 fewer lines of
+  code, cleaner and more idiomatic Python.
+
 .. _v2.0.0:
 
-2.0.0 (2026-02-XX)
+2.0.0 (2026-02-03)
 ==================
 
 This is a major release with Python 3.10-3.11 support. Python 2.7 is no longer supported.
