@@ -57,7 +57,6 @@ _build
 # 3rd party
 vendor/*
 .python-version
-uv.lock
 
 # Git worktrees
 .worktrees/
