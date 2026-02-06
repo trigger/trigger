@@ -13,7 +13,14 @@ __all__ = ("send_email", "send_notification")
 
 # Functions
 def send_email(
-    addresses, subject, body, sender, mailhost="localhost", mailuser="", mailpass="", ssl=False
+    addresses,
+    subject,
+    body,
+    sender,
+    mailhost="localhost",
+    mailuser="",
+    mailpass="",
+    ssl=False,
 ):
     """Sends an email to a list of recipients. Returns ``True`` when done.
 
