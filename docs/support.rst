@@ -64,5 +64,5 @@ We will use GitHub's built-in wiki located at
 OpenHatch
 ---------
 
-Find Trigger on Openhatch at 
+Find Trigger on Openhatch at
 `http://openhatch.org/projects/Trigger <http://openhatch.org/projects/Trigger>`_!

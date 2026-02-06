@@ -125,7 +125,7 @@ Or if you want to match devices names only, use the ``-d`` flag::
 
     % acl -d jathan-special
     No results for ['jathan-special']
-    
+
 Working with the load queue
 ---------------------------
 

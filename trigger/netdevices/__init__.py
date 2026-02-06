@@ -163,7 +163,7 @@ def device_match(name, production_only=True):
 
 
 # Classes
-class NetDevice:  # noqa: PLW1641
+class NetDevice:
     """An object that represents a distinct network device and its metadata.
 
     Almost all of the attributes are populated by

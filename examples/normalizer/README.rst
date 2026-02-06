@@ -35,16 +35,16 @@ This example of a reporting tool reports on the IOS version of devices. If you r
 
 .. code::
 
-    johnf@pstanadm1:~/TriggerOpen$ ./Report.py 
+    johnf@pstanadm1:~/TriggerOpen$ ./Report.py
     Processing all sites
     Failed to ping host r1
-    johnf@pstanadm1:~/TriggerOpen$ cat report.csv 
+    johnf@pstanadm1:~/TriggerOpen$ cat report.csv
     Device,Last Access,Version
     r1,Never,Unknown
     r2,2015-08-20 09:00,15.2(4)M6
     r3,2015-08-20 09:00,15.2(4)M6
     johnf@pstanadm1:~/TriggerOpen$ ./Report.py r2
-    johnf@pstanadm1:~/TriggerOpen$ cat report.csv 
+    johnf@pstanadm1:~/TriggerOpen$ cat report.csv
     Device,Last Access,Version
     r1,Never,Unknown
     r2,2015-08-20 09:01,15.2(4)M6

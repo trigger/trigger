@@ -117,12 +117,12 @@ supported with just vendor and device type. To identify these platforms,
 we also make use of the ``make`` and ``model`` fields.
 
 The following fields are required for full support of all officially supported
-vendor platforms. 
+vendor platforms.
 
 make
     The device platform such as ``Cisco Nexus`` or just ``Nexus``.
 
-model 
+model
     The specific device model as it appears on the network device, such as
     ``N9K`` or ``NEXUS 9000``.
 
@@ -137,7 +137,7 @@ Quick Start
 
 To get started quickly managing real devices, try this:
 
-1. Create a :ref:`csv-format` file. 
+1. Create a :ref:`csv-format` file.
 2. Tell Trigger where to find your file by setting the locatoin of the file in
    :setting:`NETDEVICES_SOURCE` in your ``settings.py``.
 
@@ -157,7 +157,7 @@ Trigger currently comes with loaders that support the following formats:
     :depth: 1
 
 Except when using CSV or RANCID as a data source, the contents of your source
-data should be a dump of relevant metadata fields from your CMDB. 
+data should be a dump of relevant metadata fields from your CMDB.
 
 If you don't have a CMDB, then you're going to have to populate this file
 manually.
@@ -401,7 +401,7 @@ has three things it requires before you can properly do this:
     ``with_acls=False`` to `~trigger.netdevices.NetDevices` and then you only need
     to satisfy the first requirement. A this time it is not possible to
     globally disable ACL support, so this will only work for the purpose of
-    this walkthrough or when you manually instantiate NetDevices objects. 
+    this walkthrough or when you manually instantiate NetDevices objects.
 
 1. The :setting:`NETDEVICES_SOURCE` file must be readable and must properly
    parse using one of the default loaders formats supported in
@@ -532,12 +532,12 @@ You can dump the values::
             Model:             M40-B-AC
             Type:              ROUTER
             Location:          LAB CR10 16ZZ
-    
+
             Project:           Test Lab
             Serial:            987654321
             Asset Tag:         0000012345
             Budget Code:       1234578 (Data Center)
-    
+
             Admin Status:      PRODUCTION
             Lifecycle Status:  INSTALLED
             Operation Status:  MONITORED
@@ -552,7 +552,7 @@ There are some special methods to perform identity tests::
 
     >>> dev.is_router(), dev.is_switch(), dev.is_firewall()
     (True, False, False)
-    
+
 You can view the ACLs assigned to the device:
 
 .. note::

@@ -56,13 +56,13 @@ To fetch interface information for a device, just provide its hostname as an arg
 
     $ gnng test1-abc.net.aol.com
     DEVICE: test1-abc.net.aol.com
-    Interface  | Addresses     | Subnets        | ACLs IN | ACLs OUT    | Description                                       
+    Interface  | Addresses     | Subnets        | ACLs IN | ACLs OUT    | Description
     -------------------------------------------------------------------------------------------
-    fe-1/2/1.0 | 10.10.20.38   | 10.10.20.36/30 |         | count_all   | this is an interface 
-               |               |                |         | test_filter |                                                   
+    fe-1/2/1.0 | 10.10.20.38   | 10.10.20.36/30 |         | count_all   | this is an interface
+               |               |                |         | test_filter |
     ge-1/1/0.0 | 1.2.148.246   | 1.2.148.244/30 |         | filterbad   | and so is this
-    lo0.0      | 10.10.20.253  | 10.10.20.253   | protect |             |                                                   
-               | 10.10.20.193  | 10.10.20.193   |         |             |                                                   
+    lo0.0      | 10.10.20.253  | 10.10.20.253   | protect |             |
+               | 10.10.20.193  | 10.10.20.193   |         |             |
 
 You may specify any number of device hostnames as arguments, or to fetch ALL
 devices pass the ``-a`` flag.

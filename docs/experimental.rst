@@ -86,7 +86,7 @@ Code
 
 Below details the code needed to actually run the command on the device and process the results asynchronously.
 
-:: 
+::
 
         # Open connection to device.
         print "Begin example. Please wait while we extract the OS version from {name}'s show version output.".format(name=dev.nodeName)
@@ -106,7 +106,7 @@ Below details the code needed to actually run the command on the device and proc
 We can continue to make asynchronous calls without having to restart the running process. With this in mind we could perform an action if the device
 is not running on our minimum baseline version. This could be achieved like so:
 
-:: 
+::
 
         # Open connection to device.
         print "Begin example. Please wait while we extract the OS version from {name}'s show version output.".format(name=dev.nodeName)

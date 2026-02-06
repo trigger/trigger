@@ -170,7 +170,7 @@ permitted previously.
 Understanding ``--replace-defined``
 -----------------------------------
 
-This flag will completely replace portions of an ACL with newly-defined information. 
+This flag will completely replace portions of an ACL with newly-defined information.
 
 Junos
 ~~~~~
@@ -178,7 +178,7 @@ Junos
 Take the following term::
 
     term sr31337 {
-        from {   
+        from {
             source-address {
                 10.0.0.0/8;
                 11.0.0.0/8;
@@ -189,7 +189,7 @@ Take the following term::
             destination-port 80;
             protocol tcp;
         }
-        then {   
+        then {
             accept;
             count sr31337;
         }
@@ -201,7 +201,7 @@ With the following arguments to ``acl_script``::
 The following is generated::
 
     term sr31337 {
-        from {   
+        from {
             source-address {
                 5.5.5.5/32;
             }
@@ -211,7 +211,7 @@ The following is generated::
             destination-port 80;
             protocol tcp;
         }
-        then {   
+        then {
             accept;
             count sr31337;
         }

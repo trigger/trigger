@@ -3,4 +3,3 @@
 
 .. automodule:: trigger.gorc
    :members:
-

@@ -129,6 +129,10 @@ ignore = [
     "B016",     # raise-literal (used intentionally in tests)
     "B018",     # useless-expression (test assertions)
 
+    # --- Pre-commit specific ignores ---
+    "PLW1641",  # __hash__ implementation (false positive, requires __eq__ impl)
+    "PT028",    # pytest parameter defaults (false positive, not pytest functions)
+
     # --- Docstring exceptions (not enforcing coverage/style) ---
     "D100",     # undocumented-public-module
     "D101",     # undocumented-public-class
