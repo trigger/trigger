@@ -121,7 +121,7 @@ Bug Fixes
 + Fixed a bug on Arista EOS devices that would sometimes cause the prompt to be
   included in the results from commands with no output.
 + :bug:`313` Use pyparsing~=2.2.0 for compat w/ setuptools>=34.0.0 which was
-  causing install to fail 
+  causing install to fail
 
 .. _v1.5.10:
 

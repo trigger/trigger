@@ -1,7 +1,7 @@
 /*
  * Example JunOS ACLs from Juniper documentation:
  * http://www.juniper.net/techpubs/software/junos/junos73/swconfig73-policy/html/firewall-config18.html
- * 
+ *
  * Each example is followed by a version in AOL preferred style.
  * Differences from JunOS inconsistent documentation style:
  * 1. Always give ports numerically.
@@ -135,7 +135,7 @@ filter rpf-dhcp {
 }
 
 /* JunOS 7.3 example 4 */
-/* Brace missing after "police-class1"; reported as doc bug 2006-02-08, 
+/* Brace missing after "police-class1"; reported as doc bug 2006-02-08,
    bug ID doc-sw/68418 */
 filter filter1 {
     policer police-class1 {
@@ -323,7 +323,7 @@ filter ospf-filter {
 }
 
 /* JunOS 7.3 example 7 */
-filter ospf-or-131 {   
+filter ospf-or-131 {
     term protocol-match {
         from {
             protocol ospf;

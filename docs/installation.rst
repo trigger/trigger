@@ -413,4 +413,3 @@ Ubuntu
 
 CentOS/RedHat
     ``sudo yum install mysql-devel openssl-devel python-devel``
-
