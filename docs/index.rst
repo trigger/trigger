@@ -47,9 +47,9 @@ network devices with ease. Here are some of things that make Trigger tick:
 Documentation
 =============
 
-Please note that all documentation is written with users of Python 2.6 or
-higher in mind. It's safe to assume that Trigger will not work properly on
-Python versions earlier than Python 2.6.
+Trigger v2.0+ requires Python 3.10 or 3.11. Python 2.7 support ended with
+v1.6.0, and Python 3.12+ is not yet supported due to SimpleParse C extension
+incompatibility.
 
 For now, most of our documentation is automatically generated from the source
 code documentation, which is usually very detailed. As we move along, this will

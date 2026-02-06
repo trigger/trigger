@@ -42,6 +42,10 @@ dev = [
     "ruff>=0.1.0",
     "python-semantic-release>=9.0.0",
 ]
+docs = [
+    "sphinx>=7.0",
+    "sphinx_rtd_theme>=2.0",
+]
 
 [project.scripts]
 acl = "trigger.bin.acl:main"
