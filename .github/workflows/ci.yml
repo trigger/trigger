@@ -34,7 +34,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -v
+          uv run pytest -v
 
   lint:
     name: Lint with Ruff
