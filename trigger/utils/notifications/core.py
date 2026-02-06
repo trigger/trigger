@@ -12,7 +12,9 @@ __all__ = ("send_email", "send_notification")
 
 
 # Functions
-def send_email(addresses, subject, body, sender, mailhost="localhost"):
+def send_email(
+    addresses, subject, body, sender, mailhost="localhost", mailuser="", mailpass="", ssl=False
+):
     """Sends an email to a list of recipients. Returns ``True`` when done.
 
     :param addresses:
@@ -29,13 +31,26 @@ def send_email(addresses, subject, body, sender, mailhost="localhost"):
 
     :param mailhost:
         (Optional) Mail server address
+
+    :param mailuser:
+        (Optional) Username for SMTP authentication
+
+    :param mailpass:
+        (Optional) Password for SMTP authentication
+
+    :param ssl:
+        (Optional) Use SMTP_SSL for secure communication
     """
     import smtplib
 
     for email in addresses:
         header = f"From: {sender}\r\nTo: {email}\r\nSubject: {subject}\r\n\r\n"
         message = header + body
-        server = smtplib.SMTP(mailhost)
+        if ssl:
+            server = smtplib.SMTP_SSL(mailhost, port=smtplib.SMTP_SSL_PORT)
+            server.login(mailuser, mailpass)
+        else:
+            server = smtplib.SMTP(mailhost)
         server.sendmail(sender, email, message)
         server.quit()
 
