@@ -257,7 +257,7 @@ def _emit(  # noqa: PLR0912, PLR0913
         content_handler.endElement(key)
 
 
-def unparse(item, output=None, encoding="utf-8", **kwargs):
+def unparse(item, output=None, encoding="utf-8", **kwargs):  # noqa: D103
     ((key, value),) = item.items()
     must_return = False
     if output is None:
@@ -282,7 +282,7 @@ if __name__ == "__main__":  # pragma: no cover
     (item_depth,) = sys.argv[1:]
     item_depth = int(item_depth)
 
-    def handle_item(path, item):
+    def handle_item(path, item):  # noqa: D103
         marshal.dump((path, item), sys.stdout)
         return True
 

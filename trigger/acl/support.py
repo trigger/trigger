@@ -67,7 +67,7 @@ def check_name(name, exc, max_len=255, extra_chars=" -_."):
         msg = "Name cannot be null string"
         raise exc(msg)
     if len(name) > max_len:
-        raise exc('Name "%s" cannot be longer than %d characters' % (name, max_len))
+        raise exc('Name "%s" cannot be longer than %d characters' % (name, max_len))  # noqa: UP031
     for char in name:
         if not (
             (extra_chars is not None and char in extra_chars)
@@ -79,7 +79,7 @@ def check_name(name, exc, max_len=255, extra_chars=" -_."):
             raise exc(msg)
 
 
-def check_range(values, min, max):
+def check_range(values, min, max):  # noqa: D103
     for value in values:
         try:
             for subvalue in value:
@@ -87,12 +87,12 @@ def check_range(values, min, max):
         except TypeError as err:  # noqa: PERF203
             if not min <= value <= max:
                 raise exceptions.BadMatchArgRange(
-                    "match arg %s must be between %d and %d" % (str(value), min, max),
+                    "match arg %s must be between %d and %d" % (str(value), min, max),  # noqa: UP031
                 ) from err
 
 
 # Having this take the dictionary itself instead of a function is very slow.
-def do_lookup(lookup_func, arg):
+def do_lookup(lookup_func, arg):  # noqa: D103
     if isinstance(arg, tuple):
         return tuple([do_lookup(lookup_func, elt) for elt in arg])
 
@@ -110,29 +110,29 @@ def do_lookup(lookup_func, arg):
         raise exceptions.UnknownMatchArg(msg) from err
 
 
-def do_protocol_lookup(arg):
+def do_protocol_lookup(arg):  # noqa: D103
     if isinstance(arg, tuple):
         return (Protocol(arg[0]), Protocol(arg[1]))
     return Protocol(arg)
 
 
-def do_port_lookup(arg):
+def do_port_lookup(arg):  # noqa: D103
     return do_lookup(lambda x: ports[x], arg)
 
 
-def do_icmp_type_lookup(arg):
+def do_icmp_type_lookup(arg):  # noqa: D103
     return do_lookup(lambda x: icmp_types[x], arg)
 
 
-def do_icmp_code_lookup(arg):
+def do_icmp_code_lookup(arg):  # noqa: D103
     return do_lookup(lambda x: icmp_codes[x], arg)
 
 
-def do_ip_option_lookup(arg):
+def do_ip_option_lookup(arg):  # noqa: D103
     return do_lookup(lambda x: ip_option_names[x], arg)
 
 
-def do_dscp_lookup(arg):
+def do_dscp_lookup(arg):  # noqa: D103
     return do_lookup(lambda x: dscp_names[x], arg)
 
 
@@ -146,7 +146,7 @@ def make_inverse_mask(prefixlen):
     return TIP(inverse_bits)
 
 
-def strip_comments(tags):
+def strip_comments(tags):  # noqa: D103
     if tags is None:
         return None
     noncomments = []
@@ -816,12 +816,12 @@ class ACL:
             if t.name is None:
                 for line in t.output_ios():
                     counter = counter + 10
-                    out += [" %d %s" % (counter, line)]
+                    out += [" %d %s" % (counter, line)]  # noqa: UP031
             else:
                 try:
                     counter = int(t.name)
                     if not 1 <= counter <= 2147483646:  # noqa: PLR2004
-                        raise exceptions.BadTermName("Term %d out of range" % counter)
+                        raise exceptions.BadTermName("Term %d out of range" % counter)  # noqa: UP031
                     line = t.output_iosxr()
                     if len(line) > 1:
                         msg = "one name per line"
@@ -837,7 +837,7 @@ class ACL:
         n = 1
         for t in self.terms:
             if t.name is None:
-                t.name = "T%d" % n
+                t.name = "T%d" % n  # noqa: UP031
                 n += 1
 
     def strip_comments(self):
@@ -1250,7 +1250,7 @@ class Matches(MyDict):
             The 2-tuple to convert.
         """
         try:
-            return "%s-%s" % pair  # Tuples back to ranges.
+            return "%s-%s" % pair  # noqa: UP031  # Tuples back to ranges.
         except TypeError:
             with contextlib.suppress(AttributeError):
                 # Make it print prefixes for /32, /128
@@ -1361,7 +1361,7 @@ class Matches(MyDict):
                             try:
                                 destports.append(ios_icmp_names[(type, code)])
                             except KeyError:  # noqa: PERF203
-                                destports.append("%d %d" % (type, code))
+                                destports.append("%d %d" % (type, code))  # noqa: UP031
                     else:
                         try:
                             destports.append(ios_icmp_names[(type,)])

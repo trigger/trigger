@@ -91,7 +91,7 @@ def main(action_class=None):
     fd, _logfile = tempfile.mkstemp(suffix="_run_cmds")
     log.startLogging(os.fdopen(fd, "a"), setStdout=False)
     log.msg(
-        'User %s (uid:%d) executed "%s"'
+        'User %s (uid:%d) executed "%s"'  # noqa: UP031
         % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv)),
     )
 
@@ -357,7 +357,7 @@ def stage_tftp(devices, acl, nonce):
     return True
 
 
-def parse_args(argv, description=None):
+def parse_args(argv, description=None):  # noqa: D103
     if description is None:
         description = "insert description here."
 
@@ -555,7 +555,7 @@ def verify_opts(opts):
 
 
 # TODO: There's gotta be a better way.
-def set_globals_from_opts(opts):
+def set_globals_from_opts(opts):  # noqa: D103
     global DEBUG  # noqa: PLW0603
     global VERBOSE  # noqa: PLW0603
     global PUSH  # noqa: PLW0603

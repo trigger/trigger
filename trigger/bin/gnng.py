@@ -39,7 +39,7 @@ RowData = namedtuple("RowData", "all_rows subnet_table")
 DottyData = namedtuple("DottyData", "graph links")
 
 
-def parse_args(argv):
+def parse_args(argv):  # noqa: D103
     parser = OptionParser(
         usage="%prog [options] [routers]",
         description="""GetNets-NG

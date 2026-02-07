@@ -35,7 +35,7 @@ def gsr_checks(a):
     elif [c for c in a.comments if "PSA-448" in c]:
         max_lines, psa = 448, True
     if max_lines and len(a.terms) > max_lines:
-        print("ACL has %d lines, max %d (GSR limit)" % (len(a.terms), max_lines))
+        print("ACL has %d lines, max %d (GSR limit)" % (len(a.terms), max_lines))  # noqa: UP031
         ok = False
     if psa:
         for t in a.terms:

@@ -109,7 +109,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):  # noqa: PLR
 
     # Display progress bar at top (#/devices, elapsed time)
     s.addstr(0, 0, "load_acl"[: maxx()], curses.A_BOLD)
-    progress = "  %d/%d devices" % (start_qlen - len(work) - len(active), start_qlen)
+    progress = "  %d/%d devices" % (start_qlen - len(work) - len(active), start_qlen)  # noqa: UP031
     s.addstr(0, maxx() - len(progress), progress)
 
     doneness = 1 - float(len(work) + len(active)) / start_qlen
@@ -135,7 +135,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):  # noqa: PLR
         s.addstr(
             2,
             0,
-            " %d failure%s, will report at end " % (count, plural),
+            " %d failure%s, will report at end " % (count, plural),  # noqa: UP031
             curses.A_STANDOUT,
         )
 
@@ -724,7 +724,7 @@ def main():  # noqa: PLR0912, PLR0915
     for dev, acls in devs:
         acls = list(work[dev])  # noqa: PLW2901
         acls.sort()
-        print("%-32s %s" % (dev, " ".join(acls)))
+        print("%-32s %s" % (dev, " ".join(acls)))  # noqa: UP031
     acl_count = len(acls)
     print()
     if debug_fakeout():
@@ -821,18 +821,18 @@ def main():  # noqa: PLR0912, PLR0915
         if failed_count:
             send_notification(
                 "LOAD_ACL FAILURE",
-                "%d ACLS failed to load! See logfile: %s on jumphost."
+                "%d ACLS failed to load! See logfile: %s on jumphost."  # noqa: UP031
                 % (failed_count, tmpfile),
             )
         else:
             send_email(
                 settings.SUCCESS_EMAILS,
                 "LOAD ACL SUCCESS!",
-                "%d acls loaded successfully! see log file: %s" % (acl_count, tmpfile),
+                "%d acls loaded successfully! see log file: %s" % (acl_count, tmpfile),  # noqa: UP031
                 settings.EMAIL_SENDER,
             )
 
-    log.msg("%d failures" % failed_count)
+    log.msg("%d failures" % failed_count)  # noqa: UP031
     log.msg(f"Elapsed time: {min_sec(time.time() - start)}")
 
 
@@ -840,7 +840,7 @@ if __name__ == "__main__":
     fd, tmpfile = tempfile.mkstemp(suffix="_load_acl")
     log.startLogging(os.fdopen(fd, "a"), setStdout=False)
     log.msg(
-        'User %s (uid:%d) executed "%s"'
+        'User %s (uid:%d) executed "%s"'  # noqa: UP031
         % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv)),
     )
     main()

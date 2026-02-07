@@ -805,7 +805,7 @@ class NetACLInfo(Commando):
 
     def __init__(self, **args):
         try:
-            import pyparsing as pp
+            import pyparsing as pp  # noqa: F401
         except ImportError as err:
             msg = "You must install ``pyparsing==1.5.7`` to use NetACLInfo"
             raise RuntimeError(
@@ -874,7 +874,7 @@ class NetACLInfo(Commando):
         self.results[device.nodeName] = data  # "MY OWN IOS DATA"
         alld = data[0]
 
-        log.msg("Parsing interface data (%d bytes)" % len(alld))
+        log.msg("Parsing interface data (%d bytes)" % len(alld))  # noqa: UP031
         if not device.is_cisco_asa():
             self.config[device] = _parse_ios_interfaces(
                 alld,

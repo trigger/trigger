@@ -376,7 +376,7 @@ def create_cm_ticket(acls, oncall, service="load_acl"):
     devlist = ""
     for dev, aclset in acls.items():
         a = sorted(aclset)
-        devlist += "%-32s %s\n" % (dev, " ".join(a))
+        devlist += "%-32s %s\n" % (dev, " ".join(a))  # noqa: UP031
 
     oncall["devlist"] = devlist
     oncall["service"] = service

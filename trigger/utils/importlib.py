@@ -3,7 +3,7 @@
 Taken verbatim from ``django.utils.importlib`` in Django 1.4.
 """
 
-import os
+import os  # noqa: F401
 import sys
 from pathlib import Path
 

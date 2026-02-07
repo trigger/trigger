@@ -14,18 +14,18 @@ __version__ = "3.2.1"
 
 
 # Imports
-import os
+import os  # noqa: F401
 import re
-import socket
+import socket  # noqa: F401
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import ClassVar
-from xml.etree.ElementTree import Element, ElementTree, SubElement
+from xml.etree.ElementTree import Element, ElementTree, SubElement  # noqa: F401
 
 from twisted.python import log
 
 from trigger.cmds import Commando
-from trigger.conf import settings
+from trigger.conf import settings  # noqa: F401
 
 # Exports
 __all__ = ["CommandRunner", "ConfigLoader", "DoCommandBase", "core", "xml_print"]

@@ -23,7 +23,7 @@ __version__ = "0.2.1"
 # Imports
 import itertools
 import os
-import pickle
+import pickle  # noqa: F401
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 

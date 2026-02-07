@@ -21,7 +21,7 @@ from trigger.conf import settings
 from trigger.utils.cli import get_terminal_width
 
 
-def parse_args(argv, optp):
+def parse_args(argv, optp):  # noqa: D103
     usage = """
         %prog --display [--exact | --device-name-only] (<acl_name> | <device>)
         %prog (--add | --remove) <acl_name> [<device> [<device> ...]]
@@ -111,14 +111,14 @@ def parse_args(argv, optp):
     return opts, args
 
 
-def pretty_print_acls(name, acls, term_width, offset=41):
+def pretty_print_acls(name, acls, term_width, offset=41):  # noqa: D103
     output = wrap(" ".join(acls), term_width - offset)
-    print("%-39s %s" % (name, output[0]))
+    print("%-39s %s" % (name, output[0]))  # noqa: UP031
     for line in output[1:]:
         print(" " * 39, line)
 
 
-def p_error(optp, msg=None):
+def p_error(optp, msg=None):  # noqa: D103
     optp.print_help()
     if msg:
         optp.error(msg)

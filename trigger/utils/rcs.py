@@ -5,7 +5,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2009-2011, AOL Inc."
 
-import os
+import os  # noqa: F401
 import time
 from pathlib import Path
 

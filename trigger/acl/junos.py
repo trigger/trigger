@@ -150,7 +150,7 @@ def braced_list(arg):
     return '("{{", jws?, ({}, jws?)*, "}}"!{})'.format(arg, errs["comm_start"])
 
 
-def keyword_match(keyword, arg=None):
+def keyword_match(keyword, arg=None):  # noqa: D103
     for k in keyword, keyword + "-except":
         prod = "junos_" + k.replace("-", "_")
         junos_match_types.append(prod)
@@ -180,7 +180,7 @@ keyword_match("tcp-flags", "tcp_flag")
 keyword_match("tcp-initial")
 
 
-def range_match(key, arg):
+def range_match(key, arg):  # noqa: D103
     rules[S(arg + "_range")] = (f'{arg}, "-", {arg}', tuple)
     match = f"{arg}_range / {arg}"
     keyword_match(key, f'{match} / ("[", jws?, ({match}, jws?)*, "]")')

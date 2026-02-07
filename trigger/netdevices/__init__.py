@@ -22,19 +22,19 @@ Example::
 # Imports
 import copy
 import itertools
-import os
+import os  # noqa: F401
 import re
-import sys
-import time
+import sys  # noqa: F401
+import time  # noqa: F401
 import xml.etree.ElementTree as ET
 from collections.abc import MutableMapping
 
-from crochet import run_in_reactor, setup, wait_for
-from twisted.internet import defer, reactor
-from twisted.internet.protocol import Factory
+from crochet import run_in_reactor, setup, wait_for  # noqa: F401
+from twisted.internet import defer, reactor  # noqa: F401
+from twisted.internet.protocol import Factory  # noqa: F401
 from twisted.python import log
 
-from trigger import changemgmt, exceptions, rancid
+from trigger import changemgmt, exceptions, rancid  # noqa: F401
 from trigger.conf import settings
 from trigger.utils import network, parse_node_port
 from trigger.utils.url import parse_url
@@ -145,7 +145,7 @@ def device_match(name, production_only=True):
                 print(f"Matched '{single}'.")
                 return single
 
-            print("%d possible matches found for '%s':" % (len(matches), name))
+            print("%d possible matches found for '%s':" % (len(matches), name))  # noqa: UP031
 
             matches.sort()
             for num, shortname in enumerate(matches):
@@ -633,7 +633,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         from trigger.twister2 import (
             IoslikeSendExpect,
             TriggerEndpointClientFactory,
-            TriggerSSHShellClientEndpointBase,
+            TriggerSSHShellClientEndpointBase,  # noqa: F401
         )
 
         if on_error is None:

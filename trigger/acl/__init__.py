@@ -27,5 +27,5 @@ __all__.extend(parser.__all__)
 
 
 # Functions
-def acl_exists(name):
+def acl_exists(name):  # noqa: D103
     return os.access(settings.FIREWALL_DIR + "/acl." + name, os.R_OK)

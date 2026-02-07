@@ -213,7 +213,7 @@ def min_sec(secs):
     '0:11'
     """
     secs = int(secs)
-    return "%d:%02d" % (secs / 60, secs % 60)
+    return "%d:%02d" % (secs / 60, secs % 60)  # noqa: UP031
 
 
 def setup_tty_for_pty(func):

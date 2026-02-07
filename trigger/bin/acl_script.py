@@ -21,7 +21,7 @@ from trigger.utils.cli import yesno
 from trigger.utils.rcs import RCS
 
 
-def parse_args(argv):
+def parse_args(argv):  # noqa: D103
     notes = ""
     parser = OptionParser(
         usage="%prog [options]",
@@ -345,7 +345,7 @@ NOTE when using --replace-defined:
     return opts, args
 
 
-def log_term(term, msg="ADDING"):
+def log_term(term, msg="ADDING"):  # noqa: D103
     print(f">>{msg}<<", end=" ")
     for k, v in term.match.items():
         for x in v:
@@ -353,7 +353,7 @@ def log_term(term, msg="ADDING"):
     print()
 
 
-def wedge_acl(acl, new_term, between, opts):  # noqa: PLR0912, PLR0915
+def wedge_acl(acl, new_term, between, opts):  # noqa: D103, PLR0912, PLR0915
     if not between:
         # ugg, don't deal with this yet.
         return
