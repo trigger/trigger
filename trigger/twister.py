@@ -99,6 +99,52 @@ def is_awaiting_confirmation(prompt):
     return any(prompt.endswith(match.lower()) for match in matchlist)
 
 
+def compile_prompt_pattern(pattern):
+    r"""Compile a prompt pattern with line-start anchoring to prevent false matches.
+
+    Prepends ``(?:^|\r?\n)`` to the pattern so that prompts only match at the
+    start of a line (beginning of buffer or after a newline).  Already-compiled
+    ``re.Pattern`` objects and patterns that already start with a line anchor
+    (``^``, ``\r``, ``\n``) are returned unchanged.
+
+    :param pattern:
+        A prompt regex string or compiled ``re.Pattern``.
+
+    :returns:
+        A compiled ``re.Pattern`` with ``re.MULTILINE`` enabled.
+    """
+    if isinstance(pattern, re.Pattern):
+        return pattern
+    if pattern.startswith(("^", r"\r", r"\n")):
+        return re.compile(pattern, re.MULTILINE)
+    return re.compile(r"(?:^|\r?\n)" + pattern, re.MULTILINE)
+
+
+def prompt_match_start(match):
+    r"""Return the start position of the actual prompt within a match.
+
+    When ``compile_prompt_pattern`` prepends a ``(?:^|\r?\n)`` prefix, the
+    match may begin with ``\r`` or ``\n`` characters that are not part of the
+    prompt itself.  This helper skips those leading characters and returns the
+    index where the real prompt text begins.
+
+    :param match:
+        A ``re.Match`` object from a prompt search.
+
+    :returns:
+        An integer index suitable for slicing the buffer at the prompt boundary.
+    """
+    s = match.start()
+    text = match.group()
+    # Skip any leading \r or \n consumed by the anchor prefix
+    for ch in text:
+        if ch in "\r\n":
+            s += 1
+        else:
+            break
+    return s
+
+
 def requires_enable(proto_obj, data):
     """Check if a device requires enable.
 
@@ -951,7 +997,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         self.timeout = timeout
         self.channel_class = channel_class
         self.command_interval = command_interval
-        self.prompt = re.compile(prompt_pattern)
+        self.prompt = compile_prompt_pattern(prompt_pattern)
         self.device = device
         self.connection_class = connection_class
         TriggerClientFactory.__init__(self, deferred, creds)
@@ -1292,7 +1338,7 @@ class Interactor(protocol.Protocol):
 
     def __init__(self, log_to=None):
         self._log_to = log_to
-        self.enable_prompt = re.compile(settings.IOSLIKE_ENABLE_PAT)
+        self.enable_prompt = compile_prompt_pattern(settings.IOSLIKE_ENABLE_PAT)
         self.enabled = False
         self.initialized = False
 
@@ -1306,7 +1352,7 @@ class Interactor(protocol.Protocol):
         c.dataReceived = self.write
         self.stdio = stdio.StandardIO(c)
         self.device = self.factory.device  # Attach the device object
-        self.prompt = re.compile(self.device.vendor.prompt_pattern)
+        self.prompt = compile_prompt_pattern(self.device.vendor.prompt_pattern)
 
     def loseConnection(self):
         """Terminate the connection. Link this to the transport method of the same
@@ -1415,7 +1461,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
         log.msg(f"[{self.device}] My startup commands: {self.startup_commands!r}")
 
         # For IOS-like devices that require 'enable'
-        self.enable_prompt = re.compile(settings.IOSLIKE_ENABLE_PAT)
+        self.enable_prompt = compile_prompt_pattern(settings.IOSLIKE_ENABLE_PAT)
         self.enabled = False
 
     def channelOpen(self, data):
@@ -1467,7 +1513,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
             # Or just use the matched regex object...
             log.msg(f"[{self.device}] STATE: buffer {self.data!r}")
             log.msg(f"[{self.device}] STATE: prompt {m.group()!r}")
-            prompt_idx = m.start()
+            prompt_idx = prompt_match_start(m)
 
         # Strip the prompt from the match result
         result = self.data[:prompt_idx]  # Cut the prompt out
@@ -1759,7 +1805,7 @@ class TriggerSSHNetscalerChannel(TriggerSSHChannelBase):
             return
         log.msg(f"[{self.device}] STATE: prompt {m.group()!r}")
 
-        result = self.data[: m.start()]  # Strip ' Done\n' from results.
+        result = self.data[: prompt_match_start(m)]  # Strip ' Done\n' from results.
 
         if self.initialized:
             self.results.append(result)
@@ -2026,7 +2072,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.with_errors = with_errors
         self.timeout = timeout
         self.command_interval = command_interval
-        self.prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        self.prompt = compile_prompt_pattern(settings.IOSLIKE_PROMPT_PAT)
         self.startup_commands = copy.copy(self.device.startup_commands)
         log.msg(f"[{self.device}] My initialize commands: {self.startup_commands!r}")
         self.initialized = False
@@ -2059,7 +2105,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 return
         else:
             # Or just use the matched regex object...
-            prompt_idx = m.start()
+            prompt_idx = prompt_match_start(m)
 
         result = self.data[:prompt_idx]
         # Trim off the echoed-back command.  This should *not* be necessary
