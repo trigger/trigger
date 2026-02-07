@@ -267,7 +267,7 @@ class RangeList:
         # Get all list/tuples and return tuples
         tuples = [tuple(sorted(i)) for i in L if isinstance(i, (list, tuple))]
         singles = [i[0] for i in tuples if len(i) == 1]  # Grab len of 1
-        tuples = [i for i in tuples if len(i) == 2]  # Filter out len of 1
+        tuples = [i for i in tuples if len(i) == 2]  # noqa: PLR2004  # Filter out len of 1
         digits = [i for i in L if isinstance(i, int)]  # Get digits
 
         ret.extend(singles)
@@ -459,7 +459,7 @@ class TIP(IPy.IP):
             d = data.split()
             # This means we got something like "1.2.3.4 except" or "inactive:
             # 1.2.3.4'
-            if len(d) == 2:
+            if len(d) == 2:  # noqa: PLR2004
                 # Check if last word is 'except', set negated=True
                 if d[-1] == "except":
                     negated = True
@@ -468,7 +468,7 @@ class TIP(IPy.IP):
                 elif d[0] == "inactive:":
                     inactive = True
                     data = d[1]
-            elif len(d) == 3:
+            elif len(d) == 3:  # noqa: PLR2004
                 if d[-1] == "except":
                     negated = True
                 if d[0] == "inactive:":
@@ -733,7 +733,7 @@ class ACL:
             raise exceptions.MissingACLName(msg)
         try:
             x = int(self.name)
-            if not (100 <= x <= 199 or 2000 <= x <= 2699):
+            if not (100 <= x <= 199 or 2000 <= x <= 2699):  # noqa: PLR2004
                 msg = "IOS ACLs are 100-199 or 2000-2699"
                 raise exceptions.BadACLName(msg)
         except (TypeError, ValueError) as err:
@@ -820,7 +820,7 @@ class ACL:
             else:
                 try:
                     counter = int(t.name)
-                    if not 1 <= counter <= 2147483646:
+                    if not 1 <= counter <= 2147483646:  # noqa: PLR2004
                         raise exceptions.BadTermName("Term %d out of range" % counter)
                     line = t.output_iosxr()
                     if len(line) > 1:
@@ -850,7 +850,7 @@ class ACL:
 class Term:
     """An individual term from which an ACL is made."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name=None,
         action="accept",
@@ -905,7 +905,7 @@ class Term:
             action = ("next", "term")
         if isinstance(action, str):
             action = (action,)
-        if len(action) > 2:
+        if len(action) > 2:  # noqa: PLR2004
             msg = f'too many arguments to action "{action!s}"'
             raise exceptions.ActionError(
                 msg,
@@ -1268,10 +1268,10 @@ class Matches(MyDict):
             try:
                 if port[0] == 0:
                     # Omit ports if 0-65535
-                    if port[1] == 65535:
+                    if port[1] == 65535:  # noqa: PLR2004
                         continue
                     a.append("lt %s" % (port[1] + 1))
-                elif port[1] == 65535:
+                elif port[1] == 65535:  # noqa: PLR2004
                     a.append("gt %s" % (port[0] - 1))
                 else:
                     a.append("range {} {}".format(*port))
@@ -1295,7 +1295,7 @@ class Matches(MyDict):
                 )
             if addr.prefixlen() == 0:
                 a.append("any")
-            elif addr.prefixlen() == 32:
+            elif addr.prefixlen() == 32:  # noqa: PLR2004
                 a.append(f"host {addr.net()}")
             else:
                 inverse_mask = make_inverse_mask(addr.prefixlen())

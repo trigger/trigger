@@ -129,7 +129,7 @@ def edit(editfile):
 
 def main():  # noqa: PLR0912, PLR0915
     """Main entry point for the CLI tool."""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2:  # noqa: PLR2004
         print("usage: fe files...", file=sys.stderr)
         sys.exit(2)
 

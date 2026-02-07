@@ -62,7 +62,7 @@ filtered_acls = set()
 output_cache = {}
 
 
-def draw_screen(s, work, active, failures, start_qlen, start_time):
+def draw_screen(s, work, active, failures, start_qlen, start_time):  # noqa: PLR0913
     """Curses-based status board for displaying progress during interactive
     mode.
 
@@ -521,7 +521,7 @@ def group(dev):
 
     # FIXME(jathan): This is some hard-coded AOL-specific legacy stuff that
     # will probably work for most environments, but it's awfully presumptuous.
-    if len(group_key) >= 4 and group_key[-1] not in ("i", "e"):
+    if len(group_key) >= 4 and group_key[-1] not in ("i", "e"):  # noqa: PLR2004
         group_key = group_key[:-1] + "X"
 
     return (dev.site, group_key)
@@ -551,7 +551,7 @@ def clear_load_queue(dev, acls):
     queue.complete(dev, acls)
 
 
-def activate(work, active, failures, jobs, redraw, opts):  # noqa: PLR0915
+def activate(work, active, failures, jobs, redraw, opts):  # noqa: PLR0915, PLR0913
     """Refill the active work queue based on number of current active jobs.
 
     :param work:

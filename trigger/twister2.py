@@ -15,7 +15,7 @@ from crochet import run_in_reactor, setup
 
 setup()
 
-from twisted.conch.endpoints import (
+from twisted.conch.endpoints import (  # noqa: E402
     SSHCommandClientEndpoint,
     TCP4ClientEndpoint,
     _CommandTransport,
@@ -25,16 +25,16 @@ from twisted.conch.endpoints import (
     _UserAuth,
     connectProtocol,
 )
-from twisted.conch.ssh import common, session, transport
-from twisted.conch.ssh.channel import SSHChannel
-from twisted.internet import defer, protocol, reactor
-from twisted.internet.defer import CancelledError
-from twisted.protocols.policies import TimeoutMixin
-from twisted.python import log
+from twisted.conch.ssh import common, session, transport  # noqa: E402
+from twisted.conch.ssh.channel import SSHChannel  # noqa: E402
+from twisted.internet import defer, protocol, reactor  # noqa: E402
+from twisted.internet.defer import CancelledError  # noqa: E402
+from twisted.protocols.policies import TimeoutMixin  # noqa: E402
+from twisted.python import log  # noqa: E402
 
-from trigger import exceptions, tacacsrc
-from trigger.conf import settings
-from trigger.twister import (
+from trigger import exceptions, tacacsrc  # noqa: E402
+from trigger.conf import settings  # noqa: E402
+from trigger.twister import (  # noqa: E402
     has_ioslike_error,
     is_awaiting_confirmation,
     prompt_match_start,
@@ -83,7 +83,7 @@ class _TriggerShellChannel(SSHChannel):
 
     name = b"session"
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         creator,
         command,
@@ -348,7 +348,7 @@ class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
     a single command.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         reactor,
         device,
@@ -445,7 +445,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     """
 
     @classmethod
-    def newConnection(
+    def newConnection(  # noqa: PLR0913
         cls,
         reactor,
         username,
@@ -479,7 +479,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     def __init__(self, creator):
         self._creator = creator
 
-    def _executeCommand(
+    def _executeCommand(  # noqa: PLR0913
         self,
         connection,
         protocolFactory,
@@ -520,7 +520,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
         self.connected = True
         return commandConnected
 
-    def connect(
+    def connect(  # noqa: PLR0913
         self,
         factory,
         command="",

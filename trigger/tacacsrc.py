@@ -193,13 +193,13 @@ def validate_credentials(creds=None):
         creds = creds.values()
 
     # If it's missing realm, add it.
-    if len(creds) == 2:
+    if len(creds) == 2:  # noqa: PLR2004
         log.msg("Creds is a 2-tuple, making into namedtuple...")
         username, password = creds
         return Credentials(username, password, realm)
 
     # Or just make it go...
-    if len(creds) == 3:
+    if len(creds) == 3:  # noqa: PLR2004
         log.msg("Creds is a 3-tuple, making into namedtuple...")
         return Credentials(*creds)
 
@@ -359,7 +359,7 @@ class Tacacsrc:
 
         key += self._get_key_nonce_old()
         key = _perl_pack_Hstar_old((key + (" " * 48))[:48])
-        assert len(key) == 24  # noqa: S101
+        assert len(key) == 24  # noqa: S101, PLR2004
 
         return key
 

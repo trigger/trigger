@@ -54,19 +54,19 @@ class Policer:
                         type, value = entry
                         if type == "bandwidth-limit":
                             limit = self.str2bits(value)
-                            if limit > 32000000000 or limit < 32000:
+                            if limit > 32000000000 or limit < 32000:  # noqa: PLR2004
                                 msg = "bandwidth-limit must be between 32000bps and 32000000000bps"
                                 raise ValueError(msg)
                             self.exceedings.append((type, limit))
                         elif type == "burst-size-limit":
                             limit = self.str2bits(value)
-                            if limit > 100000000 or limit < 1500:
+                            if limit > 100000000 or limit < 1500:  # noqa: PLR2004
                                 msg = "burst-size-limit must be between 1500B and 100,000,000B"
                                 raise ValueError(msg)
                             self.exceedings.append((type, limit))
                         elif type == "bandwidth-percent":
                             limit = int(value)
-                            if limit < 1 or limit > 100:
+                            if limit < 1 or limit > 100:  # noqa: PLR2004
                                 msg = "bandwidth-percent must be between 1 and 100"
                                 raise ValueError(msg)
                         else:

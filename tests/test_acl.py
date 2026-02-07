@@ -72,7 +72,7 @@ class CheckRangeList(unittest.TestCase):
         """Check RangeList behavior as a container type."""
         r = acl.RangeList([1, (3, 6)])
         self.assertTrue(1 in r)
-        self.assertTrue(5 in r)
+        self.assertTrue(5 in r)  # noqa: PLR2004
         self.assertTrue(0 not in r)
         r = acl.RangeList([acl.TIP("10/8"), acl.TIP("172.16/12")])
         self.assertTrue(acl.TIP("10.1.1.1") in r)

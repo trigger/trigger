@@ -201,7 +201,7 @@ class BounceWindow:
             # We need a list indexed by hour (0-23) for subscripting
             status_by_hour = [self.hour_map[i] for i in range(24)]
 
-        if len(status_by_hour) != 24:
+        if len(status_by_hour) != 24:  # noqa: PLR2004
             msg = "There must be exactly 24 hours defined for this BounceWindow."
             raise exceptions.InvalidBounceWindow(msg)
 
@@ -227,9 +227,9 @@ class BounceWindow:
 
         # Return default during weekend moratorium, otherwise look it up.
         if (
-            when_et.weekday() >= 5
-            or (when_et.weekday() == 0 and when_et.hour < 4)
-            or (when_et.weekday() == 4 and when_et.hour >= 12)
+            when_et.weekday() >= 5  # noqa: PLR2004
+            or (when_et.weekday() == 0 and when_et.hour < 4)  # noqa: PLR2004
+            or (when_et.weekday() == 4 and when_et.hour >= 12)  # noqa: PLR2004
         ):
             return BounceStatus(BOUNCE_DEFAULT_COLOR)
         return self._status_by_hour[when_et.hour]
@@ -324,7 +324,7 @@ class BounceWindow:
             parts = [int(p) for p in parts]  # make ints
             if len(parts) == 1:  # no hyphen
                 parts.append(parts[0] + 1)
-            elif len(parts) == 2:
+            elif len(parts) == 2:  # noqa: PLR2004
                 parts[1] += 1
             else:
                 msg = "This should not have happened!"
@@ -338,4 +338,4 @@ class BounceWindow:
 
 # Load ``bounce()`` from the location of ``bounce.py`` or provide a dummy that
 # returns a hard-coded bounce window
-from .bounce import bounce
+from .bounce import bounce  # noqa: E402

@@ -40,7 +40,7 @@ Automatically log into network devices using cached TACACS credentials.
 
     opts, args = parser.parse_args(argv)
 
-    if len(args) != 2:
+    if len(args) != 2:  # noqa: PLR2004
         parser.print_help()
         sys.exit(2)
 

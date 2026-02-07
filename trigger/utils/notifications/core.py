@@ -12,7 +12,7 @@ __all__ = ("send_email", "send_notification")
 
 
 # Functions
-def send_email(
+def send_email(  # noqa: PLR0913
     addresses,
     subject,
     body,

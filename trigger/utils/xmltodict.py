@@ -37,7 +37,7 @@ class ParsingInterrupted(Exception):
 
 
 class _DictSAXHandler:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         item_depth=0,
         item_callback=lambda *args: True,
@@ -204,7 +204,7 @@ def parse(xml_input, encoding="utf-8", *args, **kwargs):
     return handler.item
 
 
-def _emit(  # noqa: PLR0912
+def _emit(  # noqa: PLR0912, PLR0913
     key,
     value,
     content_handler,

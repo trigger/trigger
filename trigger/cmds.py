@@ -144,7 +144,7 @@ class Commando:
     # Whether to stop the reactor when all results have returned.
     stop_reactor = None
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         devices=None,
         commands=None,
