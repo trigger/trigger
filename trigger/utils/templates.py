@@ -41,7 +41,7 @@ def get_template_path(cmd, dev_type=None):
     return (
         str(
             Path(t_dir)
-            / "{1}_{2}.template".format(t_dir, dev_type, cmd.replace(" ", "_")),
+            / "{}_{}.template".format(dev_type, cmd.replace(" ", "_")),
         )
         or None
     )
