@@ -120,7 +120,7 @@ class SQLiteLoader(BaseLoader):
 
         # And the devices. This is a list of tuples whose values match the indexes
         # of the column names.
-        devfetch = cursor.execute(f"select * from {table_name}")
+        devfetch = cursor.execute(f"select * from {table_name}")  # noqa: S608 - trusted config value
         devrows = devfetch.fetchall()
 
         # Another generator within a generator, which structurally is a list of

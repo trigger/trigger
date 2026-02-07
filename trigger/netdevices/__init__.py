@@ -472,7 +472,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         return self.nodeName.split(".", 1)[0]
 
     @property
-    def os(self):
+    def os(self):  # noqa: F811 - property name intentionally shadows os module
         vendor_mapping = settings.TEXTFSM_VENDOR_MAPPINGS
         try:
             oss = vendor_mapping[self.vendor]

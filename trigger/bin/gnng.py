@@ -193,7 +193,7 @@ def write_sqldb(sqlfile, dev, rows):
             VALUES (
                 '{dev}', '{iface}', '{addrs}',
                 '{snets}', '{inacl}', '{outacl}', '{desc}'
-            );""",
+            );""",  # noqa: S608 - local sqlite, not user input
         )
 
     connection.commit()

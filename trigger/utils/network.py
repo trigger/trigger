@@ -43,7 +43,7 @@ def ping(host, count=1, timeout=5):
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
     status = None
     with Path(os.devnull).open("w") as devnull_fd:
-        status = subprocess.call(
+        status = subprocess.call(  # noqa: S603
             shlex.split(ping_command),
             stdout=devnull_fd,
             stderr=devnull_fd,

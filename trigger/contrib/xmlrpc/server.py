@@ -21,7 +21,7 @@ from twisted.python import log
 from twisted.web import server, xmlrpc
 
 from trigger.contrib.commando import CommandoApplication
-from trigger.utils import importlib
+from trigger.utils import importlib as importlib  # noqa: F811
 
 # Enable Deferred debuging if ``DEBUG`` is set.
 if os.getenv("DEBUG"):

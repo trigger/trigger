@@ -748,8 +748,8 @@ class CheckTriggerIP(unittest.TestCase):
         # Until we fix inactive testing, this is legit
         self.assertTrue(obj in self.test_net)
 
-    def testInactive(self):
-        """Test an inactive IP object"""
+    def testInactiveAndNegated(self):
+        """Test an inactive and negated IP object"""
         test = "inactive: 1.2.3.4/32 except"
         obj = acl.TIP(test)
         self.assertEqual(str(obj), test)
