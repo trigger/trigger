@@ -133,7 +133,6 @@ ignore = [
     "B018",     # useless-expression (test assertions)
 
     # --- Pre-commit specific ignores ---
-    "PLW1641",  # __hash__ implementation (false positive, requires __eq__ impl)
     "PT028",    # pytest parameter defaults (false positive, not pytest functions)
 
     # --- Docstring exceptions (not enforcing coverage/style) ---
@@ -150,7 +149,6 @@ ignore = [
     "D404",     # docstring-starts-with-this
 
     # --- Complexity (deep refactoring territory) ---
-    "PLR0911",  # too-many-return-statements
     "PLR0912",  # too-many-branches
     "PLR0913",  # too-many-arguments
     "PLR0915",  # too-many-statements
@@ -160,9 +158,6 @@ ignore = [
     # --- Security false positives for network toolkit ---
     "S101",     # assert (used in tests)
     "S105",     # hardcoded-password-string (false positives)
-    "S110",     # try-except-pass
-    "S112",     # try-except-continue
-    "S314",     # suspicious-xml-element-tree-usage
     "S603",     # subprocess-without-shell-equals-true
     "S605",     # start-process-with-a-shell (fix manually)
     "S606",     # start-process-with-no-shell

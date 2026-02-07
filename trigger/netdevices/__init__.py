@@ -163,7 +163,7 @@ def device_match(name, production_only=True):
 
 
 # Classes
-class NetDevice:
+class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
     """An object that represents a distinct network device and its metadata.
 
     Almost all of the attributes are populated by
@@ -356,7 +356,7 @@ class NetDevice:
 
         return []
 
-    def _set_commit_commands(self):
+    def _set_commit_commands(self):  # noqa: PLR0911 - vendor dispatch
         """Return the proper "commit" command. (e.g. write mem, etc.)."""
         if self.is_ioslike():
             return self._ioslike_commit()
