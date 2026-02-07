@@ -500,7 +500,9 @@ class NetDevice:
         self.factories["base"] = factory
 
         # FIXME(jathan): prompt_pattern could move back to protocol?
-        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        from trigger.twister import compile_prompt_pattern
+
+        prompt = compile_prompt_pattern(settings.IOSLIKE_PROMPT_PAT)
         proto = endpoint.connect(factory, prompt_pattern=prompt)
         self._proto = proto  # Track this for later, too.
 
@@ -594,7 +596,9 @@ class NetDevice:
 
         # Here's where we're using self._connect injected on .open()
         ep = TriggerSSHShellClientEndpointBase.existingConnection(self._conn)
-        prompt = re.compile(settings.IOSLIKE_PROMPT_PAT)
+        from trigger.twister import compile_prompt_pattern
+
+        prompt = compile_prompt_pattern(settings.IOSLIKE_PROMPT_PAT)
         proto = ep.connect(factory, prompt_pattern=prompt)
 
         d = defer.Deferred()

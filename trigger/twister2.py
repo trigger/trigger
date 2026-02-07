@@ -37,6 +37,7 @@ from trigger.conf import settings
 from trigger.twister import (
     has_ioslike_error,
     is_awaiting_confirmation,
+    prompt_match_start,
 )
 
 
@@ -655,7 +656,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
                 return
         else:
             # Or just use the matched regex object...
-            prompt_idx = m.start()
+            prompt_idx = prompt_match_start(m)
 
         result = self.data[:prompt_idx]
         # Trim off the echoed-back command.  This should *not* be necessary
