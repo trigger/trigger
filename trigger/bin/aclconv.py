@@ -19,7 +19,7 @@ formats = {
 
 
 def main():  # noqa: PLR0912
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     optp = optparse.OptionParser(
         description="""\
 Convert an ACL on stdin, or a list of ACLs, from one format to another.

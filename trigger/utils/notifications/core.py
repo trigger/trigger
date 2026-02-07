@@ -47,7 +47,7 @@ def send_email(  # noqa: PLR0913
 
     :param ssl:
         (Optional) Use SMTP_SSL for secure communication
-    """
+    """  # noqa: D401
     import smtplib
 
     for email in addresses:
@@ -70,5 +70,5 @@ def send_notification(*args, **kwargs):
 
     This relies on handlers to be definied within
     ``settings.NOTIFICATION_HANDLERS``.
-    """
+    """  # noqa: D401, D205
     return handlers.notify(*args, **kwargs)

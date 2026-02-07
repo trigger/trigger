@@ -23,16 +23,16 @@ def xmlrpc_show_clock(*args, **kwargs):
 class ShowClock(CommandoApplication):
     """Commando application for retrieving device clock information."""
 
-    def to_cisco(self, dev, commands=None, extra=None):
+    def to_cisco(self, dev, commands=None, extra=None):  # noqa: D102
         return ["show clock"]
 
     to_brocade = to_cisco
 
-    def to_arista(self, dev, commands=None, extra=None):
+    def to_arista(self, dev, commands=None, extra=None):  # noqa: D102
         return ["show clock", "show uptime"]
 
     def to_juniper(self, dev, commands=None, extra=None):
-        """Generates an etree.Element object suitable for use with JunoScript."""
+        """Generates an etree.Element object suitable for use with JunoScript."""  # noqa: D401
         cmd = Element("get-system-uptime-information")
         self.commands = [cmd]
         return self.commands
@@ -53,7 +53,7 @@ class ShowClock(CommandoApplication):
     def from_brocade(self, data, device, commands=None):
         """Parse Brocade time. Brocade switches and routers behave
         differently...
-        """
+        """  # noqa: D205
         if device.is_router():
             # => '16:42:04 GMT+00 Thu Jun 28 2012\r\n'
             fmt = "%H:%M:%S GMT+00 %a %b %d %Y\r\n"
@@ -110,7 +110,7 @@ class ShowClock(CommandoApplication):
     def _parse_datetime(self, datestr, fmt):
         """Given a date string and a format, try to parse and return
         datetime.datetime object.
-        """
+        """  # noqa: D205
         try:
             d = datetime.datetime.strptime(datestr, fmt)
             return d.isoformat()

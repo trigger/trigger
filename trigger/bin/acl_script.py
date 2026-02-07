@@ -460,7 +460,7 @@ def wedge_acl(acl, new_term, between, opts):  # noqa: D103, PLR0912, PLR0915
 
 
 def main():  # noqa: PLR0912, PLR0915
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     opts, _args = parse_args(sys.argv)
     for acl_file in opts.acl:
         rcs = RCS(acl_file, create=False)

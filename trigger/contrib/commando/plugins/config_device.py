@@ -33,7 +33,7 @@ class ConfigDevice(CommandoApplication):
     tftp_host = settings.TFTP_HOST
     tftp_ip = gethostbyname(tftp_host)
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         action="replace",
         files=None,
@@ -66,7 +66,7 @@ class ConfigDevice(CommandoApplication):
     ## The dev is passed to allow for creating different
     ## commands based on model and version!!
 
-    def to_cisco(self, dev, commands=None, extra=None):
+    def to_cisco(self, dev, commands=None, extra=None):  # noqa: D102
         cmds = []
         files = self.files
         for fn in files:
@@ -77,7 +77,7 @@ class ConfigDevice(CommandoApplication):
 
     to_arista = to_cisco
 
-    def to_brocade(self, dev, commands=None, extra=None):
+    def to_brocade(self, dev, commands=None, extra=None):  # noqa: D102
         cmds = []
         action = self.action
         files = self.files
@@ -92,7 +92,7 @@ class ConfigDevice(CommandoApplication):
         cmds.append("copy running-config startup-config")
         return cmds
 
-    def to_dell(self, dev, commands=None, extra=None):
+    def to_dell(self, dev, commands=None, extra=None):  # noqa: D102
         cmds = []
         files = self.files
         if dev.make != "POWERCONNECT":
@@ -104,12 +104,12 @@ class ConfigDevice(CommandoApplication):
         cmds.append("copy running-config startup-config")
         return cmds
 
-    def to_a10(self, dev, commands=None, extra=None):
+    def to_a10(self, dev, commands=None, extra=None):  # noqa: D102
         cmds = []
         log.msg(f"Device Type ({dev.vendor}) not supported")
         return cmds
 
-    def to_juniper(self, dev, commands=None, extra=None):
+    def to_juniper(self, dev, commands=None, extra=None):  # noqa: D102
         if commands is None:
             commands = []
         cmds = [Element("lock-configuration")]

@@ -39,7 +39,7 @@ def ping(host, count=1, timeout=5):
     True
     >>> network.ping('192.168.199.253')
     False
-    """
+    """  # noqa: D401
     ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)  # noqa: UP031
     status = None
     with Path(os.devnull).open("w") as devnull_fd:
@@ -148,5 +148,5 @@ def address_is_internal(ip):
 
     >>> address_is_internal('1.1.1.1')
     False
-    """
+    """  # noqa: D401, D205
     return any(ip in i for i in settings.INTERNAL_NETWORKS)

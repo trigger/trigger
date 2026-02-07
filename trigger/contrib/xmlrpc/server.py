@@ -31,7 +31,7 @@ if os.getenv("DEBUG"):
 class TriggerXMLRPCServer(xmlrpc.XMLRPC):
     """Twisted XMLRPC server front-end for Commando."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # noqa: D107
         xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
         self.allowNone = True
         self.useDateTime = True
@@ -156,7 +156,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         # Bind the dummy shell method to TriggerXMLRPCServer as 'xmlrpc_' + task_name
         setattr(TriggerXMLRPCServer, "xmlrpc_" + task_name, dummy)
 
-    def xmlrpc_list_subhandlers(self):
+    def xmlrpc_list_subhandlers(self):  # noqa: D102
         return list(self.subHandlers)
 
     def xmlrpc_execute_commands(self, args, kwargs):
@@ -165,7 +165,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
         return c.run()
 
     def xmlrpc_add(self, x, y):
-        """Adds x and y."""
+        """Adds x and y."""  # noqa: D401
         return x + y
 
     def xmlrpc_fault(self):
@@ -175,7 +175,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
     def _ebRender(self, failure):
         """Custom exception rendering.
         Ref: https://netzguerilla.net/iro/dev/_modules/iro/view/xmlrpc.html.
-        """
+        """  # noqa: D401, D205
         if isinstance(failure.value, Exception):
             msg = f"""{failure.type.__name__}: {failure.value.args[0]}"""
             return xmlrpc.Fault(400, msg)

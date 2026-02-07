@@ -11,7 +11,7 @@ and what ACLs will be applied to them.  You can save this output
 before editing and compare it to the output after your change.
 
 Skip down a bit to find the part you should edit.
-"""
+"""  # noqa: D205
 
 import sys
 
@@ -46,7 +46,7 @@ def autoacl(dev, explicit_acls=None):  # noqa: PLR0912
     <Vendor: Juniper>
     >>> autoacl(dev)
     set(['juniper-router-protect', 'juniper-router.policer'])
-    """
+    """  # noqa: D205
     # Explicitly pass a set of explicit_acls so that we can use it as a
     # dependency for assigning implicit_acls. Defaults to an empty set.
     if explicit_acls is None:
@@ -124,7 +124,7 @@ def autoacl(dev, explicit_acls=None):  # noqa: PLR0912
 
 
 def main():
-    """A simple syntax check and dump of all we see and know!"""
+    """A simple syntax check and dump of all we see and know!"""  # noqa: D401
     print("Syntax ok.")
     if len(sys.argv) > 1:
         from trigger.netdevices import NetDevices

@@ -14,7 +14,7 @@ from trigger.acl.tools import check_access, create_trigger_term
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     optp = optparse.OptionParser(
         description="""\
 Determine whether access is permitted by a given ACL.  Exits 0 if permitted,

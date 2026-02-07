@@ -82,7 +82,7 @@ def get_device_password(device=None, tcrc=None):
 
     :param device:
         Optional `~trigger.tacacsrc.Tacacsrc` instance
-    """
+    """  # noqa: D205
     if tcrc is None:
         tcrc = Tacacsrc()
 
@@ -149,7 +149,7 @@ def update_credentials(device, username=None):
 
     :param device: Device or realm name to update
     :param username: Username for credentials
-    """
+    """  # noqa: D205
     tcrc = Tacacsrc()
     if tcrc.creds_updated:
         return None
@@ -177,7 +177,7 @@ def validate_credentials(creds=None):
     :param creds:
         A tuple of credentials.
 
-    """
+    """  # noqa: D205
     realm = settings.DEFAULT_REALM
 
     # If it isn't set or it's a string, or less than 1 or more than 3 items,
@@ -208,7 +208,7 @@ def validate_credentials(creds=None):
 
 
 def convert_tacacsrc():
-    """Converts old .tacacsrc to new .tacacsrc.gpg."""
+    """Converts old .tacacsrc to new .tacacsrc.gpg."""  # noqa: D401
     print("Converting old tacacsrc to new kind :)")
     tco = Tacacsrc(old=True)
     tcn = Tacacsrc(old=False, gen=True)
@@ -223,7 +223,7 @@ def _perl_unhex_old(c):
     "G".."Z" is not well-defined", says perlfunc(1).  Smash!
 
     This function can be safely removed once GPG is fully supported.
-    """
+    """  # noqa: D205
     if "a" <= c <= "z":
         return (ord(c) - ord("a") + 10) & 0xF
     if "A" <= c <= "Z":
@@ -235,7 +235,7 @@ def _perl_pack_Hstar_old(s):
     """Used with _perl_unhex_old(). Ghetto hack.
 
     This function can be safely removed once GPG is fully supported.
-    """
+    """  # noqa: D401
     r = ""
     while len(s) > 1:
         r += chr((_perl_unhex_old(s[0]) << 4) | _perl_unhex_old(s[1]))
@@ -255,7 +255,7 @@ class Tacacsrc:
 
     `*_old` functions should be removed after everyone is moved to the new
     system.
-    """
+    """  # noqa: D205
 
     def __init__(  # noqa: PLR0912
         self,
@@ -267,7 +267,7 @@ class Tacacsrc:
         a new file if one cannot be found on disk.
 
         If settings.USE_GPG_AUTH is enabled, tries to use GPG (.tacacsrc.gpg).
-        """
+        """  # noqa: D205
         self.file_name = tacacsrc_file
         self.use_gpg = use_gpg
         self.generate_new = generate_new
@@ -345,7 +345,7 @@ class Tacacsrc:
         """Of course, encrypting something in the filesystem using a key
         in the filesystem really doesn't buy much.  This is best referred
         to as obfuscation of the .tacacsrc.
-        """
+        """  # noqa: D205
         try:
             with Path(keyfile).open() as kf:
                 key = kf.readline().strip()
@@ -364,7 +364,7 @@ class Tacacsrc:
         return key
 
     def _parse_old(self):
-        """Parses .tacacsrc and returns dictionary of credentials."""
+        """Parses .tacacsrc and returns dictionary of credentials."""  # noqa: D401
         data = {}
         creds = {}
 
@@ -428,7 +428,7 @@ class Tacacsrc:
         :param creds: Dictionary of credentials keyed by realm
         :param realm: The realm to update within the creds dict
         :param user: (Optional) Username passed to prompt_credentials()
-        """
+        """  # noqa: D205
         creds[realm] = prompt_credentials(realm, user)
         log.msg("setting self.creds_updated flag", debug=True)
         self.creds_updated = True
@@ -436,7 +436,7 @@ class Tacacsrc:
         print(f"\nCredentials updated for user: {new_user!r}, device/realm: {realm!r}.")
 
     def _encrypt_old(self, s):
-        """Encodes using the old method. Adds a newline for you."""
+        """Encodes using the old method. Adds a newline for you."""  # noqa: D401
         # Ensure key and plaintext are bytes for cryptography library
         key = self.key if isinstance(self.key, bytes) else self.key.encode("latin-1")
         plaintext = s if isinstance(s, bytes) else s.encode("latin-1")
@@ -459,7 +459,7 @@ class Tacacsrc:
         ) + "\n"
 
     def _decrypt_old(self, s):
-        """Decodes using the old method. Strips newline for you."""
+        """Decodes using the old method. Strips newline for you."""  # noqa: D401
         # Ensure key is bytes for cryptography library
         key = self.key if isinstance(self.key, bytes) else self.key.encode("latin-1")
         des = TripleDES(key)
@@ -531,7 +531,7 @@ class Tacacsrc:
         self._update_perms()
 
     def write(self):
-        """Writes .tacacsrc(.gpg) using the accurate method (old vs. new)."""
+        """Writes .tacacsrc(.gpg) using the accurate method (old vs. new)."""  # noqa: D401
         if self.use_gpg:
             return self._write_new()
 
@@ -542,7 +542,7 @@ class Tacacsrc:
         Path(self.file_name).chmod(0o600)
 
     def _parse(self):
-        """Parses .tacacsrc.gpg and returns dictionary of credentials."""
+        """Parses .tacacsrc.gpg and returns dictionary of credentials."""  # noqa: D401
         data = {}
         creds = {}
         for line in self.rawdata:
@@ -572,7 +572,7 @@ class Tacacsrc:
         return creds
 
     def user_has_gpg(self):
-        """Checks if user has .gnupg directory and .tacacsrc.gpg file."""
+        """Checks if user has .gnupg directory and .tacacsrc.gpg file."""  # noqa: D401
         gpg_dir = Path(self.user_home) / ".gnupg"
         tacacsrc_gpg = Path(self.user_home) / ".tacacsrc.gpg"
 

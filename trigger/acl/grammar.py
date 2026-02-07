@@ -10,7 +10,7 @@ Imported into the specific grammar files.
     literals
     update
     dict_sum
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
 __editor__ = "Joseph Malone"
@@ -37,7 +37,7 @@ def S(prod):
     performing modifiers.
 
     :param prod: The parser product.
-    """
+    """  # noqa: D205
     subtagged.add(prod)
     return prod
 
@@ -57,7 +57,7 @@ def update(d, **kwargs):  # noqa: D103
     for key in kwargs:
         if key in d:
             msg = f"duplicate {key}"
-            raise exceptions.ParseError(msg)
+            raise exceptions.ParseError(msg)  # noqa: F405
     d.update(kwargs)
     return d
 
@@ -92,20 +92,20 @@ rules = {
     "anychar": "[ a-zA-Z0-9.$:()&,/'_-]",
     "hex": "[0-9a-fA-F]+",
     "ipchars": "[0-9a-fA-F:.]+",
-    "ipv4": ('digits, (".", digits)*', TIP),
-    "ipaddr": ("ipchars", TIP),
+    "ipv4": ('digits, (".", digits)*', TIP),  # noqa: F405
+    "ipaddr": ("ipchars", TIP),  # noqa: F405
     "cidr": (
         '("inactive:", ws+)?, (ipaddr / ipv4), "/", digits, (ws+, "except")?',
-        TIP,
+        TIP,  # noqa: F405
     ),
     "macaddr": 'hex, (":", hex)+',
-    "protocol": (literals(Protocol.name2num) + " / digits", do_protocol_lookup),
-    "tcp": ('"tcp" / "6"', Protocol("tcp")),
-    "udp": ('"udp" / "17"', Protocol("udp")),
-    "icmp": ('"icmp" / "1"', Protocol("icmp")),
-    "icmp_type": (literals(icmp_types) + " / digits", do_icmp_type_lookup),
-    "icmp_code": (literals(icmp_codes) + " / digits", do_icmp_code_lookup),
-    "port": (literals(ports) + " / digits", do_port_lookup),
-    "dscp": (literals(dscp_names) + " / digits", do_dscp_lookup),
+    "protocol": (literals(Protocol.name2num) + " / digits", do_protocol_lookup),  # noqa: F405
+    "tcp": ('"tcp" / "6"', Protocol("tcp")),  # noqa: F405
+    "udp": ('"udp" / "17"', Protocol("udp")),  # noqa: F405
+    "icmp": ('"icmp" / "1"', Protocol("icmp")),  # noqa: F405
+    "icmp_type": (literals(icmp_types) + " / digits", do_icmp_type_lookup),  # noqa: F405
+    "icmp_code": (literals(icmp_codes) + " / digits", do_icmp_code_lookup),  # noqa: F405
+    "port": (literals(ports) + " / digits", do_port_lookup),  # noqa: F405
+    "dscp": (literals(dscp_names) + " / digits", do_dscp_lookup),  # noqa: F405
     "root": "ws?, junos_raw_acl / junos_replace_family_acl / junos_replace_acl / junos_replace_policers / ios_acl, ws?",
 }

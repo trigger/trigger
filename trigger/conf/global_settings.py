@@ -573,7 +573,7 @@ def _get_tftp_source(dev=None, no_vip=True):  # False): #True):
 
     :param dev:
         A `~trigger.netdevices.NetDevice` object
-    """
+    """  # noqa: D205
     import socket
 
     from trigger.conf import settings

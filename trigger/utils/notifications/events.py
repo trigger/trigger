@@ -39,7 +39,7 @@ class Event:
 
     required_args = ()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # noqa: D107
         self.__dict__.update(kwargs)  # Brute force wins!
         local_vars = self.__dict__
         for var, value in local_vars.items():
@@ -47,10 +47,10 @@ class Event:
                 msg = f"`{var}` is a required argument"
                 raise SyntaxError(msg)
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}>"
 
-    def handle(self):
+    def handle(self):  # noqa: D102
         msg = "Define me in your subclass!"
         raise NotImplementedError(msg)
 
@@ -93,7 +93,7 @@ class Notification(Event):
     }
     default_sender = settings.NOTIFICATION_SENDER
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         title=None,
         message=None,
@@ -136,7 +136,7 @@ class EmailEvent(Notification):
     }
     mailhost = "localhost"
 
-    def handle(self):
+    def handle(self):  # noqa: D102
         from trigger.utils.notifications import send_email
 
         try:

@@ -1,6 +1,6 @@
 """Various tools for use in scripts or other modules. Heavy lifting from tools
 that have matured over time have been moved into this module.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Eileen Tschetter"
 __maintainer__ = "Jathan McCollum"
@@ -52,7 +52,7 @@ def create_trigger_term(  # noqa: PLR0913
     action=None,
     name="generated_term",
 ):
-    """Constructs & returns a Term object from constituent parts."""
+    """Constructs & returns a Term object from constituent parts."""  # noqa: D401
     if action is None:
         action = ["accept"]
     if protocols is None:
@@ -65,7 +65,7 @@ def create_trigger_term(  # noqa: PLR0913
         dest_ips = []
     if source_ips is None:
         source_ips = []
-    term = Term()
+    term = Term()  # noqa: F405
     term.action = action
     term.name = name
     for key, data in {
@@ -118,12 +118,12 @@ def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=
     def _permitted_in_term(term, comment=" check_access: PERMITTED HERE"):
         """A little closure to re-use internally that returns a Boolean based
         on the given Term object's action.
-        """
+        """  # noqa: D401, D205
         action = term.action[0]
         if action == "accept":
             is_permitted = True
             if not quiet:
-                term.comments.append(Comment(comment))
+                term.comments.append(Comment(comment))  # noqa: F405
 
         elif action in ("discard", "reject"):
             is_permitted = False
@@ -194,7 +194,7 @@ def create_access(terms_to_check, new_term):
     compared in a check_access test.
 
     Returns a list of terms that should be inserted.
-    """
+    """  # noqa: D401, D205
     protos = new_term.match.get("protocol", ["any"])
     sources = new_term.match.get("source-address", ["any"])
     dests = new_term.match.get("destination-address", ["any"])
@@ -207,7 +207,7 @@ def create_access(terms_to_check, new_term):
             for sourceport in sourceports:
                 for dest in dests:
                     for destport in destports:
-                        t = Term()
+                        t = Term()  # noqa: F405
                         if str(proto) != "any":
                             t.match["protocol"] = [proto]
                         if str(source) != "any":
@@ -248,8 +248,8 @@ def insert_term_into_acl(new_term, aclobj, debug=False):  # noqa: PLR0912
         new_acl = copy.deepcopy(original_acl) # Dupe the original
         for term in terms_to_be_added:
             new_acl = generate_new_acl(term, new_acl)
-    """
-    new_acl = ACL()  # ACL comes from trigger.acl.parser
+    """  # noqa: D205
+    new_acl = ACL()  # ACL comes from trigger.acl.parser  # noqa: F405
     new_acl.policers = aclobj.policers
     new_acl.format = aclobj.format
     new_acl.name = aclobj.name
@@ -336,9 +336,9 @@ def create_new_acl(old_file, terms_to_be_added):
     """Given a list of Term objects call insert_term_into_acl() to determine
     what needs to be added in based on the contents of old_file. Returns a new
     ACL object.
-    """
+    """  # noqa: D205
     with Path(old_file).open() as fh:
-        aclobj = parse(fh)  # Start with the original ACL contents
+        aclobj = parse(fh)  # Start with the original ACL contents  # noqa: F405
     new_acl = None
     for new_term in terms_to_be_added:
         new_acl = insert_term_into_acl(new_term, aclobj)
@@ -347,7 +347,7 @@ def create_new_acl(old_file, terms_to_be_added):
 
 
 def get_bulk_acls():
-    """Returns a dict of acls with an applied count over settings.AUTOLOAD_BULK_THRESH."""
+    """Returns a dict of acls with an applied count over settings.AUTOLOAD_BULK_THRESH."""  # noqa: D401
     from trigger.netdevices import NetDevices
 
     nd = NetDevices()
@@ -431,7 +431,7 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
                     )
                     print(msg)
                     if "log" in globals():
-                        log.msg(msg)
+                        log.msg(msg)  # noqa: F405
 
                     # Remove that acl from being loaded, but still load on that device
                     work[dev].remove(acl)
@@ -535,9 +535,9 @@ def worklog(title, diff, log_string="updated by express-gen"):
 class ACLScript:
     """Interface to generating or modifying access-lists. Intended for use in
     creating command-line utilities using the ACL API.
-    """
+    """  # noqa: D205
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         acl=None,
         mode="insert",
@@ -561,11 +561,11 @@ class ACLScript:
         self.no_worklog = no_worklog
         self.no_changes = no_changes
 
-    def cleanup(self):
+    def cleanup(self):  # noqa: D102
         for file in self.tempfiles:
             Path(file).unlink()
 
-    def genargs(self, interactive=False):  # noqa: PLR0912
+    def genargs(self, interactive=False):  # noqa: PLR0912, D102
         if not self.acl:
             msg = "need acl defined"
             raise ValueError(msg)
@@ -633,10 +633,10 @@ class ACLScript:
 
         return argz
 
-    def parselog(self, log):
+    def parselog(self, log):  # noqa: D102
         return log
 
-    def run(self, interactive=False):
+    def run(self, interactive=False):  # noqa: D102
         args = self.genargs(interactive=interactive)
         log = []
         # print self.cmd + ' ' + ' '.join(args)
@@ -651,7 +651,7 @@ class ACLScript:
                 line = f.readline()
         return log
 
-    def errors_from_log(self, log):
+    def errors_from_log(self, log):  # noqa: D102
         errors = ""
         for line in log:
             if "%%ERROR%%" in line:
@@ -659,7 +659,7 @@ class ACLScript:
                 errors += line[1:] + "\n"
         return errors
 
-    def diff_from_log(self, log):
+    def diff_from_log(self, log):  # noqa: D102
         diff = ""
         for line in log:
             if "%%DIFF%%" in line:
@@ -667,7 +667,7 @@ class ACLScript:
                 diff += line[1:] + "\n"
         return diff
 
-    def set_acl(self, acl):
+    def set_acl(self, acl):  # noqa: D102
         self.acl = acl
 
     def _add_addr(self, to, src):
@@ -686,7 +686,7 @@ class ACLScript:
         elif int(src) not in to:
             to.append(int(src))
 
-    def add_protocol(self, src):
+    def add_protocol(self, src):  # noqa: D102
         to = self.protocol
         if isinstance(src, list):
             for x in src:
@@ -695,40 +695,40 @@ class ACLScript:
         elif src not in to:
             to.append(src)
 
-    def add_src_host(self, data):
+    def add_src_host(self, data):  # noqa: D102
         self._add_addr(self.source_ips, data)
 
-    def add_dst_host(self, data):
+    def add_dst_host(self, data):  # noqa: D102
         self._add_addr(self.dest_ips, data)
 
-    def add_src_port(self, data):
+    def add_src_port(self, data):  # noqa: D102
         self._add_port(self.source_ports, data)
 
-    def add_dst_port(self, data):
+    def add_dst_port(self, data):  # noqa: D102
         self._add_port(self.dest_ports, data)
 
-    def add_modify_between_comments(self, begin, end):
+    def add_modify_between_comments(self, begin, end):  # noqa: D102
         del self.modify_terms
         self.modify_terms = []
         self.bcomments.append((begin, end))
 
-    def add_modify_term(self, term):
+    def add_modify_term(self, term):  # noqa: D102
         del self.bcomments
         self.bcomments = []
         if term not in self.modify_terms:
             self.modify_terms.append(term)
 
-    def get_protocols(self):
+    def get_protocols(self):  # noqa: D102
         return self.protocol
 
-    def get_src_hosts(self):
+    def get_src_hosts(self):  # noqa: D102
         return self.source_ips
 
-    def get_dst_hosts(self):
+    def get_dst_hosts(self):  # noqa: D102
         return self.dest_ips
 
-    def get_src_ports(self):
+    def get_src_ports(self):  # noqa: D102
         return self.source_ports
 
-    def get_dst_ports(self):
+    def get_dst_ports(self):  # noqa: D102
         return self.dest_ports

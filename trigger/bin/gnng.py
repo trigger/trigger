@@ -115,7 +115,7 @@ default. Works on Cisco, Foundry, Juniper, and NetScreen devices.""",
 def fetch_router_list(args, opts):
     """Turns a list of device names into device objects, skipping unsupported,
     invalid, or filtered devices.
-    """
+    """  # noqa: D401, D205
     nd = NetDevices(production_only=opts.nonprod)
     ret = []
     blocked_groups = []
@@ -139,7 +139,7 @@ def fetch_router_list(args, opts):
 
 
 def pass_filters(device, opts):
-    """Used by fetch_router_list() to filter a device based on command-line arguments."""
+    """Used by fetch_router_list() to filter a device based on command-line arguments."""  # noqa: D401
     if opts.filter_on_group and device.owningTeam not in opts.filter_on_group:
         return False
     return not (opts.filter_on_type and device.deviceType not in opts.filter_on_type)
@@ -396,7 +396,7 @@ def output_dotty(subnet_table, display=True):
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     opts, args = parse_args(sys.argv)
 
     if opts.all or opts.filter_on_type:

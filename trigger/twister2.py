@@ -1,7 +1,7 @@
 """Login and basic command-line interaction support using the Twisted asynchronous
 I/O framework. The Trigger Twister is just like the Mersenne Twister, except
 not at all.
-"""
+"""  # noqa: D205
 
 import fcntl
 import os
@@ -72,7 +72,7 @@ class SSHSessionAddress:
     We load command with a null string as Cisco device's typically do not support bash!
     """
 
-    def __init__(self, server, username, command):
+    def __init__(self, server, username, command):  # noqa: D107
         self.server = server
         self.username = username
         self.command = command
@@ -140,11 +140,11 @@ class _TriggerShellChannel(SSHChannel):
         return struct.unpack("4H", winsz)
 
     def _execFailure(self, reason):
-        """Callback for when the exec command fails."""
+        """Callback for when the exec command fails."""  # noqa: D401
         self._commandConnected.errback(reason)
 
     def _execSuccess(self, ignored):
-        """Callback for when the exec command succees."""
+        """Callback for when the exec command succees."""  # noqa: D401
         self._protocol = self._protocolFactory.buildProtocol(
             SSHSessionAddress(
                 self.conn.transport.transport.getPeer(),
@@ -157,7 +157,7 @@ class _TriggerShellChannel(SSHChannel):
         self._commandConnected.callback(self._protocol)
 
     def _bind_protocol_data(self):
-        """Helper method to bind protocol related attributes to the channel."""
+        """Helper method to bind protocol related attributes to the channel."""  # noqa: D401
         # This was a string before, now it's a NetDevice.
         self._protocol.device = self.conn.transport.creator.device or None
 
@@ -174,7 +174,7 @@ class _TriggerShellChannel(SSHChannel):
         """Callback for when data is received.
 
         Once data is received in the channel we defer to the protocol level dataReceived method.
-        """
+        """  # noqa: D401
         self._protocol.dataReceived(data)
 
 
@@ -194,7 +194,7 @@ class _TriggerUserAuth(_UserAuth):
         This is most commonly the case with 'keyboard-interactive', which even
         when configured within self.preferredOrder, does not work using default
         getPassword() method.
-        """
+        """  # noqa: D205
         log.msg("Performing interactive authentication", debug=True)
         log.msg(f"Prompts: {prompts!r}", debug=True)
 
@@ -219,7 +219,7 @@ class _TriggerUserAuth(_UserAuth):
         sendDisconnect(), we raise a `~trigger.exceptions.LoginFailure` and
         call loseConnection().
         See the base docstring for the method signature.
-        """
+        """  # noqa: D401, D205
         canContinue, partial = common.getNS(packet)
         partial = ord(partial)
         log.msg(f"Previous method: {self.lastAuth!r} ", debug=True)
@@ -240,7 +240,7 @@ class _TriggerUserAuth(_UserAuth):
             @type meth: C{str}
             @return: the comparison key for C{meth}.
             @rtype: C{int}.
-            """
+            """  # noqa: D401, D205
             if meth in self.preferredOrder:
                 return self.preferredOrder.index(meth)
             # put the element at the end of the list.
@@ -260,7 +260,7 @@ class _TriggerUserAuth(_UserAuth):
         return self._cbUserauthFailure(None, iter(canContinue))
 
     def _cbUserauthFailure(self, result, iterator):
-        """Callback for ssh_USERAUTH_FAILURE."""
+        """Callback for ssh_USERAUTH_FAILURE."""  # noqa: D401
         if result:
             return None
         try:
@@ -291,7 +291,7 @@ class _TriggerCommandTransport(_CommandTransport):
     def dataReceived(self, data):
         """Explicity override version detection for edge cases where "SSH-"
         isn't on the first line of incoming data.
-        """
+        """  # noqa: D205
         # Store incoming data in a local buffer until we've detected the
         # presence of 'SSH-', then handover to default .dataReceived() for
         # version banner processing.
@@ -346,7 +346,7 @@ class _TriggerSessionTransport(_TriggerCommandTransport):
 class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
     """Return object used for establishing an async session rather than executing
     a single command.
-    """
+    """  # noqa: D205
 
     def __init__(  # noqa: PLR0913
         self,
@@ -387,7 +387,7 @@ class _NewTriggerConnectionHelperBase(_NewConnectionHelper):
 class TriggerEndpointClientFactory(protocol.Factory):
     """Factory for all clients. Subclass me."""
 
-    def __init__(self, creds=None, init_commands=None):
+    def __init__(self, creds=None, init_commands=None):  # noqa: D107
         self.creds = tacacsrc.validate_credentials(creds)
         self.results = []
         self.err = None
@@ -414,7 +414,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
             log.msg(f"Got results: {self.results!r}")
             self.d.callback(self.results)
 
-    def stopFactory(self):
+    def stopFactory(self):  # noqa: D102
         # IF we're out of channels, shut it down!
         log.msg("All done!")
 
@@ -431,7 +431,7 @@ class TriggerEndpointClientFactory(protocol.Factory):
                 protocol.write(next_init + "\r\n")
             self.initialized = True
 
-    def connection_success(self, conn, transport):
+    def connection_success(self, conn, transport):  # noqa: D102
         log.msg("Connection success.")
         self.conn = conn
         self.transport = transport
@@ -445,7 +445,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
     """
 
     @classmethod
-    def newConnection(  # noqa: PLR0913
+    def newConnection(  # noqa: PLR0913, D102
         cls,
         reactor,
         username,
@@ -476,7 +476,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
         helper = _ExistingConnectionHelper(connection)
         return cls(helper)
 
-    def __init__(self, creator):
+    def __init__(self, creator):  # noqa: D107
         self._creator = creator
 
     def _executeCommand(  # noqa: PLR0913
@@ -534,7 +534,7 @@ class TriggerSSHShellClientEndpointBase(SSHCommandClientEndpoint):
 
         :param factory: Trigger factory responsible for setting up connection
         :type factory: `~trigger.twister2.TriggerEndpointClientFactory`
-        """
+        """  # noqa: D401
         d = self._creator.secureConnection()
         d.addCallback(
             self._executeCommand,
@@ -556,7 +556,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     one errors. Wait for a prompt after each.
     """
 
-    def __init__(self):
+    def __init__(self):  # noqa: D107
         self.device = None
         self.commands = []
         self.commanditer = iter(self.commands)
@@ -579,7 +579,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         self.data = ""
         log.msg(f"[{self.device}] connectionMade, data: {self.data!r}")
 
-    def connectionLost(self, reason):
+    def connectionLost(self, reason):  # noqa: D102
         self.finished.callback(None)
 
         # Don't call _send_next, since we expect to see a prompt, which

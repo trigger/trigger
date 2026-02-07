@@ -2,4 +2,4 @@
 `~trigger.netdevices.NetDevice` objects.
 
 By default, Trigger provides filesystem-based data loaders.
-"""
+"""  # noqa: D205

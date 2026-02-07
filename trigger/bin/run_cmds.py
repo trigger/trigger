@@ -9,7 +9,7 @@ from trigger.contrib import docommand
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     docommand.main(action_class=docommand.CommandRunner)
 
 

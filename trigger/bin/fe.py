@@ -90,7 +90,7 @@ def edit(editfile):
     """Edits the file and calls normalize(). Loops until it passes or the user
     confirms they want to bypass failed normalization. Returns a file object of
     the diff output.
-    """
+    """  # noqa: D205
     editor = os.environ.get("EDITOR", "vim")
     if editor.startswith("vi"):
         os.spawnlp(
@@ -128,7 +128,7 @@ def edit(editfile):
 
 
 def main():  # noqa: PLR0912, PLR0915
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     if len(sys.argv) < 2:  # noqa: PLR2004
         print("usage: fe files...", file=sys.stderr)
         sys.exit(2)

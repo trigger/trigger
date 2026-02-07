@@ -42,7 +42,7 @@ __all__ = ("BaseSettings", "DummySettings", "Settings", "settings")
 class DummySettings:
     """Emulates settings and returns empty strings on attribute gets."""
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name):  # noqa: D105
         return ""
 
 
@@ -51,14 +51,14 @@ class DummySettings:
 class BaseSettings:
     """Common logic for settings whether set by a module or by the user."""
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name, value):  # noqa: D105
         object.__setattr__(self, name, value)
 
 
 class Settings(BaseSettings):
     """Trigger settings loaded from a settings module."""
 
-    def __init__(self, settings_module):
+    def __init__(self, settings_module):  # noqa: D107
         # Update this dict from global settings (but only for ALL_CAPS settings)
         for setting in dir(global_settings):
             if setting == setting.upper():

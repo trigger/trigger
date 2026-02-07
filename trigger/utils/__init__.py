@@ -20,7 +20,7 @@ def crypt_md5(passwd):
 
     :param passwd:
         Password string to be encrypted
-    """
+    """  # noqa: D401
     import platform
 
     if platform.system() == "Linux":
@@ -74,7 +74,7 @@ NodePort = namedtuple("HostPort", "nodeName nodePort")
 def parse_node_port(nodeport, delimiter=":"):
     """Parse a string in format 'hostname' or 'hostname:port'  and return them
     as a 2-tuple.
-    """
+    """  # noqa: D205
     node, _, port = nodeport.partition(delimiter)
     port = int(port) if port.isdigit() else None
 

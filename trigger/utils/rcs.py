@@ -52,7 +52,7 @@ class RCS:
     first commit
     """
 
-    def __init__(self, filename, create=True):
+    def __init__(self, filename, create=True):  # noqa: D107
         self.locked = False
         self.filename = filename
 
@@ -78,7 +78,7 @@ class RCS:
 
         >>> rcs.checkin('This is my commit message')
         True
-        """
+        """  # noqa: D205
         if initial:
             cmd = f'ci -m"first commit" -t- -i {self.filename}'
         else:
@@ -98,7 +98,7 @@ class RCS:
 
         >>> rcs.lock()
         True
-        """
+        """  # noqa: D205
         cmd = f"co -f -l {self.filename}"
         status, output = commands.getstatusoutput(cmd)  # noqa: S605
 
@@ -159,7 +159,7 @@ class RCS:
         return True
 
     def log(self):
-        """Returns the RCS log as a string (see above)."""
+        """Returns the RCS log as a string (see above)."""  # noqa: D401
         cmd = f"rlog {self.filename} 2>&1"
         status, output = commands.getstatusoutput(cmd)  # noqa: S605
 

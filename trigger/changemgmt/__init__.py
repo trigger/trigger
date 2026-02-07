@@ -52,46 +52,46 @@ class BounceStatus:
         The colored risk-level status name.
     """
 
-    def __init__(self, status_name):
+    def __init__(self, status_name):  # noqa: D107
         self.status_name = status_name
         self.value = BOUNCE_VALUES.index(status_name)
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self.status_name}>"
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return self.status_name
 
     def _get_compare_value(self, other):
-        """Helper to get comparison value from self or other."""
+        """Helper to get comparison value from self or other."""  # noqa: D401
         try:
             return other.value
         except AttributeError:
             # Other object is not a BounceStatus; maybe it's a string.
             return BounceStatus(other).value
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # noqa: D105
         try:
             return self.value == self._get_compare_value(other)
         except (ValueError, KeyError):
             return False
 
-    def __ne__(self, other):
+    def __ne__(self, other):  # noqa: D105
         return not self.__eq__(other)
 
-    def __lt__(self, other):
+    def __lt__(self, other):  # noqa: D105
         return self.value < self._get_compare_value(other)
 
-    def __le__(self, other):
+    def __le__(self, other):  # noqa: D105
         return self.value <= self._get_compare_value(other)
 
-    def __gt__(self, other):
+    def __gt__(self, other):  # noqa: D105
         return self.value > self._get_compare_value(other)
 
-    def __ge__(self, other):
+    def __ge__(self, other):  # noqa: D105
         return self.value >= self._get_compare_value(other)
 
-    def __hash__(self):
+    def __hash__(self):  # noqa: D105
         return hash((self.status_name, self.value))
 
 
@@ -174,7 +174,7 @@ class BounceWindow:
     # Prepopulate these objects to save a little horsepower
     BOUNCE_STATUS: ClassVar[dict] = {n: BounceStatus(n) for n in BOUNCE_VALUES}
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         status_by_hour=None,
         green=None,
@@ -213,7 +213,7 @@ class BounceWindow:
                 raise exceptions.InvalidBounceWindow(msg)
         self._status_by_hour = status_by_hour
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"{self.__class__.__name__}(green={self._green!r}, yellow={self._yellow!r}, red={self._red!r}, default={self.default!r})"
 
     def status(self, when=None):
@@ -222,7 +222,7 @@ class BounceWindow:
 
         :param when:
             A ``datetime`` object.
-        """
+        """  # noqa: D205
         when_et = (when or datetime.now(tz=UTC)).astimezone(BOUNCE_DEFAULT_TZ)
 
         # Return default during weekend moratorium, otherwise look it up.
@@ -246,7 +246,7 @@ class BounceWindow:
 
         :param when:
             A ``datetime`` object.
-        """
+        """  # noqa: D205
         when = when or datetime.now(tz=UTC)
         if self.status(when) <= status:
             return when.astimezone(UTC)
@@ -280,7 +280,7 @@ class BounceWindow:
 
         :param default:
             The default bounce status name.
-        """
+        """  # noqa: D205
         if default is None:
             default = self.default
         status = []
@@ -305,7 +305,7 @@ class BounceWindow:
 
         :param hs:
             A string representation of hours.
-        """
+        """  # noqa: D205
         myhours = []
         if hs is None:
             return myhours

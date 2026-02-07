@@ -30,7 +30,7 @@ def parse_args(argv):  # noqa: D103
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     global opts
 
     fd, _tmpfile = tempfile.mkstemp(suffix="_parsing_check")

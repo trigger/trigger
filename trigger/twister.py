@@ -1,7 +1,7 @@
 """Login and basic command-line interaction support using the Twisted asynchronous
 I/O framework. The Trigger Twister is just like the Mersenne Twister, except
 not at all.
-"""
+"""  # noqa: D205
 
 import copy
 import fcntl
@@ -93,7 +93,7 @@ def is_awaiting_confirmation(prompt):
 
     :param prompt:
         The prompt string to check
-    """
+    """  # noqa: D401
     prompt = prompt.lower()
     matchlist = settings.CONTINUE_PROMPTS
     return any(prompt.endswith(match.lower()) for match in matchlist)
@@ -314,7 +314,7 @@ def handle_login_failure(failure):
 
     :param failure:
         A Twisted ``Failure`` instance
-    """
+    """  # noqa: D401
     global login_failed  # noqa: PLW0603
     login_failed = failure
 
@@ -411,7 +411,7 @@ def _choose_execute(device, force_cli=False):
 
     :param device:
         A `~trigger.netdevices.NetDevice` object.
-    """
+    """  # noqa: D205
     if device.is_ioslike():
         _execute = execute_ioslike
     elif device.is_netscaler():
@@ -498,7 +498,7 @@ def execute(  # noqa: PLR0913
         (Optional) Juniper-only: Force use of CLI instead of Junoscript.
 
     :returns: A Twisted ``Deferred`` object
-    """
+    """  # noqa: D205
     execute_func = _choose_execute(device, force_cli=force_cli)
     return execute_func(
         device=device,
@@ -529,7 +529,7 @@ def execute_generic_ssh(  # noqa: PLR0913
 
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
-    """
+    """  # noqa: D205
     d = defer.Deferred()
 
     # Fallback to sane defaults if they aren't specified
@@ -612,7 +612,7 @@ def execute_junoscript(  # noqa: PLR0913
 
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
-    """
+    """  # noqa: D205
     assert device.vendor == "juniper"  # noqa: S101
 
     channel_class = TriggerSSHJunoscriptChannel
@@ -651,7 +651,7 @@ def execute_ioslike(  # noqa: PLR0913
 
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
-    """
+    """  # noqa: D205
     # Try SSH if it's available and enabled
     if device.can_ssh_async():
         log.msg(f"execute_ioslike: SSH ENABLED for {device.nodeName}")
@@ -810,7 +810,7 @@ def execute_netscreen(  # noqa: PLR0913
 
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
-    """
+    """  # noqa: D205
     assert device.is_netscreen()  # noqa: S101
 
     # We live in a world where not every NetScreen device is local and can use
@@ -881,7 +881,7 @@ def execute_pica8(  # noqa: PLR0913
 
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
-    """
+    """  # noqa: D205
     assert device.is_pica8()  # noqa: S101
 
     channel_class = TriggerSSHPica8Channel
@@ -908,7 +908,7 @@ def execute_pica8(  # noqa: PLR0913
 class TriggerClientFactory(protocol.ClientFactory):
     """Factory for all clients. Subclass me."""
 
-    def __init__(self, deferred, creds=None, init_commands=None):
+    def __init__(self, deferred, creds=None, init_commands=None):  # noqa: D107
         self.d = deferred
         self.creds = tacacsrc.validate_credentials(creds)
         self.results = []
@@ -936,7 +936,7 @@ class TriggerClientFactory(protocol.ClientFactory):
             log.msg(f"Got results: {self.results!r}")
             self.d.callback(self.results)
 
-    def stopFactory(self):
+    def stopFactory(self):  # noqa: D102
         # IF we're out of channels, shut it down!
         log.msg("All done!")
 
@@ -953,7 +953,7 @@ class TriggerClientFactory(protocol.ClientFactory):
                 protocol.write(next_init + "\r\n")
             self.initialized = True
 
-    def connection_success(self, conn, transport):
+    def connection_success(self, conn, transport):  # noqa: D102
         log.msg("Connection success.")
         self.conn = conn
         self.transport = transport
@@ -963,9 +963,9 @@ class TriggerClientFactory(protocol.ClientFactory):
 class TriggerSSHChannelFactory(TriggerClientFactory):
     """Intended to be used as a parent of automated SSH channels (e.g. Junoscript,
     NetScreen, NetScaler) to eliminate boiler plate in those subclasses.
-    """
+    """  # noqa: D205
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         deferred,
         commands,
@@ -1002,7 +1002,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
         self.connection_class = connection_class
         TriggerClientFactory.__init__(self, deferred, creds)
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self, addr):  # noqa: D102
         self.protocol = self.protocol()
         self.protocol.factory = self
         return self.protocol
@@ -1015,7 +1015,7 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
     Use it to interact with the user and pass along commands.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         deferred,
         action,
@@ -1063,7 +1063,7 @@ class TriggerSSHTransport(transport.SSHClientTransport):
     def dataReceived(self, data):
         """Explicity override version detection for edge cases where "SSH-"
         isn't on the first line of incoming data.
-        """
+        """  # noqa: D205
         # Store incoming data in a local buffer until we've detected the
         # presence of 'SSH-', then handover to default .dataReceived() for
         # version banner processing.
@@ -1106,7 +1106,7 @@ class TriggerSSHTransport(transport.SSHClientTransport):
     def connectionLost(self, reason):
         """Detect when the transport connection is lost, such as when the
         remote end closes the connection prematurely (hosts.allow, etc.).
-        """
+        """  # noqa: D205
         super().connectionLost(reason)
         log.msg(f"Transport connection lost: {reason.value}")
 
@@ -1146,7 +1146,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
         This is most commonly the case with 'keyboard-interactive', which even
         when configured within self.preferredOrder, does not work using default
         getPassword() method.
-        """
+        """  # noqa: D205
         log.msg("Performing interactive authentication", debug=True)
         log.msg(f"Prompts: {prompts!r}", debug=True)
 
@@ -1178,7 +1178,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
         call loseConnection().
 
         See the base docstring for the method signature.
-        """
+        """  # noqa: D401, D205
         canContinue, partial = common.getNS(packet)
         partial = ord(partial)
         log.msg(f"Previous method: {self.lastAuth!r} ", debug=True)
@@ -1201,7 +1201,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
 
             @return: the comparison key for C{meth}.
             @rtype: C{int}
-            """
+            """  # noqa: D401, D205
             if meth in self.preferredOrder:
                 return self.preferredOrder.index(meth)
             # put the element at the end of the list.
@@ -1221,7 +1221,7 @@ class TriggerSSHUserAuth(SSHUserAuthClient):
         return self._cbUserauthFailure(None, iter(canContinue))
 
     def _cbUserauthFailure(self, result, iterator):
-        """Callback for ssh_USERAUTH_FAILURE."""
+        """Callback for ssh_USERAUTH_FAILURE."""  # noqa: D401
         if result:
             return None
         try:
@@ -1247,7 +1247,7 @@ class TriggerSSHConnection(SSHConnection):
     Optionally takes a list of commands that may be passed on.
     """
 
-    def __init__(self, commands=None, *args, **kwargs):
+    def __init__(self, commands=None, *args, **kwargs):  # noqa: D107
         super().__init__()
         self.commands = commands
 
@@ -1262,14 +1262,14 @@ class TriggerSSHConnection(SSHConnection):
         self._channelOpener()
 
     def _channelOpener(self):
-        """Calls ``self.channelOpen()``."""
+        """Calls ``self.channelOpen()``."""  # noqa: D401
         # Default behavior: Single channel/conn
         self.openChannel(self.channel_class(conn=self))
 
     def channelClosed(self, channel):
         """Forcefully close the transport connection when a channel closes
         connection. This is assuming only one channel is open.
-        """
+        """  # noqa: D401, D205
         log.msg("Forcefully closing transport connection!")
         self.transport.loseConnection()
 
@@ -1336,7 +1336,7 @@ class Interactor(protocol.Protocol):
     Intended for use as an action with pty_connect(). See gong for an example.
     """
 
-    def __init__(self, log_to=None):
+    def __init__(self, log_to=None):  # noqa: D107
         self._log_to = log_to
         self.enable_prompt = compile_prompt_pattern(settings.IOSLIKE_ENABLE_PAT)
         self.enabled = False
@@ -1357,7 +1357,7 @@ class Interactor(protocol.Protocol):
     def loseConnection(self):
         """Terminate the connection. Link this to the transport method of the same
         name.
-        """
+        """  # noqa: D205
         log.msg(f"[{self.device}] Forcefully closing transport connection")
         self.factory.transport.loseConnection()
 
@@ -1387,7 +1387,7 @@ class TriggerSSHPtyChannel(channel.SSHChannel):
     name = "session"
 
     def channelOpen(self, data):
-        """Setup the terminal when the channel opens."""
+        """Setup the terminal when the channel opens."""  # noqa: D401
         pr = session.packRequest_pty_req(
             settings.TERM_TYPE,
             self._get_window_size(),
@@ -1479,7 +1479,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
         initialized.
 
         If the shell never establishes, this won't be called.
-        """
+        """  # noqa: D205
         log.msg(f"[{self.device}] Got channel request response!")
 
     def _ebShellOpen(self, reason):
@@ -1578,7 +1578,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
     def loseConnection(self):
         """Terminate the connection. Link this to the transport method of the same
         name.
-        """
+        """  # noqa: D205
         log.msg(f"[{self.device}] Forcefully closing transport connection")
         self.conn.transport.loseConnection()
 
@@ -1588,7 +1588,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
         self.factory.err = exceptions.CommandTimeout("Timed out while sending commands")
         self.loseConnection()
 
-    def request_exit_status(self, data):
+    def request_exit_status(self, data):  # noqa: D102
         status = struct.unpack(">L", data)[0]
         log.msg(f"[{self.device}] Exit status: {status}")
 
@@ -1600,7 +1600,7 @@ class TriggerSSHGenericChannel(TriggerSSHChannelBase):
     Currently A10, Cisco, Brocade, NetScreen can simply use this. Nice!
 
     Before you create your own subclass, see if you can't use me as-is!
-    """
+    """  # noqa: D205
 
 
 class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
@@ -1612,9 +1612,9 @@ class TriggerSSHAsyncPtyChannel(TriggerSSHChannelBase):
 
     This is distinctly different from ~trigger.twister.TriggerSSHPtyChannel`
     which is intended for interactive end-user sessions.
-    """
+    """  # noqa: D205
 
-    def channelOpen(self, data):
+    def channelOpen(self, data):  # noqa: D102
         self._setup_channelOpen()
 
         # Request a pty even tho we are not actually using one.
@@ -1634,7 +1634,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     individual channel which feeds its result back to the factory.
     """
 
-    def __init__(self, command, *args, **kwargs):
+    def __init__(self, command, *args, **kwargs):  # noqa: D107
         super().__init__(*args, **kwargs)
         self.command = command
         self.result = None
@@ -1656,11 +1656,11 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
     def _ebShellOpen(self, reason):
         log.msg(f"[{self.device}] CHANNEL {reason}: Channel request failed: {self.id}")
 
-    def dataReceived(self, bytes):
+    def dataReceived(self, bytes):  # noqa: D102
         self.data += bytes
         log.msg(f"[{self.device}] BYTES RECV: {bytes!r}")
 
-    def eofReceived(self):
+    def eofReceived(self):  # noqa: D102
         log.msg(f"[{self.device}] CHANNEL {self.id}: EOF received.")
         result = self.data
 
@@ -1681,7 +1681,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         log.msg(f"[{self.device}] CHANNEL {self.id}: sending next command!")
         self.conn.send_command()
 
-    def closeReceived(self):
+    def closeReceived(self):  # noqa: D102
         log.msg(f"[{self.device}] CHANNEL {self.id}: Close received.")
         self.loseConnection()
 
@@ -1690,7 +1690,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
         log.msg(f"[{self.device}] LOSING CHANNEL CONNECTION")
         channel.SSHChannel.loseConnection(self)
 
-    def closed(self):
+    def closed(self):  # noqa: D102
         log.msg(f"[{self.device}] Channel {self.id} closed")
         log.msg(f"[{self.device}] CONN CHANNELS: {len(self.conn.channels)}")
 
@@ -1699,7 +1699,7 @@ class TriggerSSHCommandChannel(TriggerSSHChannelBase):
             log.msg(f"[{self.device}] RESULTS MATCHES COMMANDS SENT.")
             self.conn.transport.loseConnection()
 
-    def request_exit_status(self, data):
+    def request_exit_status(self, data):  # noqa: D102
         exitStatus = int(struct.unpack(">L", data)[0])
         log.msg(f"[{self.device}] Exit status: {exitStatus}")
 
@@ -1711,7 +1711,7 @@ class TriggerSSHJunoscriptChannel(TriggerSSHChannelBase):
     This completely assumes that we are the only channel in the factory (a
     TriggerJunoscriptFactory) and walks all the way back up to the factory for
     its arguments.
-    """
+    """  # noqa: D205
 
     def channelOpen(self, data):
         """Do this when channel opens."""
@@ -1826,7 +1826,7 @@ class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
     def _setup_commanditer(self, commands=None):
         """Munge our list of commands and overload self.commanditer to append
         " | no-more" to any "show" commands.
-        """
+        """  # noqa: D205
         if commands is None:
             commands = self.factory.commands
         new_commands = []
@@ -1840,7 +1840,7 @@ class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
     def channelOpen(self, data):
         """Override channel open, which is where commanditer is setup in the
         base class.
-        """
+        """  # noqa: D205
         super().channelOpen(data)
         self._setup_commanditer()  # Replace self.commanditer with our version
 
@@ -1859,7 +1859,7 @@ class IncrementalXMLTreeBuilder(TreeBuilder):
     Note: XMLTreeBuilder was renamed to TreeBuilder in Python 3.
     """
 
-    def __init__(self, callback, *args, **kwargs):
+    def __init__(self, callback, *args, **kwargs):  # noqa: D107
         self._endhandler = callback
         TreeBuilder.__init__(self, *args, **kwargs)
 
@@ -1876,7 +1876,7 @@ class IncrementalXMLTreeBuilder(TreeBuilder):
 class TriggerTelnetClientFactory(TriggerClientFactory):
     """Factory for a telnet connection."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         deferred,
         action,
@@ -1898,9 +1898,9 @@ class TriggerTelnetClientFactory(TriggerClientFactory):
 class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     """Telnet-based session login state machine. Primarily used by IOS-like type
     devices.
-    """
+    """  # noqa: D205
 
-    def __init__(self, timeout=settings.TELNET_TIMEOUT):
+    def __init__(self, timeout=settings.TELNET_TIMEOUT):  # noqa: D107
         self.protocol = telnet.TelnetProtocol()
         self.waiting_for = [
             ("Username: ", self.state_username),  # Most
@@ -1920,7 +1920,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         enabled already (e.g. ECHO). (Ref: http://bit.ly/wkFZFg) For some
         reason Arista Networks hardware is the only vendor that needs this
         method right now.
-        """
+        """  # noqa: D205
         log.msg(f"enableRemote option: {option!r}")
         return True
 
@@ -1963,7 +1963,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     def state_logged_in(self):
         """Once we're logged in, exit state machine and pass control to the
         action.
-        """
+        """  # noqa: D205
         self.setTimeout(None)
         data = self.data.lstrip("\n")
         log.msg(f"[{self.host}] state_logged_in, DATA: {data!r}")
@@ -1986,7 +1986,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
         """Special Foundry breakage because they don't do auto-enable from
         TACACS by default. Use 'aaa authentication login privilege-mode'.
         Also, why no space after the Password: prompt here?
-        """
+        """  # noqa: D401, D205
         log.msg(f"[{self.host}] ENABLE: Sending command: enable")
         self.write("enable\n")
         self.waiting_for = [
@@ -2034,7 +2034,7 @@ class TriggerTelnet(telnet.Telnet, telnet.ProtocolTransportMixin, TimeoutMixin):
     def state_percent_error(self):
         """Found a % error message. Don't return immediately because we
         don't have the error text yet.
-        """
+        """  # noqa: D205
         self.waiting_for = [("\n", self.state_raise_error)]
 
     def state_raise_error(self):
@@ -2058,7 +2058,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     one errors. Wait for a prompt after each.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         device,
         commands,

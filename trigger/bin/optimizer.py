@@ -132,7 +132,7 @@ is set to 0 (or off).
 class ProgressMeter:
     """Display progress during ACL optimization."""
 
-    def __init__(self, **kw):
+    def __init__(self, **kw):  # noqa: D107
         # What time do we start tracking our progress from?
         self.timestamp = kw.get("timestamp", time.time())
         # What kind of unit are we tracking?
@@ -155,7 +155,7 @@ class ProgressMeter:
         self.last_refresh = 0
         self.prev_meter_len = 0
 
-    def update(self, count, **kw):
+    def update(self, count, **kw):  # noqa: D102
         now = time.time()
         # Caclulate rate of progress
         rate = 0.0
@@ -190,13 +190,13 @@ class ProgressMeter:
         else:
             self.refresh()
 
-    def get_meter(self, **kw):
+    def get_meter(self, **kw):  # noqa: D102
         bar = "-" * self.meter_value
         pad = " " * (self.meter_ticks - self.meter_value)
         perc = (float(self.count) / self.total) * 100
         return "[%s>%s] %d%%  %.1f/sec" % (bar, pad, perc, self.rate_current)  # noqa: UP031
 
-    def refresh(self, **kw):
+    def refresh(self, **kw):  # noqa: D102
         # Clear line and return cursor to start-of-line
         sys.stderr.write(" " * self.prev_meter_len + "\x08" * self.prev_meter_len)
         # Get meter text
@@ -216,7 +216,7 @@ class ProgressMeter:
 def focus_terms(pcount, terms):  # noqa: PLR0912
     """Generates a list of term names that have a port count
     greater than pcount for the optimizer to 'focus' in on.
-    """
+    """  # noqa: D401, D205
     focused = dict()
     matched_ports = dict()
     ports = dict()
@@ -612,7 +612,7 @@ def do_work(opts, files):  # noqa: D103, PLR0912, PLR0915
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     opts, args = parse_args(sys.argv)
     if opts.debug:
         log.setLevel(logging.DEBUG)

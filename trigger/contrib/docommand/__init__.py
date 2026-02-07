@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This package provides facilities for running commands on devices using the CLI.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Mike Biancianello"
 __maintainer__ = "Jathan McCollum"
@@ -41,7 +41,7 @@ class DoCommandBase(Commando):
 
     description = "Insert description here."
 
-    def errback(self, failure, device):
+    def errback(self, failure, device):  # noqa: D102
         failure = super().errback(failure, device)
         print(f"{device} - Error: {failure.value}")
         return failure
@@ -88,7 +88,7 @@ class CommandRunner(DoCommandBase):
 
         :param timeout:
             Timeout in seconds
-        """
+        """  # noqa: D205
         if files is None:
             files = []
         if commands is None:
@@ -110,7 +110,7 @@ class CommandRunner(DoCommandBase):
         """Reads in file contents and adds to self.commands list.
 
         This is done to prevent having to read the list of cmds multiple times.
-        """
+        """  # noqa: D401
         for fname in self.files:
             with Path(fname).open() as fr:
                 lines = fr.readlines()
@@ -143,7 +143,7 @@ class CommandRunner(DoCommandBase):
     def __children_with_namespace(self, ns):
         return lambda elt, tag: elt.findall("./" + ns + tag)
 
-    def from_juniper(self, data, device, commands=None):
+    def from_juniper(self, data, device, commands=None):  # noqa: D102
         # If we've set foce_cli, use from_base() instead
         if self.force_cli:
             return self.from_base(data, device, commands)
@@ -235,7 +235,7 @@ class ConfigLoader(Commando):
 
         :param debug:
             Whether to display debug information
-        """
+        """  # noqa: D205
         if files is None:
             files = []
         if commands is None:
@@ -262,7 +262,7 @@ class ConfigLoader(Commando):
             body = SubElement(lc, "configuration-text")
             if self.debug:
                 print("fname: " + fname)
-            body.text = file(fname).read()
+            body.text = file(fname).read()  # noqa: F405
             cmds.append(lc)
         if len(commands) > 0:
             lc = Element("load-configuration", action="replace", format="text")

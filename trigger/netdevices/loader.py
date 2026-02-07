@@ -17,7 +17,7 @@ specifies whether the loader can be used with this Python installation. Each
 loader is responsible for setting this when it is initialized.
 
 This code is based on Django's template loader code: http://bit.ly/WWOLU3
-"""
+"""  # noqa: D205
 
 from collections import namedtuple
 
@@ -37,21 +37,21 @@ class BaseLoader:
 
     is_usable = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # noqa: D107
         pass
 
-    def __call__(self, data_source, **kwargs):
+    def __call__(self, data_source, **kwargs):  # noqa: D102
         return self.load_data(data_source, **kwargs)
 
-    def load_data(self, data_source, **kwargs):
+    def load_data(self, data_source, **kwargs):  # noqa: D102
         return self.load_data_source(data_source, **kwargs)
 
     def load_data_source(self, data_source, **kwargs):
-        """Returns an iterable of key/value pairs for the given ``data_source``."""
+        """Returns an iterable of key/value pairs for the given ``data_source``."""  # noqa: D401
         raise NotImplementedError
 
     def reset(self):
-        """Resets any state maintained by the loader instance."""
+        """Resets any state maintained by the loader instance."""  # noqa: D401
 
 
 # Functions
@@ -70,7 +70,7 @@ def find_data_loader(loader):
     :param loader:
         A string represnting the Python path to a Loader object, or list/tuple
         of loader path and args to pass to the Loader.
-    """
+    """  # noqa: D205
     if isinstance(loader, (tuple, list)):
         loader, args = loader[0], loader[1:]
     else:
