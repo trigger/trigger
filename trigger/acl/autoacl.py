@@ -16,11 +16,6 @@ If you do not specify a location for ``AUTOACL_FILE`` or the module cannot be
 loaded, then a default :func:`autoacl()` function ill be used.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Eileen Tschetter"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2010-2012, AOL Inc."
-
 import warnings
 
 from twisted.python import log
@@ -31,7 +26,6 @@ from trigger.utils.importlib import import_module_from_path
 __all__ = ("autoacl",)
 
 module_path = settings.AUTOACL_FILE
-
 
 # In either case we're exporting a single name: autoacl().
 try:

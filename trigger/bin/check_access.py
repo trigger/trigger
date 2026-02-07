@@ -2,8 +2,6 @@
 
 """check_access - Determines whether access is permitted by a given ACL."""
 
-__version__ = "1.2"
-
 import optparse
 import sys
 

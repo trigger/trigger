@@ -1,10 +1,5 @@
 """Abstract interface to bounce windows and moratoria."""
 
-__author__ = "Jathan McCollum, Mark Thomas, Michael Shields"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2006-2012, AOL Inc."
-
 # Imports
 from datetime import datetime, timedelta
 from typing import ClassVar
@@ -23,7 +18,6 @@ BOUNCE_VALUE_MAP = {
     "yellow": 2,
     "green": 1,
 }
-
 
 # Exports
 __all__ = ("BounceStatus", "BounceWindow", "bounce")
