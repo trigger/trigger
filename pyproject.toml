@@ -124,7 +124,6 @@ ignore = [
     "F402",     # import-shadowed-by-loop-var
     "F403",     # undefined-local-with-import-star
     "F405",     # undefined-local-with-import-star-usage
-    "F523",     # string-dot-format-extra-positional-arguments
     "F811",     # redefined-while-unused
     "F821",     # undefined-name
     "UP031",    # printf-string-formatting
@@ -145,7 +144,6 @@ ignore = [
     "D104",     # undocumented-public-package
     "D105",     # undocumented-magic-method
     "D107",     # undocumented-public-init
-    "D200",     # unnecessary-multiline-docstring
     "D205",     # missing-blank-line-after-summary
     "D401",     # non-imperative-mood
     "D402",     # signature-in-docstring
