@@ -19,9 +19,6 @@ For JunOS like ACLs.
     juniper_multiline_comments
 """  # noqa: D205
 
-# Copied metadata from parser.py
-__editor__ = "Joseph Malone"
-
 from trigger.conf import settings
 
 from .grammar import *  # noqa: F403

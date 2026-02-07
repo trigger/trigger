@@ -11,9 +11,6 @@ For IOS like ACLs.
     'handle_ios_acl',
 """  # noqa: D205
 
-# Copied metadata from parser.py
-__editor__ = "Joseph Malone"
-
 from .grammar import *  # noqa: F403
 
 

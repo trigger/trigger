@@ -12,8 +12,6 @@ Imported into the specific grammar files.
     dict_sum
 """  # noqa: D205
 
-__editor__ = "Joseph Malone"
-
 from .support import *  # noqa: F403
 
 # Each production can be any of:

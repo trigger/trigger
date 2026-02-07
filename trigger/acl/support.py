@@ -26,9 +26,6 @@ support the various modules for parsing. This file is not meant to by used by it
     'TIP',
 """  # noqa: D205
 
-# Copied metadata from parser.py
-__editor__ = "Joseph Malone"
-
 import contextlib
 from typing import ClassVar
 

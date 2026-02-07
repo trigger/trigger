@@ -23,8 +23,6 @@ Variables defined:
   tcp_flag_rev
 """  # noqa: D205
 
-__editor__ = "Joseph Malone"
-
 adrsbk = {"svc": {"group": {}, "book": {}}, "addr": {"group": {}, "book": {}}}
 
 dscp_names = {
