@@ -353,7 +353,7 @@ def log_term(term, msg="ADDING"):
     print()
 
 
-def wedge_acl(acl, new_term, between, opts):
+def wedge_acl(acl, new_term, between, opts):  # noqa: PLR0915
     if not between:
         # ugg, don't deal with this yet.
         return
@@ -459,7 +459,7 @@ def wedge_acl(acl, new_term, between, opts):
                 break
 
 
-def main():
+def main():  # noqa: PLR0915
     """Main entry point for the CLI tool."""
     opts, _args = parse_args(sys.argv)
     for acl_file in opts.acl:

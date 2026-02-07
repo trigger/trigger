@@ -59,7 +59,7 @@ def _register_handlers():
 
     Any built-in event handlers need to be defined above this function.
     """
-    global HANDLERS_REGISTERED
+    global HANDLERS_REGISTERED  # noqa: PLW0603
     from trigger.conf import settings
 
     for handler_path in settings.NOTIFICATION_HANDLERS:
@@ -125,5 +125,5 @@ def notify(*args, **kwargs):
             continue
 
     # We don't want to get to this point
-    msg = f"No handlers succeeded for this event: {event}"
+    msg = f"No handlers succeeded for this event: {args}"
     raise RuntimeError(msg)

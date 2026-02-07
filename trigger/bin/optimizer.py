@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 
 def sig_handler(s, d):
-    global stop_all
+    global stop_all  # noqa: PLW0603
     stop_all = True
 
 
@@ -260,7 +260,7 @@ chk_keys = ["protocol", "source-address", "destination-address", "destination-po
 rej_keys = ["reject", "deny", "discard"]
 
 
-def optimize_terms(terms, focused, which, opts):
+def optimize_terms(terms, focused, which, opts):  # noqa: PLR0915
     global stop_all  # noqa: PLW0602
     to_delete = dict()
     other = ""
@@ -518,7 +518,7 @@ def optimize(opts, terms, focused):
     return terms_unchunk(chunks)
 
 
-def do_work(opts, files):
+def do_work(opts, files):  # noqa: PLR0915
     global stop_all  # noqa: PLW0602
     for acl_file in files:
         focused = None

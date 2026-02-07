@@ -127,7 +127,7 @@ def edit(editfile):
     return os.popen("rcsdiff -u -b -q " + editfile).read()
 
 
-def main():
+def main():  # noqa: PLR0915
     """Main entry point for the CLI tool."""
     if len(sys.argv) < 2:
         print("usage: fe files...", file=sys.stderr)

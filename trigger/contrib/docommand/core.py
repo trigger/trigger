@@ -334,10 +334,15 @@ def print_results(results=None):
     return True
 
 
-def stage_tftp(acls, nonce):
-    """Need to edit this for cmds, not just acls, but
-    the basic idea is borrowed from ``bin/load_acl``.
+def stage_tftp(devices, acl, nonce):
+    """Stage ACL files to TFTP root for device loading.
+
+    Borrowed from ``bin/load_acl``.
     """
+    from shutil import copyfile
+
+    from trigger.conf import settings
+
     for _device in devices:
         source = settings.FIREWALL_DIR + f"/acl.{acl}"
         dest = settings.TFTPROOT_DIR + f"/acl.{acl}.{nonce}"
@@ -491,6 +496,8 @@ def parse_args(argv, description=None):
         print("\n", err)
         sys.exit(1)
     if opts.quiet:
+        from trigger.utils.cli import NullDevice
+
         sys.stdout = NullDevice()
 
     # Mutate some global sentinel values based on opts
@@ -549,11 +556,11 @@ def verify_opts(opts):
 
 # TODO: There's gotta be a better way.
 def set_globals_from_opts(opts):
-    global DEBUG
-    global VERBOSE
-    global PUSH
-    global TIMEOUT
-    global FORCE_CLI
+    global DEBUG  # noqa: PLW0603
+    global VERBOSE  # noqa: PLW0603
+    global PUSH  # noqa: PLW0603
+    global TIMEOUT  # noqa: PLW0603
+    global FORCE_CLI  # noqa: PLW0603
     DEBUG = opts.debug
     VERBOSE = opts.verbose
     PUSH = opts.push

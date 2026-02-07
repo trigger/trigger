@@ -1,3 +1,5 @@
+"""Commando plugin for retrieving clock information from network devices."""
+
 import contextlib
 import datetime
 import xml.etree.ElementTree as ET

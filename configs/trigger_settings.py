@@ -1,5 +1,8 @@
-# This is a sample settings.py that varies slightly from the default. Please see docs/configuration.rst or
-# trigger/conf/global_settings.py for the complete list of default settings.
+"""Sample Trigger settings that varies slightly from the default.
+
+Please see docs/configuration.rst or trigger/conf/global_settings.py for the
+complete list of default settings.
+"""
 
 import os
 import socket
