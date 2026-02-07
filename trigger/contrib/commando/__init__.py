@@ -159,7 +159,7 @@ class CommandoApplication(Commando):
 
         cmd_list = []
         for cmd, res in itertools.zip_longest(commands, results):
-            if type(Element("")) == type(cmd):
+            if isinstance(cmd, Element):
                 # XML must die a very horrible death
                 cmd = ET.tostring(cmd)  # noqa: PLW2901
             cmdobj = dict(command=cmd, result=res)

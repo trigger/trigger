@@ -182,7 +182,7 @@ def validate_credentials(creds=None):
 
     # If it isn't set or it's a string, or less than 1 or more than 3 items,
     # get from .tacacsrc
-    if (not creds) or (type(creds) == str) or (len(creds) not in (2, 3)):
+    if (not creds) or isinstance(creds, str) or (len(creds) not in (2, 3)):
         log.msg("Creds not valid, fetching from .tacacsrc...")
         tcrc = Tacacsrc()
         return tcrc.creds.get(realm, get_device_password(realm, tcrc))
@@ -487,9 +487,9 @@ class Tacacsrc:
             ),
         ]
 
-        for realm, (uname, pwd, _) in self.creds.items():
+        for realm, (uname, password, _) in self.creds.items():
             out.append(f"{realm}_uname_ = {self._encrypt_old(uname)}")
-            out.append(f"{realm}_pwd_ = {self._encrypt_old(pwd)}")
+            out.append(f"{realm}_pwd_ = {self._encrypt_old(password)}")
 
         with Path(self.file_name).open("w+") as fd:
             fd.writelines(out)
@@ -522,9 +522,9 @@ class Tacacsrc:
             ),
         ]
 
-        for realm, (uname, pwd, _) in self.creds.items():
+        for realm, (uname, password, _) in self.creds.items():
             out.append(f"{realm}_uname_ = {uname}")
-            out.append(f"{realm}_pwd_ = {pwd}")
+            out.append(f"{realm}_pwd_ = {password}")
 
         self.rawdata = out
         self._encrypt_and_write()

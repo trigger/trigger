@@ -75,7 +75,7 @@ class Settings(BaseSettings):
         for setting in dir(mod):
             if setting == setting.upper():
                 setting_value = getattr(mod, setting)
-                if setting in tuple_settings and type(setting_value) == str:
+                if setting in tuple_settings and isinstance(setting_value, str):
                     setting_value = (
                         setting_value,
                     )  # In case the user forgot the comma.

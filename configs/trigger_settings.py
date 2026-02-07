@@ -30,7 +30,7 @@ TACACSRC_USE_PASSPHRASE = False
 
 # Use this passphrase to encrypt credentials.CHANGE THIS IN YOUR FILE BEFORE
 # USING THIS IN YOUR ENVIRONMENT.
-TACACSRC_PASSPHRASE = "bacon is awesome, son."  # NYI
+TACACSRC_PASSPHRASE = "bacon is awesome, son."  # noqa: S105 - example config
 
 # Default login realm to store user credentials (username, password) for
 # general use within the .tacacsrc

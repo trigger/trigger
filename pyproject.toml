@@ -117,14 +117,11 @@ ignore = [
     # --- Kept from v2.0.0 baseline ---
     "E402",     # module-import-not-at-top-of-file
     "E501",     # line-too-long (handled by formatter)
-    "E721",     # type-comparison (existing code style)
     "E722",     # bare-except (intentional in many places)
     "E741",     # ambiguous-variable-name (existing code style)
     "F401",     # unused-import (may be used dynamically)
-    "F402",     # import-shadowed-by-loop-var
     "F403",     # undefined-local-with-import-star
     "F405",     # undefined-local-with-import-star-usage
-    "F811",     # redefined-while-unused
     "F821",     # undefined-name
     "UP031",    # printf-string-formatting
 
@@ -157,11 +154,8 @@ ignore = [
 
     # --- Security false positives for network toolkit ---
     "S101",     # assert (used in tests)
-    "S105",     # hardcoded-password-string (false positives)
-    "S603",     # subprocess-without-shell-equals-true
     "S605",     # start-process-with-a-shell (fix manually)
     "S606",     # start-process-with-no-shell
-    "S608",     # hardcoded-sql-expression
 
     # --- Other ---
     "RUF012",   # mutable-class-default (too many in device metadata)
