@@ -22,11 +22,6 @@ These modules are then included back into parser.py.
 This makes the code more readable.
 """
 
-__author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathanism@aol.com"
-__copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
-
 from simpleparse.common import comments, strings  # noqa: E402, F401
 from simpleparse.dispatchprocessor import (  # noqa: E402
     DispatchProcessor,

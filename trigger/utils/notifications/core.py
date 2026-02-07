@@ -1,10 +1,5 @@
 """Basic functions for sending notifications."""
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2012-2012, AOL Inc."
-
 from . import handlers
 
 # Exports

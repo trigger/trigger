@@ -2,9 +2,6 @@
 
 """fe - the File Editor. Uses RCS to maintain ACL policy versioning."""
 
-__version__ = "1.2.1"
-
-
 import os
 import re
 import sys

@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
+"""gen_tacacsrc.py - Simple, stupid tool that creates a .tacacsrc if is not found.
 """
-gen_tacacsrc.py - Simple, stupid tool that creates a .tacacsrc if is not found.
-"""
-
-__author__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2006-2011, AOL Inc."
-__version__ = "1.9"
 
 from trigger.tacacsrc import *
 

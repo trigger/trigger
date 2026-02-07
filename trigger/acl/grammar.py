@@ -12,11 +12,7 @@ Imported into the specific grammar files.
     dict_sum
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
 __editor__ = "Joseph Malone"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathanism@aol.com"
-__copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
 from .support import *  # noqa: F403
 

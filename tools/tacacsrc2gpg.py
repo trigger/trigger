@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""
-tacacsrc2gpg.py - Converts clear-text .tacacsrc to GPG-encrypted .tacacsrc.gpg
+"""tacacsrc2gpg.py - Converts clear-text .tacacsrc to GPG-encrypted .tacacsrc.gpg
 
 Intended for use when migrating from clear-text .tacacsrc to GPG.
 """
@@ -11,7 +10,7 @@ import pwd
 import socket
 import sys
 
-from trigger.tacacsrc import Tacacsrc, get_device_password, convert_tacacsrc
+from trigger.tacacsrc import convert_tacacsrc, get_device_password
 from trigger.utils.cli import yesno
 
 prompt = (
