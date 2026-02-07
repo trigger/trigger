@@ -3,15 +3,15 @@
 # nd2sqlite.py - Converts netdevices.xml into a SQLite database and also prints
 # some performance stuff
 
-from xml.etree.cElementTree import ElementTree, parse
+from xml.etree.ElementTree import parse
 
 try:
     import simplejson as json
 except ImportError:
-    import json
-import time
-import sys
+    pass
 import sqlite3 as sqlite
+import sys
+import time
 
 if len(sys.argv) < 3:
     sys.exit(
@@ -45,7 +45,7 @@ for node in nodes:
     keystr = ", ".join(keys)
     valstr = ",".join("?" * len(vals))
     # sql = ''' INSERT INTO netdevices ( {0}) VALUES ( {1}); '''.format(keystr, valstr)
-    sql = """INSERT INTO netdevices ( {} ) VALUES ( {} )""".format(keystr, valstr)
+    sql = f"""INSERT INTO netdevices ( {keystr} ) VALUES ( {valstr} )"""
     cursor.execute(sql, vals)
 
 connection.commit()

@@ -27,10 +27,6 @@ try:  # pragma no cover
 except NameError:  # pragma no cover
     _unicode = str
 
-__author__ = "Martin Blech"
-__version__ = "0.4.6"
-__license__ = "MIT"
-
 
 class ParsingInterrupted(Exception):
     """Raised when XML parsing is interrupted by a callback."""

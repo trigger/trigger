@@ -2,11 +2,10 @@
 
 """netdev - Command-line search interface for NetDevices."""
 
-__version__ = "1.2"
-
 import sys
 from optparse import OptionParser
 
+from trigger import __version__
 from trigger.netdevices import NetDevices, device_match
 
 

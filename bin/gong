@@ -9,12 +9,6 @@ Partially adapted from conch.  See twisted.conch.scripts.conch and
 http://twistedmatrix.com/projects/conch/documentation/howto/conch_client.html
 """
 
-__author__ = 'Jathan McCollum, Eileen Tschetter, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2012, AOL Inc.'
-__version__ = '2.0'
-
 from optparse import OptionParser
 import os
 import sys

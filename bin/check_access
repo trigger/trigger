@@ -4,12 +4,6 @@
 check_access - Determines whether access is permitted by a given ACL.
 """
 
-__author__ = 'Jathan McCollum, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2006-2013, AOL Inc.'
-__version__ = '1.2'
-
 import optparse
 import sys
 from simpleparse.error import ParserSyntaxError

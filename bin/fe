@@ -4,13 +4,6 @@
 fe - the File Editor. Uses RCS to maintain ACL policy versioning.
 """
 
-__author__ = 'Jathan McCollum, Mark Ellzey Thomas, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2002-2013, AOL Inc.'
-__version__ = '1.2.1'
-
-
 import os
 import re
 from simpleparse.error import ParserSyntaxError

@@ -8,12 +8,6 @@ various algorithms to determine which filters can be merged
 and removed.
 """
 
-__author__ = 'Jathan McCollum, Mark Ellzey Thomas'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2013, AOL Inc.'
-__version__ = '1.5'
-
 import copy
 import datetime
 import IPy

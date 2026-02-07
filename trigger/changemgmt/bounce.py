@@ -14,13 +14,6 @@ If you do not specify a location for :setting:`BOUNCE_FILE`` or the module
 cannot be loaded, then a default :func:`bounce()` function ill be used.
 """
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2012, AOL Inc."
-__version__ = "0.1"
-
-
 # Imports
 import warnings
 
@@ -29,7 +22,6 @@ from trigger.utils.importlib import import_module_from_path
 
 # Exports
 __all__ = ("bounce",)
-
 
 # Load ``bounce()`` from the location of ``bounce.py``
 bounce_mpath = settings.BOUNCE_FILE

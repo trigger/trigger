@@ -2,12 +2,6 @@
 from the filesystem.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2013, AOL Inc."
-__version__ = "1.1"
-
 import itertools
 import os
 from pathlib import Path

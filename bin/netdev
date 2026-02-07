@@ -4,12 +4,6 @@
 netdev - Command-line search interface for NetDevices.
 """
 
-__author__ = 'Jathan McCollum, Eileen Tschetter'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2013, AOL Inc.'
-__version__ = '1.2'
-
 from optparse import OptionParser
 import sys
 
@@ -21,7 +15,6 @@ def parse_args(argv):
     parser = OptionParser(
         usage='%prog [options]',
         description="\nCommand-line search interface for 'NetDevices' metadata.",
-        version='%prog ' + __version__
     )
 
     parser.add_option('-a', '--acls', action='store_true',

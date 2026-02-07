@@ -6,13 +6,6 @@
 This package provides facilities for running commands on devices using the CLI.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Mike Biancianello"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan@gmail.com"
-__copyright__ = "Copyright 2012-2013, AOL Inc.; 2013 Salesforce.com"
-__version__ = "3.2.1"
-
-
 # Imports
 import os  # noqa: F401
 import re

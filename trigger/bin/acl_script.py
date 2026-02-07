@@ -2,12 +2,8 @@
 
 """acl_script - CLI interface to simplify complex modification to access-lists."""
 
-
 # TODO (jathan): Have this import from trigger.acl.utils.AclScript, because
 # much of the code is copypasta.
-
-__version__ = "1.2"
-
 
 import os
 import re
