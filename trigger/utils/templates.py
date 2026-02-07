@@ -56,7 +56,7 @@ def load_cmd_template(cmd, dev_type=None):
     try:
         with Path(get_template_path(cmd, dev_type=dev_type)).open("rb") as f:
             return textfsm.TextFSM(f)
-    except:
+    except Exception:
         log.msg(f"Unable to load template:\n{cmd} :: {dev_type}")
 
 
@@ -67,11 +67,11 @@ def get_textfsm_object(re_table, cli_output):
     rv = defaultdict(list)
     keys = re_table.header
     values = re_table.ParseText(cli_output)
-    l = []
+    pairs = []
     for item in values:
-        l.extend(zip(map(lambda x: x.lower(), keys), item, strict=False))
+        pairs.extend(zip(map(lambda x: x.lower(), keys), item, strict=False))
 
-    for k, v in l:
+    for k, v in pairs:
         rv[k].append(v)
 
     return dict(rv)

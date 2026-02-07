@@ -59,7 +59,7 @@ def generate_endpoint(device):
 
 
 class SSHSessionAddress:
-    """This object represents an endpoint's session details.
+    """Represents an endpoint's session details.
 
     This object would typically be loaded as follows:
 
@@ -79,7 +79,7 @@ class SSHSessionAddress:
 
 
 class _TriggerShellChannel(SSHChannel):
-    """This is the Trigger subclassed Channel object."""
+    """Trigger subclassed Channel object."""
 
     name = b"session"
 

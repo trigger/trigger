@@ -1,4 +1,4 @@
-"""This code is originally from parser.py. It consists of a lot of classes which
+"""Originally from parser.py. Consists of a lot of classes which
 support the various modules for parsing. This file is not meant to by used by itself.
 
 # Functions
@@ -278,26 +278,26 @@ class RangeList:
 
         return sorted(set(ret))
 
-    def _collapse(self, l):
+    def _collapse(self, items):
         """Reduce a sorted list of elements to ranges represented as tuples;
         e.g. [1, 2, 3, 4, 10] -> [(1, 4), 10].
         """
-        l = self._cleanup(l)  # Remove duplicates
+        items = self._cleanup(items)  # Remove duplicates
 
         # Don't bother reducing a single item
-        if len(l) <= 1:
-            return l
+        if len(items) <= 1:
+            return items
 
         # Make sure the elements are incrementable, or we can't reduce at all.
         try:
-            l[0] + 1
+            items[0] + 1
         except (TypeError, AttributeError):
-            return l
+            return items
         """
             try:
-                l[0][0] + 1
+                items[0][0] + 1
             except (TypeError, AttributeError):
-                return l
+                return items
         """
 
         # This last step uses a loop instead of pure functionalism because
@@ -306,30 +306,30 @@ class RangeList:
         # [x, x+1, ..., x+n] -> [(x, x+n)]
         n = 0
         try:
-            while l[n] + 1 == l[n + 1]:
+            while items[n] + 1 == items[n + 1]:
                 n += 1
         except IndexError:  # entire list collapses to one range
-            return [(l[0], l[-1])]
+            return [(items[0], items[-1])]
         if n == 0:
-            return [l[0], *self._collapse(l[1:])]
-        return [(l[0], l[n]), *self._collapse(l[n + 1 :])]
+            return [items[0], *self._collapse(items[1:])]
+        return [(items[0], items[n]), *self._collapse(items[n + 1 :])]
 
     def _do_collapse(self):
         self.data = self._collapse(self._expand(self.data))
 
-    def _expand(self, l):
+    def _expand(self, items):
         """Expand a list of elements and tuples back to discrete elements.
         Opposite of _collapse().
         """
-        if not l:
-            return l
+        if not items:
+            return items
         try:
             # Python 3: range() returns a range object, not a list
-            return list(range(l[0][0], l[0][1] + 1)) + self._expand(l[1:])
+            return list(range(items[0][0], items[0][1] + 1)) + self._expand(items[1:])
         except AttributeError:  # not incrementable
-            return l
+            return items
         except (TypeError, IndexError):
-            return [l[0], *self._expand(l[1:])]
+            return [items[0], *self._expand(items[1:])]
 
     def expanded(self):
         """Return a list with all ranges converted to discrete elements."""

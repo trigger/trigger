@@ -285,7 +285,8 @@ class NetScreen:
                     else:
                         found.append(self.service_book[entry])
                 else:
-                    raise "Unknown group type"
+                    msg = "Unknown group type"
+                    raise ValueError(msg)
 
             elif isinstance(node, NSRawPolicy):
                 policy_id = node.data.get("id", 0)
@@ -310,7 +311,8 @@ class NetScreen:
                             found = i
                             break
                     if not found:
-                        raise "Sub policy before policy defined"
+                        msg = "Sub policy before policy defined"
+                        raise ValueError(msg)
                 else:
                     # create a new policy
                     found = NSPolicy(id=policy_id, isglobal=isglobal, name=name)
@@ -413,12 +415,14 @@ class NSGroup(NetScreen):
     def add_address(self, addr):
         assert self.type == "address"
         if not isinstance(addr, NSAddress):
-            raise "add_address requires NSAddress object"
+            msg = "add_address requires NSAddress object"
+            raise TypeError(msg)
         # make sure the entry hasn't already been added, and
         # that all the zones are in the same zone
         for i in self.nodes:
             if i.zone != addr.zone:
-                raise f"zone {addr.zone} did not equal others in group"
+                msg = f"zone {addr.zone} did not equal others in group"
+                raise ValueError(msg)
             if i.name == addr.name:
                 return
         self.nodes.append(addr)
@@ -426,7 +430,8 @@ class NSGroup(NetScreen):
     def add_service(self, svc):
         assert self.type == "service"
         if not isinstance(svc, NSService):
-            raise "add_service requires NSService object"
+            msg = "add_service requires NSService object"
+            raise TypeError(msg)
         for i in self.nodes:
             if i.name == svc.name:
                 return
@@ -535,10 +540,11 @@ class NSServiceBook(NetScreen):
             return self.entries.append(item)
         if isinstance(item, NSGroup) and item.type == "service":
             return self.entries.append(item)
-        raise (
+        msg = (
             "item inserted into NSServiceBook, not an NSService or "
             "NSGroup.type='service' object"
         )
+        raise TypeError(msg)
 
     def output(self):
         ret = []
@@ -575,7 +581,8 @@ class NSAddressBook(NetScreen):
         if not isinstance(item, NSAddress) and (
             (not isinstance(item, NSGroup)) and item.type != "address"
         ):
-            raise "Item inserted int NSAddress not correct type"
+            msg = "Item inserted int NSAddress not correct type"
+            raise TypeError(msg)
 
         if not self.entries.has_key(item.zone):
             self.entries[item.zone] = []
@@ -705,7 +712,8 @@ class NSService(NetScreen):
             check_range(ports, 0, 65535)
             self.source_port = ports
         else:
-            raise "add_source_port needs int or tuple argument"
+            msg = "add_source_port needs int or tuple argument"
+            raise TypeError(msg)
 
     def set_destination_port(self, ports):
         if isinstance(ports, int):
@@ -715,7 +723,8 @@ class NSService(NetScreen):
             check_range(ports, 0, 65535)
             self.destination_port = ports
         else:
-            raise "add_destination_port needs int or tuple argument"
+            msg = "add_destination_port needs int or tuple argument"
+            raise TypeError(msg)
 
     def set_timeout(self, timeout):
         self.timeout = timeout
@@ -839,7 +848,8 @@ class NSPolicy(NetScreen):
     ):
         found = None
         if not protocol:
-            raise "no protocol defined in add_service"
+            msg = "no protocol defined in add_service"
+            raise ValueError(msg)
 
         if isinstance(destination_port, tuple):
             sname = "%s%d-%d" % (protocol, destination_port[0], destination_port[1])

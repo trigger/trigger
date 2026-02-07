@@ -1,4 +1,4 @@
-"""This file controls when bounce windows get auto-applied to network devices.
+"""Controls when bounce windows get auto-applied to network devices.
 
 This module is expected to provide a ``bounce()`` function that takes a
 `~trigger.netdevice.NetDevice` as the mandatory first argument and returns a

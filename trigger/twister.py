@@ -1262,7 +1262,7 @@ class TriggerSSHConnection(SSHConnection):
         self._channelOpener()
 
     def _channelOpener(self):
-        """This is what calls ``self.channelOpen()``."""
+        """Calls ``self.channelOpen()``."""
         # Default behavior: Single channel/conn
         self.openChannel(self.channel_class(conn=self))
 

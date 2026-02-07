@@ -347,7 +347,7 @@ def stage_tftp(acls, nonce):
             try:
                 copyfile(source, dest)
                 Path(dest).chmod(0o644)
-            except:
+            except OSError:
                 return None
     return True
 
