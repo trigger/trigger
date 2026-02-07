@@ -674,7 +674,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         :param when:
             A datetime object.
         """
-        assert action == "load-acl"
+        assert action == "load-acl"  # noqa: S101
         return self.bounce.status(when) == changemgmt.BounceStatus("green")
 
     def next_ok(self, action, when=None):
@@ -687,7 +687,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         :param when:
             A datetime object.
         """
-        assert action == "load-acl"
+        assert action == "load-acl"  # noqa: S101
         return self.bounce.next_ok(changemgmt.BounceStatus("green"), when)
 
     def is_router(self):
@@ -813,7 +813,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
             "pty": settings.SSH_PTY_DISABLED,
             "async": settings.SSH_ASYNC_DISABLED,
         }
-        assert method in METHOD_MAP
+        assert method in METHOD_MAP  # noqa: S101
         method_enabled = self._ssh_enabled(METHOD_MAP[method])
 
         return method_enabled and self.has_ssh()

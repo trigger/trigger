@@ -279,7 +279,7 @@ def debug_fakeout():
     return os.getenv("DEBUG_FAKEOUT") is not None
 
 
-def get_work(opts, args):  # noqa: PLR0915
+def get_work(opts, args):  # noqa: PLR0912, PLR0915
     """Determine the set of devices to load on, and what ACLs to load on
     each.  Processes extra CLI arguments to modify the work queue. Return a
     dictionary of ``{nodeName: set(acls)}``.
@@ -689,7 +689,7 @@ def run(stdscr, work, jobs, failures, opts):
     reactor.run()
 
 
-def main():  # noqa: PLR0915
+def main():  # noqa: PLR0912, PLR0915
     """The Main Event."""
     global opts
     opts, args = parse_args(sys.argv)

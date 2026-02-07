@@ -125,7 +125,7 @@ def p_error(optp, msg=None):
     sys.exit(1)
 
 
-def main():  # noqa: PLR0915
+def main():  # noqa: PLR0912, PLR0915
     """Main entry point for the CLI tool."""
     # Setup
     aclsdb = AclsDB()

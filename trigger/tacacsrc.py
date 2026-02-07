@@ -257,7 +257,7 @@ class Tacacsrc:
     system.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0912
         self,
         tacacsrc_file=None,
         use_gpg=settings.USE_GPG_AUTH,
@@ -359,7 +359,7 @@ class Tacacsrc:
 
         key += self._get_key_nonce_old()
         key = _perl_pack_Hstar_old((key + (" " * 48))[:48])
-        assert len(key) == 24
+        assert len(key) == 24  # noqa: S101
 
         return key
 
@@ -557,7 +557,7 @@ class Tacacsrc:
                         raise VersionMismatch(msg)
                 else:
                     realm, s, _junk = k.split("_")
-                    assert (realm, s) not in data
+                    assert (realm, s) not in data  # noqa: S101
                     data[(realm, s)] = v
 
         for (realm, k), v in data.items():

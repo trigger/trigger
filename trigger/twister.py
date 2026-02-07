@@ -613,7 +613,7 @@ def execute_junoscript(
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    assert device.vendor == "juniper"
+    assert device.vendor == "juniper"  # noqa: S101
 
     channel_class = TriggerSSHJunoscriptChannel
     prompt_pattern = ""
@@ -702,7 +702,7 @@ def execute_ioslike_telnet(
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    assert device.is_ioslike()
+    assert device.is_ioslike()  # noqa: S101
 
     d = defer.Deferred()
     action = IoslikeSendExpect(
@@ -769,7 +769,7 @@ def execute_ioslike_ssh(
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    assert device.is_ioslike()
+    assert device.is_ioslike()  # noqa: S101
 
     # Test if device requires shell + pty-req
     if device.requires_async_pty:
@@ -811,7 +811,7 @@ def execute_netscreen(
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    assert device.is_netscreen()
+    assert device.is_netscreen()  # noqa: S101
 
     # We live in a world where not every NetScreen device is local and can use
     # TACACS, so we must store unique credentials for each NetScreen device.
@@ -849,7 +849,7 @@ def execute_netscaler(
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    assert device.is_netscaler()
+    assert device.is_netscaler()  # noqa: S101
 
     channel_class = TriggerSSHNetscalerChannel
     method = "NetScaler"
@@ -882,7 +882,7 @@ def execute_pica8(
     Please see `~trigger.twister.execute` for a full description of the
     arguments and how this works.
     """
-    assert device.is_pica8()
+    assert device.is_pica8()  # noqa: S101
 
     channel_class = TriggerSSHPica8Channel
     method = "Async PTY"
@@ -1821,6 +1821,8 @@ PICA8_NO_MORE_COMMANDS = ["show"]
 
 
 class TriggerSSHPica8Channel(TriggerSSHAsyncPtyChannel):
+    """SSH channel for Pica8 devices."""
+
     def _setup_commanditer(self, commands=None):
         """Munge our list of commands and overload self.commanditer to append
         " | no-more" to any "show" commands.

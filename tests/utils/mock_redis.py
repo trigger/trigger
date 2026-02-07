@@ -11,6 +11,7 @@ __all__ = ("MockRedis", "Redis", "install")
 import re
 import sys
 from collections import defaultdict
+from typing import ClassVar
 
 
 class MockRedisLock:
@@ -72,7 +73,7 @@ class MockRedis:
     """
 
     # The 'Redis' store
-    redis = defaultdict(dict)
+    redis: ClassVar[dict] = defaultdict(dict)
 
     def __init__(self):
         """Initialize the object."""

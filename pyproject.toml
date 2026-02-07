@@ -118,12 +118,10 @@ ignore = [
     "E402",     # module-import-not-at-top-of-file
     "E501",     # line-too-long (handled by formatter)
     "F401",     # unused-import (may be used dynamically)
-    "F403",     # undefined-local-with-import-star
     "F405",     # undefined-local-with-import-star-usage
     "UP031",    # printf-string-formatting
 
     # --- Docstring exceptions (not enforcing coverage/style) ---
-    "D101",     # undocumented-public-class
     "D102",     # undocumented-public-method
     "D103",     # undocumented-public-function
     "D105",     # undocumented-magic-method
@@ -132,15 +130,10 @@ ignore = [
     "D401",     # non-imperative-mood
 
     # --- Complexity (deep refactoring territory) ---
-    "PLR0912",  # too-many-branches
     "PLR0913",  # too-many-arguments
     "PLR2004",  # magic-value-comparison
 
-    # --- Security false positives for network toolkit ---
-    "S101",     # assert (used in tests)
-
     # --- Other ---
-    "RUF012",   # mutable-class-default (too many in device metadata)
     "SLF001",   # private-member-access (common in Twisted patterns)
 ]
 

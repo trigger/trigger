@@ -56,6 +56,8 @@ class BaseSettings:
 
 
 class Settings(BaseSettings):
+    """Trigger settings loaded from a settings module."""
+
     def __init__(self, settings_module):
         # Update this dict from global settings (but only for ALL_CAPS settings)
         for setting in dir(global_settings):

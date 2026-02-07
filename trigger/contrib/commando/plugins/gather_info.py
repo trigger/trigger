@@ -50,6 +50,7 @@ GatherInfo.results will look something like::
 """
 
 import re
+from typing import ClassVar
 
 from twisted.python import log
 
@@ -70,7 +71,7 @@ class GatherInfo(Commando):
     run per-platform.
     """
 
-    vendors = ["cisco"]
+    vendors: ClassVar[list[str]] = ["cisco"]
     ios_shver_parse = re.compile(
         r"""
         (?P<hostname>\S*)               (?# Capture Hostname)

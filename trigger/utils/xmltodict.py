@@ -33,7 +33,7 @@ __license__ = "MIT"
 
 
 class ParsingInterrupted(Exception):
-    pass
+    """Raised when XML parsing is interrupted by a callback."""
 
 
 class _DictSAXHandler:
@@ -204,7 +204,7 @@ def parse(xml_input, encoding="utf-8", *args, **kwargs):
     return handler.item
 
 
-def _emit(
+def _emit(  # noqa: PLR0912
     key,
     value,
     content_handler,

@@ -27,6 +27,8 @@ def xmlrpc_config_device(*args, **kwargs):
 
 
 class ConfigDevice(CommandoApplication):
+    """Commando application for loading device configurations."""
+
     tftp_dir = settings.TFTPROOT_DIR
     tftp_host = settings.TFTP_HOST
     tftp_ip = gethostbyname(tftp_host)

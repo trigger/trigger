@@ -13,6 +13,8 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathan.mccollum@teamaol.com"
 __copyright__ = "Copyright 2012-2012, AOL Inc."
 
+from typing import ClassVar
+
 from trigger.conf import settings
 
 # Exports
@@ -85,7 +87,7 @@ class Notification(Event):
     """
 
     required_args = ("title", "message")
-    status_map = {
+    status_map: ClassVar[dict] = {
         "success": settings.SUCCESS_RECIPIENTS,
         "failure": settings.FAILURE_RECIPIENTS,
     }
@@ -128,7 +130,7 @@ class EmailEvent(Notification):
     """An email notification event."""
 
     default_sender = settings.EMAIL_SENDER
-    status_map = {
+    status_map: ClassVar[dict] = {
         "success": settings.SUCCESS_EMAILS,
         "failure": settings.FAILURE_EMAILS,
     }

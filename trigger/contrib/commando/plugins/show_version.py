@@ -1,5 +1,7 @@
 """Commando plugin for retrieving version information from network devices."""
 
+from typing import ClassVar
+
 from twisted.python import log
 
 from trigger.contrib.commando import CommandoApplication
@@ -17,4 +19,4 @@ def xmlrpc_show_version(*args, **kwargs):
 class ShowVersion(CommandoApplication):
     """Simple example to run ``show version`` on devices."""
 
-    commands = ["show version"]
+    commands: ClassVar[list[str]] = ["show version"]
