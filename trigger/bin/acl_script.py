@@ -525,8 +525,8 @@ def main():
 
         print(f'{prestr}"{acl_file}"')  # opts.acl)
         print(f"{prestr}BEGINNING OF CHANGES ===========")
-        for l in diff.split("\n"):
-            print(f"{prestr}{l}")
+        for line in diff.split("\n"):
+            print(f"{prestr}{line}")
         print(f"{prestr}END OF CHANGES =================")
 
         if not opts.no_input and not yesno("Do you want to save changes?"):

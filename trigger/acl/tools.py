@@ -528,7 +528,7 @@ def worklog(title, diff, log_string="updated by express-gen"):
     rcs.checkin(log_string)
 
     # Use acl to insert into queue, should be replaced with API call
-    os.spawnlp(os.P_WAIT, "acl", "acl", "-i", title)
+    os.spawnlp(os.P_WAIT, "acl", "acl", "-i", title)  # noqa: S606
 
 
 # Classes
@@ -567,7 +567,8 @@ class ACLScript:
 
     def genargs(self, interactive=False):
         if not self.acl:
-            raise "need acl defined"
+            msg = "need acl defined"
+            raise ValueError(msg)
 
         argz = []
         argz.append(f"-a {self.acl}")
@@ -591,7 +592,8 @@ class ACLScript:
             argz.append("--replace-defined")
 
         else:
-            raise "invalid mode"
+            msg = "invalid mode"
+            raise ValueError(msg)
 
         for k, v in {
             "--source-address-from-file": self.source_ips,
@@ -619,7 +621,8 @@ class ACLScript:
 
         if len(self.modify_terms) and len(self.bcomments):
             print("Can only define either modify_terms or between comments")
-            raise "Can only define either modify_terms or between comments"
+            msg = "Can only define either modify_terms or between comments"
+            raise ValueError(msg)
 
         if self.modify_terms:
             argz.extend(f"-t {x}" for x in self.modify_terms)
@@ -650,18 +653,18 @@ class ACLScript:
 
     def errors_from_log(self, log):
         errors = ""
-        for l in log:
-            if "%%ERROR%%" in l:
-                l = l.spit("%%ERROR%%")[1]  # noqa: PLW2901
-                errors += l[1:] + "\n"
+        for line in log:
+            if "%%ERROR%%" in line:
+                line = line.spit("%%ERROR%%")[1]  # noqa: PLW2901
+                errors += line[1:] + "\n"
         return errors
 
     def diff_from_log(self, log):
         diff = ""
-        for l in log:
-            if "%%DIFF%%" in l:
-                l = l.split("%%DIFF%%")[1]  # noqa: PLW2901
-                diff += l[1:] + "\n"
+        for line in log:
+            if "%%DIFF%%" in line:
+                line = line.split("%%DIFF%%")[1]  # noqa: PLW2901
+                diff += line[1:] + "\n"
         return diff
 
     def set_acl(self, acl):

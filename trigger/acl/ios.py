@@ -1,5 +1,5 @@
-"""This code is originally from parser.py. This file is not meant to by used by itself.
-This is for IOS like ACLs.
+"""Originally from parser.py. Not meant to be used by itself.
+For IOS like ACLs.
 
 #Constants
     unary_port_operators

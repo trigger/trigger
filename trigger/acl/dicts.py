@@ -1,4 +1,4 @@
-"""This code is originally from parser.py. It contains all the simple data definitions in
+"""Originally from parser.py. Contains all the simple data definitions in
 form of dictionaries and lists and such. This file is not meant to by used by itself.
 Imported into support.py.
 

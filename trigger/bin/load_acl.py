@@ -772,7 +772,7 @@ def main():
         # catch failures to create a ticket
         try:
             cm_ticketnum = create_cm_ticket(work, oncall)
-        except:
+        except Exception:
             # create_cm_ticket is user defined
             # so we don't know what exceptions can be returned
             cm_ticketnum = None

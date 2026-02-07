@@ -272,7 +272,7 @@ def update_password_and_reconnect(hostname):
                     args.append(sys.argv[idx])
                     break
             args.append(hostname)
-            os.execl(sys.executable, sys.executable, *args)
+            os.execl(sys.executable, sys.executable, *args)  # noqa: S606
 
 
 # Classes

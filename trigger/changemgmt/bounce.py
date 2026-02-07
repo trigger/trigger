@@ -1,4 +1,4 @@
-"""This module controls how bounce windows get auto-applied to network devices.
+"""Controls how bounce windows get auto-applied to network devices.
 
 This is primarily used by `~trigger.changemgmt`.
 

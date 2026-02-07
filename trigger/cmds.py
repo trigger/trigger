@@ -1,4 +1,4 @@
-"""This module abstracts the asynchronous execution of commands on multiple
+"""Abstracts the asynchronous execution of commands on multiple
 network devices. It allows for integrated parsing and event-handling of return
 data for rapid integration to existing or newly-created tools.
 
@@ -457,7 +457,7 @@ class Commando:
                         device,
                         self.map_parsed_results(command, fsm),
                     )
-                except:
+                except Exception:
                     log.msg(
                         "Unable to load TextFSM template, just updating with unstructured output",
                     )
@@ -641,7 +641,7 @@ class Commando:
     # Vendor-specific generate (to_)/parse (from_) methods
     # =======================================
     def to_juniper(self, device, commands=None, extra=None):
-        """This just creates a series of ``<command>foo</command>`` elements to
+        """Creates a series of ``<command>foo</command>`` elements to
         pass along to execute_junoscript().
         """
         commands = commands or self.commands
@@ -828,7 +828,7 @@ class NetACLInfo(Commando):
     # =======================================
 
     def to_cisco(self, dev, commands=None, extra=None):
-        """This is the "show me all interface information" command we pass to
+        """Generate the "show me all interface information" command we pass to
         IOS devices.
         """
         if dev.is_cisco_asa():
@@ -1117,7 +1117,9 @@ def _parse_ios_interfaces(
     # This is where the parsing is actually happening
     try:
         results = interfaces.parseString(data)
-    except:  # (ParseException, ParseFatalException, RecursiveGrammarException):
+    except (
+        Exception
+    ):  # (ParseException, ParseFatalException, RecursiveGrammarException)
         results = {}
 
     if auto_cleanup:

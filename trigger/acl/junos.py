@@ -1,5 +1,5 @@
-"""This code is originally from parser.py. This file is not meant to by used by itself.
-This is for JunOS like ACLs.
+"""Originally from parser.py. Not meant to be used by itself.
+For JunOS like ACLs.
 
 #Constants
     junos_match_types
@@ -55,19 +55,23 @@ class Policer:
                         if type == "bandwidth-limit":
                             limit = self.str2bits(value)
                             if limit > 32000000000 or limit < 32000:
-                                raise "bandwidth-limit must be between 32000bps and 32000000000bps"
+                                msg = "bandwidth-limit must be between 32000bps and 32000000000bps"
+                                raise ValueError(msg)
                             self.exceedings.append((type, limit))
                         elif type == "burst-size-limit":
                             limit = self.str2bits(value)
                             if limit > 100000000 or limit < 1500:
-                                raise "burst-size-limit must be between 1500B and 100,000,000B"
+                                msg = "burst-size-limit must be between 1500B and 100,000,000B"
+                                raise ValueError(msg)
                             self.exceedings.append((type, limit))
                         elif type == "bandwidth-percent":
                             limit = int(value)
                             if limit < 1 or limit > 100:
-                                raise "bandwidth-percent must be between 1 and 100"
+                                msg = "bandwidth-percent must be between 1 and 100"
+                                raise ValueError(msg)
                         else:
-                            raise f"Unknown policer if-exceeding tag: {type}"
+                            msg = f"Unknown policer if-exceeding tag: {type}"
+                            raise ValueError(msg)
                 elif k == "action":
                     for i in v:
                         self.actions.append(i)

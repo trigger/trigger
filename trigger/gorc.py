@@ -1,4 +1,4 @@
-"""This is used by :doc:`../usage/scripts/go` to execute commands upon login to a
+"""Used by :doc:`../usage/scripts/go` to execute commands upon login to a
 device. A user may specify a list of commands to execute for each vendor. If
 the file is not found, or the syntax is bad, no commands will be passed to the
 device.

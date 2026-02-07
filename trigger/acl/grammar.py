@@ -1,4 +1,4 @@
-"""This code is originally from parser.py. This is the basic grammar and rules
+"""Originally from parser.py. Provides the basic grammar and rules
 from which the other specific grammars are built. This file is not meant to by used by itself.
 Imported into the specific grammar files.
 

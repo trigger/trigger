@@ -117,16 +117,12 @@ ignore = [
     # --- Kept from v2.0.0 baseline ---
     "E402",     # module-import-not-at-top-of-file
     "E501",     # line-too-long (handled by formatter)
-    "E722",     # bare-except (intentional in many places)
-    "E741",     # ambiguous-variable-name (existing code style)
     "F401",     # unused-import (may be used dynamically)
     "F403",     # undefined-local-with-import-star
     "F405",     # undefined-local-with-import-star-usage
     "F821",     # undefined-name
     "UP031",    # printf-string-formatting
 
-    # --- Bugbear exceptions ---
-    "B016",     # raise-literal (used intentionally in tests)
     # --- Docstring exceptions (not enforcing coverage/style) ---
     "D100",     # undocumented-public-module
     "D101",     # undocumented-public-class
@@ -136,7 +132,6 @@ ignore = [
     "D107",     # undocumented-public-init
     "D205",     # missing-blank-line-after-summary
     "D401",     # non-imperative-mood
-    "D404",     # docstring-starts-with-this
 
     # --- Complexity (deep refactoring territory) ---
     "PLR0912",  # too-many-branches
@@ -148,7 +143,6 @@ ignore = [
     # --- Security false positives for network toolkit ---
     "S101",     # assert (used in tests)
     "S605",     # start-process-with-a-shell (fix manually)
-    "S606",     # start-process-with-no-shell
 
     # --- Other ---
     "RUF012",   # mutable-class-default (too many in device metadata)

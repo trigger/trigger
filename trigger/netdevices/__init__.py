@@ -478,7 +478,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
             oss = vendor_mapping[self.vendor]
             if self.operatingSystem.lower() in oss:
                 return f"{self.vendor}_{self.operatingSystem.lower()}"
-        except:
+        except (KeyError, AttributeError):
             log.msg("""Unable to find template for given device.
                     Check to see if your netdevices object has the 'platform' key.
                     Otherwise template does not exist.""")
@@ -976,7 +976,7 @@ class NetDevices(MutableMapping):
     _Singleton = None
 
     class _actual:
-        """This is the real class that stays active upon instantiation. All
+        """The real class that stays active upon instantiation. All
         attributes are inherited by NetDevices from this object. This means you
         do NOT reference ``_actual`` itself, and instead call the methods from
         the parent object.

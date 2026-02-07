@@ -1,4 +1,4 @@
-"""This module controls when ACLs get auto-applied to network devices,
+"""Controls when ACLs get auto-applied to network devices,
 in addition to what is specified in acls.db.
 
 This is primarily used by :class:`~trigger.acl.db.AclsDB` to populate the

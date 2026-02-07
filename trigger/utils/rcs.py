@@ -63,7 +63,7 @@ class RCS:
             try:
                 with Path(self.filename).open("w"):
                     pass
-            except:
+            except OSError:
                 return
             if not self.checkin(initial=True):
                 return
