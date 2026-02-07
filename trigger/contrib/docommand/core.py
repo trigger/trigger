@@ -34,13 +34,6 @@ contents would be the config you want loaded to that specific device.
 **not waiting on anything, just not implemented in v1**
 """
 
-__author__ = "Jathan McCollum, Mike Biancianello"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan@gmail.com"
-__copyright__ = "Copyright 2012-2013, AOL Inc.; 2013-2014, Salesforce.com"
-__version__ = "3.1.1"
-
-
 # Imports
 import os
 import re
@@ -51,6 +44,8 @@ from pathlib import Path
 
 from twisted.python import log
 
+from trigger import __version__
+
 # Globals
 PROD_ONLY = False
 DEBUG = False
@@ -58,7 +53,6 @@ VERBOSE = False
 PUSH = False
 FORCE_CLI = False
 TIMEOUT = 30
-
 
 # Exports
 __all__ = (

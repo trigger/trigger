@@ -2,8 +2,6 @@
 
 """find_access - Like check_access but reports on networks inside of networks."""
 
-__version__ = "1.6"
-
 import sys
 from optparse import OptionParser
 

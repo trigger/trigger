@@ -6,13 +6,6 @@ The `~trigger.cmds.Commando` class is designed to be extended but can still be
 used as-is to execute commands and return the results as-is.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Eileen Tschetter, Mark Thomas"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan@gmail.com"
-__copyright__ = "Copyright 2009-2013, AOL Inc.; 2014 Salesforce.com"
-__version__ = "2.7"
-
-
 # Imports
 import collections
 import itertools
@@ -32,7 +25,6 @@ from trigger.utils.templates import (
 
 # Exports
 __all__ = ("Commando", "NetACLInfo", "ReactorlessCommando")
-
 
 # Default timeout in seconds for commands to return a result
 DEFAULT_TIMEOUT = 30

@@ -2,11 +2,6 @@
 pieces of code like user prompts, that don't fit in other utils modules.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
-
 import datetime
 import os
 import pwd

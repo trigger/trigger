@@ -20,11 +20,6 @@ notification type is an `~trigger.utils.notification.events.EmailEvent` that is
 handled by `~trigger.utils.notifications.handlers.email_handler`.
 """
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2012-2012, AOL Inc."
-
 from trigger import exceptions
 from trigger.utils.importlib import import_module
 
@@ -36,7 +31,6 @@ _registered_handlers = []
 
 # And whether they've been successfully registered
 HANDLERS_REGISTERED = False
-
 
 # Exports
 __all__ = ("email_handler", "notify")
