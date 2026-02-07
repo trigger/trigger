@@ -42,11 +42,7 @@ from trigger import exceptions
 from .dicts import *
 
 # Python 2/3 compatibility
-try:
-    unicode
-except NameError:
-    # Python 3
-    unicode = str
+unicode = str
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.

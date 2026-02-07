@@ -80,7 +80,7 @@ __all__ = (
 
 # Functions
 def main(action_class=None):
-    """Void = main(CommandoClass action_class)."""
+    """Run the docommand main entry point with the given action class."""
     if action_class is None:
         sys.exit("You must specify a docommand action class.")
 
@@ -104,7 +104,7 @@ def main(action_class=None):
 
 
 def get_jobs(opts):
-    """List jobs = get_jobs(dict opts).
+    """Build a list of jobs from the given options.
 
     Based on which arguments are provided, figure out what is loaded/run on
     which devices and create a list of objects matching the 2::
@@ -155,7 +155,7 @@ def get_jobs(opts):
 
 
 def get_devices_from_path(path):
-    """List devicenames = get_devices_from_path(str path).
+    """Return device names from filenames in the given directory path.
 
     If path specified for devices/configs, then the list of filenames
     in dir will correspond to the list of devices.
@@ -175,7 +175,7 @@ def get_devices_from_path(path):
 
 
 def get_list_from_file(path):
-    """List text = get_list_from_file(str path).
+    """Read newline-separated items from a file and return as a list.
 
     Specified file (path) will contain a list of newline-separated items. This
     function is used for loading both configs/cmds as well as devices.
@@ -189,7 +189,7 @@ def get_list_from_file(path):
 
 
 def get_devices_from_opts(opts):
-    """List devicenames = get_devices_from_opts(dict opts).
+    """Return device names from command-line options.
 
     User specified on cmdline either a path to a file containing a list of
     devices or an actual list. Return the list!
@@ -213,7 +213,7 @@ def get_devices_from_opts(opts):
 
 
 def get_commands_from_opts(opts):
-    """List commands = get_commands_from_opts(dict opts).
+    """Return commands from command-line options.
 
     User specified on cmdline either a path to a file containing a list of
     commands/config or an actual list. Return the list!
@@ -235,11 +235,7 @@ def get_commands_from_opts(opts):
 
 
 def do_work(work=None, action_class=None):
-    """List results = do_work(list work)."""
-    """
-    Cycle through the list of jobs and then actually
-    load the config onto the devices.
-    """
+    """Cycle through the list of jobs and execute them on devices."""
     if work is None:
         work = []
     if DEBUG:
@@ -316,7 +312,7 @@ def print_work(work=None):
 
 
 def print_results(results=None):
-    """Binary success = print_results(list results)."""
+    """Print formatted results from completed jobs."""
     if results is None:
         results = []
     if DEBUG:
@@ -324,7 +320,7 @@ def print_results(results=None):
     for res in results:
         devname = res["devname"]
         data = res["data"]
-        print
+        print()
         print("###")
         print(f"# {devname}")
         print("###")

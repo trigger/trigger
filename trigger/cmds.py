@@ -1198,4 +1198,4 @@ def _dump_interfaces(idict):
                 print(str(info))
         else:
             print("might be shutdown")
-        print
+        print()

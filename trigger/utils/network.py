@@ -55,7 +55,7 @@ def ping(host, count=1, timeout=5):
     return status == 0
 
 
-def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=""):
+def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=""):  # noqa: PT028
     """Attempts to connect to a TCP port. Returns a Boolean.
 
     If ``check_result`` is set, the first line of output is retreived from the
@@ -106,7 +106,7 @@ def test_tcp_port(host, port=23, timeout=5, check_result=False, expected_result=
             sock.close()
 
 
-def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):
+def test_ssh(host, port=22, timeout=5, version=SSH_VERSION_STRINGS):  # noqa: PT028
     """Connect to a TCP port and confirm the SSH version. Defaults to SSHv2.
 
     Note that the default of ('SSH-1.99', 'SSH-2.0') both indicate SSHv2 per

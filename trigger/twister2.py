@@ -337,7 +337,7 @@ class _TriggerCommandTransport(_CommandTransport):
 
 class _TriggerSessionTransport(_TriggerCommandTransport):
     def verifyHostKey(self, hostKey, fingerprint):
-        self.transport.getPeer().host
+        _ = self.transport.getPeer().host
 
         self._state = b"SECURING"
         return defer.succeed(1)
