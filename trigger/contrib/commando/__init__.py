@@ -11,7 +11,7 @@ This differs from `~trigger.cmds.Commando` in that:
 + The ``.run()`` method returns a ``twisted.internet.defer.Deferred`` object.
 + Results/errors are stored in a list instead of a dict.
 + Each result object is meant to be easily serialized (e.g. to JSON).
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Mike Biancaniello"
 __maintainer__ = "Jathan McCollum"
@@ -48,11 +48,11 @@ class CommandoApplication(Commando):
     running (e.g. twistd or an application server).
 
     Stores results as a list of dictionaries ideal for serializing to JSON.
-    """
+    """  # noqa: D205
 
     timeout = 5
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # noqa: D107
         self.all_done = False
         self.results = []
         self.errors = []
@@ -104,7 +104,7 @@ class CommandoApplication(Commando):
 
         Should do somethign meaningful with the errors, but for now just stores
         it as it would a result.
-        """
+        """  # noqa: D401
         devname = str(device)
         log.msg(f"Storing error for {devname}: {error}")
 
@@ -131,7 +131,7 @@ class CommandoApplication(Commando):
 
         :param results:
             The results to store. Anything you want really.
-        """
+        """  # noqa: D401
         devname = str(device)
         log.msg(f"Storing results for {devname!r}: {results!r}")
 
@@ -176,7 +176,7 @@ class CommandoApplication(Commando):
         log.msg(f"MY  ERRORS ARE: {self.errors!r}")
         self.all_done = True
 
-    def run(self):
+    def run(self):  # noqa: D102
         log.msg(".run() called")
         self._add_worker()
         self._start()
@@ -191,7 +191,7 @@ class CommandoApplication(Commando):
     def monitor_result(self, result, reactor):
         """Loop periodically or until the factory stops to monitor the results
         and return them.
-        """
+        """  # noqa: D205
         log.msg(">>>>> monitor_result() called")
         log.msg(f">>>>> self.all_done = {self.all_done}")
         if self.all_done:

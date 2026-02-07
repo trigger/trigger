@@ -1,6 +1,6 @@
 """All custom exceptions used by Trigger. Where possible built-in exceptions are
 used, but sometimes we need more descriptive errors.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"
@@ -32,14 +32,14 @@ class ACLError(TriggerError):
 class ParseError(ACLError):
     """Raised when there is an error parsing/normalizing an ACL that tries to tell
     you where it failed.
-    """
+    """  # noqa: D205
 
-    def __init__(self, reason, line=None, column=None):
+    def __init__(self, reason, line=None, column=None):  # noqa: D107
         self.reason = reason
         self.line = line
         self.column = column
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         s = self.reason
         if self.line is not None and self.line > 1:
             s += " at line %d" % self.line  # noqa: UP031
@@ -50,13 +50,13 @@ class ParseError(ACLError):
 class BadTermName(ACLError):
     """Raised when an invalid name is assigned to a `~trigger.acl.parser.Term`
     object.
-    """
+    """  # noqa: D205
 
 
 class MissingTermName(ACLError):
     """Raised when a an un-named Term is output to a format that requires Terms to
     be named (e.g. Juniper).
-    """
+    """  # noqa: D205
 
 
 class VendorSupportLacking(ACLError):
@@ -84,7 +84,7 @@ class ActionError(ACLError):
 class UnknownActionName(ActionError):
     """Raised when an action assigned to a ~trigger.acl.parser.Term` object is
     unknown.
-    """
+    """  # noqa: D205
 
 
 class BadRoutingInstanceName(ActionError):
@@ -115,13 +115,13 @@ class BadPolicerName(ActionError):
 class MatchError(ACLError):
     """A base exception for all errors related to Term
     `~trigger.acl.parser.Matches` objects.
-    """
+    """  # noqa: D205
 
 
 class BadMatchArgRange(MatchError):
     """Raised when a match condition argument does not fall within a specified
     range.
-    """
+    """  # noqa: D205
 
 
 class UnknownMatchType(MatchError):
@@ -207,7 +207,7 @@ class ConnectionFailure(TwisterError):
 class SSHConnectionLost(TwisterError):
     """Raised when an SSH connection is lost for any reason."""
 
-    def __init__(self, code, desc):
+    def __init__(self, code, desc):  # noqa: D107
         self.code = code
         TwisterError.__init__(self, desc)
 
@@ -219,7 +219,7 @@ class CommandTimeout(TwisterError):
 class CommandFailure(TwisterError):
     """Raised when a command fails to execute, such as when it results in an
     error.
-    """
+    """  # noqa: D205
 
 
 class IoslikeCommandFailure(CommandFailure):
@@ -233,10 +233,10 @@ class NetscalerCommandFailure(CommandFailure):
 class JunoscriptCommandFailure(CommandFailure):
     """Raised when a Junoscript command fails on a Juniper device."""
 
-    def __init__(self, tag):
+    def __init__(self, tag):  # noqa: D107
         self.tag = tag
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         s = "JunOS XML command failure:\n"
         ns = "{http://xml.juniper.net/xnm/1.1/xnm}"
         for e in self.tag.findall(f".//{ns}error"):

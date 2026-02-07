@@ -4,7 +4,7 @@ data for rapid integration to existing or newly-created tools.
 
 The `~trigger.cmds.Commando` class is designed to be extended but can still be
 used as-is to execute commands and return the results as-is.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Eileen Tschetter, Mark Thomas"
 __maintainer__ = "Jathan McCollum"
@@ -144,7 +144,7 @@ class Commando:
     # Whether to stop the reactor when all results have returned.
     stop_reactor = None
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         devices=None,
         commands=None,
@@ -196,7 +196,7 @@ class Commando:
     def _validate_platforms(self):
         """Determine the set of supported platforms for this instance by making
         sure the specified vendors/platforms for the class match up.
-        """
+        """  # noqa: D205
         supported_platforms = {}
         for vendor in self.vendors:
             if vendor in self.platforms:
@@ -219,7 +219,7 @@ class Commando:
         """Self-explanatory. Called by _add_worker() as both callback/errback
         so we can accurately refill the jobs queue, which relies on the
         current connection count.
-        """
+        """  # noqa: D205
         self.curr_conns -= 1
         return data
 
@@ -229,7 +229,7 @@ class Commando:
         return True
 
     def _setup_jobs(self):
-        """Maps device hostnames to `~trigger.netdevices.NetDevice` objects and populates the job queue."""
+        """Maps device hostnames to `~trigger.netdevices.NetDevice` objects and populates the job queue."""  # noqa: D401
         for dev in self.devices:
             log.msg("Adding", dev)
             if self.verbose:
@@ -281,7 +281,7 @@ class Commando:
     def _add_worker(self):
         """Adds devices to the work queue to keep it populated with the maximum
         connections as specified by ``max_conns``.
-        """
+        """  # noqa: D401, D205
         while self.jobs and self.curr_conns < self.max_conns:
             device = self.select_next_device()
             if device is None:
@@ -423,7 +423,7 @@ class Commando:
         :param extra:
             (Optional) A dictionary of extra data to send to the generate
             method for the device.
-        """
+        """  # noqa: D205
         if commands is None:
             commands = self.commands
         if extra is None:
@@ -444,7 +444,7 @@ class Commando:
             NetDevice object
         :type device:
             `~trigger.netdevices.NetDevice`
-        """
+        """  # noqa: D401, D205
         device_type = device.os
         ret = []
 
@@ -489,7 +489,7 @@ class Commando:
             class constructor.
         :type commands:
             list
-        """
+        """  # noqa: D205
         func = self._lookup_method(device, method="parse")
         return func(results, device, commands)
 
@@ -502,7 +502,7 @@ class Commando:
 
         :param device:
             A `~trigger.netdevices.NetDevice` object
-        """
+        """  # noqa: D401, D205
         failure.trap(Exception)
         self.store_error(device, failure)
         return failure
@@ -520,7 +520,7 @@ class Commando:
         :param error:
             The error to store. Anything you want really, but usually a Twisted
             ``Failure`` instance.
-        """
+        """  # noqa: D401, D205
         devname = str(device)
         self.errors[devname] = error
         return True
@@ -537,7 +537,7 @@ class Commando:
 
         :param results:
             The results to store. Anything you want really.
-        """
+        """  # noqa: D401, D205
         devname = str(device)
         log.msg(f"Appending results for {devname!r}: {results!r}")
         if self.parsed_results.get(devname):
@@ -558,7 +558,7 @@ class Commando:
 
         :param results:
             The results to store. Anything you want really.
-        """
+        """  # noqa: D401, D205
         devname = str(device)
         log.msg(f"Storing results for {devname!r}: {results!r}")
         self.results[devname] = results
@@ -627,12 +627,12 @@ class Commando:
     # =======================================
     # Base generate (to_)/parse (from_) methods
     # =======================================
-    def to_base(self, device, commands=None, extra=None):
+    def to_base(self, device, commands=None, extra=None):  # noqa: D102
         commands = commands or self.commands
         log.msg(f"Sending {commands!r} to {device}")
         return commands
 
-    def from_base(self, results, device, commands=None):
+    def from_base(self, results, device, commands=None):  # noqa: D102
         commands = commands or self.commands
         log.msg(f"Received {results!r} from {device}")
         self.store_results(device, self.map_results(commands, results))
@@ -643,7 +643,7 @@ class Commando:
     def to_juniper(self, device, commands=None, extra=None):
         """Creates a series of ``<command>foo</command>`` elements to
         pass along to execute_junoscript().
-        """
+        """  # noqa: D401, D205
         commands = commands or self.commands
 
         # If we've set force_cli, use to_base() instead
@@ -697,12 +697,12 @@ class ReactorlessCommando(Commando):
     """
 
     def _start(self):
-        """Initializes ``all_done`` instead of starting the reactor."""
+        """Initializes ``all_done`` instead of starting the reactor."""  # noqa: D401
         log.msg("._start() called")
         self.all_done = False
 
     def _stop(self):
-        """Sets ``all_done`` to True instead of stopping the reactor."""
+        """Sets ``all_done`` to True instead of stopping the reactor."""  # noqa: D401
         log.msg("._stop() called")
         self.all_done = True
 
@@ -731,7 +731,7 @@ class ReactorlessCommando(Commando):
     def monitor_result(self, result, reactor):
         """Loop periodically or until the factory stops to check if we're
         ``all_done`` and then return the results.
-        """
+        """  # noqa: D205
         # Once we're done, return the results
         if self.all_done:
             return self.results
@@ -801,9 +801,9 @@ class NetACLInfo(Commando):
     :param skip_disabled:
         Whether to include interface names without any information. (Default:
         ``True``)
-    """
+    """  # noqa: D205
 
-    def __init__(self, **args):
+    def __init__(self, **args):  # noqa: D107
         try:
             import pyparsing as pp  # noqa: F401
         except ImportError as err:
@@ -830,7 +830,7 @@ class NetACLInfo(Commando):
     def to_cisco(self, dev, commands=None, extra=None):
         """Generate the "show me all interface information" command we pass to
         IOS devices.
-        """
+        """  # noqa: D205
         if dev.is_cisco_asa():
             return [
                 "show running-config | include ^(interface | ip address | nameif | description |access-group|!)",
@@ -860,7 +860,7 @@ class NetACLInfo(Commando):
         + You only get the "grep" ("include" equivalent) when using "show
           run".
         + The regex must be quoted.
-        """
+        """  # noqa: D205
         return [
             'show running-config | grep "^(interface | ip address | ip access-group | description|!)"',
         ]
@@ -896,7 +896,7 @@ class NetACLInfo(Commando):
     def to_juniper(self, dev, commands=None, extra=None):
         """Generates an etree.Element object suitable for use with
         JunoScript.
-        """
+        """  # noqa: D401, D205
         cmd = Element("get-configuration", database="committed", inherit="inherit")
 
         SubElement(SubElement(cmd, "configuration"), "interfaces")
@@ -1002,7 +1002,7 @@ def _parse_ios_interfaces(
 
     :param skip_disabled:
         Whether to skip disabled interfaces. (Default: ``True``)
-    """
+    """  # noqa: D401
     import pyparsing as pp
 
     # Setup
@@ -1172,19 +1172,19 @@ def _cleanup_interface_results(results, skip_disabled=True):
 def _make_ipy(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list of
     IP address objects.
-    """
+    """  # noqa: D205
     return [IP(addr) for addr, mask in nets]
 
 
 def _make_cidrs(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list CIDR
     blocks.
-    """
+    """  # noqa: D205
     return [IP(addr).make_net(mask) for addr, mask in nets]
 
 
 def _dump_interfaces(idict):
-    """Prints a dict of parsed interface results info for use in debugging."""
+    """Prints a dict of parsed interface results info for use in debugging."""  # noqa: D401
     for name, info in idict.items():
         print(">>>", name)
         print(

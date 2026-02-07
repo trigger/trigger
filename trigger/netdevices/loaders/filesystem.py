@@ -1,6 +1,6 @@
 """Built-in Loader objects for loading `~trigger.netdevices.NetDevice` metadata
 from the filesystem.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"
@@ -39,13 +39,13 @@ class JSONLoader(BaseLoader):
 
     is_usable = True
 
-    def get_data(self, data_source):
+    def get_data(self, data_source):  # noqa: D102
         with Path(data_source).open() as contents:
             # TODO (jathan): Can we somehow return an generator like the other
             # _parse methods? Maybe using JSONDecoder?
             return json.load(contents)
 
-    def load_data_source(self, data_source, **kwargs):
+    def load_data_source(self, data_source, **kwargs):  # noqa: D102
         try:
             return self.get_data(data_source)
         except Exception as err:
@@ -62,7 +62,7 @@ class XMLLoader(BaseLoader):
 
     is_usable = True
 
-    def get_data(self, data_source):
+    def get_data(self, data_source):  # noqa: D102
         # Parsing the complete file into a tree once and extracting outthe
         # device nodes is faster than using iterparse(). Curses!!
         xml = ET.parse(data_source).findall("device")  # noqa: S314 - trusted local data
@@ -71,7 +71,7 @@ class XMLLoader(BaseLoader):
         # Python 3.9+: getchildren() removed, use list(node) instead
         return (((e.tag, e.text) for e in list(node)) for node in xml)
 
-    def load_data_source(self, data_source, **kwargs):
+    def load_data_source(self, data_source, **kwargs):  # noqa: D102
         try:
             return self.get_data(data_source)
         except Exception as err:
@@ -88,10 +88,10 @@ class RancidLoader(BaseLoader):
 
     is_usable = True
 
-    def get_data(self, data_source, recurse_subdirs=None):
+    def get_data(self, data_source, recurse_subdirs=None):  # noqa: D102
         return rancid.parse_rancid_data(data_source, recurse_subdirs=recurse_subdirs)
 
-    def load_data_source(self, data_source, **kwargs):
+    def load_data_source(self, data_source, **kwargs):  # noqa: D102
         # We want to make sure that we've set this variable
         recurse_subdirs = kwargs.get("recurse_subdirs", settings.RANCID_RECURSE_SUBDIRS)
         try:
@@ -109,7 +109,7 @@ class SQLiteLoader(BaseLoader):
 
     is_usable = SQLITE_AVAILABLE
 
-    def get_data(self, data_source, table_name="netdevices"):
+    def get_data(self, data_source, table_name="netdevices"):  # noqa: D102
         connection = sqlite3.connect(data_source)
         cursor = connection.cursor()
 
@@ -127,7 +127,7 @@ class SQLiteLoader(BaseLoader):
         # lists containing 2-tuples (key, value).
         return (itertools.izip(columns, row) for row in devrows)
 
-    def load_data_source(self, data_source, **kwargs):
+    def load_data_source(self, data_source, **kwargs):  # noqa: D102
         table_name = kwargs.get("table_name", "netdevices")
         try:
             return self.get_data(data_source, table_name)
@@ -153,11 +153,11 @@ class CSVLoader(BaseLoader):
 
     is_usable = True
 
-    def get_data(self, data_source):
+    def get_data(self, data_source):  # noqa: D102
         root_dir, filename = os.path.split(data_source)
         return rancid.parse_rancid_file(root_dir, filename, delimiter=",")
 
-    def load_data_source(self, data_source, **kwargs):
+    def load_data_source(self, data_source, **kwargs):  # noqa: D102
         try:
             return self.get_data(data_source)
         except Exception as err:

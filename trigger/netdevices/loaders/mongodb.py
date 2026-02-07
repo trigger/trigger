@@ -21,12 +21,12 @@ class MongoDBLoader(BaseLoader):
 
     is_usable = PYMONGO_AVAILABLE
 
-    def get_data(self, data_source, host, port, database, table_name):
+    def get_data(self, data_source, host, port, database, table_name):  # noqa: D102
         client = MongoClient(host, port)
         collection = client[database][table_name]
         return list(collection.find())
 
-    def load_data_source(self, data_source, **kwargs):
+    def load_data_source(self, data_source, **kwargs):  # noqa: D102
         host = kwargs.get("hostname")
         port = kwargs.get("port")
         database = kwargs.get("database")

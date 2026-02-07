@@ -16,7 +16,7 @@ set(['juniper-router.policer', 'juniper-router-protect'])
 {'all': set(['abc123', 'juniper-router-protect', 'juniper-router.policer']),
  'explicit': set(['abc123']),
   'implicit': set(['juniper-router-protect', 'juniper-router.policer'])}
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"
@@ -63,7 +63,7 @@ class AclsDB:
     add/remove operations are for explicit associations only.
     """
 
-    def __init__(self):
+    def __init__(self):  # noqa: D107
         self.redis = r
         log.msg("ACLs database client initialized")
 
@@ -111,7 +111,7 @@ class AclsDB:
         'testgreenj', 'testops_blockmj']),
         'explicit': set(['test-bluej', 'testgreenj', 'testops_blockmj']),
         'implicit': set(['115j', 'protectRE', 'protectRE.policer'])}
-        """
+        """  # noqa: D401, D205
         acls = {}
 
         # Explicit (we want to make sure the key exists before we try to assign
@@ -142,7 +142,7 @@ class AclsDB:
         set(['testops_blockmj', 'test-bluej', 'testgreenj'])
         >>> a.get_acl_set(dev, 'implicit')
         set(['protectRE', 'protectRE.policer', '115j'])
-        """
+        """  # noqa: D205
         acls_dict = self.get_acl_dict(device)
         ACL_SETS = acls_dict.keys()
         if DEBUG:
@@ -180,7 +180,7 @@ def populate_explicit_acls(aclsdb_file):
 
 
 def backup_explicit_acls():
-    """Dumps acls:explicit:* to csv."""
+    """Dumps acls:explicit:* to csv."""  # noqa: D401
     import csv
 
     out = csv.writer(Path(ACLSDB_BACKUP).open("w"))  # noqa: SIM115
@@ -212,7 +212,7 @@ def get_all_acls(nd=None):
     >>> all_acls = get_all_acls()
     >>> all_acls['abc123']
     set([<NetDevice: test1-abc.net.aol.com>, <NetDevice: fw1-xyz.net.aol.com>])
-    """
+    """  # noqa: D401, D205
     nd = nd or get_netdevices()
     all_acls = defaultdict(set)
     for device in nd.all():
@@ -224,7 +224,7 @@ def get_all_acls(nd=None):
 def get_bulk_acls(nd=None):
     """Returns a set of acls with an applied count over
     settings.AUTOLOAD_BULK_THRESH.
-    """
+    """  # noqa: D401, D205
     nd = nd or get_netdevices()
     all_acls = get_all_acls()
     return set(
@@ -269,7 +269,7 @@ def get_matching_acls(wanted, exact=True, match_acl=True, match_device=False, nd
     >>> adb.get_matching_acls(['test1-abc'], match_device=True, exact=False)
     [('test1-abc.net.aol.com', ['abc123', 'juniper-router-protect',
     'juniper-router.policer'])]
-    """
+    """  # noqa: D205
     found = []
     wanted_set = set(wanted)
 

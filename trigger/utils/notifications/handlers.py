@@ -58,7 +58,7 @@ def _register_handlers():
     register them internally.
 
     Any built-in event handlers need to be defined above this function.
-    """
+    """  # noqa: D205
     global HANDLERS_REGISTERED  # noqa: PLW0603
     from trigger.conf import settings
 

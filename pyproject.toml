@@ -110,20 +110,15 @@ select = [
     "UP",     # pyupgrade - Python 3 modernization
     "W",      # pycodestyle warnings
 ]
+extend-select = [
+    "D401",   # non-imperative-mood (not in google convention, enabled explicitly)
+]
 ignore = [
     # --- Formatter conflicts ---
     "COM812",   # trailing-comma-missing (handled by ruff formatter)
 
     # --- Kept from v2.0.0 baseline ---
     "E501",     # line-too-long (handled by formatter)
-    "F405",     # undefined-local-with-import-star-usage
-
-    # --- Docstring exceptions (not enforcing coverage/style) ---
-    "D102",     # undocumented-public-method
-    "D105",     # undocumented-magic-method
-    "D107",     # undocumented-public-init
-    "D205",     # missing-blank-line-after-summary
-    "D401",     # non-imperative-mood
 ]
 
 [tool.ruff.lint.pydocstyle]

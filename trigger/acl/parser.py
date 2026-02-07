@@ -44,31 +44,31 @@ from .support import *  # noqa: F403, E402
 # Exports
 __all__ = (
     # Classes
-    "ACL",
-    "TIP",
+    "ACL",  # noqa: F405
+    "TIP",  # noqa: F405
     "ACLParser",
     "ACLProcessor",
-    "Comment",
-    "Matches",
-    "Policer",
-    "PolicerGroup",
-    "Protocol",
-    "RangeList",
-    "Remark",
-    "S",
-    "Term",
-    "TermList",
+    "Comment",  # noqa: F405
+    "Matches",  # noqa: F405
+    "Policer",  # noqa: F405
+    "PolicerGroup",  # noqa: F405
+    "Protocol",  # noqa: F405
+    "RangeList",  # noqa: F405
+    "Remark",  # noqa: F405
+    "S",  # noqa: F405
+    "Term",  # noqa: F405
+    "TermList",  # noqa: F405
     # Functions
-    "check_range",
+    "check_range",  # noqa: F405
     "default_processor",
-    "do_port_lookup",
-    "do_protocol_lookup",
-    "literals",
+    "do_port_lookup",  # noqa: F405
+    "do_protocol_lookup",  # noqa: F405
+    "literals",  # noqa: F405
     "make_nondefault_processor",
     "parse",
     # Constants,
-    "ports",
-    "strip_comments",
+    "ports",  # noqa: F405
+    "strip_comments",  # noqa: F405
 )
 
 # Temporary resting place for comments, so the rest of the parser can
@@ -98,11 +98,11 @@ def make_nondefault_processor(action):  # noqa: D103
 
         def processor(self, tag_info, buffer):
             tag, start, stop, subtags = tag_info
-            if tag in subtagged:
+            if tag in subtagged:  # noqa: F405
                 results = [
                     getattr(self, subtag[0])(subtag, buffer) for subtag in subtags
                 ]
-                return action(strip_comments(results))
+                return action(strip_comments(results))  # noqa: F405
             return action(buffer[start:stop])
 
     else:
@@ -114,7 +114,7 @@ def make_nondefault_processor(action):  # noqa: D103
 
 
 grammar = []
-for production, rule in rules.items():
+for production, rule in rules.items():  # noqa: F405
     if isinstance(rule, tuple):
         assert len(rule) == 2  # noqa: S101, PLR2004
         setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
@@ -129,7 +129,7 @@ grammar = "\n".join(grammar)
 class ACLParser(Parser):
     """SimpleParse parser for ACL text."""
 
-    def buildProcessor(self):
+    def buildProcessor(self):  # noqa: D102
         return ACLProcessor()
 
 
@@ -144,7 +144,7 @@ def parse(input_data):
 
     :param input_data:
         An ACL policy as a string or file-like object.
-    """
+    """  # noqa: D205
     parser = ACLParser(grammar)
 
     try:

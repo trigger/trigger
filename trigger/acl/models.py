@@ -50,7 +50,7 @@ class BaseModel(pw.Model):
 class CustomCharField(pw.CharField):
     """Overload default CharField to always return strings vs. UTF-8."""
 
-    def coerce(self, value):
+    def coerce(self, value):  # noqa: D102
         return str(value or "")
 
 

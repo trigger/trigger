@@ -1,6 +1,6 @@
 """Command-line interface utilities for Trigger tools. Intended for re-usable
 pieces of code like user prompts, that don't fit in other utils modules.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"
@@ -124,7 +124,7 @@ def print_severed_head():
     production-impacting network outages caused by fat-fingered ACL changes.
 
     Thanks to Jeff Sullivan for this best error message ever.
-    """
+    """  # noqa: D401, D205
     print(r"""
 
                                                                 _( (~\
@@ -173,7 +173,7 @@ def pretty_time(t):
     2011-07-20 04:13:00-05:00
     >>> print pretty_time(t)
     tomorrow 02:13 PDT
-    """
+    """  # noqa: D205
     from trigger.conf import settings
 
     localzone = timezone(os.environ.get("TZ", settings.BOUNCE_DEFAULT_TZ))
@@ -211,7 +211,7 @@ def min_sec(secs):
     >>> finish = time.time()
     >>> min_sec(finish - start)
     '0:11'
-    """
+    """  # noqa: D401
     secs = int(secs)
     return "%d:%02d" % (secs / 60, secs % 60)  # noqa: UP031
 
@@ -223,7 +223,7 @@ def setup_tty_for_pty(func):
 
     :param func:
         The callable to run after the tty is ready, such as ``reactor.run``
-    """
+    """  # noqa: D401, D205
     # Preserve original tty settings
     stdin_fileno = sys.stdin.fileno()
     old_ttyattr = tty.tcgetattr(stdin_fileno)
@@ -255,7 +255,7 @@ def update_password_and_reconnect(hostname):
     device.
 
     :param hostname: Hostname of the device to connect to.
-    """
+    """  # noqa: D205
     if yesno(
         "Authentication failed, would you like to update your password?",
         default=True,
@@ -294,7 +294,7 @@ class NullDevice:
         3 - this will print to SDTDOUT
     """
 
-    def write(self, s):
+    def write(self, s):  # noqa: D102
         pass
 
 
@@ -309,9 +309,9 @@ class Whirlygig:
     Example::
 
         >>> Whirlygig("Doing stuff:", "Done.", 12).run()
-    """
+    """  # noqa: D205
 
-    def __init__(self, start_msg="", done_msg="", max=100):
+    def __init__(self, start_msg="", done_msg="", max=100):  # noqa: D107
         self.unbuff = os.fdopen(sys.stdout.fileno(), "w", 0)
         self.start_msg = start_msg
         self.done_msg = done_msg
@@ -320,14 +320,14 @@ class Whirlygig:
         self.whirl = self.whirlygig[:]
         self.first = False
 
-    def do_whirl(self, whirl):
+    def do_whirl(self, whirl):  # noqa: D102
         if not self.first:
             self.unbuff.write(self.start_msg + "  ")
             self.first = True
         self.unbuff.write(f"\b{whirl.pop(0)}")
 
     def run(self):
-        """Executes the whirlygig!"""
+        """Executes the whirlygig!"""  # noqa: D401
         cnt = 1
         while cnt <= self.max:
             try:

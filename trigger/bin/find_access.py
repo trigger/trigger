@@ -113,17 +113,17 @@ def match_terms(acl, sources, dests, ports, opts):  # noqa: D103
 
 
 def permits_from_any(term):
-    """Returns True if action is "accept" and term has no 'source-address'."""
+    """Returns True if action is "accept" and term has no 'source-address'."""  # noqa: D401
     return term.action[0] == "accept" and not term.match.get("source-address")
 
 
 def any_source(term):
-    """Returns True term has no 'source-address'."""
+    """Returns True term has no 'source-address'."""  # noqa: D401
     return not term.match.get("source-address")
 
 
 def any_dest(term):
-    """Returns True term has no 'destination-address'."""
+    """Returns True term has no 'destination-address'."""  # noqa: D401
     return not term.match.get("destination-address")
 
 
@@ -170,7 +170,7 @@ def print_report(data):  # noqa: D103
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     opts, args = parse_args(sys.argv)
 
     acls_to_check = args[1:]

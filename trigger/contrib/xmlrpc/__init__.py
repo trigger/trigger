@@ -2,4 +2,4 @@
 ~~~~~~~~~~~~~~~~~~~~~~
 
 XMLRPC Server for Trigger with SSH manhole service.
-"""
+"""  # noqa: D205

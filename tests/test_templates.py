@@ -112,12 +112,12 @@ class CheckTemplates(unittest.TestCase):
 
     def testTemplatePath(self):
         """Test that template path is correct."""
-        t_path = get_template_path("show clock", dev_type="cisco_ios")
+        t_path = get_template_path("show clock", dev_type="cisco_ios")  # noqa: F405
         self.assertTrue("vendor/ntc_templates/cisco_ios_show_clock.template" in t_path)
 
     def testGetTextFsmObject(self):
         """Test that we get structured data back from cli output."""
-        data = get_textfsm_object(self.re_table, cli_data)
+        data = get_textfsm_object(self.re_table, cli_data)  # noqa: F405
         self.assertTrue(isinstance(data, dict))
         keys = ["dayweek", "time", "timezone", "year", "day", "month"]
         # Python 3: dict.has_key() removed, use 'in' operator

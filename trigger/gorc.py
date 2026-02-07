@@ -39,7 +39,7 @@ object's method of the same name) to override anything specified in a user's
     foo1-abc#exit
     >>>
 
-"""
+"""  # noqa: D205
 
 # Imports
 import configparser
@@ -95,7 +95,7 @@ def filter_commands(cmds, allowed_commands=None):
 
     :returns:
         Filtered list of commands
-    """
+    """  # noqa: D401
     if allowed_commands is None:
         allowed_commands = settings.GORC_ALLOWED_COMMANDS
     ret = []
@@ -152,7 +152,7 @@ def get_init_commands(vendor):
 
     :returns:
         list of commands
-    """
+    """  # noqa: D205
     config = read_config()
     return parse_commands(vendor, config=config)
 

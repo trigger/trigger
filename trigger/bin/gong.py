@@ -58,7 +58,7 @@ def connect_to_oob(dev):
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     global opts
     opts, args = parse_args(sys.argv)
 

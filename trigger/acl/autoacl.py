@@ -14,7 +14,7 @@ devices out of the Trigger packaging.
 
 If you do not specify a location for ``AUTOACL_FILE`` or the module cannot be
 loaded, then a default :func:`autoacl()` function ill be used.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Eileen Tschetter"
 __maintainer__ = "Jathan McCollum"
@@ -64,5 +64,5 @@ except ImportError:
 
         NOTE: If the default function is returned it does nothing with the
         arguments and always returns an empty set.
-        """
+        """  # noqa: D205
         return set()

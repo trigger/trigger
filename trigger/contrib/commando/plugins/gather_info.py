@@ -69,7 +69,7 @@ def xmlrpc_gather_info(*args, **kwargs):
 class GatherInfo(Commando):
     """Extension of Commando class for generating the proper commands to
     run per-platform.
-    """
+    """  # noqa: D205
 
     vendors: ClassVar[list[str]] = ["cisco"]
     ios_shver_parse = re.compile(
@@ -106,7 +106,7 @@ class GatherInfo(Commando):
     def to_cisco(self, device, commands=None, extra=None):
         """We want different information depending on whether the device
         is a switch, router, or firewall.
-        """
+        """  # noqa: D205
         if device.is_cisco_asa():
             return [
                 "show version",
@@ -144,7 +144,7 @@ class GatherInfo(Commando):
 
         Will add keys to each host's dictionary in results for hostname,
         serial number, software image, and more.
-        """
+        """  # noqa: D401
         commands_ran = self.generate(device)
         results_dict = {
             "commands_ran": self.map_results(commands_ran, results),

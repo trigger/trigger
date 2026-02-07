@@ -126,7 +126,7 @@ def p_error(optp, msg=None):  # noqa: D103
 
 
 def main():  # noqa: PLR0912, PLR0915
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     # Setup
     aclsdb = AclsDB()
     term_width = get_terminal_width()  # How wide is your term!

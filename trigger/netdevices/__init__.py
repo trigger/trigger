@@ -17,7 +17,7 @@ Example::
     >>> dev.bounce.next_ok('green')
     datetime.datetime(2010, 4, 9, 9, 0, tzinfo=<UTC>)
 
-"""
+"""  # noqa: D205
 
 # Imports
 import copy
@@ -76,7 +76,7 @@ def _populate(netdevices, data_source, production_only, with_acls):
 
     Abstracted from within NetDevices to prevent accidental repopulation of NetDevice
     objects.
-    """
+    """  # noqa: D401
     loader, device_data = _munge_source_data(data_source=data_source)
     netdevices.set_loader(loader)
 
@@ -176,7 +176,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
     `~trigger.netdevice.NetDevices` to do this for you.
     """
 
-    def __init__(self, data=None, with_acls=None):
+    def __init__(self, data=None, with_acls=None):  # noqa: D107
         # Here comes all of the bare minimum set of attributes a NetDevice
         # object needs for basic functionality within the existing suite.
 
@@ -318,7 +318,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
     def _set_requires_async_pty(self):
         """Set whether a device requires an async pty (see:
         `~trigger.twister.TriggerSSHAsyncPtyChannel`).
-        """
+        """  # noqa: D205
         RULES = (
             self.vendor in ("a10", "arista", "aruba", "cisco", "cumulus", "force10"),
             self.is_brocade_vdx(),
@@ -336,7 +336,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
     def _set_startup_commands(self):
         """Set the commands to run at startup. For now they are just ones to
         disable pagination.
-        """
+        """  # noqa: D205
 
         def get_vendor_name():
             """Return the vendor name for startup commands lookup."""
@@ -383,7 +383,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
     def _juniper_commit(self, fields=settings.JUNIPER_FULL_COMMIT_FIELDS):
         """Return proper ``commit-configuration`` element for a Juniper
         device.
-        """
+        """  # noqa: D205
         default = [JUNIPER_COMMIT]
         if not fields:
             return default
@@ -425,10 +425,10 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         self.implicit_acls = acls_dict["implicit"]
         self.acls = acls_dict["all"]
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return self.nodeName
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<NetDevice: {self.nodeName}>"
 
     def __eq__(self, other):
@@ -437,42 +437,42 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
             return NotImplemented
         return self.nodeName == other.nodeName
 
-    def __ne__(self, other):
+    def __ne__(self, other):  # noqa: D105
         result = self.__eq__(other)
         if result is NotImplemented:
             return NotImplemented
         return not result
 
-    def __lt__(self, other):
+    def __lt__(self, other):  # noqa: D105
         if not isinstance(other, NetDevice):
             return NotImplemented
         return self.nodeName < other.nodeName
 
-    def __le__(self, other):
+    def __le__(self, other):  # noqa: D105
         if not isinstance(other, NetDevice):
             return NotImplemented
         return self.nodeName <= other.nodeName
 
-    def __gt__(self, other):
+    def __gt__(self, other):  # noqa: D105
         if not isinstance(other, NetDevice):
             return NotImplemented
         return self.nodeName > other.nodeName
 
-    def __ge__(self, other):
+    def __ge__(self, other):  # noqa: D105
         if not isinstance(other, NetDevice):
             return NotImplemented
         return self.nodeName >= other.nodeName
 
     @property
-    def bounce(self):
+    def bounce(self):  # noqa: D102
         return changemgmt.bounce(self)
 
     @property
-    def shortName(self):
+    def shortName(self):  # noqa: D102
         return self.nodeName.split(".", 1)[0]
 
     @property
-    def os(self):  # noqa: F811 - property name intentionally shadows os module
+    def os(self):  # noqa: F811, D102
         vendor_mapping = settings.TEXTFSM_VENDOR_MAPPINGS
         try:
             oss = vendor_mapping[self.vendor]
@@ -549,14 +549,14 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
 
         self._connected = False
 
-    def __enter__(self):
+    def __enter__(self):  # noqa: D105
         self.open()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):  # noqa: D105
         self.close()
 
-    def get_results(self):
+    def get_results(self):  # noqa: D102
         self._results = []
         while len(self._results) != len(self.commands):
             pass
@@ -659,7 +659,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         return d
 
     @property
-    def connected(self):
+    def connected(self):  # noqa: D102
         return self._connected
 
     def allowable(self, action, when=None):
@@ -686,7 +686,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
 
         :param when:
             A datetime object.
-        """
+        """  # noqa: D205
         assert action == "load-acl"  # noqa: S101
         return self.bounce.next_ok(changemgmt.BounceStatus("green"), when)
 
@@ -808,7 +808,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         if so do I even have SSH?
 
         :param method: One of ('pty', 'async')
-        """
+        """  # noqa: D205
         METHOD_MAP = {
             "pty": settings.SSH_PTY_DISABLED,
             "async": settings.SSH_ASYNC_DISABLED,
@@ -831,7 +831,7 @@ class NetDevice:  # noqa: PLW1641 - mutable object, intentionally unhashable
         return network.ping(self.nodeName)
 
     def dump(self):
-        """Prints details for a device."""
+        """Prints details for a device."""  # noqa: D401
         dev = self
         # Python 3: print is a function, not a statement
         print()
@@ -875,7 +875,7 @@ class Vendor:
         """:param manufacturer:
         The literal or "internal" name for a vendor that is to be mapped to
         its canonical name.
-        """
+        """  # noqa: D205
         if manufacturer is None:
             msg = "You must specify a `manufacturer` name"
             raise SyntaxError(msg)
@@ -902,7 +902,7 @@ class Vendor:
     def _get_prompt_pattern(self, vendor, prompt_patterns=None):
         """Map the vendor name to the appropriate ``prompt_pattern`` defined in
         :setting:`PROMPT_PATTERNS`.
-        """
+        """  # noqa: D205
         if prompt_patterns is None:
             prompt_patterns = settings.PROMPT_PATTERNS
 
@@ -923,22 +923,22 @@ class Vendor:
         """Return the normalized name for the vendor."""
         return self.name.replace(" ", "_").lower()
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return self.name
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self.title}>"
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # noqa: D105
         return self.name.__eq__(Vendor(str(other)).name)
 
-    def __contains__(self, other):
+    def __contains__(self, other):  # noqa: D105
         return self.name.__contains__(Vendor(str(other)).name)
 
-    def __hash__(self):
+    def __hash__(self):  # noqa: D105
         return hash(self.name)
 
-    def lower(self):
+    def lower(self):  # noqa: D102
         return self.normalized
 
 
@@ -953,7 +953,7 @@ def vendor_factory(vendor_name):
 
     :param vendor_name:
         The vendor's full manufacturer name (e.g. 'CISCO SYSTEMS')
-    """
+    """  # noqa: D205
     return _vendor_registry.setdefault(vendor_name, Vendor(vendor_name))
 
 
@@ -971,7 +971,7 @@ class NetDevices(MutableMapping):
       2. hot spares with the same ``nodeName``.
 
     You may override this by passing ``production_only=False``.
-    """
+    """  # noqa: D205
 
     _Singleton = None
 
@@ -994,7 +994,7 @@ class NetDevices(MutableMapping):
               File "<stdin>", line 1, in <module>
             TypeError: unbound method match() must be called with _actual
             instance as first argument (got str instance instead)
-        """
+        """  # noqa: D205
 
         def __init__(self, production_only=True, with_acls=None):
             self.loader = None
@@ -1058,7 +1058,7 @@ class NetDevices(MutableMapping):
 
             :param string key: Hostname prefix to find.
             :returns: NetDevice object
-            """
+            """  # noqa: D205
             key = key.lower()
 
             # Try to use the loader plugin first.
@@ -1080,7 +1080,7 @@ class NetDevices(MutableMapping):
 
             This method can be overloaded in NetDevices loader plugins to
             customize the behavior as dictated by the plugin.
-            """
+            """  # noqa: D401
             if hasattr(self.loader, "all"):
                 return self.loader.all()
             # Python 3: dict.values() returns a view, convert to list
@@ -1110,7 +1110,7 @@ class NetDevices(MutableMapping):
             :param string token: Token to search match on in @field
             :param string field: The field to match on when searching
             :returns: List of NetDevice objects
-            """
+            """  # noqa: D401, D205
             # We could actually just make this call match() to make this
             # case-insensitive as well. But we won't yet because of possible
             # implications in outside dependencies.
@@ -1140,7 +1140,7 @@ class NetDevices(MutableMapping):
                 >>> mydevices = nd(oncallname='data center', model='fcslb')
 
             :returns: List of NetDevice objects
-            """
+            """  # noqa: D205
             skip_loader = kwargs.pop("skip_loader", False)
             if skip_loader:
                 log.msg("Skipping loader.match()")
@@ -1161,7 +1161,7 @@ class NetDevices(MutableMapping):
                 self._all_field_names = all_field_names
 
             def map_attr(attr):
-                """Helper function for lower-to-regular attribute mapping."""
+                """Helper function for lower-to-regular attribute mapping."""  # noqa: D401
                 return self._all_field_names[attr.lower()]
 
             # Use list comp. to keep filtering out the devices.
@@ -1178,19 +1178,19 @@ class NetDevices(MutableMapping):
             """Returns a list of NetDevice objects with deviceType matching type.
 
             Known deviceTypes: ['FIREWALL', 'ROUTER', 'SWITCH']
-            """
+            """  # noqa: D401
             return [x for x in self.values() if x.deviceType == devtype]
 
         def list_switches(self):
-            """Returns a list of NetDevice objects with deviceType of SWITCH."""
+            """Returns a list of NetDevice objects with deviceType of SWITCH."""  # noqa: D401
             return self.get_devices_by_type("SWITCH")
 
         def list_routers(self):
-            """Returns a list of NetDevice objects with deviceType of ROUTER."""
+            """Returns a list of NetDevice objects with deviceType of ROUTER."""  # noqa: D401
             return self.get_devices_by_type("ROUTER")
 
         def list_firewalls(self):
-            """Returns a list of NetDevice objects with deviceType of FIREWALL."""
+            """Returns a list of NetDevice objects with deviceType of FIREWALL."""  # noqa: D401
             return self.get_devices_by_type("FIREWALL")
 
     def __init__(self, production_only=True, with_acls=None):
@@ -1200,7 +1200,7 @@ class NetDevices(MutableMapping):
         :param with_acls:
             Whether to load ACL associations (requires Redis). Defaults to whatever
             is specified in settings.WITH_ACLS
-        """
+        """  # noqa: D205
         if with_acls is None:
             with_acls = settings.WITH_ACLS
         classobj = self.__class__
@@ -1210,26 +1210,26 @@ class NetDevices(MutableMapping):
                 with_acls=with_acls,
             )
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr):  # noqa: D105
         return getattr(self.__class__._Singleton, attr)
 
-    def __setattr__(self, attr, value):
+    def __setattr__(self, attr, value):  # noqa: D105
         return setattr(self.__class__._Singleton, attr, value)
 
     # MutableMapping abstract methods - delegate to singleton
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # noqa: D105
         return self.__class__._Singleton[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # noqa: D105
         self.__class__._Singleton._dict[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key):  # noqa: D105
         del self.__class__._Singleton._dict[key]
 
-    def __iter__(self):
+    def __iter__(self):  # noqa: D105
         return iter(self.__class__._Singleton._dict)
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return len(self.__class__._Singleton._dict)
 
     def reload(self, **kwargs):

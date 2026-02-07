@@ -13,7 +13,7 @@ from trigger.netdevices import NetDevices, device_match
 def parse_args(argv):
     """Parse arguments, duh. There is a better way to do this using Twisted's
     usage module, but replacing it is not a high priority.
-    """
+    """  # noqa: D205
     parser = OptionParser(
         usage="%prog [options]",
         description="\nCommand-line search interface for 'NetDevices' metadata.",
@@ -179,7 +179,7 @@ def parse_args(argv):
 def search_builder(opts):  # noqa: PLR0912, PLR0915
     """Builds a list comprehension from the options passed at command-line and
     then evaluates it to return a list of matching device names.
-    """
+    """  # noqa: D401, D205
     NetDevices(production_only=opts.nonprod)
 
     query = "[x for x in nd.all()"
@@ -304,7 +304,7 @@ def search_builder(opts):  # noqa: PLR0912, PLR0915
 
 
 def main():
-    """Main entry point for the CLI tool."""
+    """Main entry point for the CLI tool."""  # noqa: D401
     _opts, _args = parse_args(sys.argv)
 
 

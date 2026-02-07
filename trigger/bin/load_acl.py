@@ -80,7 +80,7 @@ def draw_screen(s, work, active, failures, start_qlen, start_time):  # noqa: PLR
 
     :param start_time:
         The epoch time at startup (to calculate progress)
-    """
+    """  # noqa: D205
     global output_cache  # noqa: PLW0602
 
     if not s:
@@ -157,7 +157,7 @@ def parse_args(argv):
 
     :param argv:
         A list of opts/args to use over sys.argv
-    """
+    """  # noqa: D401, D205
 
     def comma_cb(option, opt_str, value, parser):
         """OptionParser callback to handle comma-separated arguments."""
@@ -275,7 +275,7 @@ def parse_args(argv):
 
 
 def debug_fakeout():
-    """Used for debug, but this method is rarely used."""
+    """Used for debug, but this method is rarely used."""  # noqa: D401
     return os.getenv("DEBUG_FAKEOUT") is not None
 
 
@@ -289,7 +289,7 @@ def get_work(opts, args):  # noqa: PLR0912, PLR0915
 
     :param args:
         A list of CLI arguments
-    """
+    """  # noqa: D205
     # removing acl. assumption from files
     aclargs = set(
         args[1:],
@@ -299,7 +299,7 @@ def get_work(opts, args):  # noqa: PLR0912, PLR0915
     bulk_acls = get_bulk_acls()
 
     def add_work(dev_name, acls):
-        """A closure for the purpose of adding/updating ACLS for a given device."""
+        """A closure for the purpose of adding/updating ACLS for a given device."""  # noqa: D401
         try:
             dev = nd[dev_name]
         except KeyError:
@@ -438,7 +438,7 @@ def junoscript_cmds(acls_content, tftp_paths, dev):
 
     :param dev:
         A Juniper `~trigger.netdevices.NetDevice` object
-    """
+    """  # noqa: D205
     xml = [Element("lock-configuration")]
     status = ["locking configuration"]
 
@@ -472,7 +472,7 @@ def ioslike_cmds(tftp_paths, dev, opts):  # , nonce):
 
     :param nonce:
         A nonce to use when staging the ACL file for TFTP
-    """
+    """  # noqa: D205
     template_base = {
         "arista": "copy tftp://%s/%s system:/running-config\n",
         "cisco": "copy tftp://%s/%s system:/running-config\n",
@@ -507,7 +507,7 @@ def group(dev):
 
     :param dev:
         The `~trigger.netdevices.NetDevice` object to try to group
-    """
+    """  # noqa: D401, D205
     # TODO(jathan): Make this pattern configurable globally.
     trimmer = re.compile("[0-9]*[a-z]+")  # allow for e.g. "36bit1"
 
@@ -536,7 +536,7 @@ def select_next_device(work, active):
 
     :param active:
         Dictionary mapping running devs to human-readable status
-    """
+    """  # noqa: D205
     active_groups = set([group(dev) for dev in active])
     for dev in work:
         if group(dev) not in active_groups:
@@ -669,7 +669,7 @@ def run(stdscr, work, jobs, failures, opts):
 
     :param failures:
         Dictionary of failures
-    """
+    """  # noqa: D401
     # Dictionary of currently running devs -> human-readable status
     active = {}
 
@@ -677,7 +677,7 @@ def run(stdscr, work, jobs, failures, opts):
     start_time = time.time()
 
     def redraw():
-        """A closure to redraw the screen with current environment."""
+        """A closure to redraw the screen with current environment."""  # noqa: D401
         draw_screen(stdscr, work, active, failures, start_qlen, start_time)
 
     activate(work, active, failures, jobs, redraw, opts)
@@ -690,7 +690,7 @@ def run(stdscr, work, jobs, failures, opts):
 
 
 def main():  # noqa: PLR0912, PLR0915
-    """The Main Event."""
+    """The Main Event."""  # noqa: D401
     global opts
     opts, args = parse_args(sys.argv)
 

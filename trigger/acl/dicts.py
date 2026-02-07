@@ -21,7 +21,7 @@ Variables defined:
   tcp_flag_names
   tcp_flag_specials
   tcp_flag_rev
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
 __editor__ = "Joseph Malone"

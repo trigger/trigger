@@ -17,7 +17,7 @@ For JunOS like ACLs.
     handle_junos_policers
     handle_junos_term
     juniper_multiline_comments
-"""
+"""  # noqa: D205
 
 # Copied metadata from parser.py
 __author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
@@ -38,12 +38,12 @@ Comments = []
 class Policer:
     """Container class for policer policy definitions. This is a dummy class for
     now, that just passes it through as a string.
-    """
+    """  # noqa: D205
 
-    def __init__(self, name, data):  # noqa: PLR0912
+    def __init__(self, name, data):  # noqa: PLR0912, D107
         if not name:
             msg = "Policer requres name"
-            raise exceptions.ActionError(msg)
+            raise exceptions.ActionError(msg)  # noqa: F405
         self.name = name
         self.exceedings = []
         self.actions = []
@@ -76,7 +76,7 @@ class Policer:
                     for i in v:
                         self.actions.append(i)
 
-    def str2bits(self, str):
+    def str2bits(self, str):  # noqa: D102
         try:
             val = int(str)
         except Exception as err:
@@ -88,13 +88,13 @@ class Policer:
             raise ValueError(msg) from err
         return val
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self.name!r}>"
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return self.data
 
-    def output(self):
+    def output(self):  # noqa: D102
         output = [f"policer {self.name} {{"]
         if self.exceedings:
             output.append("    if-exceeding {")
@@ -113,19 +113,19 @@ class Policer:
 class PolicerGroup:
     """Container for Policer objects. Juniper only."""
 
-    def __init__(self, format=None):
+    def __init__(self, format=None):  # noqa: D107
         self.policers = []
         self.format = format
         global Comments  # noqa: PLW0603
         self.comments = Comments
         Comments = []
 
-    def output(self, format=None, *largs, **kwargs):
+    def output(self, format=None, *largs, **kwargs):  # noqa: D102
         if format is None:
             format = self.format
         return getattr(self, "output_" + format)(*largs, **kwargs)
 
-    def output_junos(self, replace=False):
+    def output_junos(self, replace=False):  # noqa: D102
         output = []
         for ent in self.policers:
             output.extend(ent.output())
@@ -138,7 +138,7 @@ class PolicerGroup:
 class QuotedString(str):
     """String subclass that wraps its value in double quotes."""
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return '"' + self + '"'
 
 
@@ -146,8 +146,8 @@ junos_match_types = []
 
 
 def braced_list(arg):
-    """Returned braced output.  Will alert if comment is malformed."""
-    return '("{{", jws?, ({}, jws?)*, "}}"!{})'.format(arg, errs["comm_start"])
+    """Returned braced output.  Will alert if comment is malformed."""  # noqa: D401
+    return '("{{", jws?, ({}, jws?)*, "}}"!{})'.format(arg, errs["comm_start"])  # noqa: F405
 
 
 def keyword_match(keyword, arg=None):  # noqa: D103
@@ -155,14 +155,14 @@ def keyword_match(keyword, arg=None):  # noqa: D103
         prod = "junos_" + k.replace("-", "_")
         junos_match_types.append(prod)
         if arg is None:
-            rules[prod] = (f'"{k}", jsemi', {k: True})
+            rules[prod] = (f'"{k}", jsemi', {k: True})  # noqa: F405
         else:
             tokens = f'"{k}", jws, '
-            if k in address_matches:
+            if k in address_matches:  # noqa: F405
                 tokens += braced_list(arg + ", jsemi")
             else:
                 tokens += arg + ", jsemi"
-            rules[S(prod)] = (tokens, lambda x, k=k: {k: x})
+            rules[S(prod)] = (tokens, lambda x, k=k: {k: x})  # noqa: F405
 
 
 keyword_match("address", "cidr / ipaddr")
@@ -181,7 +181,7 @@ keyword_match("tcp-initial")
 
 
 def range_match(key, arg):  # noqa: D103
-    rules[S(arg + "_range")] = (f'{arg}, "-", {arg}', tuple)
+    rules[S(arg + "_range")] = (f'{arg}, "-", {arg}', tuple)  # noqa: F405
     match = f"{arg}_range / {arg}"
     keyword_match(key, f'{match} / ("[", jws?, ({match}, jws?)*, "]")')
 
@@ -214,13 +214,13 @@ def handle_junos_acl(x):
     parser.
 
     Don't forget to wrap your token in S()!
-    """
-    a = ACL(name=x[0], format="junos")
+    """  # noqa: D205
+    a = ACL(name=x[0], format="junos")  # noqa: F405
     for elt in x[1:]:
         # Handle dictionary args we throw at the constructor
         if isinstance(elt, dict):
             a.__dict__.update(elt)
-        elif isinstance(elt, Term):
+        elif isinstance(elt, Term):  # noqa: F405
             a.terms.append(elt)
         elif isinstance(elt, Policer):
             a.policers.append(elt)
@@ -238,7 +238,7 @@ def handle_junos_family_acl(x):
     parser.
 
     Don't forget to wrap your token in S()!
-    """
+    """  # noqa: D401, D205
     family, aclobj = x
     aclobj.family = family
     return aclobj
@@ -259,8 +259,8 @@ def handle_junos_policers(x):
 def handle_junos_term(d):
     """Parse a JUNOS term and return a Term object."""
     if "modifiers" in d:
-        d["modifiers"] = Modifiers(d["modifiers"])
-    return Term(**d)
+        d["modifiers"] = Modifiers(d["modifiers"])  # noqa: F405
+    return Term(**d)  # noqa: F405
 
 
 # For multiline comments
@@ -276,23 +276,23 @@ def juniper_multiline_comments():
     return single
 
 
-rules.update(
+rules.update(  # noqa: F405
     {
         "jword": "double_quoted / word",
         "double_quoted": ('"\\"", -[\\"]+, "\\""', lambda x: QuotedString(x[1:-1])),
         ">jws<": "(ws / jcomment)+",
-        S("jcomment"): ("jslashbang_comment", lambda x: Comment(x[0])),
+        S("jcomment"): ("jslashbang_comment", lambda x: Comment(x[0])),  # noqa: F405
         "<comment_start>": '"/*"',
         "<comment_stop>": '"*/"',
         ">jslashbang_comment<": "comment_start, jcomment_body, !{}, comment_stop".format(
-            errs["comm_stop"],
+            errs["comm_stop"],  # noqa: F405
         ),
         "jcomment_body": juniper_multiline_comments(),
         # Errors on missing ';', ignores multiple ;; and normalizes to one.
-        "<jsemi>": "jws?, [;]+!{}".format(errs["semicolon"]),
-        "fragment_flag": literals(fragment_flag_names),
-        "ip_option": "digits / " + literals(ip_option_names),
-        "tcp_flag": literals(tcp_flag_names),
+        "<jsemi>": "jws?, [;]+!{}".format(errs["semicolon"]),  # noqa: F405
+        "fragment_flag": literals(fragment_flag_names),  # noqa: F405
+        "ip_option": "digits / " + literals(ip_option_names),  # noqa: F405
+        "tcp_flag": literals(tcp_flag_names),  # noqa: F405
     },
 )
 
@@ -301,9 +301,9 @@ rules.update(
 # that config onto the router, the comments will not remain in place on
 # the next load of a similar config (e.g., another ACL).  I had a workaround
 # for this but it made the parser substantially slower.
-rules.update(
+rules.update(  # noqa: F405
     {
-        S("junos_raw_acl"): (
+        S("junos_raw_acl"): (  # noqa: F405
             'jws?, "filter", jws, jword, jws?, '
             + braced_list("junos_iface_specific / junos_term / junos_policer"),
             handle_junos_acl,
@@ -315,11 +315,11 @@ rules.update(
         "junos_replace_acl": (
             'jws?, "firewall", jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}"'
         ),
-        S("junos_replace_family_acl"): (
+        S("junos_replace_family_acl"): (  # noqa: F405
             'jws?, "firewall", jws?, "{", jws?, junos_filter_family, jws?, "{", jws?, "replace:", jws?, (junos_raw_acl, jws?)*, "}", jws?, "}"',
             handle_junos_family_acl,
         ),
-        S("junos_replace_policers"): (
+        S("junos_replace_policers"): (  # noqa: F405
             '"firewall", jws?, "{", jws?, "replace:", jws?, (junos_policer, jws?)*, "}"',
             handle_junos_policers,
         ),
@@ -329,32 +329,32 @@ rules.update(
             '"{", jws?, (jword / "[" / "]" / ";" / opaque_braced_group / jws)*, "}"',
             lambda x: x,
         ),
-        S("junos_term"): (
+        S("junos_term"): (  # noqa: F405
             'maybe_inactive, "term", jws, junos_term_name, '
             "jws?, " + braced_list("junos_from / junos_then"),
-            lambda x: handle_junos_term(dict_sum(x)),
+            lambda x: handle_junos_term(dict_sum(x)),  # noqa: F405
         ),
-        S("junos_term_name"): ("jword", lambda x: {"name": x[0]}),
+        S("junos_term_name"): ("jword", lambda x: {"name": x[0]}),  # noqa: F405
         "maybe_inactive": ('("inactive:", jws)?', lambda x: {"inactive": len(x) > 0}),
-        S("junos_from"): (
+        S("junos_from"): (  # noqa: F405
             '"from", jws?, ' + braced_list("junos_match"),
-            lambda x: {"match": Matches(dict_sum(x))},
+            lambda x: {"match": Matches(dict_sum(x))},  # noqa: F405
         ),
-        S("junos_then"): ("junos_basic_then / junos_braced_then", dict_sum),
-        S("junos_braced_then"): (
+        S("junos_then"): ("junos_basic_then / junos_braced_then", dict_sum),  # noqa: F405
+        S("junos_braced_then"): (  # noqa: F405
             '"then", jws?, ' + braced_list("junos_action/junos_modifier, jsemi"),
-            dict_sum,
+            dict_sum,  # noqa: F405
         ),
-        S("junos_basic_then"): ('"then", jws?, junos_action, jsemi', dict_sum),
-        S("junos_policer"): (
+        S("junos_basic_then"): ('"then", jws?, junos_action, jsemi', dict_sum),  # noqa: F405
+        S("junos_policer"): (  # noqa: F405
             '"policer", jws, junos_term_name, jws?, '
             + braced_list("junos_exceeding / junos_policer_then"),
             lambda x: Policer(x[0]["name"], x[1:]),
         ),
-        S("junos_policer_then"): (
+        S("junos_policer_then"): (  # noqa: F405
             '"then", jws?, ' + braced_list("junos_policer_action, jsemi")
         ),
-        S("junos_policer_action"): (
+        S("junos_policer_action"): (  # noqa: F405
             'junos_discard / junos_fwd_class / ("loss-priority", jws, jword)',
             lambda x: {"action": x},
         ),
@@ -368,39 +368,39 @@ rules.update(
             lambda x: {"forwarding-class": x[0]},
         ),
         "junos_filter_specific": ('"filter-specific"'),
-        S("junos_exceeding"): (
+        S("junos_exceeding"): (  # noqa: F405
             '"if-exceeding", jws?, '
             + braced_list("junos_bw_limit/junos_bw_perc/junos_burst_limit"),
             lambda x: {"if-exceeding": x},
         ),
-        S("junos_bw_limit"): (
+        S("junos_bw_limit"): (  # noqa: F405
             '"bandwidth-limit", jws, word, jsemi',
             lambda x: ("bandwidth-limit", x[0]),
         ),
-        S("junos_bw_perc"): (
+        S("junos_bw_perc"): (  # noqa: F405
             '"bandwidth-percent", jws, alphanums, jsemi',
             lambda x: ("bandwidth-percent", x[0]),
         ),
-        S("junos_burst_limit"): (
+        S("junos_burst_limit"): (  # noqa: F405
             '"burst-size-limit", jws, alphanums, jsemi',
             lambda x: ("burst-size-limit", x[0]),
         ),
-        S("junos_match"): (" / ".join(junos_match_types), dict_sum),
-        S("junos_action"): (
+        S("junos_match"): (" / ".join(junos_match_types), dict_sum),  # noqa: F405
+        S("junos_action"): (  # noqa: F405
             "junos_one_action / junos_reject_action /"
             "junos_reject_action / junos_ri_action",
             lambda x: {"action": x[0]},
         ),
         "junos_one_action": ('"accept" / "discard" / "reject" / ("next", jws, "term")'),
         "junos_reject_action": (
-            '"reject", jws, ' + literals(icmp_reject_codes),
+            '"reject", jws, ' + literals(icmp_reject_codes),  # noqa: F405
             lambda x: ("reject", x),
         ),
-        S("junos_ri_action"): (
+        S("junos_ri_action"): (  # noqa: F405
             '"routing-instance", jws, jword',
             lambda x: ("routing-instance", x[0]),
         ),
-        S("junos_modifier"): (
+        S("junos_modifier"): (  # noqa: F405
             "junos_one_modifier / junos_arg_modifier",
             lambda x: {"modifiers": x},
         ),
@@ -408,7 +408,7 @@ rules.update(
             '"log" / "sample" / "syslog" / "port-mirror"',
             lambda x: (x, True),
         ),
-        S("junos_arg_modifier"): "junos_arg_modifier_kw, jws, jword",
+        S("junos_arg_modifier"): "junos_arg_modifier_kw, jws, jword",  # noqa: F405
         "junos_arg_modifier_kw": (
             '"count" / "forwarding-class" / "ipsec-sa" /"loss-priority" / "policer"'
         ),

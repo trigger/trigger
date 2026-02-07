@@ -6,7 +6,7 @@
     >>> q.list()
     (('dc1-abc.net.aol.com', 'datacenter-protect'), ('dc2-abc.net.aol.com',
     'datacenter-protect'))
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum"
 __maintainer__ = "Jathan McCollum"
@@ -42,7 +42,7 @@ class Queue:
         Boolean
     """
 
-    def __init__(self, verbose=True):
+    def __init__(self, verbose=True):  # noqa: D107
         self.nd = NetDevices()
         self.verbose = verbose
         self.login = get_user()

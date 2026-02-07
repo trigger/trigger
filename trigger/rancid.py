@@ -93,7 +93,7 @@ def parse_rancid_file(rancid_root, filename=RANCID_DB_FILE, fields=None, delimit
 
     :param delimiter:
         (Optional) Field delimiter
-    """
+    """  # noqa: D205
     device_data = _parse_delimited_file(rancid_root, filename, delimiter)
     if not device_data:
         return None  # Always return None if there are no results
@@ -190,7 +190,7 @@ def parse_rancid_data(
 
     :param recurse_subdirs:
         Whether to recurse directories (e.g. multiple instances)
-    """
+    """  # noqa: D205
     if recurse_subdirs:
         subdirs = walk_rancid_subdirs(rancid_root, config_dirname, fields)
         metadata = gather_devices(subdirs, filename)
@@ -210,7 +210,7 @@ def parse_devices(metadata, parser):
 
     :param parser:
         A callabale used to create your objects
-    """
+    """  # noqa: D205
     # Two tees of `metadata` iterator, in case a TypeError is encountered, we
     # aren't losing the first item.
     md_original, md_backup = itertools.tee(metadata)
@@ -242,7 +242,7 @@ def gather_devices(subdir_data, rancid_db_file=RANCID_DB_FILE):
 
     :param rancid_db_file:
         If it's named other than ``router.db``
-    """
+    """  # noqa: D401, D205
     iters = []
     for files in subdir_data.values():
         # Only carry on if we find 'router.db' or it's equivalent
@@ -354,7 +354,7 @@ class RancidDevice(collections.namedtuple("RancidDevice", NETDEVICE_FIELDS)):
 
     __slots__ = ()
 
-    def __new__(cls, nodeName, manufacturer, deviceStatus=None, deviceType=None):
+    def __new__(cls, nodeName, manufacturer, deviceStatus=None, deviceType=None):  # noqa: D102
         return super(cls, RancidDevice).__new__(
             cls,
             nodeName,
@@ -401,7 +401,7 @@ class Rancid:
         Whether you want to recurse directories.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         rancid_root,
         rancid_db_file=RANCID_DB_FILE,
@@ -425,13 +425,13 @@ class Rancid:
         self._populate()
 
     def _populate(self):
-        """Fired after init, does all the stuff to populate RANCID data."""
+        """Fired after init, does all the stuff to populate RANCID data."""  # noqa: D401
         self._populate_devices()
 
     def _populate_devices(self):
         """Read router.db or equivalent and populate ``devices`` dictionary
         with objects.
-        """
+        """  # noqa: D205
         metadata = parse_rancid_data(
             self.rancid_root,
             filename=self.rancid_db_file,
@@ -450,5 +450,5 @@ class Rancid:
     def _populate_data(self):
         """NYI - Maybe keep the other metadata but how?"""
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"Rancid({self.rancid_root!r}, recurse_subdirs={self.recurse_subdirs})"

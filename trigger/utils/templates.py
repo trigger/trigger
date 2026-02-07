@@ -52,7 +52,7 @@ def load_cmd_template(cmd, dev_type=None):
     :param cmd: CLI command to load template.
     :type  cmd: str
     :returns: String template path
-    """
+    """  # noqa: D205
     try:
         with Path(get_template_path(cmd, dev_type=dev_type)).open("rb") as f:
             return textfsm.TextFSM(f)
@@ -61,7 +61,7 @@ def load_cmd_template(cmd, dev_type=None):
 
 
 def get_textfsm_object(re_table, cli_output):
-    """Returns structure object from TextFSM data."""
+    """Returns structure object from TextFSM data."""  # noqa: D401
     from collections import defaultdict
 
     rv = defaultdict(list)

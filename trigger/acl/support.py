@@ -24,7 +24,7 @@ support the various modules for parsing. This file is not meant to by used by it
     'Term',
     'TermList',
     'TIP',
-"""
+"""  # noqa: D205
 
 # Copied metadata from parser.py
 __author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
@@ -60,7 +60,7 @@ def check_name(name, exc, max_len=255, extra_chars=" -_."):
     :param exc: Exception type to raise if the name is invalid.
     :param max_len: Integer of the maximum length of the name.
     :param extra_chars: Extra non-alphanumeric characters to allow in the name.
-    """
+    """  # noqa: D205
     if name is None:
         return
     if name == "":
@@ -117,23 +117,23 @@ def do_protocol_lookup(arg):  # noqa: D103
 
 
 def do_port_lookup(arg):  # noqa: D103
-    return do_lookup(lambda x: ports[x], arg)
+    return do_lookup(lambda x: ports[x], arg)  # noqa: F405
 
 
 def do_icmp_type_lookup(arg):  # noqa: D103
-    return do_lookup(lambda x: icmp_types[x], arg)
+    return do_lookup(lambda x: icmp_types[x], arg)  # noqa: F405
 
 
 def do_icmp_code_lookup(arg):  # noqa: D103
-    return do_lookup(lambda x: icmp_codes[x], arg)
+    return do_lookup(lambda x: icmp_codes[x], arg)  # noqa: F405
 
 
 def do_ip_option_lookup(arg):  # noqa: D103
-    return do_lookup(lambda x: ip_option_names[x], arg)
+    return do_lookup(lambda x: ip_option_names[x], arg)  # noqa: F405
 
 
 def do_dscp_lookup(arg):  # noqa: D103
-    return do_lookup(lambda x: dscp_names[x], arg)
+    return do_lookup(lambda x: dscp_names[x], arg)  # noqa: F405
 
 
 def make_inverse_mask(prefixlen):
@@ -161,9 +161,9 @@ def strip_comments(tags):  # noqa: D103
 class MyDict(dict):
     """A dictionary subclass to collect common behavior changes used in container
     classes for the ACL components: Modifiers, Matches.
-    """
+    """  # noqa: D205
 
-    def __init__(self, d=None, **kwargs):
+    def __init__(self, d=None, **kwargs):  # noqa: D107
         if d:
             if not hasattr(d, "keys"):
                 d = dict(d)
@@ -171,10 +171,10 @@ class MyDict(dict):
         if kwargs:
             self.update(kwargs)
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self!s}>"
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return ", ".join([f"{k} {v}" for k, v in self.items()])
 
     def update(self, d):
@@ -186,9 +186,9 @@ class MyDict(dict):
 class Modifiers(MyDict):
     """Container class for modifiers. These are only supported by JunOS format
     and are ignored by all others.
-    """
+    """  # noqa: D205
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # noqa: D105
         # Handle argument-less modifiers first.
         if key in ("log", "sample", "syslog", "port-mirror"):
             if value not in (None, True):
@@ -240,10 +240,10 @@ class RangeList:
     as it is now?  All the current uses of this class are in this file
     and have unit tests, so when we decided what the semantics of the
     generalized module ought to be, we can make it so without worry.
-    """
+    """  # noqa: D205
 
     # Another way to implement this would be as a radix tree.
-    def __init__(self, data=None):
+    def __init__(self, data=None):  # noqa: D107
         if data is None:
             data = []
 
@@ -282,7 +282,7 @@ class RangeList:
     def _collapse(self, items):
         """Reduce a sorted list of elements to ranges represented as tuples;
         e.g. [1, 2, 3, 4, 10] -> [(1, 4), 10].
-        """
+        """  # noqa: D205
         items = self._cleanup(items)  # Remove duplicates
 
         # Don't bother reducing a single item
@@ -321,7 +321,7 @@ class RangeList:
     def _expand(self, items):
         """Expand a list of elements and tuples back to discrete elements.
         Opposite of _collapse().
-        """
+        """  # noqa: D205
         if not items:
             return items
         try:
@@ -336,11 +336,11 @@ class RangeList:
         """Return a list with all ranges converted to discrete elements."""
         return self._expand(self.data)
 
-    def __add__(self, y):
+    def __add__(self, y):  # noqa: D105
         for elt in y:
             self.append(elt)
 
-    def append(self, obj):
+    def append(self, obj):  # noqa: D102
         # We could make this faster.
         self.data.append(obj)
         self._do_collapse()
@@ -353,34 +353,34 @@ class RangeList:
             return self.data == other
         return NotImplemented
 
-    def __ne__(self, other):
+    def __ne__(self, other):  # noqa: D105
         result = self.__eq__(other)
         if result is NotImplemented:
             return NotImplemented
         return not result
 
-    def __lt__(self, other):
+    def __lt__(self, other):  # noqa: D105
         if isinstance(other, RangeList):
             return self.data < other.data
         if isinstance(other, list):
             return self.data < other
         return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other):  # noqa: D105
         if isinstance(other, RangeList):
             return self.data <= other.data
         if isinstance(other, list):
             return self.data <= other
         return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other):  # noqa: D105
         if isinstance(other, RangeList):
             return self.data > other.data
         if isinstance(other, list):
             return self.data > other
         return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other):  # noqa: D105
         if isinstance(other, RangeList):
             return self.data >= other.data
         if isinstance(other, list):
@@ -392,7 +392,7 @@ class RangeList:
         * Compare single ports to tuples (i.e. 1700 in (1700, 1800))
         * Compare tuples to tuples (i.e. (1700,1800) in (0,65535))
         * Comparing tuple to integer ALWAYS returns False!!
-        """
+        """  # noqa: D401, D205
         for elt in self.data:
             if isinstance(elt, tuple):
                 if isinstance(obj, tuple):
@@ -412,29 +412,29 @@ class RangeList:
                 return True
         return False
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self.data!s}>"
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return str(self.data)
 
     # Straight passthrough of these:
-    def __hash__(self):
+    def __hash__(self):  # noqa: D105
         return self.data.__hash__(self.data)
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return len(self.data)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # noqa: D105
         return self.data[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # noqa: D105
         self.data[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key):  # noqa: D105
         del self.data[key]
 
-    def __iter__(self):
+    def __iter__(self):  # noqa: D105
         return self.data.__iter__()
 
 
@@ -446,7 +446,7 @@ class TIP(IPy.IP):
     (doesn't interact well with IPy.IP objects). Does not handle IPv6 yet.
     """
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, **kwargs):  # noqa: D107
         # Insert logic to handle 'except' preserve negated flag if it exists
         # already
         negated = getattr(data, "negated", False)
@@ -486,7 +486,7 @@ class TIP(IPy.IP):
             self.NoPrefixForSingleIp = False
 
     def _compare_to(self, other):
-        """Helper method for comparison. Returns -1, 0, or 1."""
+        """Helper method for comparison. Returns -1, 0, or 1."""  # noqa: D401
         # Regular IPy sorts by prefix length before network base, but Juniper
         # (our baseline) does not. We also need comparisons to be different for
         # negation. Following Juniper's sorting, use IP compare, and then break
@@ -515,30 +515,30 @@ class TIP(IPy.IP):
         return -1 if self.negated else 1
         # Return the base comparison
 
-    def __lt__(self, other):
+    def __lt__(self, other):  # noqa: D105
         return self._compare_to(other) < 0
 
-    def __le__(self, other):
+    def __le__(self, other):  # noqa: D105
         return self._compare_to(other) <= 0
 
-    def __gt__(self, other):
+    def __gt__(self, other):  # noqa: D105
         return self._compare_to(other) > 0
 
-    def __ge__(self, other):
+    def __ge__(self, other):  # noqa: D105
         return self._compare_to(other) >= 0
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # noqa: D105
         return self._compare_to(other) == 0
 
-    def __ne__(self, other):
+    def __ne__(self, other):  # noqa: D105
         return self._compare_to(other) != 0
 
-    def __hash__(self):
+    def __hash__(self):  # noqa: D105
         # Make TIP hashable for use in sets and as dict keys
         # Base hash on IP address, prefix length, and negation status
         return hash((str(self.ip), self.prefixlen(), self.negated, self.inactive))
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         # Just stick an 'except' at the end if except is set since we don't
         # code to accept this in the constructor really just provided, for now,
         # as a debugging aid.
@@ -555,7 +555,7 @@ class TIP(IPy.IP):
             rs = "'".join(rs)  # Restore original repr
         return rs
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         # IPy is not a new-style class, so the following doesn't work:
         # return super(TIP, self).__str__()  # noqa: ERA001
         rs = IPy.IP.__str__(self)
@@ -580,23 +580,23 @@ class TIP(IPy.IP):
 class Comment:
     """Container for inline comments."""
 
-    def __init__(self, data):
+    def __init__(self, data):  # noqa: D107
         self.data = data
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self.data!r}>"
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return self.data
 
     def __len__(self):
-        """Defining this method allows null comments to be false."""
+        """Defining this method allows null comments to be false."""  # noqa: D401
         return len(self.data)
 
-    def __iter__(self):
+    def __iter__(self):  # noqa: D105
         return self.data.__iter__()
 
-    def __contains__(self, item):
+    def __contains__(self, item):  # noqa: D105
         return item in self.data
 
     def output_junos(self):
@@ -630,9 +630,9 @@ class Comment:
 class ACL:
     """An abstract access-list object intended to be created by the :func:`parse`
     function.
-    """
+    """  # noqa: D205
 
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         name=None,
         terms=None,
@@ -654,10 +654,10 @@ class ACL:
         self.comments = Comments
         Comments = []
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<ACL: {self.name}>"
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return "\n".join(self.output(format=self.format, family=self.family))
 
     def output(self, format=None, *largs, **kwargs):
@@ -841,7 +841,7 @@ class ACL:
                 n += 1
 
     def strip_comments(self):
-        """Strips all comments from ACL header and all terms."""
+        """Strips all comments from ACL header and all terms."""  # noqa: D401
         self.comments = []
         for term in self.terms:
             term.comments = []
@@ -850,7 +850,7 @@ class ACL:
 class Term:
     """An individual term from which an ACL is made."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         name=None,
         action="accept",
@@ -880,25 +880,25 @@ class Term:
         self.comments = Comments
         Comments = []
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<Term: {self.name}>"
 
-    def getname(self):
+    def getname(self):  # noqa: D102
         return self.__name
 
-    def setname(self, name):
+    def setname(self, name):  # noqa: D102
         check_name(name, exceptions.BadTermName)
         self.__name = name
 
-    def delname(self):
+    def delname(self):  # noqa: D102
         self.name = None
 
     name = property(getname, setname, delname)
 
-    def getaction(self):
+    def getaction(self):  # noqa: D102
         return self.__action
 
-    def setaction(self, action):
+    def setaction(self, action):  # noqa: D102
         if action is None:
             action = "accept"
         if action == "next term":
@@ -918,9 +918,9 @@ class Term:
         elif action == ("deny",):
             self.__action = ("reject",)
         elif action[0] == "reject":
-            if action[1] not in icmp_reject_codes:
+            if action[1] not in icmp_reject_codes:  # noqa: F405
                 raise exceptions.BadRejectCode("invalid rejection code " + action[1])
-            if action[1] == icmp_reject_codes[0]:
+            if action[1] == icmp_reject_codes[0]:  # noqa: F405
                 action = ("reject",)
             self.__action = action
         elif action[0] == "routing-instance":
@@ -930,7 +930,7 @@ class Term:
             msg = f'unknown action "{action!s}"'
             raise exceptions.UnknownActionName(msg)
 
-    def delaction(self):
+    def delaction(self):  # noqa: D102
         self.action = "accept"
 
     action = property(getaction, setaction, delaction)
@@ -938,7 +938,7 @@ class Term:
     def set_action_or_modifier(self, action):
         """Add or replace a modifier, or set the primary action. This method exists
         for the convenience of parsers.
-        """
+        """  # noqa: D205
         try:
             self.action = action
         except exceptions.UnknownActionName:
@@ -992,7 +992,7 @@ class Term:
             action = "deny "
         else:
             msg = '"{}" action not supported by IOS'.format(" ".join(self.action))
-            raise VendorSupportLacking(
+            raise VendorSupportLacking(  # noqa: F405
                 msg,
             )
         suffix = ""
@@ -1052,7 +1052,7 @@ class TermList(list):
 class Protocol:
     """A protocol object used for access membership tests in :class:`Term` objects.
     Acts like an integer, but stringify into a name if possible.
-    """
+    """  # noqa: D205
 
     num2name: ClassVar[dict[int, str]] = {
         1: "icmp",
@@ -1075,7 +1075,7 @@ class Protocol:
     name2num: ClassVar[dict[str, int]] = {v: k for k, v in num2name.items()}
     name2num["ahp"] = 51  # undocumented Cisco special name
 
-    def __init__(self, arg):
+    def __init__(self, arg):  # noqa: D107
         if isinstance(arg, Protocol):
             self.value = arg.value
         elif arg in Protocol.name2num:
@@ -1083,16 +1083,16 @@ class Protocol:
         else:
             self.value = int(arg)
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         if self.value in Protocol.num2name:
             return Protocol.num2name[self.value]
         return str(self.value)
 
-    def __repr__(self):
+    def __repr__(self):  # noqa: D105
         return f"<{self.__class__.__name__}: {self!s}>"
 
     def _get_compare_value(self, other):
-        """Helper to get comparison value from other."""
+        """Helper to get comparison value from other."""  # noqa: D401
         try:
             return Protocol(other).value
         except (ValueError, TypeError):
@@ -1105,37 +1105,37 @@ class Protocol:
             return NotImplemented
         return self.value == other_value
 
-    def __ne__(self, other):
+    def __ne__(self, other):  # noqa: D105
         result = self.__eq__(other)
         if result is NotImplemented:
             return NotImplemented
         return not result
 
-    def __lt__(self, other):
+    def __lt__(self, other):  # noqa: D105
         other_value = self._get_compare_value(other)
         if other_value is NotImplemented:
             return NotImplemented
         return self.value < other_value
 
-    def __le__(self, other):
+    def __le__(self, other):  # noqa: D105
         other_value = self._get_compare_value(other)
         if other_value is NotImplemented:
             return NotImplemented
         return self.value <= other_value
 
-    def __gt__(self, other):
+    def __gt__(self, other):  # noqa: D105
         other_value = self._get_compare_value(other)
         if other_value is NotImplemented:
             return NotImplemented
         return self.value > other_value
 
-    def __ge__(self, other):
+    def __ge__(self, other):  # noqa: D105
         other_value = self._get_compare_value(other)
         if other_value is NotImplemented:
             return NotImplemented
         return self.value >= other_value
 
-    def __hash__(self):
+    def __hash__(self):  # noqa: D105
         return hash(self.value)
 
     def __getattr__(self, name):
@@ -1146,9 +1146,9 @@ class Protocol:
 class Matches(MyDict):
     """Container class for Term.match object used for membership tests on
     access checks.
-    """
+    """  # noqa: D205
 
-    def __setitem__(self, key, arg):  # noqa: PLR0912, PLR0915
+    def __setitem__(self, key, arg):  # noqa: PLR0912, PLR0915, D105
         if key in (
             "ah-spi",
             "destination-mac-address",
@@ -1207,11 +1207,11 @@ class Matches(MyDict):
         elif key in ("prefix-list", "source-prefix-list", "destination-prefix-list"):
             for pl in arg:
                 check_name(pl, exceptions.MatchError)
-        elif key in tcp_flag_specials:
+        elif key in tcp_flag_specials:  # noqa: F405
             # This cannot be the final form of how to represent tcp-flags.
             # Instead, we need to implement a real parser for it.
             # See: http://www.juniper.net/techpubs/software/junos/junos73/swconfig73-policy/html/firewall-config14.html
-            arg = [tcp_flag_specials[key]]
+            arg = [tcp_flag_specials[key]]  # noqa: F405
             key = "tcp-flags"
         elif key == "tcp-flags":
             pass
@@ -1248,7 +1248,7 @@ class Matches(MyDict):
 
         :param pair:
             The 2-tuple to convert.
-        """
+        """  # noqa: D205
         try:
             return "%s-%s" % pair  # noqa: UP031  # Tuples back to ranges.
         except TypeError:
@@ -1306,12 +1306,12 @@ class Matches(MyDict):
         """Return a list that can form the ``from { ... }`` clause of the term."""
         a = []
         # Python 3: dict.keys() returns a view, convert to list for sorting
-        keys = sorted(self.keys(), key=lambda x: junos_match_order.get(x, 999))
+        keys = sorted(self.keys(), key=lambda x: junos_match_order.get(x, 999))  # noqa: F405
         for s in keys:
             # Python 3: map() returns an iterator, convert to list
             matches = list(map(self.junos_str, self[s]))
             has_negated_addrs = any(m for m in matches if m.endswith(" except"))
-            if s in address_matches:
+            if s in address_matches:  # noqa: F405
                 # Check to see if any of the added is any, and if so break out,
                 # but only if none of the addresses is "negated".
                 if "0.0.0.0/0" in matches and not has_negated_addrs:
@@ -1322,7 +1322,7 @@ class Matches(MyDict):
                 continue
             if s == "tcp-flags" and len(self[s]) == 1:
                 try:
-                    a.append(tcp_flag_rev[self[s][0]] + ";")
+                    a.append(tcp_flag_rev[self[s][0]] + ";")  # noqa: F405
                     continue
                 except KeyError:
                     pass
@@ -1359,12 +1359,12 @@ class Matches(MyDict):
                     if "icmp-code" in self:
                         for code in self["icmp-code"]:
                             try:
-                                destports.append(ios_icmp_names[(type, code)])
+                                destports.append(ios_icmp_names[(type, code)])  # noqa: F405
                             except KeyError:  # noqa: PERF203
                                 destports.append("%d %d" % (type, code))  # noqa: UP031
                     else:
                         try:
-                            destports.append(ios_icmp_names[(type,)])
+                            destports.append(ios_icmp_names[(type,)])  # noqa: F405
                         except KeyError:
                             destports.append(str(type))
             elif key == "icmp-code":
@@ -1372,7 +1372,7 @@ class Matches(MyDict):
                     msg = "need ICMP code w/type"
                     raise exceptions.VendorSupportLacking(msg)
             elif key == "tcp-flags":
-                if arg != [tcp_flag_specials["tcp-established"]]:
+                if arg != [tcp_flag_specials["tcp-established"]]:  # noqa: F405
                     msg = 'IOS supports only "tcp-flags established"'
                     raise exceptions.VendorSupportLacking(
                         msg,

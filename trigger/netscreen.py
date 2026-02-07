@@ -1,7 +1,7 @@
 """Parses and manipulates firewall policy for Juniper NetScreen firewall devices.
 Broken apart from acl.parser because the approaches are vastly different from each
 other.
-"""
+"""  # noqa: D205
 
 __author__ = "Jathan McCollum, Mark Thomas"
 __maintainer__ = "Jathan McCollum"
@@ -44,7 +44,7 @@ __all__ = (
 class NetScreen:
     """Parses and generates NetScreen firewall policy."""
 
-    def __init__(self):
+    def __init__(self):  # noqa: D107
         self.service_book = NSServiceBook()
         self.address_book = NSAddressBook()
         self.interfaces = []
@@ -200,7 +200,7 @@ class NetScreen:
         )
 
     def concatenate_grp(self, x):
-        """Used by NetScreen class when grouping policy members."""
+        """Used by NetScreen class when grouping policy members."""  # noqa: D401
         ret = {}
         for entry in x:
             for key, val in entry.items():
@@ -211,7 +211,7 @@ class NetScreen:
         return ret
 
     def netmask2cidr(self, iptuple):
-        """Converts dotted-quad netmask to cidr notation."""
+        """Converts dotted-quad netmask to cidr notation."""  # noqa: D401
         if len(iptuple) == 2:  # noqa: PLR2004
             addr, mask = iptuple
             ipstr = addr.strNormal() + "/" + mask.strNormal()
@@ -221,7 +221,7 @@ class NetScreen:
     def handle_raw_netscreen(self, rows):  # noqa: PLR0912, PLR0915
         """The parser will hand it's final output to this function, which decodes
         and puts everything in the right place.
-        """
+        """  # noqa: D401, D205
         for node in rows:
             if isinstance(node, NSAddress):
                 self.address_book.append(node)
@@ -365,14 +365,14 @@ class NetScreen:
             else:
                 raise f"Unknown node type {type(node)!s}"
 
-    def output(self):
+    def output(self):  # noqa: D102
         ret = list(self.address_book.output())
         ret.extend(self.service_book.output())
         for ent in self.policies:
             ret.extend(ent.output())
         return ret
 
-    def output_terms(self):
+    def output_terms(self):  # noqa: D102
         ret = []
         for ent in self.policies:
             ret.extend(ent.output_terms())
@@ -385,7 +385,7 @@ class NetScreen:
 class NSRawGroup:
     """Container for group definitions."""
 
-    def __init__(self, data):
+    def __init__(self, data):  # noqa: D107
         if data[0] == "address" and len(data) == 3:  # noqa: PLR2004
             data.append(None)
         if data[0] == "service" and len(data) == 2:  # noqa: PLR2004
@@ -393,26 +393,26 @@ class NSRawGroup:
 
         self.data = data
 
-    def __iter__(self):
+    def __iter__(self):  # noqa: D105
         return self.data.__iter__()
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return self.data.__len__()
 
 
 class NSGroup(NetScreen):
     """Container for address/service groups."""
 
-    def __init__(self, name=None, group_type="address", zone=None):
+    def __init__(self, name=None, group_type="address", zone=None):  # noqa: D107
         self.nodes = []
         self.name = name
         self.type = group_type
         self.zone = zone
 
-    def append(self, item):
+    def append(self, item):  # noqa: D102
         return getattr(self, "add_" + self.type)(item)
 
-    def add_address(self, addr):
+    def add_address(self, addr):  # noqa: D102
         assert self.type == "address"  # noqa: S101
         if not isinstance(addr, NSAddress):
             msg = "add_address requires NSAddress object"
@@ -427,7 +427,7 @@ class NSGroup(NetScreen):
                 return
         self.nodes.append(addr)
 
-    def add_service(self, svc):
+    def add_service(self, svc):  # noqa: D102
         assert self.type == "service"  # noqa: S101
         if not isinstance(svc, NSService):
             msg = "add_service requires NSService object"
@@ -437,32 +437,32 @@ class NSGroup(NetScreen):
                 return
         self.nodes.append(svc)
 
-    def set_name(self, name):
+    def set_name(self, name):  # noqa: D102
         self.name = name
 
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # noqa: D105
         # allow people to find things in groups via a dict style
         for i in self.nodes:
             if i.name == key:
                 return i
         raise KeyError
 
-    def __iter__(self):
+    def __iter__(self):  # noqa: D105
         return self.nodes.__iter__()
 
-    def output_crap(self):
+    def output_crap(self):  # noqa: D102
         ret = ""
         for i in self.nodes:
             ret += i.output_crap()
         return ret
 
-    def get_real(self):
+    def get_real(self):  # noqa: D102
         ret = []
         for i in self.nodes:
             ret.extend(i.get_real())
         return ret
 
-    def output(self):
+    def output(self):  # noqa: D102
         ret = []
         for i in self.nodes:
             zone = ""
@@ -483,7 +483,7 @@ class NSServiceBook(NetScreen):
         print(service.output())
     """
 
-    def __init__(self, entries=None):
+    def __init__(self, entries=None):  # noqa: D107
         self.entries = entries or []
         if entries:
             self.entries = entries
@@ -521,13 +521,13 @@ class NSServiceBook(NetScreen):
                 ),
             )
 
-    def has_key(self, key):
+    def has_key(self, key):  # noqa: D102
         return any(key == entry.name for entry in self.entries)
 
-    def __iter__(self):
+    def __iter__(self):  # noqa: D105
         return self.entries.__iter__()
 
-    def __getitem__(self, item):
+    def __getitem__(self, item):  # noqa: D105
         for entry in self.entries:
             if item == entry.name:
                 return entry
@@ -535,7 +535,7 @@ class NSServiceBook(NetScreen):
         msg = "%s"
         raise KeyError(msg, item)
 
-    def append(self, item):
+    def append(self, item):  # noqa: D102
         if isinstance(item, NSService):
             return self.entries.append(item)
         if isinstance(item, NSGroup) and item.type == "service":
@@ -546,7 +546,7 @@ class NSServiceBook(NetScreen):
         )
         raise TypeError(msg)
 
-    def output(self):
+    def output(self):  # noqa: D102
         ret = []
         for ent in self.entries:
             ret.extend(ent.output())
@@ -556,11 +556,11 @@ class NSServiceBook(NetScreen):
 class NSAddressBook(NetScreen):
     """Container for address book entries."""
 
-    def __init__(self, name="ANY", zone=None):
+    def __init__(self, name="ANY", zone=None):  # noqa: D107
         self.entries = {}
         self.any = NSAddress(name="ANY")
 
-    def find(self, address, zone):
+    def find(self, address, zone):  # noqa: D102
         if not self.entries.has_key(zone):
             return None
 
@@ -577,7 +577,7 @@ class NSAddressBook(NetScreen):
 
         return None
 
-    def append(self, item):
+    def append(self, item):  # noqa: D102
         if not isinstance(item, NSAddress) and (
             (not isinstance(item, NSGroup)) and item.type != "address"
         ):
@@ -589,7 +589,7 @@ class NSAddressBook(NetScreen):
 
         return self.entries[item.zone].append(item)
 
-    def name2ips(self, name, zone):
+    def name2ips(self, name, zone):  # noqa: D102
         for entry in self.entries:
             if entry.name == name:
                 if isinstance(entry, NSAddress):
@@ -598,7 +598,7 @@ class NSAddressBook(NetScreen):
                     return [ent.addr for ent in entry]
         return None
 
-    def output(self):
+    def output(self):  # noqa: D102
         ret = []
         for addrs in self.entries.values():
             for addr in addrs:
@@ -609,7 +609,7 @@ class NSAddressBook(NetScreen):
 class NSAddress(NetScreen):
     """Container for individual address items."""
 
-    def __init__(self, name=None, zone=None, addr=None, comment=None):
+    def __init__(self, name=None, zone=None, addr=None, comment=None):  # noqa: D107
         self.name = None
         self.zone = None
         self.addr = TIP("0.0.0.0/0")
@@ -623,30 +623,30 @@ class NSAddress(NetScreen):
         if comment:
             self.set_comment(comment)
 
-    def set_address(self, addr):
+    def set_address(self, addr):  # noqa: D102
         try:
             a = TIP(addr)
         except Exception as e:
             raise e
         self.addr = a
 
-    def set_zone(self, zone):
+    def set_zone(self, zone):  # noqa: D102
         self.zone = zone
 
-    def set_name(self, name):
+    def set_name(self, name):  # noqa: D102
         self.name = name
 
-    def set_comment(self, comment):
+    def set_comment(self, comment):  # noqa: D102
         comment = f'"{comment}"'
         self.comment = comment
 
-    def get_real(self):
+    def get_real(self):  # noqa: D102
         return [self.addr]
 
-    def output_crap(self):
+    def output_crap(self):  # noqa: D102
         return f"[(Z:{self.zone}){self.addr.strNormal()}]"
 
-    def output(self):
+    def output(self):  # noqa: D102
         tmpl = 'set address "%s" "%s" %s %s %s'
         output = tmpl % (
             self.zone,
@@ -661,7 +661,7 @@ class NSAddress(NetScreen):
 class NSService(NetScreen):
     """Container for individual service items."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         name=None,
         protocol=None,
@@ -678,14 +678,14 @@ class NSService(NetScreen):
         self.predefined = predefined
         self.initialize()
 
-    def initialize(self):
+    def initialize(self):  # noqa: D102
         self.set_name(self.name)
         self.set_protocol(self.protocol)
         self.set_source_port(self.source_port)
         self.set_destination_port(self.destination_port)
         self.set_timeout(self.timeout)
 
-    def __cmp__(self, other):
+    def __cmp__(self, other):  # noqa: D105
         if not isinstance(other, NSService):
             return -1
 
@@ -701,10 +701,10 @@ class NSService(NetScreen):
 
         return 0
 
-    def set_name(self, arg):
+    def set_name(self, arg):  # noqa: D102
         self.name = arg
 
-    def set_source_port(self, ports):
+    def set_source_port(self, ports):  # noqa: D102
         if isinstance(ports, int):
             check_range([ports], 0, 65535)
             self.source_port = (ports, ports)
@@ -715,7 +715,7 @@ class NSService(NetScreen):
             msg = "add_source_port needs int or tuple argument"
             raise TypeError(msg)
 
-    def set_destination_port(self, ports):
+    def set_destination_port(self, ports):  # noqa: D102
         if isinstance(ports, int):
             check_range([ports], 0, 65535)
             self.destination_port = (ports, ports)
@@ -726,16 +726,16 @@ class NSService(NetScreen):
             msg = "add_destination_port needs int or tuple argument"
             raise TypeError(msg)
 
-    def set_timeout(self, timeout):
+    def set_timeout(self, timeout):  # noqa: D102
         self.timeout = timeout
 
-    def set_protocol(self, protocol):
+    def set_protocol(self, protocol):  # noqa: D102
         if isinstance(protocol, (str, int)):
             self.protocol = Protocol(protocol)
         if isinstance(protocol, Protocol):
             self.protocol = protocol
 
-    def output_crap(self):
+    def output_crap(self):  # noqa: D102
         return "[Service: %s (%d-%d):(%d-%d)]" % (  # noqa: UP031
             self.protocol,
             self.source_port[0],
@@ -744,10 +744,10 @@ class NSService(NetScreen):
             self.destination_port[1],
         )
 
-    def get_real(self):
+    def get_real(self):  # noqa: D102
         return [(self.source_port, self.destination_port, self.protocol)]
 
-    def output(self):
+    def output(self):  # noqa: D102
         if self.predefined:
             return []
         ret = 'set service "%s" protocol %s src-port %d-%d dst-port %d-%d' % (  # noqa: UP031
@@ -766,7 +766,7 @@ class NSService(NetScreen):
 class NSRawPolicy:
     """Container for policy definitions."""
 
-    def __init__(self, data, isglobal=0):
+    def __init__(self, data, isglobal=0):  # noqa: D107
         self.isglobal = isglobal
         self.data = {}
 
@@ -778,7 +778,7 @@ class NSRawPolicy:
 class NSPolicy(NetScreen):
     """Container for individual policy definitions."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, D107
         self,
         name=None,
         address_book=None,
@@ -810,7 +810,7 @@ class NSPolicy(NetScreen):
         self.name = name
         self.isglobal = isglobal
 
-    def add_address(self, address, zone, address_book, addresses):
+    def add_address(self, address, zone, address_book, addresses):  # noqa: D102
         addr = TIP(address)
         found = address_book.find(addr, zone)
         if not found:
@@ -824,7 +824,7 @@ class NSPolicy(NetScreen):
             address_book.append(found)
         addresses.append(found)
 
-    def add_source_address(self, address):
+    def add_source_address(self, address):  # noqa: D102
         self.add_address(
             address,
             self.source_zone,
@@ -832,7 +832,7 @@ class NSPolicy(NetScreen):
             self.source_addresses,
         )
 
-    def add_destination_address(self, address):
+    def add_destination_address(self, address):  # noqa: D102
         self.add_address(
             address,
             self.destination_zone,
@@ -840,7 +840,7 @@ class NSPolicy(NetScreen):
             self.destination_addresses,
         )
 
-    def add_service(
+    def add_service(  # noqa: D102
         self,
         protocol,
         source_port=(1, 65535),
@@ -873,7 +873,7 @@ class NSPolicy(NetScreen):
             found = test_service
         self.services.append(found)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # noqa: D105
         if key == "dst-address":
             return self.destination_addresses
         if key == "src-address":
@@ -882,7 +882,7 @@ class NSPolicy(NetScreen):
             return self.services
         raise KeyError
 
-    def output_crap(self):
+    def output_crap(self):  # noqa: D102
         for service in self.services:
             for src in self.source_addresses:
                 for dst in self.destination_addresses:
@@ -894,7 +894,7 @@ class NSPolicy(NetScreen):
                         service.output_crap(),
                     )
 
-    def output_human(self):
+    def output_human(self):  # noqa: D102
         source_addrs = []
         dest_addrs = []
         dest_serv = []
@@ -942,7 +942,7 @@ class NSPolicy(NetScreen):
         print("DESTINATIONS", dest_addrs)
         print("SERVICES", serv_hash)
 
-    def output_terms(self):
+    def output_terms(self):  # noqa: D102
         source_addrs = []
         dest_addrs = []
         dest_serv = []
@@ -978,7 +978,7 @@ class NSPolicy(NetScreen):
                 terms.append(term)
         return terms
 
-    def output(self):
+    def output(self):  # noqa: D102
         toret = []
         num_saddrs = len(self.source_addresses)
         num_daddrs = len(self.destination_addresses)
