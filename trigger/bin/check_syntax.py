@@ -17,7 +17,7 @@ from trigger.acl.parser import parse as acl_parse
 CONTEXT = 3
 
 
-def parse_args(argv):
+def parse_args(argv):  # noqa: D103
     optp = optparse.OptionParser(
         description="""\
         Determine if ACL file passes trigger's parsing checks.""",
@@ -36,7 +36,7 @@ def main():
     fd, _tmpfile = tempfile.mkstemp(suffix="_parsing_check")
     log.startLogging(os.fdopen(fd, "a"), setStdout=False)
     log.msg(
-        'User %s (uid:%d) executed "%s"'
+        'User %s (uid:%d) executed "%s"'  # noqa: UP031
         % (os.environ["LOGNAME"], os.getuid(), " ".join(sys.argv)),
     )
 

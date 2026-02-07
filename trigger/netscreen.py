@@ -736,7 +736,7 @@ class NSService(NetScreen):
             self.protocol = protocol
 
     def output_crap(self):
-        return "[Service: %s (%d-%d):(%d-%d)]" % (
+        return "[Service: %s (%d-%d):(%d-%d)]" % (  # noqa: UP031
             self.protocol,
             self.source_port[0],
             self.source_port[1],
@@ -750,7 +750,7 @@ class NSService(NetScreen):
     def output(self):
         if self.predefined:
             return []
-        ret = 'set service "%s" protocol %s src-port %d-%d dst-port %d-%d' % (
+        ret = 'set service "%s" protocol %s src-port %d-%d dst-port %d-%d' % (  # noqa: UP031
             self.name,
             self.protocol,
             self.source_port[0],
@@ -759,7 +759,7 @@ class NSService(NetScreen):
             self.destination_port[1],
         )
         if self.timeout:
-            ret += " timeout %d" % (self.timeout)
+            ret += " timeout %d" % (self.timeout)  # noqa: UP031
         return [ret]
 
 
@@ -852,9 +852,9 @@ class NSPolicy(NetScreen):
             raise ValueError(msg)
 
         if isinstance(destination_port, tuple):
-            sname = "%s%d-%d" % (protocol, destination_port[0], destination_port[1])
+            sname = "%s%d-%d" % (protocol, destination_port[0], destination_port[1])  # noqa: UP031
         else:
-            sname = "%s%d" % (protocol, destination_port)
+            sname = "%s%d" % (protocol, destination_port)  # noqa: UP031
 
         test_service = NSService(
             name=sname,
@@ -987,7 +987,7 @@ class NSPolicy(NetScreen):
         if self.isglobal:
             ret += "global "
         if self.id:
-            ret += "id %d " % (self.id)
+            ret += "id %d " % (self.id)  # noqa: UP031
         if self.name:
             ret += f'name "{self.name}" '
         ret += f'from "{self.source_zone}" to "{self.destination_zone}" '
@@ -1004,7 +1004,7 @@ class NSPolicy(NetScreen):
         toret.append(ret)
 
         if num_saddrs > 1 or num_daddrs > 1 or num_services > 1:
-            toret.append("set policy id %d" % (self.id))
+            toret.append("set policy id %d" % (self.id))  # noqa: UP031
             for k, v in {
                 "src-address": self.source_addresses[1:],
                 "dst-address": self.destination_addresses[1:],

@@ -46,22 +46,23 @@ def literals(d):
     """Longest match of all the strings that are keys of 'd'."""
     keys = [str(key) for key in d]
     keys.sort(key=lambda x: -len(x))  # Sort by length descending
-    return " / ".join(['"%s"' % key for key in keys])
+    return " / ".join([f'"{key}"' for key in keys])
 
 
-def update(d, **kwargs):
+def update(d, **kwargs):  # noqa: D103
     # Check for duplicate subterms, which is legal but too confusing to be
     # allowed at AOL.  For example, a Juniper term can have two different
     # 'destination-address' clauses, which means that the first will be
     # ignored.  This led to an outage on 2006-10-11.
     for key in kwargs:
         if key in d:
-            raise exceptions.ParseError("duplicate %s" % key)
+            msg = f"duplicate {key}"
+            raise exceptions.ParseError(msg)
     d.update(kwargs)
     return d
 
 
-def dict_sum(dlist):
+def dict_sum(dlist):  # noqa: D103
     dsum = {}
     for d in dlist:
         for k, v in d.items():

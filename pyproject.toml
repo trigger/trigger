@@ -116,13 +116,10 @@ ignore = [
 
     # --- Kept from v2.0.0 baseline ---
     "E501",     # line-too-long (handled by formatter)
-    "F401",     # unused-import (may be used dynamically)
     "F405",     # undefined-local-with-import-star-usage
-    "UP031",    # printf-string-formatting
 
     # --- Docstring exceptions (not enforcing coverage/style) ---
     "D102",     # undocumented-public-method
-    "D103",     # undocumented-public-function
     "D105",     # undocumented-magic-method
     "D107",     # undocumented-public-init
     "D205",     # missing-blank-line-after-summary

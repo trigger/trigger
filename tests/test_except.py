@@ -1,5 +1,5 @@
 # a test for except processing
-import os
+import os  # noqa: F401
 import sys
 from pathlib import Path
 

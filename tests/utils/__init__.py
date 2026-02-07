@@ -3,7 +3,7 @@ Utils used for testing and especially mocking objects for testing.
 """
 
 import os
-import sys
+import sys  # noqa: F401
 
 from . import mock_redis
 

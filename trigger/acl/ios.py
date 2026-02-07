@@ -37,7 +37,7 @@ class Remark(Comment):
 inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(33)])
 
 
-def handle_ios_match(a):  # noqa: PLR0912
+def handle_ios_match(a):  # noqa: D103, PLR0912
     protocol, source, dest = a[:3]
     extra = a[3:]
 
@@ -79,7 +79,7 @@ def handle_ios_match(a):  # noqa: PLR0912
     return {"match": match, "modifiers": modifiers}
 
 
-def handle_ios_acl(rows):  # noqa: PLR0912
+def handle_ios_acl(rows):  # noqa: D103, PLR0912
     acl = ACL()
     for d in rows:
         if not d:
@@ -132,7 +132,7 @@ rules.update(
         S("ios_masked_ipv4"): (
             "ipv4, ts, ipv4_inverse_mask",
             # Python 3: Explicit tuple unpacking for string formatting
-            lambda x: TIP("%s/%d" % (x[0], x[1])),
+            lambda x: TIP("%s/%d" % (x[0], x[1])),  # noqa: UP031
         ),
         "ipv4_inverse_mask": (
             literals(inverse_mask_table),

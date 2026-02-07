@@ -425,7 +425,7 @@ def process_bulk_loads(work, max_hits=settings.BULK_MAX_HITS_DEFAULT, force_bulk
                     print(prefix_site), prefix_hits[prefix_site]
                 if prefix_hits[prefix_site] > max_hits:
                     msg = (
-                        "Removing %s on %s from job queue: threshold of %d exceeded for "
+                        "Removing %s on %s from job queue: threshold of %d exceeded for "  # noqa: UP031
                         "'%s' devices in '%s'"
                         % (acl, dev, max_hits, prefix_site[0], prefix_site[1])
                     )
@@ -617,7 +617,7 @@ class ACLScript:
             if not len(v):
                 continue
 
-            argz.extend("%s %d" % (k, x) for x in v)
+            argz.extend("%s %d" % (k, x) for x in v)  # noqa: UP031
 
         if len(self.modify_terms) and len(self.bcomments):
             print("Can only define either modify_terms or between comments")

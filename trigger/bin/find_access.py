@@ -12,7 +12,7 @@ from simpleparse.error import ParserSyntaxError
 from trigger.acl.parser import TIP, parse
 
 
-def parse_args(argv):
+def parse_args(argv):  # noqa: D103
     parser = OptionParser(
         usage="%prog [options] [acls]",
         add_help_option=False,
@@ -72,7 +72,7 @@ This works in reverse, if the input is 172.16.1.0/24 and a term contains
     return opts, args
 
 
-def match_term(term, data, type, opts):
+def match_term(term, data, type, opts):  # noqa: D103
     # If any source/dest, return False
     if opts.no_any_source and any_source(term):
         return False
@@ -94,7 +94,7 @@ def match_term(term, data, type, opts):
     return False
 
 
-def match_terms(acl, sources, dests, ports, opts):
+def match_terms(acl, sources, dests, ports, opts):  # noqa: D103
     matched = []
 
     for term in acl.terms:
@@ -127,7 +127,7 @@ def any_dest(term):
     return not term.match.get("destination-address")
 
 
-def do_work(acl_files, opts):
+def do_work(acl_files, opts):  # noqa: D103
     acl_file_data = {}
     sources = []
     dests = []
@@ -159,7 +159,7 @@ def do_work(acl_files, opts):
     return acl_file_data
 
 
-def print_report(data):
+def print_report(data):  # noqa: D103
     for aclobj, terms in data.items():
         print(aclobj.filename)
         print("=================================================")

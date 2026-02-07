@@ -31,12 +31,12 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def sig_handler(s, d):
+def sig_handler(s, d):  # noqa: D103
     global stop_all  # noqa: PLW0603
     stop_all = True
 
 
-def parse_args(argv):
+def parse_args(argv):  # noqa: D103
     parser = OptionParser(
         usage="%prog [options] [acls]",
         description="""ACL Optimizer
@@ -194,7 +194,7 @@ class ProgressMeter:
         bar = "-" * self.meter_value
         pad = " " * (self.meter_ticks - self.meter_value)
         perc = (float(self.count) / self.total) * 100
-        return "[%s>%s] %d%%  %.1f/sec" % (bar, pad, perc, self.rate_current)
+        return "[%s>%s] %d%%  %.1f/sec" % (bar, pad, perc, self.rate_current)  # noqa: UP031
 
     def refresh(self, **kw):
         # Clear line and return cursor to start-of-line
@@ -239,7 +239,7 @@ def focus_terms(pcount, terms):  # noqa: PLR0912
 
     for port, cnt in ports.items():
         if cnt >= pcount:
-            log.info("port %s had a count of %d" % (str(port), cnt))
+            log.info("port %s had a count of %d" % (str(port), cnt))  # noqa: UP031
             matched_ports[port] = 1
 
     for term in terms:
@@ -253,7 +253,7 @@ def focus_terms(pcount, terms):  # noqa: PLR0912
                 focused[term.name] = 1
                 break
 
-    log.info("%d focused terms" % len(focused))
+    log.info("%d focused terms" % len(focused))  # noqa: UP031
     return focused
 
 
@@ -262,7 +262,7 @@ chk_keys = ["protocol", "source-address", "destination-address", "destination-po
 rej_keys = ["reject", "deny", "discard"]
 
 
-def optimize_terms(terms, focused, which, opts):  # noqa: PLR0912, PLR0915
+def optimize_terms(terms, focused, which, opts):  # noqa: D103, PLR0912, PLR0915
     global stop_all  # noqa: PLW0602
     to_delete = dict()
     other = ""
@@ -315,7 +315,7 @@ def optimize_terms(terms, focused, which, opts):  # noqa: PLR0912, PLR0915
                 break
 
             log.debug(
-                "Comparing term %s to term %s [%d terms deleted]"
+                "Comparing term %s to term %s [%d terms deleted]"  # noqa: UP031
                 % (term1.name, term2.name, len(to_delete)),
             )
             if focused and term2.name not in focused:
@@ -433,7 +433,7 @@ def optimize_terms(terms, focused, which, opts):  # noqa: PLR0912, PLR0915
     return [term for term in terms if term.name not in to_delete]
 
 
-def terms_unchunk(chunks):
+def terms_unchunk(chunks):  # noqa: D103
     terms = []
 
     for chunk in chunks:
@@ -486,7 +486,7 @@ def terms_chunker(terms):
     return ret
 
 
-def optimize(opts, terms, focused):
+def optimize(opts, terms, focused):  # noqa: D103
     global stop_all  # noqa: PLW0602
 
     terms_old = terms
@@ -513,14 +513,14 @@ def optimize(opts, terms, focused):
             return terms
 
         for chunk_count, chunk in enumerate(chunks):
-            log.info("Optimizing %s [Chunk %d]" % (type, chunk_count))
+            log.info("Optimizing %s [Chunk %d]" % (type, chunk_count))  # noqa: UP031
             chunks[chunk_count] = optimize_terms(chunk, focused, type, opts)
-            log.info("TCount: %d/%d" % (len(terms_old), len(terms)))
+            log.info("TCount: %d/%d" % (len(terms_old), len(terms)))  # noqa: UP031
 
     return terms_unchunk(chunks)
 
 
-def do_work(opts, files):  # noqa: PLR0912, PLR0915
+def do_work(opts, files):  # noqa: D103, PLR0912, PLR0915
     global stop_all  # noqa: PLW0602
     for acl_file in files:
         focused = None
@@ -565,7 +565,7 @@ def do_work(opts, files):  # noqa: PLR0912, PLR0915
             if stop_all:
                 break
 
-            log.info("Optimization pass %d" % passes)
+            log.info("Optimization pass %d" % passes)  # noqa: UP031
             terms = optimize(opts, terms_old, focused)
 
             if opts.passes and passes >= opts.passes:
@@ -587,7 +587,7 @@ def do_work(opts, files):  # noqa: PLR0912, PLR0915
                 if stop_all:
                     break
 
-                log.info("PORT Optimization pass %d" % passes)
+                log.info("PORT Optimization pass %d" % passes)  # noqa: UP031
                 terms = optimize(opts, terms_old, focused)
 
                 if opts.passes and passes >= opts.passes:

@@ -1,6 +1,6 @@
 """Commando plugin for loading configuration onto Juniper devices."""
 
-import os.path
+import os.path  # noqa: F401
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -21,7 +21,7 @@ if not hasattr(settings, "TFTP_HOST"):
     settings.TFTP_HOST = ""
 
 
-def xmlrpc_config_device(*args, **kwargs):
+def xmlrpc_config_device(*args, **kwargs):  # noqa: D103
     c = ConfigDevice(*args, **kwargs)
     return c.run()
 

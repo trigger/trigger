@@ -695,7 +695,7 @@ class CheckMiscIOS(unittest.TestCase):
         # Python 3: map() returns an iterator, convert to list for comparison
         self.assertEqual(
             t.output_ios(),
-            list(map(lambda x: "permit icmp any any %d" % x, types)),
+            list(map(lambda x: "permit icmp any any %d" % x, types)),  # noqa: UP031
         )
 
     def testCounterSuppression(self):

@@ -23,7 +23,7 @@ from trigger.netdevices import device_match
 settings.WITH_ACLS = False
 
 
-def parse_args(argv):
+def parse_args(argv):  # noqa: D103
     parser = OptionParser(
         usage="%prog [options] [device]",
         description="""\

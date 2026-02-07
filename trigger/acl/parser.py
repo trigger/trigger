@@ -27,7 +27,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from simpleparse.common import comments, strings  # noqa: E402
+from simpleparse.common import comments, strings  # noqa: E402, F401
 from simpleparse.dispatchprocessor import (  # noqa: E402
     DispatchProcessor,
     dispatch,
@@ -84,7 +84,7 @@ class ACLProcessor(DispatchProcessor):
     """SimpleParse dispatch processor for ACL grammar rules."""
 
 
-def default_processor(self, tag_info, buffer):
+def default_processor(self, tag_info, buffer):  # noqa: D103
     _tag, start, stop, subtags = tag_info
     if not subtags:
         return buffer[start:stop]
@@ -93,7 +93,7 @@ def default_processor(self, tag_info, buffer):
     return dispatchList(self, subtags, buffer)
 
 
-def make_nondefault_processor(action):
+def make_nondefault_processor(action):  # noqa: D103
     if callable(action):
 
         def processor(self, tag_info, buffer):

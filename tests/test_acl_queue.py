@@ -6,7 +6,7 @@ Test the functionality of `~trigger.acl.queue` (aka task queue)
 Only tests SQLite for now.
 """
 
-import os
+import os  # noqa: F401
 import tempfile
 from pathlib import Path
 

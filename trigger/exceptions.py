@@ -10,7 +10,7 @@ __version__ = "1.9"
 
 
 # Imports
-from simpleparse.error import ParserSyntaxError
+from simpleparse.error import ParserSyntaxError  # noqa: F401
 
 
 # Exceptions
@@ -42,7 +42,7 @@ class ParseError(ACLError):
     def __str__(self):
         s = self.reason
         if self.line is not None and self.line > 1:
-            s += " at line %d" % self.line
+            s += " at line %d" % self.line  # noqa: UP031
         return s
 
 

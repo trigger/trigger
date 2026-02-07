@@ -40,7 +40,7 @@ def ping(host, count=1, timeout=5):
     >>> network.ping('192.168.199.253')
     False
     """
-    ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)
+    ping_command = "ping -q -c%d -W%d %s" % (count, timeout, host)  # noqa: UP031
     status = None
     with Path(os.devnull).open("w") as devnull_fd:
         status = subprocess.call(  # noqa: S603
