@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 # trigger_xmlrpc.py - Twisted twistd server plugin for Trigger
 """
