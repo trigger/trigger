@@ -40,8 +40,7 @@ def get_template_path(cmd, dev_type=None):
     t_dir = settings.TEXTFSM_TEMPLATE_DIR
     return (
         str(
-            Path(t_dir)
-            / "{}_{}.template".format(dev_type, cmd.replace(" ", "_")),
+            Path(t_dir) / "{}_{}.template".format(dev_type, cmd.replace(" ", "_")),
         )
         or None
     )
