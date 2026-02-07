@@ -116,7 +116,7 @@ def notify(*args, **kwargs):
         # print 'Sending %s, %s to %s' % (args, kwargs, handler)
         try:
             result = handler(*args, **kwargs)
-        except Exception:  # noqa: PERF203
+        except Exception:  # noqa: PERF203, S112
             # print 'Got exception: %s' % err
             continue
         else:

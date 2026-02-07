@@ -134,7 +134,7 @@ class TriggerXMLRPCServer(xmlrpc.XMLRPC):
                 module = importlib.import_module(mod_name, __name__)
             except NameError as msg:
                 log.msg(f"NameError: {msg}")
-            except:
+            except:  # noqa: S110
                 pass
 
         if not module:

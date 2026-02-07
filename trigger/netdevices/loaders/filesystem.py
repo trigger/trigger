@@ -65,7 +65,7 @@ class XMLLoader(BaseLoader):
     def get_data(self, data_source):
         # Parsing the complete file into a tree once and extracting outthe
         # device nodes is faster than using iterparse(). Curses!!
-        xml = ET.parse(data_source).findall("device")
+        xml = ET.parse(data_source).findall("device")  # noqa: S314 - trusted local data
 
         # This is a generator within a generator. Trust me, it works in _populate()
         # Python 3.9+: getchildren() removed, use list(node) instead
