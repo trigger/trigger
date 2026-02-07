@@ -1,6 +1,61 @@
 # CHANGELOG
 
 
+## v2.2.3 (2026-02-07)
+
+### Bug Fixes
+
+- Anchor prompt patterns to line boundaries to prevent false matches
+  ([#317](https://github.com/trigger/trigger/pull/317),
+  [`aef5684`](https://github.com/trigger/trigger/commit/aef56849f77724c1b008f05d9e701311bdc34509))
+
+Prompt detection regex falsely matched '>' and '#' characters in command output (e.g. Juniper's
+  "Flags: <Sync RSync>") as device prompts, causing output truncation. Add compile_prompt_pattern()
+  helper that prepends a line-start anchor and prompt_match_start() to adjust match positions.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+### Documentation
+
+- Add explicit docs dependencies and fix stale Python version note
+  ([`33c86da`](https://github.com/trigger/trigger/commit/33c86da3a5d92ad3060d940d1086f1ae06e9d481))
+
+Add a `docs` optional dependency group (sphinx, sphinx_rtd_theme) to pyproject.toml so RTD builds
+  have the packages they need. Clean up .readthedocs.yml by removing the redundant pre_install job
+  and pointing extra_requirements at the new `docs` group instead of `dev`. Update the outdated
+  Python 2.6 note in docs/index.rst to reflect v2.0+ requirements (Python 3.10-3.11).
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Add rebase merge guidance to CLAUDE.md
+  ([`64f5893`](https://github.com/trigger/trigger/commit/64f5893a94ac989be341da6a36b0c84a3c45726c))
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Add v2.0.1–v2.2.2 entries to docs changelog and fix v2.0.0 date
+  ([`74ccc86`](https://github.com/trigger/trigger/commit/74ccc8645c2e9ded1c78ec83cd67494fd3dd7d01))
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Fold versionadded directives into Key Features bullet list
+  ([`749ef32`](https://github.com/trigger/trigger/commit/749ef329d163b395f8fb6d2495cd51f796606ecd))
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Update README and docs to reflect main branch and remove stale links
+  ([`6ddb930`](https://github.com/trigger/trigger/commit/6ddb930e7578da63c00fbe95e432ae4d46e6f5b5))
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Update tests badge to match CI workflow name
+  ([`1bd8353`](https://github.com/trigger/trigger/commit/1bd8353b27572005333a5edd3584b3bf4051be35))
+
+The badge referenced a "Tests" workflow that doesn't exist. Updated to match the actual "CI"
+  workflow in .github/workflows/ci.yml.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v2.2.2 (2026-02-06)
 
 ### Bug Fixes
