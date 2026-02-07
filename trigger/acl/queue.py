@@ -8,12 +8,6 @@
     'datacenter-protect'))
 """  # noqa: D205
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jmccollum@salesforce.com"
-__version__ = "2.0.1"
-
-
 import datetime
 
 from trigger import exceptions
@@ -25,7 +19,6 @@ from . import models
 
 # Globals
 QUEUE_NAMES = ("integrated", "manual")
-
 
 # Exports
 __all__ = ("Queue",)

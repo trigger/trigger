@@ -2,11 +2,6 @@
 
 # tests/scripts.py
 
-__author__ = "Michael Shields"
-__maintainer__ = "Jathan McCollum"
-__copyright__ = "Copyright 2005-2011 AOL Inc."
-__version__ = "1.1"
-
 import os
 import subprocess
 import unittest

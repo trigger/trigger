@@ -1,10 +1,5 @@
 """Provides a CVS like wrapper for local RCS (Revision Control System) with common commands."""
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2009-2011, AOL Inc."
-
 import os  # noqa: F401
 import time
 from pathlib import Path

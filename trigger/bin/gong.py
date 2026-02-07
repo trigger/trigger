@@ -8,8 +8,6 @@ Partially adapted from conch.  See twisted.conch.scripts.conch and
 http://twistedmatrix.com/projects/conch/documentation/howto/conch_client.html
 """
 
-__version__ = "2.0"
-
 import os
 import sys
 from optparse import OptionParser

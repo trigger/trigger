@@ -10,8 +10,6 @@ ACLs listed will load everything in the queue. ``load_acl --auto`` will
 automatically load eligible devices from the queue and email results.
 """
 
-__version__ = "1.9.2"
-
 # Dist imports
 import contextlib
 import curses

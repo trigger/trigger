@@ -18,11 +18,6 @@ set(['juniper-router.policer', 'juniper-router-protect'])
   'implicit': set(['juniper-router-protect', 'juniper-router.policer'])}
 """  # noqa: D205
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan@gmail.com"
-__copyright__ = "Copyright 2010-2012, AOL Inc.; 2013 Salesforce.com"
-
 from collections import defaultdict
 from pathlib import Path
 

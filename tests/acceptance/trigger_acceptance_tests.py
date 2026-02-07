@@ -10,11 +10,6 @@ netdevices = NetDevices(with_acls=False)
 nd = NetDevices(with_acls=False)
 print(list(nd.values()))
 
-__author__ = "Murat Ezbiderli"
-__maintainer__ = "Salesforce"
-__copyright__ = "Copyright 2012-2013 Salesforce Inc."
-__version__ = "2.1"
-
 import unittest
 
 from trigger.netdevices import NetDevices

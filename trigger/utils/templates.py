@@ -1,11 +1,5 @@
 """Templating functions for unstructured CLI output."""
 
-__author__ = "Thomas Cuthbert"
-__maintainer__ = "Thomas Cuthbert"
-__email__ = "tcuthbert90@gmail.com"
-__copyright__ = "Copyright 2016 Trigger Org"
-
-
 from pathlib import Path
 
 from twisted.python import log
@@ -22,7 +16,6 @@ except ImportError:
 
         >>> pip install textfsm
     """)
-
 
 # Exports
 __all__ = ("get_template_path", "get_textfsm_object", "load_cmd_template")

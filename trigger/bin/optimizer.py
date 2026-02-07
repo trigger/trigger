@@ -7,8 +7,6 @@ various algorithms to determine which filters can be merged
 and removed.
 """
 
-__version__ = "1.5"
-
 import copy
 import logging
 import signal

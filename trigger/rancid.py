@@ -24,12 +24,6 @@ Or using multiple RANCID instances within a single root::
 
 """
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2012-2012, AOL Inc.; 2013 Salesforce.com"
-__version__ = "0.1.1"
-
 import collections
 import csv
 import itertools

@@ -5,11 +5,6 @@ provide a reasonable API on top of that.  The name and format of the
 .tacacsrc file are not ideal, but compatibility matters.
 """
 
-__author__ = "Jathan McCollum, Mark Thomas, Michael Shields"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jmccollum@salesforce.com"
-__copyright__ = "Copyright 2006-2012, AOL Inc.; 2013 Salesforce.com"
-
 import getpass
 import os
 import pwd

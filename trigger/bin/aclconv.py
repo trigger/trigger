@@ -2,8 +2,6 @@
 
 """aclconv - Converts an ACL, or a list of ACLs, from one format to another."""
 
-__version__ = "1.11"
-
 import optparse
 import sys
 from pathlib import Path

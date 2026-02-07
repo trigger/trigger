@@ -13,13 +13,6 @@ This differs from `~trigger.cmds.Commando` in that:
 + Each result object is meant to be easily serialized (e.g. to JSON).
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Mike Biancaniello"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan@gmail.com"
-__copyright__ = "Copyright 2012-2013, AOL Inc."
-__version__ = "0.2.1"
-
-
 # Imports
 import itertools
 import os
@@ -35,7 +28,6 @@ from trigger.cmds import Commando
 
 # Exports
 __all__ = ("CommandoApplication",)
-
 
 # Enable Deferred debuging if ``DEBUG`` is set.
 if os.getenv("DEBUG"):

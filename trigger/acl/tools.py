@@ -2,11 +2,6 @@
 that have matured over time have been moved into this module.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Eileen Tschetter"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2010-2011, AOL Inc."
-
 import datetime
 import os
 import re
@@ -23,7 +18,6 @@ from trigger.conf import settings
 DEBUG = False
 DATE_FORMAT = "%Y-%m-%d"
 DEFAULT_EXPIRE = 6 * 30  # 6 months
-
 
 # Exports
 __all__ = (

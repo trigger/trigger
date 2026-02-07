@@ -2,13 +2,6 @@
 used, but sometimes we need more descriptive errors.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan@gmail.com"
-__copyright__ = "Copyright 2012-2012, AOL Inc."
-__version__ = "1.9"
-
-
 # Imports
 from simpleparse.error import ParserSyntaxError  # noqa: F401
 
