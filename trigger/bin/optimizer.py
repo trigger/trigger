@@ -130,6 +130,8 @@ is set to 0 (or off).
 
 
 class ProgressMeter:
+    """Display progress during ACL optimization."""
+
     def __init__(self, **kw):
         # What time do we start tracking our progress from?
         self.timestamp = kw.get("timestamp", time.time())
@@ -211,7 +213,7 @@ class ProgressMeter:
         self.last_refresh = time.time()
 
 
-def focus_terms(pcount, terms):
+def focus_terms(pcount, terms):  # noqa: PLR0912
     """Generates a list of term names that have a port count
     greater than pcount for the optimizer to 'focus' in on.
     """
@@ -260,7 +262,7 @@ chk_keys = ["protocol", "source-address", "destination-address", "destination-po
 rej_keys = ["reject", "deny", "discard"]
 
 
-def optimize_terms(terms, focused, which, opts):  # noqa: PLR0915
+def optimize_terms(terms, focused, which, opts):  # noqa: PLR0912, PLR0915
     global stop_all  # noqa: PLW0602
     to_delete = dict()
     other = ""
@@ -518,7 +520,7 @@ def optimize(opts, terms, focused):
     return terms_unchunk(chunks)
 
 
-def do_work(opts, files):  # noqa: PLR0915
+def do_work(opts, files):  # noqa: PLR0912, PLR0915
     global stop_all  # noqa: PLW0602
     for acl_file in files:
         focused = None

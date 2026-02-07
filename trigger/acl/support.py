@@ -34,12 +34,13 @@ __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
 import contextlib
+from typing import ClassVar
 
 import IPy
 
 from trigger import exceptions
 
-from .dicts import *
+from .dicts import *  # noqa: F403
 
 # Python 2/3 compatibility
 unicode = str
@@ -680,7 +681,7 @@ class ACL:
         # Make sure we properly set 'family' so it's automatically used for
         # printing.
         if family is not None:
-            assert family in ("inet", "inet6")
+            assert family in ("inet", "inet6")  # noqa: S101
         else:
             family = self.family
 
@@ -1053,7 +1054,7 @@ class Protocol:
     Acts like an integer, but stringify into a name if possible.
     """
 
-    num2name = {
+    num2name: ClassVar[dict[int, str]] = {
         1: "icmp",
         2: "igmp",
         4: "ipip",
@@ -1071,7 +1072,7 @@ class Protocol:
         # 112: 'vrrp' # Breaks Cisco compatibility
     }
 
-    name2num = {v: k for k, v in num2name.items()}
+    name2num: ClassVar[dict[str, int]] = {v: k for k, v in num2name.items()}
     name2num["ahp"] = 51  # undocumented Cisco special name
 
     def __init__(self, arg):
@@ -1147,7 +1148,7 @@ class Matches(MyDict):
     access checks.
     """
 
-    def __setitem__(self, key, arg):  # noqa: PLR0915
+    def __setitem__(self, key, arg):  # noqa: PLR0912, PLR0915
         if key in (
             "ah-spi",
             "destination-mac-address",
@@ -1332,7 +1333,7 @@ class Matches(MyDict):
             a.append(s + ";")
         return a
 
-    def output_ios(self):  # noqa: PLR0915
+    def output_ios(self):  # noqa: PLR0912, PLR0915
         """Return a string of IOS ACL bodies."""
         # This is a mess!  Thanks, Cisco.
         protos = []

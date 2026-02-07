@@ -16,7 +16,7 @@ from pathlib import Path
 
 import IPy
 
-from trigger.acl.parser import *
+from trigger.acl.parser import *  # noqa: F403
 from trigger.conf import settings
 
 # Defaults
@@ -83,7 +83,7 @@ def create_trigger_term(
     return term
 
 
-def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=None):
+def check_access(terms_to_check, new_term, quiet=True, format="junos", acl_name=None):  # noqa: PLR0912
     """Determine whether access is permitted by a given ACL (list of terms).
 
     Tests a new term against a list of terms. Return True if access in new term
@@ -225,7 +225,7 @@ def create_access(terms_to_check, new_term):
 
 
 # note, following code is -not currently used-
-def insert_term_into_acl(new_term, aclobj, debug=False):
+def insert_term_into_acl(new_term, aclobj, debug=False):  # noqa: PLR0912
     """Return a new ACL object with the new_term added in the proper place based
     on the aclobj. Intended to recursively append to an interim ACL object
     based on a list of Term objects.
@@ -565,7 +565,7 @@ class ACLScript:
         for file in self.tempfiles:
             Path(file).unlink()
 
-    def genargs(self, interactive=False):
+    def genargs(self, interactive=False):  # noqa: PLR0912
         if not self.acl:
             msg = "need acl defined"
             raise ValueError(msg)

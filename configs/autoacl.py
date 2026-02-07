@@ -30,7 +30,7 @@ log.msg("IN CUSTOM AUTOACL.PY FILE:", __file__)
 OWNERS = settings.VALID_OWNERS
 
 
-def autoacl(dev, explicit_acls=None):
+def autoacl(dev, explicit_acls=None):  # noqa: PLR0912
     """Given a NetDevice object, returns a set of **implicit** (auto) ACLs. We require
     a device object so that we don't have circular dependencies between netdevices
     and autoacl.

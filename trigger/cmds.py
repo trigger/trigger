@@ -353,7 +353,7 @@ class Commando:
             "generate": "to_%s",
             "parse": "from_%s",
         }
-        assert method in METHOD_MAP
+        assert method in METHOD_MAP  # noqa: S101
 
         desired_method = None
 
@@ -907,7 +907,7 @@ class NetACLInfo(Commando):
     def __children_with_namespace(self, ns):
         return lambda elt, tag: elt.findall("./" + ns + tag)
 
-    def from_juniper(self, data, device, commands=None):
+    def from_juniper(self, data, device, commands=None):  # noqa: PLR0912
         """Do all the magic to parse Junos interfaces."""
         self.results[device.nodeName] = data  # "MY OWN JUNOS DATA"
 

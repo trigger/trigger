@@ -21,6 +21,8 @@ def xmlrpc_show_clock(*args, **kwargs):
 
 
 class ShowClock(CommandoApplication):
+    """Commando application for retrieving device clock information."""
+
     def to_cisco(self, dev, commands=None, extra=None):
         return ["show clock"]
 

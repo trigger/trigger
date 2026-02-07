@@ -7,6 +7,7 @@ __copyright__ = "Copyright 2006-2012, AOL Inc."
 
 # Imports
 from datetime import datetime, timedelta
+from typing import ClassVar
 
 from pytz import UTC, timezone
 
@@ -171,7 +172,7 @@ class BounceWindow:
     """
 
     # Prepopulate these objects to save a little horsepower
-    BOUNCE_STATUS = {n: BounceStatus(n) for n in BOUNCE_VALUES}
+    BOUNCE_STATUS: ClassVar[dict] = {n: BounceStatus(n) for n in BOUNCE_VALUES}
 
     def __init__(
         self,

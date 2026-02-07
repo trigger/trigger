@@ -21,7 +21,7 @@ __all__ = ["acl_exists", "parser"]
 
 # Parser
 from . import parser
-from .parser import *
+from .parser import *  # noqa: F403
 
 __all__.extend(parser.__all__)
 

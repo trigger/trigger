@@ -11,7 +11,7 @@ __all__ = ["mock_redis"]
 
 # misc
 from . import misc
-from .misc import *
+from .misc import *  # noqa: F403
 
 __all__.extend(misc.__all__)
 

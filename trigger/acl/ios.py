@@ -18,7 +18,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from .grammar import *
+from .grammar import *  # noqa: F403
 
 
 class Remark(Comment):
@@ -37,7 +37,7 @@ class Remark(Comment):
 inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(33)])
 
 
-def handle_ios_match(a):
+def handle_ios_match(a):  # noqa: PLR0912
     protocol, source, dest = a[:3]
     extra = a[3:]
 
@@ -79,7 +79,7 @@ def handle_ios_match(a):
     return {"match": match, "modifiers": modifiers}
 
 
-def handle_ios_acl(rows):
+def handle_ios_acl(rows):  # noqa: PLR0912
     acl = ACL()
     for d in rows:
         if not d:

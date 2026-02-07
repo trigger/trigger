@@ -33,6 +33,8 @@ __all__ = ("BaseLoader", "load_metadata")
 
 # Classes
 class BaseLoader:
+    """Base class for NetDevices metadata loaders."""
+
     is_usable = False
 
     def __init__(self, *args, **kwargs):

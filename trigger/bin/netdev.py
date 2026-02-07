@@ -176,7 +176,7 @@ def parse_args(argv):
     return opts, args
 
 
-def search_builder(opts):  # noqa: PLR0915
+def search_builder(opts):  # noqa: PLR0912, PLR0915
     """Builds a list comprehension from the options passed at command-line and
     then evaluates it to return a list of matching device names.
     """

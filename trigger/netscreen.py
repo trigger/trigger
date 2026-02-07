@@ -167,7 +167,7 @@ class NetScreen:
             rule,
         ) in rules.items():
             if isinstance(rule, tuple):
-                assert len(rule) == 2
+                assert len(rule) == 2  # noqa: S101
                 setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
                 self.grammar.append(f"{production} := {rule[0]}")
             else:
@@ -187,7 +187,7 @@ class NetScreen:
         success, children, nextchar = parser.parse(string)
 
         if success and nextchar == len(string):
-            assert len(children) == 1
+            assert len(children) == 1  # noqa: S101
             return children[0]
         line = string[:nextchar].count("\n") + 1
         column = len(string[string[nextchar].rfind("\n") : nextchar]) + 2
@@ -218,7 +218,7 @@ class NetScreen:
             return TIP(ipstr)
         return TIP(iptuple[0].strNormal())
 
-    def handle_raw_netscreen(self, rows):  # noqa: PLR0915
+    def handle_raw_netscreen(self, rows):  # noqa: PLR0912, PLR0915
         """The parser will hand it's final output to this function, which decodes
         and puts everything in the right place.
         """
@@ -413,7 +413,7 @@ class NSGroup(NetScreen):
         return getattr(self, "add_" + self.type)(item)
 
     def add_address(self, addr):
-        assert self.type == "address"
+        assert self.type == "address"  # noqa: S101
         if not isinstance(addr, NSAddress):
             msg = "add_address requires NSAddress object"
             raise TypeError(msg)
@@ -428,7 +428,7 @@ class NSGroup(NetScreen):
         self.nodes.append(addr)
 
     def add_service(self, svc):
-        assert self.type == "service"
+        assert self.type == "service"  # noqa: S101
         if not isinstance(svc, NSService):
             msg = "add_service requires NSService object"
             raise TypeError(msg)

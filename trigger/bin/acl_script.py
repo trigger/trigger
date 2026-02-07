@@ -353,7 +353,7 @@ def log_term(term, msg="ADDING"):
     print()
 
 
-def wedge_acl(acl, new_term, between, opts):  # noqa: PLR0915
+def wedge_acl(acl, new_term, between, opts):  # noqa: PLR0912, PLR0915
     if not between:
         # ugg, don't deal with this yet.
         return
@@ -414,7 +414,7 @@ def wedge_acl(acl, new_term, between, opts):  # noqa: PLR0915
             acl.terms = create_term
     elif isinstance(between, str):
         # find a specific term to modify
-        assert acl.format == "junos"
+        assert acl.format == "junos"  # noqa: S101
         for term in acl.terms:
             if term.name == between:
                 if opts.replace_defined:
@@ -459,7 +459,7 @@ def wedge_acl(acl, new_term, between, opts):  # noqa: PLR0915
                 break
 
 
-def main():  # noqa: PLR0915
+def main():  # noqa: PLR0912, PLR0915
     """Main entry point for the CLI tool."""
     opts, _args = parse_args(sys.argv)
     for acl_file in opts.acl:

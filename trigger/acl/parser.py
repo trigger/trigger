@@ -33,9 +33,9 @@ from simpleparse.parser import Parser
 
 from trigger import exceptions
 
-from .ios import *
-from .junos import *
-from .support import *
+from .ios import *  # noqa: F403
+from .junos import *  # noqa: F403
+from .support import *  # noqa: F403
 
 # Exports
 __all__ = (
@@ -77,7 +77,7 @@ Comments = []
 
 
 class ACLProcessor(DispatchProcessor):
-    pass
+    """SimpleParse dispatch processor for ACL grammar rules."""
 
 
 def default_processor(self, tag_info, buffer):
@@ -112,7 +112,7 @@ def make_nondefault_processor(action):
 grammar = []
 for production, rule in rules.items():
     if isinstance(rule, tuple):
-        assert len(rule) == 2
+        assert len(rule) == 2  # noqa: S101
         setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
         grammar.append(f"{production} := {rule[0]}")
     else:
@@ -123,6 +123,8 @@ grammar = "\n".join(grammar)
 
 
 class ACLParser(Parser):
+    """SimpleParse parser for ACL text."""
+
     def buildProcessor(self):
         return ACLProcessor()
 
@@ -150,7 +152,7 @@ def parse(input_data):
     success, children, nextchar = parser.parse(data)
 
     if success and nextchar == len(data):
-        assert len(children) == 1
+        assert len(children) == 1  # noqa: S101
         return children[0]
     line = data[:nextchar].count("\n") + 1
     column = len(data[data[nextchar].rfind("\n") : nextchar]) + 1

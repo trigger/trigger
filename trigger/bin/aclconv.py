@@ -18,7 +18,7 @@ formats = {
 }
 
 
-def main():
+def main():  # noqa: PLR0912
     """Main entry point for the CLI tool."""
     optp = optparse.OptionParser(
         description="""\

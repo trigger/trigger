@@ -18,7 +18,7 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from .support import *
+from .support import *  # noqa: F403
 
 # Each production can be any of:
 # 1. string

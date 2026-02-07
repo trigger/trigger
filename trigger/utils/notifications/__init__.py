@@ -9,9 +9,8 @@ __copyright__ = "Copyright 2012-2012, AOL Inc."
 __all__ = []
 
 # Core
-from core import *
-
 from . import core
+from .core import *  # noqa: F403
 
 __all__.extend(core.__all__)
 
@@ -21,8 +20,7 @@ from . import events
 __all__.extend(events.__all__)
 
 # Handlers
-from handlers import *
-
 from . import handlers
+from .handlers import *  # noqa: F403
 
 __all__.extend(handlers.__all__)

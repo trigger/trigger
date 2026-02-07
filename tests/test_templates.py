@@ -3,7 +3,7 @@ from io import StringIO
 
 from trigger.cmds import Commando
 from trigger.netdevices import NetDevices
-from trigger.utils.templates import *
+from trigger.utils.templates import *  # noqa: F403
 
 # Constants
 DEVICE_NAME = "test1-abc.net.aol.com"

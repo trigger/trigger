@@ -19,6 +19,7 @@ import re
 import socket
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import ClassVar
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
 from twisted.python import log
@@ -28,9 +29,8 @@ from trigger.conf import settings
 
 # Exports
 __all__ = ["CommandRunner", "ConfigLoader", "DoCommandBase", "core", "xml_print"]
-from core import *
-
 from . import core
+from .core import *  # noqa: F403
 
 __all__.extend(core.__all__)
 
@@ -190,14 +190,22 @@ class ConfigLoader(Commando):
     description = "Load configuration changes on network devices."
 
     # These are the only officially supported vendors at this time
-    vendors = ["a10", "arista", "brocade", "cisco", "foundry", "dell", "juniper"]
+    vendors: ClassVar[list[str]] = [
+        "a10",
+        "arista",
+        "brocade",
+        "cisco",
+        "foundry",
+        "dell",
+        "juniper",
+    ]
 
     # TODO: The config commands should be moved into NetDevice object
     # (.configure_commands). The save commands are already managed like that,
     # but we don't yet have a way to account for Juniper CLI commit command (it
     # assumes JunoScript). We need to not be hard-coding these types of things
     # all over the code-base.
-    known_commands = {
+    known_commands: ClassVar[dict] = {
         "config": {
             "a10": "configure terminal",
             "arista": "configure terminal",

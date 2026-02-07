@@ -28,7 +28,7 @@ __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
 from trigger.conf import settings
 
-from .grammar import *
+from .grammar import *  # noqa: F403
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
@@ -40,7 +40,7 @@ class Policer:
     now, that just passes it through as a string.
     """
 
-    def __init__(self, name, data):
+    def __init__(self, name, data):  # noqa: PLR0912
         if not name:
             msg = "Policer requres name"
             raise exceptions.ActionError(msg)
@@ -136,6 +136,8 @@ class PolicerGroup:
 
 
 class QuotedString(str):
+    """String subclass that wraps its value in double quotes."""
+
     def __str__(self):
         return '"' + self + '"'
 
