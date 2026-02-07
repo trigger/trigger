@@ -7,12 +7,14 @@ database (acls.db), to search for both implicit and explicit ACL associations,
 and to manage the ACL task queue.
 """
 
+__version__ = "1.6.1"
+
 import optparse
 import sys
 from collections import defaultdict
 from textwrap import wrap
 
-from trigger import __version__, exceptions
+from trigger import exceptions
 from trigger.acl.db import AclsDB, get_matching_acls
 from trigger.acl.queue import Queue
 from trigger.conf import settings
