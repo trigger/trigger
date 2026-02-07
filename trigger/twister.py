@@ -315,7 +315,7 @@ def handle_login_failure(failure):
     :param failure:
         A Twisted ``Failure`` instance
     """
-    global login_failed
+    global login_failed  # noqa: PLW0603
     login_failed = failure
 
 

@@ -116,7 +116,7 @@ class PolicerGroup:
     def __init__(self, format=None):
         self.policers = []
         self.format = format
-        global Comments
+        global Comments  # noqa: PLW0603
         self.comments = Comments
         Comments = []
 

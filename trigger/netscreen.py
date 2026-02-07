@@ -218,7 +218,7 @@ class NetScreen:
             return TIP(ipstr)
         return TIP(iptuple[0].strNormal())
 
-    def handle_raw_netscreen(self, rows):
+    def handle_raw_netscreen(self, rows):  # noqa: PLR0915
         """The parser will hand it's final output to this function, which decodes
         and puts everything in the right place.
         """

@@ -279,7 +279,7 @@ def debug_fakeout():
     return os.getenv("DEBUG_FAKEOUT") is not None
 
 
-def get_work(opts, args):
+def get_work(opts, args):  # noqa: PLR0915
     """Determine the set of devices to load on, and what ACLs to load on
     each.  Processes extra CLI arguments to modify the work queue. Return a
     dictionary of ``{nodeName: set(acls)}``.
@@ -551,7 +551,7 @@ def clear_load_queue(dev, acls):
     queue.complete(dev, acls)
 
 
-def activate(work, active, failures, jobs, redraw, opts):
+def activate(work, active, failures, jobs, redraw, opts):  # noqa: PLR0915
     """Refill the active work queue based on number of current active jobs.
 
     :param work:
@@ -689,7 +689,7 @@ def run(stdscr, work, jobs, failures, opts):
     reactor.run()
 
 
-def main():
+def main():  # noqa: PLR0915
     """The Main Event."""
     global opts
     opts, args = parse_args(sys.argv)
@@ -701,7 +701,7 @@ def main():
         opts.no_curses = True
         opts.queue = True
 
-    global queue
+    global queue  # noqa: PLW0603
     if opts.no_db:
         queue = None
 

@@ -110,7 +110,7 @@ def get_terminal_width():
 
 def get_terminal_size():
     """Find and return stdouts terminal size as (height, width)."""
-    rows, cols = os.popen("stty size", "r").read().split()  # noqa: S607
+    rows, cols = os.popen("stty size", "r").read().split()  # noqa: S605, S607
     return rows, cols
 
 

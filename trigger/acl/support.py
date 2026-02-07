@@ -649,7 +649,7 @@ class ACL:
             self.terms = terms
         else:
             self.terms = TermList()
-        global Comments
+        global Comments  # noqa: PLW0603
         self.comments = Comments
         Comments = []
 
@@ -875,7 +875,7 @@ class Term:
         else:
             self.modifiers = modifiers
 
-        global Comments
+        global Comments  # noqa: PLW0603
         self.comments = Comments
         Comments = []
 
@@ -1147,7 +1147,7 @@ class Matches(MyDict):
     access checks.
     """
 
-    def __setitem__(self, key, arg):
+    def __setitem__(self, key, arg):  # noqa: PLR0915
         if key in (
             "ah-spi",
             "destination-mac-address",
@@ -1332,7 +1332,7 @@ class Matches(MyDict):
             a.append(s + ";")
         return a
 
-    def output_ios(self):
+    def output_ios(self):  # noqa: PLR0915
         """Return a string of IOS ACL bodies."""
         # This is a mess!  Thanks, Cisco.
         protos = []

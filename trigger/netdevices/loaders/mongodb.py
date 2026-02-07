@@ -1,3 +1,5 @@
+"""NetDevices loader for MongoDB-backed device metadata."""
+
 from trigger.exceptions import LoaderFailed
 from trigger.netdevices.loader import BaseLoader
 

@@ -1,3 +1,5 @@
+"""Commando plugin for retrieving version information from network devices."""
+
 from twisted.python import log
 
 from trigger.contrib.commando import CommandoApplication

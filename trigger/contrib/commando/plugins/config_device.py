@@ -1,3 +1,5 @@
+"""Commando plugin for loading configuration onto Juniper devices."""
+
 import os.path
 import re
 import xml.etree.ElementTree as ET
@@ -116,9 +118,9 @@ class ConfigDevice(CommandoApplication):
         for fname in files:
             filecontents = ""
             if not Path(fname).is_file():
-                fname = tftp_dir + fname  # noqa: PLW2901
+                fname = self.tftp_dir + fname  # noqa: PLW2901
             try:
-                filecontents = file(fname).read()
+                filecontents = Path(fname).read_text()
             except OSError:
                 log.msg(f"Unable to open file: {fname}")
             if filecontents == "":

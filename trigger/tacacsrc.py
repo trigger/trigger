@@ -391,7 +391,7 @@ class Tacacsrc:
             # Check for version
             if key == "version":
                 if val != self.version:
-                    msg = f"Bad .tacacsrc version ({v})"
+                    msg = f"Bad .tacacsrc version ({val})"
                     raise VersionMismatch(msg)
                 continue
 
@@ -499,7 +499,7 @@ class Tacacsrc:
     def _decrypt_and_read(self):
         """Decrypt file using GPG and return the raw data."""
         ret = []
-        for x in os.popen(f"gpg2 --no-tty --quiet -d {self.file_name}"):
+        for x in os.popen(f"gpg2 --no-tty --quiet -d {self.file_name}"):  # noqa: S605
             x = x.rstrip()  # noqa: PLW2901
             ret.append(x)
 
@@ -507,7 +507,7 @@ class Tacacsrc:
 
     def _encrypt_and_write(self):
         """Encrypt using GPG and dump password data to disk."""
-        fin, _fout = os.popen2(
+        fin, _fout = os.popen2(  # noqa: S605
             f"gpg2 --yes --quiet -r {self.username} -e -o {self.file_name}",
         )
         for line in self.rawdata:

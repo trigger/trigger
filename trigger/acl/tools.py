@@ -499,7 +499,7 @@ def write_tmpacl(acl, process_name="_tmpacl"):
 
 def diff_files(old, new):
     """Return a unified diff between two files."""
-    return os.popen(f"diff -Naur {old} {new}").read()
+    return os.popen(f"diff -Naur {old} {new}").read()  # noqa: S605
 
 
 def worklog(title, diff, log_string="updated by express-gen"):
@@ -641,9 +641,9 @@ class ACLScript:
         log = []
         # print self.cmd + ' ' + ' '.join(args)
         if interactive:
-            os.system(self.cmd + " " + " ".join(args))
+            os.system(self.cmd + " " + " ".join(args))  # noqa: S605
         else:
-            f = os.popen(self.cmd + " " + " ".join(args))
+            f = os.popen(self.cmd + " " + " ".join(args))  # noqa: S605
             line = f.readline()
             while line:
                 line = line.rstrip()

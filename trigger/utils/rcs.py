@@ -83,7 +83,7 @@ class RCS:
             cmd = f'ci -m"first commit" -t- -i {self.filename}'
         else:
             cmd = f'ci -u -m"{logmsg}" {self.filename}'
-        status, output = commands.getstatusoutput(cmd)
+        status, output = commands.getstatusoutput(cmd)  # noqa: S605
 
         if verbose:
             print(output)
@@ -100,7 +100,7 @@ class RCS:
         True
         """
         cmd = f"co -f -l {self.filename}"
-        status, output = commands.getstatusoutput(cmd)
+        status, output = commands.getstatusoutput(cmd)  # noqa: S605
 
         if verbose:
             print(output)
@@ -120,7 +120,7 @@ class RCS:
         True
         """
         cmd = f"co -f -u {self.filename}"
-        status, output = commands.getstatusoutput(cmd)
+        status, output = commands.getstatusoutput(cmd)  # noqa: S605
 
         if verbose:
             print(output)
@@ -161,7 +161,7 @@ class RCS:
     def log(self):
         """Returns the RCS log as a string (see above)."""
         cmd = f"rlog {self.filename} 2>&1"
-        status, output = commands.getstatusoutput(cmd)
+        status, output = commands.getstatusoutput(cmd)  # noqa: S605
 
         if status > 0:
             return None

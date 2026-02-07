@@ -1,6 +1,9 @@
-# Default Trigger settings. Override these with settings in the module
-# pointed-to by the TRIGGER_SETTINGS environment variable. This is pretty much
-# an exact duplication of how Django does this.
+"""Default Trigger settings.
+
+Override these with settings in the module pointed-to by the TRIGGER_SETTINGS
+environment variable. This is pretty much an exact duplication of how Django
+does this.
+"""
 
 import os
 import socket
