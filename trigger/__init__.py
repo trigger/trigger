@@ -1,3 +1,5 @@
+"""Trigger: Network automation toolkit for managing network devices."""
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:

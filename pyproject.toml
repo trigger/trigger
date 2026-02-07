@@ -127,22 +127,15 @@ ignore = [
 
     # --- Bugbear exceptions ---
     "B016",     # raise-literal (used intentionally in tests)
-    "B018",     # useless-expression (test assertions)
-
-    # --- Pre-commit specific ignores ---
-    "PT028",    # pytest parameter defaults (false positive, not pytest functions)
-
     # --- Docstring exceptions (not enforcing coverage/style) ---
     "D100",     # undocumented-public-module
     "D101",     # undocumented-public-class
     "D102",     # undocumented-public-method
     "D103",     # undocumented-public-function
-    "D104",     # undocumented-public-package
     "D105",     # undocumented-magic-method
     "D107",     # undocumented-public-init
     "D205",     # missing-blank-line-after-summary
     "D401",     # non-imperative-mood
-    "D402",     # signature-in-docstring
     "D404",     # docstring-starts-with-this
 
     # --- Complexity (deep refactoring territory) ---

@@ -419,7 +419,7 @@ def get_work(opts, args):
                 )
                 del work[dev]
             print("\nUse --bouncy to forcefully load on these devices anyway.")
-        print
+        print()
 
     # Display filtered acls
     for a in filtered_acls:

@@ -71,4 +71,4 @@ if __name__ == "__main__":
     for test in tests:
         print(test)
         pprint.pprint(parse_url(test))
-        print
+        print()
