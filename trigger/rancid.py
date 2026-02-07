@@ -271,7 +271,7 @@ def _parse_config_file(
                 if idx >= max_lines:
                     break
 
-                if any([line.startswith("#"), line.startswith("!") and len(line) > 2]):
+                if any([line.startswith("#"), line.startswith("!") and len(line) > 2]):  # noqa: PLR2004
                     config.append(line.strip())
 
             return config
@@ -401,7 +401,7 @@ class Rancid:
         Whether you want to recurse directories.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         rancid_root,
         rancid_db_file=RANCID_DB_FILE,

@@ -15,12 +15,12 @@ from .core import *  # noqa: F403
 __all__.extend(core.__all__)
 
 # Events
-from . import events
+from . import events  # noqa: E402
 
 __all__.extend(events.__all__)
 
 # Handlers
-from . import handlers
-from .handlers import *  # noqa: F403
+from . import handlers  # noqa: E402
+from .handlers import *  # noqa: F403, E402
 
 __all__.extend(handlers.__all__)

@@ -27,15 +27,19 @@ __maintainer__ = "Jathan McCollum"
 __email__ = "jathanism@aol.com"
 __copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
 
-from simpleparse.common import comments, strings
-from simpleparse.dispatchprocessor import DispatchProcessor, dispatch, dispatchList
-from simpleparse.parser import Parser
+from simpleparse.common import comments, strings  # noqa: E402
+from simpleparse.dispatchprocessor import (  # noqa: E402
+    DispatchProcessor,
+    dispatch,
+    dispatchList,
+)
+from simpleparse.parser import Parser  # noqa: E402
 
-from trigger import exceptions
+from trigger import exceptions  # noqa: E402
 
-from .ios import *  # noqa: F403
-from .junos import *  # noqa: F403
-from .support import *  # noqa: F403
+from .ios import *  # noqa: F403, E402
+from .junos import *  # noqa: F403, E402
+from .support import *  # noqa: F403, E402
 
 # Exports
 __all__ = (
@@ -112,7 +116,7 @@ def make_nondefault_processor(action):
 grammar = []
 for production, rule in rules.items():
     if isinstance(rule, tuple):
-        assert len(rule) == 2  # noqa: S101
+        assert len(rule) == 2  # noqa: S101, PLR2004
         setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
         grammar.append(f"{production} := {rule[0]}")
     else:

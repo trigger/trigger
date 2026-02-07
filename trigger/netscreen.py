@@ -167,7 +167,7 @@ class NetScreen:
             rule,
         ) in rules.items():
             if isinstance(rule, tuple):
-                assert len(rule) == 2  # noqa: S101
+                assert len(rule) == 2  # noqa: S101, PLR2004
                 setattr(ACLProcessor, production, make_nondefault_processor(rule[1]))
                 self.grammar.append(f"{production} := {rule[0]}")
             else:
@@ -212,7 +212,7 @@ class NetScreen:
 
     def netmask2cidr(self, iptuple):
         """Converts dotted-quad netmask to cidr notation."""
-        if len(iptuple) == 2:
+        if len(iptuple) == 2:  # noqa: PLR2004
             addr, mask = iptuple
             ipstr = addr.strNormal() + "/" + mask.strNormal()
             return TIP(ipstr)
@@ -244,7 +244,7 @@ class NetScreen:
                 name = None
                 entry = None
 
-                if len(node) == 4:
+                if len(node) == 4:  # noqa: PLR2004
                     type, zone, name, entry = node
                 else:
                     type, name, entry = node
@@ -386,9 +386,9 @@ class NSRawGroup:
     """Container for group definitions."""
 
     def __init__(self, data):
-        if data[0] == "address" and len(data) == 3:
+        if data[0] == "address" and len(data) == 3:  # noqa: PLR2004
             data.append(None)
-        if data[0] == "service" and len(data) == 2:
+        if data[0] == "service" and len(data) == 2:  # noqa: PLR2004
             data.append(None)
 
         self.data = data
@@ -661,7 +661,7 @@ class NSAddress(NetScreen):
 class NSService(NetScreen):
     """Container for individual service items."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name=None,
         protocol=None,
@@ -778,7 +778,7 @@ class NSRawPolicy:
 class NSPolicy(NetScreen):
     """Container for individual policy definitions."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name=None,
         address_book=None,
@@ -814,7 +814,7 @@ class NSPolicy(NetScreen):
         addr = TIP(address)
         found = address_book.find(addr, zone)
         if not found:
-            if addr.prefixlen() == 32:
+            if addr.prefixlen() == 32:  # noqa: PLR2004
                 name = f"h{addr.strNormal(0)}"
             else:
                 name = f"n{addr.strNormal()}"

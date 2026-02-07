@@ -215,7 +215,7 @@ def stop_reactor():
 # ==================
 
 
-def pty_connect(
+def pty_connect(  # noqa: PLR0913
     device,
     action,
     creds=None,
@@ -428,7 +428,7 @@ def _choose_execute(device, force_cli=False):
     return _execute
 
 
-def execute(
+def execute(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -511,7 +511,7 @@ def execute(
     )
 
 
-def execute_generic_ssh(
+def execute_generic_ssh(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -560,7 +560,7 @@ def execute_generic_ssh(
     return d
 
 
-def execute_exec_ssh(
+def execute_exec_ssh(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -596,7 +596,7 @@ def execute_exec_ssh(
     )
 
 
-def execute_junoscript(
+def execute_junoscript(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -632,7 +632,7 @@ def execute_junoscript(
     )
 
 
-def execute_ioslike(
+def execute_ioslike(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -686,7 +686,7 @@ def execute_ioslike(
     return defer.fail(e)
 
 
-def execute_ioslike_telnet(
+def execute_ioslike_telnet(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -721,7 +721,7 @@ def execute_ioslike_telnet(
     return d
 
 
-def execute_async_pty_ssh(
+def execute_async_pty_ssh(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -755,7 +755,7 @@ def execute_async_pty_ssh(
     )
 
 
-def execute_ioslike_ssh(
+def execute_ioslike_ssh(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -796,7 +796,7 @@ def execute_ioslike_ssh(
     )
 
 
-def execute_netscreen(
+def execute_netscreen(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -835,7 +835,7 @@ def execute_netscreen(
     )
 
 
-def execute_netscaler(
+def execute_netscaler(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -866,7 +866,7 @@ def execute_netscaler(
     )
 
 
-def execute_pica8(
+def execute_pica8(  # noqa: PLR0913
     device,
     commands,
     creds=None,
@@ -965,7 +965,7 @@ class TriggerSSHChannelFactory(TriggerClientFactory):
     NetScreen, NetScaler) to eliminate boiler plate in those subclasses.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         deferred,
         commands,
@@ -1015,7 +1015,7 @@ class TriggerSSHPtyClientFactory(TriggerClientFactory):
     Use it to interact with the user and pass along commands.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         deferred,
         action,
@@ -1876,7 +1876,7 @@ class IncrementalXMLTreeBuilder(TreeBuilder):
 class TriggerTelnetClientFactory(TriggerClientFactory):
     """Factory for a telnet connection."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         deferred,
         action,
@@ -2058,7 +2058,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
     one errors. Wait for a prompt after each.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         device,
         commands,

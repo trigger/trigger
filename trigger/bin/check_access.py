@@ -26,7 +26,7 @@ end with an explicit deny.""",
     optp.add_option("-q", "--quiet", action="store_true", help="suppress output")
     (opts, args) = optp.parse_args()
 
-    if not 3 <= len(args) <= 5:
+    if not 3 <= len(args) <= 5:  # noqa: PLR2004
         optp.error("not enough arguments")
 
     acl_file = args[0]
@@ -36,10 +36,10 @@ end with an explicit deny.""",
     source = [] if args[1] == "any" else [TIP(args[1])]
     dest = [] if args[2] == "any" else [TIP(args[2])]
 
-    if len(args) <= 3:
+    if len(args) <= 3:  # noqa: PLR2004
         protocol = []
         port = []
-    elif len(args) == 4:
+    elif len(args) == 4:  # noqa: PLR2004
         try:
             protocol = [Protocol("tcp")]
             port = [int(args[3])]

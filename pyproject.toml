@@ -115,7 +115,6 @@ ignore = [
     "COM812",   # trailing-comma-missing (handled by ruff formatter)
 
     # --- Kept from v2.0.0 baseline ---
-    "E402",     # module-import-not-at-top-of-file
     "E501",     # line-too-long (handled by formatter)
     "F401",     # unused-import (may be used dynamically)
     "F405",     # undefined-local-with-import-star-usage
@@ -128,13 +127,6 @@ ignore = [
     "D107",     # undocumented-public-init
     "D205",     # missing-blank-line-after-summary
     "D401",     # non-imperative-mood
-
-    # --- Complexity (deep refactoring territory) ---
-    "PLR0913",  # too-many-arguments
-    "PLR2004",  # magic-value-comparison
-
-    # --- Other ---
-    "SLF001",   # private-member-access (common in Twisted patterns)
 ]
 
 [tool.ruff.lint.pydocstyle]

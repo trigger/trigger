@@ -43,7 +43,7 @@ __all__ = (
 
 
 # Functions
-def create_trigger_term(
+def create_trigger_term(  # noqa: PLR0913
     source_ips=None,
     dest_ips=None,
     source_ports=None,
@@ -537,7 +537,7 @@ class ACLScript:
     creating command-line utilities using the ACL API.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         acl=None,
         mode="insert",

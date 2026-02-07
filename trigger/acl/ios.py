@@ -60,13 +60,13 @@ def handle_ios_match(a):  # noqa: PLR0912
         extra.remove("log")
 
     if protocol == "icmp":
-        if len(extra) > 2:
+        if len(extra) > 2:  # noqa: PLR2004
             raise NotImplementedError(extra)
         if extra and isinstance(extra[0], tuple):
             extra = extra[0]
         if len(extra) >= 1:
             match["icmp-type"] = [extra[0]]
-        if len(extra) >= 2:
+        if len(extra) >= 2:  # noqa: PLR2004
             match["icmp-code"] = [extra[1]]
     elif protocol == "tcp":
         if extra == ["established"]:

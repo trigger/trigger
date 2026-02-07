@@ -160,7 +160,7 @@ class TestPromptMatchStart:
         m = pat.search(buffer)
         assert m is not None
         # The \n is at index 6, prompt starts at index 7
-        assert prompt_match_start(m) == 7
+        assert prompt_match_start(m) == 7  # noqa: PLR2004
 
     def test_match_after_crlf(self):
         """Match after \\r\\n skips both characters."""
@@ -169,7 +169,7 @@ class TestPromptMatchStart:
         m = pat.search(buffer)
         assert m is not None
         # \r at 6, \n at 7, prompt starts at 8
-        assert prompt_match_start(m) == 8
+        assert prompt_match_start(m) == 8  # noqa: PLR2004
 
 
 # =============================================================================
