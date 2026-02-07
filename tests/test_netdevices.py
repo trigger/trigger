@@ -7,11 +7,6 @@ This uses the mockups of netdevices.xml, acls.db, and autoacls.py in
 tests/data.
 """
 
-__author__ = "Jathan McCollum, Michael Shields"
-__maintainer__ = "Jathan McCollum"
-__copyright__ = "Copyright 2005-2011 AOL Inc.; 2013 Salesforce.com"
-__version__ = "2.0"
-
 import unittest
 
 # Make sure we load the mock redis library

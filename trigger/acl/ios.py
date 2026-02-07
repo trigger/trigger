@@ -11,13 +11,6 @@ For IOS like ACLs.
     'handle_ios_acl',
 """  # noqa: D205
 
-# Copied metadata from parser.py
-__author__ = "Jathan McCollum, Mike Biancaniello, Michael Harding, Michael Shields"
-__editor__ = "Joseph Malone"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathanism@aol.com"
-__copyright__ = "Copyright 2006-2013, AOL Inc.; 2013 Saleforce.com"
-
 from .grammar import *  # noqa: F403
 
 

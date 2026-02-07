@@ -4,13 +4,6 @@
 Tests for bounce windows and the stuff that goes with them.
 """
 
-__author__ = "Jathan McCollum, Michael Shields"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jmccollum@salesforce.com"
-__copyright__ = "Copyright 2013 Salesforce.com"
-__version__ = "2.0"
-
-
 # Make sure we load the mock redis library
 from utils import mock_redis
 

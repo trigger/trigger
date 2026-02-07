@@ -3,12 +3,6 @@ Broken apart from acl.parser because the approaches are vastly different from ea
 other.
 """  # noqa: D205
 
-__author__ = "Jathan McCollum, Mark Thomas"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2007-2012, AOL Inc."
-__version__ = "1.2.2"
-
 import IPy
 
 from trigger import exceptions

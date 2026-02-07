@@ -16,11 +16,6 @@ object containing the variables found in ``settings.py``.
 '127.0.0.1'
 """
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2010-2012, AOL Inc."
-
 import os
 import warnings
 
@@ -32,7 +27,6 @@ from . import global_settings
 DEFAULT_LOCATION = "/etc/trigger/settings.py"
 ENVIRONMENT_VARIABLE = "TRIGGER_SETTINGS"
 SETTINGS_FILE = os.environ.get(ENVIRONMENT_VARIABLE, DEFAULT_LOCATION)
-
 
 # Exports
 __all__ = ("BaseSettings", "DummySettings", "Settings", "settings")

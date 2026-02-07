@@ -8,12 +8,6 @@ database (acls.db), to search for both implicit and explicit ACL associations,
 and to manage the ACL task queue.
 """
 
-__author__ = 'Jathan McCollum, Eileen Tschetter, Mark Ellzey Thomas, Michael Shields'
-__maintainer__ = 'Jathan McCollum'
-__email__ = 'jathan.mccollum@teamaol.com'
-__copyright__ = 'Copyright 2003-2011, AOL Inc.; 2013 Salesforce.com'
-__version__ = '1.6.1'
-
 from textwrap import wrap
 from collections import defaultdict
 import optparse
@@ -40,7 +34,7 @@ def parse_args(argv):
         %prog (--list | --listmanual)"""
 
     # Parse arguments.
-    optp = optparse.OptionParser(description=__doc__.strip(), version=__version__,
+    optp = optparse.OptionParser(description=__doc__.strip(),
                              usage=usage)
     optp.add_option('-l', '--list', help='list ACLs currently in integrated (automated) queue',
                 action='store_const', const='list', dest='mode')

@@ -1,10 +1,5 @@
 """Pluggable event notification system for Trigger."""
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2012-2012, AOL Inc."
-
 # Exports
 __all__ = []
 

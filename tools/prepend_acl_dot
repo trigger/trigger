@@ -5,12 +5,6 @@
 parsing_check - Determines if ACL passes parsing check
 """
 
-__author__ = 'Eileen Watson'
-__maintainer__ = 'Eileen Watson'
-__email__ = 'ewatson@salesforce.com'
-__copyright__ = 'Copyright 2013 Salesforce.com'
-__version__ = '1.0'
-
 import optparse
 import sys
 import logging

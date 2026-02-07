@@ -1,11 +1,5 @@
 """Utilities for parsing/handling URLs."""
 
-__author__ = "Jathan McCollum"
-__maintainer__ = "Jathan McCollum"
-__email__ = "jathan.mccollum@teamaol.com"
-__copyright__ = "Copyright 2013, AOL Inc."
-__version__ = "0.1"
-
 from urllib.parse import parse_qsl, unquote, urlparse
 
 

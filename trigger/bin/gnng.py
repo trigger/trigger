@@ -8,8 +8,6 @@ may be applied to the interface. Works on Juniper, Netscreen, Foundry, and Cisco
 devices.
 """
 
-__version__ = "1.3.2"
-
 import csv
 import os
 import sys
@@ -27,7 +25,6 @@ from trigger.conf import settings
 from trigger.netdevices import NetDevices, device_match
 
 settings.WITH_ACLS = False
-
 
 # Constants
 DEBUG = os.getenv("DEBUG")

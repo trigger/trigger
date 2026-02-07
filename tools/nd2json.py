@@ -3,7 +3,7 @@
 # nd2json.py - Converts netdevices.xml to netdevices.json and reports
 # performance stuff
 
-from xml.etree.cElementTree import ElementTree, parse
+from xml.etree.ElementTree import parse
 
 try:
     import simplejson as json

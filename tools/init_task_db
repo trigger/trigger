@@ -4,11 +4,6 @@
 Initialize database tables for the task queue
 """
 
-__author__ = 'Jathan McCollum'
-__email__ = 'jathan@gmail.com'
-__version__ = '0.1'
-
-
 from trigger.acl.models import create_tables, confirm_tables
 from trigger.conf import settings
 from trigger.utils.cli import proceed

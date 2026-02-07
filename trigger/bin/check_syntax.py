@@ -2,8 +2,6 @@
 
 """check_syntax - Determines if ACL passes parsing check."""
 
-__version__ = "1.0"
-
 import optparse
 import os
 import sys
