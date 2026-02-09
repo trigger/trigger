@@ -24,19 +24,15 @@ jobs:
           # semantic-release requires a branch matching 'main' to detect versions.
           git checkout -B main
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v7
         with:
+          version: "0.10.0"
           enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
 
       - name: Install dependencies
         run: |
-          uv pip install --system python-semantic-release
+          uv tool install python-semantic-release
 
       - name: Get next version
         id: version
