@@ -30,49 +30,82 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
-      - name: Install dependencies
+      - name: Compute version and changelog
+        id: version
         run: |
           uv tool install python-semantic-release
 
-      - name: Get next version
-        id: version
-        run: |
-          # Run semantic-release in dry-run mode to get next version
+          # Get next version
           NEXT_VERSION=$(python-semantic-release version --print || echo "No version change")
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
-          # Get changelog preview
-          python-semantic-release changelog --unreleased > /tmp/changelog.md || echo "No changes" > /tmp/changelog.md
+          # Generate changelog: delete the existing file so PSR regenerates
+          # from scratch (produces a proper "## Unreleased" section).
+          rm -f CHANGELOG.md
+          python-semantic-release changelog
 
-      - name: Comment PR
+          # Extract the Unreleased section (strip the heading itself)
+          CHANGELOG=$(sed -n '/^## Unreleased/,/^## v/{/^## Unreleased/d;/^## v/d;p}' CHANGELOG.md)
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="No changes detected."
+          fi
+
+          # Write to file for the next step (multi-line safe)
+          echo "$CHANGELOG" > /tmp/changelog-preview.md
+
+      - name: Upsert PR comment
         uses: actions/github-script@v7
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next_version }}
         with:
           script: |
             const fs = require('fs');
-            const nextVersion = '${{ steps.version.outputs.next_version }}';
-            const changelog = fs.readFileSync('/tmp/changelog.md', 'utf8');
+            const marker = '<!-- release-preview-bot -->';
+            const nextVersion = process.env.NEXT_VERSION;
+            const changelog = fs.readFileSync('/tmp/changelog-preview.md', 'utf8').trim();
 
-            const body = `## 🚀 Release Preview
+            const body = [
+              marker,
+              '## Release Preview',
+              '',
+              `**Next Version:** \`${nextVersion}\``,
+              '',
+              '### Changelog Preview',
+              '',
+              changelog,
+              '',
+              '---',
+              '',
+              '*This version will be automatically released when this PR is merged to main.*',
+              '',
+              '**Reminder:** Use conventional commits:',
+              '- `fix:` → Patch release (2.0.0 → 2.0.1)',
+              '- `feat:` → Minor release (2.0.0 → 2.1.0)',
+              '- `feat!:` or `BREAKING CHANGE:` → Major release (2.0.0 → 3.0.0)',
+            ].join('\n');
 
-            **Next Version:** \`${nextVersion}\`
-
-            ### Changelog Preview
-
-            ${changelog}
-
-            ---
-
-            *This version will be automatically released when this PR is merged to main.*
-
-            **Reminder:** Use conventional commits:
-            - \`fix:\` → Patch release (2.0.0 → 2.0.1)
-            - \`feat:\` → Minor release (2.0.0 → 2.1.0)
-            - \`feat!:\` or \`BREAKING CHANGE:\` → Major release (2.0.0 → 3.0.0)
-            `;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            // Look for an existing comment with our marker (paginate to search all)
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: body
+              issue_number: context.issue.number,
             });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: body,
+              });
+              console.log(`Updated existing comment ${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+              console.log('Created new comment');
+            }
