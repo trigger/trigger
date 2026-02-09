@@ -19,15 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v7
         with:
-          enable-cache: true
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
+          version: "0.10.0"
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-python: true
+          cache-suffix: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
@@ -44,19 +43,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v7
         with:
+          version: "0.10.0"
           enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
 
       - name: Install dependencies
         run: |
-          uv pip install --system ruff
+          uv tool install ruff
 
       - name: Run ruff check
         run: |
@@ -73,15 +68,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v7
         with:
+          version: "0.10.0"
           enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+          cache-python: true
 
       - name: Build package
         run: |
