@@ -183,6 +183,8 @@ minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
 
 [tool.semantic_release.changelog]
+
+[tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGELOG.md"
 
 [tool.semantic_release.branches.main]
