@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from trigger.conf import settings
-from trigger.tacacsrc import Credentials, Tacacsrc
+from trigger.tacacsrc import Credentials, Tacacsrc, convert_tacacsrc
 
 # Constants
 aol = Credentials("jschmoe", "abc123", "aol")
@@ -140,6 +140,31 @@ class TacacsrcTest(unittest.TestCase):
         Path(fname).chmod(0o666)  # Make it world-writable
         new_perms = self._get_perms(fname)
         self.assertNotEqual(new_perms, RIGHT_PERMS)
+
+    def test_convert_tacacsrc(self):
+        """Test that convert_tacacsrc reads old creds and writes via GPG."""
+        captured = {}
+
+        def spy_encrypt_and_write(self):
+            captured["creds"] = dict(self.creds)
+            captured["use_gpg"] = self.use_gpg
+            captured["file_name"] = self.file_name
+
+        with (
+            patch("trigger.tacacsrc.Tacacsrc", MockTacacsrc),
+            patch.object(MockTacacsrc, "_encrypt_and_write", spy_encrypt_and_write),
+            patch.object(MockTacacsrc, "_update_perms"),
+        ):
+            convert_tacacsrc()
+
+        # GPG write path should have been reached
+        self.assertIn("creds", captured)
+        # All original credentials should be preserved
+        for name, value in ALL_CREDS:
+            self.assertEqual(captured["creds"][name], value)
+        # Should be in GPG mode targeting the .gpg file
+        self.assertTrue(captured["use_gpg"])
+        self.assertEqual(captured["file_name"], settings.TACACSRC + ".gpg")
 
 
 if __name__ == "__main__":
