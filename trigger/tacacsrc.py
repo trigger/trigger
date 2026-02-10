@@ -205,10 +205,12 @@ def validate_credentials(creds=None):
 def convert_tacacsrc():
     """Converts old .tacacsrc to new .tacacsrc.gpg."""  # noqa: D401
     print("Converting old tacacsrc to new kind :)")
-    tco = Tacacsrc(old=True)
-    tcn = Tacacsrc(old=False, gen=True)
-    tcn.creds = tco.creds
-    tcn.write()
+    # Read credentials from the old non-GPG .tacacsrc
+    tco = Tacacsrc(use_gpg=False)
+    # Set up for writing as GPG format and write out
+    tco.use_gpg = True
+    tco.file_name = settings.TACACSRC + ".gpg"
+    tco.write()
 
 
 def _perl_unhex_old(c):
