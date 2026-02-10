@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trigger"
-version = "2.2.4"
+version = "2.2.5"
 description = "Network automation toolkit for managing network devices"
 readme = "README.md"
 license = "BSD-3-Clause"
