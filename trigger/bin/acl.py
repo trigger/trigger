@@ -10,6 +10,7 @@ and to manage the ACL task queue.
 import optparse
 import sys
 from collections import defaultdict
+from pathlib import Path
 from textwrap import wrap
 
 from trigger import __version__, exceptions
@@ -24,7 +25,8 @@ def parse_args(argv, optp):  # noqa: D103
         %prog --display [--exact | --device-name-only] (<acl_name> | <device>)
         %prog (--add | --remove) <acl_name> [<device> [<device> ...]]
         %prog (--clear | --inject) [--quiet] [<acl_name> [<acl_name> ...]]
-        %prog (--list | --listmanual)"""
+        %prog (--list | --listmanual)
+        %prog --staged"""
 
     # Parse arguments.
     optp.usage = usage
@@ -44,6 +46,14 @@ def parse_args(argv, optp):  # noqa: D103
         help="list entries currently in manual queue",
         action="store_const",
         const="listmanual",
+        dest="mode",
+    )
+    optp.add_option(
+        "-s",
+        "--staged",
+        help="list currently staged ACLs",
+        action="store_const",
+        const="staged",
         dest="mode",
     )
     optp.add_option(
@@ -128,7 +138,7 @@ def main():  # noqa: PLR0912, PLR0915
     # Setup
     aclsdb = AclsDB()
     term_width = get_terminal_width()  # How wide is your term!
-    valid_modes = ["list", "listmanual"]  # Valid listing modes
+    valid_modes = ["list", "listmanual", "staged"]  # Valid listing modes
 
     optp = optparse.OptionParser()
     opts, args = parse_args(sys.argv, optp)
@@ -166,6 +176,20 @@ def main():  # noqa: PLR0912, PLR0915
             print()
         if not queue.list(queue="manual"):
             print("Nothing in the manual queue.")
+
+    elif opts.mode == "staged":
+        tftproot = settings.TFTPROOT_DIR
+        tftp_path = Path(tftproot)
+        if not tftp_path.is_dir():
+            print(f"TFTPROOT_DIR directory not found: {tftproot}")
+            sys.exit(1)
+        staged_files = sorted(p.name for p in tftp_path.iterdir() if p.is_file())
+        if staged_files:
+            print(f"Access-lists currently staged in {tftproot}:")
+            for filename in staged_files:
+                print(f"  {filename}")
+        else:
+            print(f"No ACLs currently staged in {tftproot}.")
 
     elif opts.mode == "inject":
         for arg in args:
