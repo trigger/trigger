@@ -314,11 +314,15 @@ class TestIsAwaitingConfirmation:
 class TestSSHChannelConfirmationAutoResponse:
     """Verify TriggerSSHChannelBase auto-responds to confirmation prompts."""
 
-    def _make_channel(self):
+    def _make_channel(self, delimiter="\n"):
         """Create a minimal mock of TriggerSSHChannelBase for testing dataReceived."""
         ch = MagicMock()
         ch.data = ""
-        ch.device = "test-device1"
+        # Device must be an object with a delimiter attribute, not a string
+        ch.device = MagicMock()
+        ch.device.nodeName = "test-device1"
+        ch.device.delimiter = delimiter
+        ch.device.__str__ = lambda self: self.nodeName
         ch.enabled = True
         ch.initialized = True
         ch.results = []
@@ -327,8 +331,8 @@ class TestSSHChannelConfirmationAutoResponse:
         ch.prompt = compile_prompt_pattern(settings.IOSLIKE_PROMPT_PAT)
         return ch
 
-    def test_confirmation_prompt_sends_newline(self):
-        """When a confirmation prompt is detected, write('\\n') should be called."""
+    def test_confirmation_prompt_sends_delimiter(self):
+        """When a confirmation prompt is detected, write(device.delimiter) should be called."""
         from trigger.twister import TriggerSSHChannelBase
 
         ch = self._make_channel()
@@ -344,6 +348,20 @@ class TestSSHChannelConfirmationAutoResponse:
         ch.write.assert_called_once_with("\n")
         ch.resetTimeout.assert_called_once()
         assert ch.data == ""
+
+    def test_confirmation_prompt_uses_device_delimiter(self):
+        """Confirmation response should use the device-specific delimiter (e.g. \\r\\n for Force10)."""
+        from trigger.twister import TriggerSSHChannelBase
+
+        # Force10 devices use \r\n as delimiter
+        ch = self._make_channel(delimiter="\r\n")
+
+        incoming = "copy running-config startup-config\nDestination filename [running-config]? "
+        ch.data = incoming
+
+        TriggerSSHChannelBase.dataReceived(ch, incoming)
+
+        ch.write.assert_called_once_with("\r\n")
 
     def test_confirmation_prompt_does_not_advance_commands(self):
         """When a confirmation prompt is detected, results should not be appended."""
@@ -363,11 +381,15 @@ class TestSSHChannelConfirmationAutoResponse:
 class TestTelnetConfirmationAutoResponse:
     """Verify IoslikeSendExpect (telnet) auto-responds to confirmation prompts."""
 
-    def _make_protocol(self):
+    def _make_protocol(self, delimiter="\n"):
         """Create a minimal mock of IoslikeSendExpect for testing dataReceived."""
         proto = MagicMock()
         proto.data = ""
-        proto.device = "test-device1"
+        # Device must be an object with a delimiter attribute, not a string
+        proto.device = MagicMock()
+        proto.device.nodeName = "test-device1"
+        proto.device.delimiter = delimiter
+        proto.device.__str__ = lambda self: self.nodeName
         proto.initialized = True
         proto.results = []
         proto.with_errors = False
@@ -376,8 +398,8 @@ class TestTelnetConfirmationAutoResponse:
         proto.factory = MagicMock()
         return proto
 
-    def test_confirmation_prompt_sends_newline(self):
-        """Telnet channel should send '\\n' on confirmation prompt."""
+    def test_confirmation_prompt_sends_delimiter(self):
+        """Telnet channel should send device.delimiter on confirmation prompt."""
         from trigger.twister import IoslikeSendExpect
 
         proto = self._make_protocol()
@@ -387,9 +409,23 @@ class TestTelnetConfirmationAutoResponse:
 
         IoslikeSendExpect.dataReceived(proto, incoming)
 
-        proto.transport.write.assert_called_once_with("\n")
+        proto.write.assert_called_once_with("\n")
         proto.resetTimeout.assert_called_once()
         assert proto.data == ""
+
+    def test_confirmation_prompt_uses_device_delimiter(self):
+        """Telnet confirmation response should use device-specific delimiter (e.g. \\r\\n for Force10)."""
+        from trigger.twister import IoslikeSendExpect
+
+        # Force10 devices use \r\n as delimiter
+        proto = self._make_protocol(delimiter="\r\n")
+
+        incoming = "Save changes [y/n]:"
+        proto.data = incoming
+
+        IoslikeSendExpect.dataReceived(proto, incoming)
+
+        proto.write.assert_called_once_with("\r\n")
 
     def test_confirmation_prompt_does_not_advance_commands(self):
         """Telnet channel should not append results on confirmation prompt."""

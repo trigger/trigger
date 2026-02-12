@@ -1499,7 +1499,7 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
             if is_awaiting_confirmation(self.data):
                 log.msg(f"[{self.device}] Got confirmation prompt: {self.data!r}")
                 log.msg(f"[{self.device}] Sending confirmation response")
-                self.write("\n")
+                self.write(self.device.delimiter)
                 self.data = ""
                 self.resetTimeout()
                 return
@@ -2099,7 +2099,7 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
             if is_awaiting_confirmation(self.data):
                 log.msg(f"[{self.device}] Got confirmation prompt: {self.data!r}")
                 log.msg(f"[{self.device}] Sending confirmation response")
-                self.transport.write("\n")
+                self.write(self.device.delimiter)
                 self.data = ""
                 self.resetTimeout()
                 return
