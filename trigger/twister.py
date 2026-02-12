@@ -1495,18 +1495,21 @@ class TriggerSSHChannelBase(channel.SSHChannel, TimeoutMixin):
                 send_enable(self)
                 return
 
-            # Check for confirmation prompts
-            # If the prompt confirms set the index to the matched bytes
+            # Check for confirmation prompts and auto-confirm with Enter
             if is_awaiting_confirmation(self.data):
                 log.msg(f"[{self.device}] Got confirmation prompt: {self.data!r}")
-                prompt_idx = self.data.find(bytes)
-            else:
+                log.msg(f"[{self.device}] Sending confirmation response")
+                self.write("\n")
+                self.data = ""
+                self.resetTimeout()
                 return
-        else:
-            # Or just use the matched regex object...
-            log.msg(f"[{self.device}] STATE: buffer {self.data!r}")
-            log.msg(f"[{self.device}] STATE: prompt {m.group()!r}")
-            prompt_idx = prompt_match_start(m)
+
+            return
+
+        # Or just use the matched regex object...
+        log.msg(f"[{self.device}] STATE: buffer {self.data!r}")
+        log.msg(f"[{self.device}] STATE: prompt {m.group()!r}")
+        prompt_idx = prompt_match_start(m)
 
         # Strip the prompt from the match result
         result = self.data[:prompt_idx]  # Cut the prompt out
@@ -2092,15 +2095,19 @@ class IoslikeSendExpect(protocol.Protocol, TimeoutMixin):
         # None
         m = self.prompt.search(self.data)
         if not m:
-            # If the prompt confirms set the index to the matched bytes,
+            # Check for confirmation prompts and auto-confirm with Enter
             if is_awaiting_confirmation(self.data):
                 log.msg(f"[{self.device}] Got confirmation prompt: {self.data!r}")
-                prompt_idx = self.data.find(bytes)
-            else:
+                log.msg(f"[{self.device}] Sending confirmation response")
+                self.transport.write("\n")
+                self.data = ""
+                self.resetTimeout()
                 return
-        else:
-            # Or just use the matched regex object...
-            prompt_idx = prompt_match_start(m)
+
+            return
+
+        # Or just use the matched regex object...
+        prompt_idx = prompt_match_start(m)
 
         result = self.data[:prompt_idx]
         # Trim off the echoed-back command.  This should *not* be necessary
