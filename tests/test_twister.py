@@ -1,9 +1,14 @@
 import re
+from unittest.mock import MagicMock
 
 import pytest
 
 from trigger.conf import settings
-from trigger.twister import compile_prompt_pattern, prompt_match_start
+from trigger.twister import (
+    compile_prompt_pattern,
+    is_awaiting_confirmation,
+    prompt_match_start,
+)
 
 
 def test_ioslike_prompt_pattern_enabled():
@@ -253,3 +258,148 @@ def test_vendor_pattern_compiles_without_error(vendor):
     """Every vendor pattern in PROMPT_PATTERNS must compile successfully."""
     pat = compile_prompt_pattern(settings.PROMPT_PATTERNS[vendor])
     assert isinstance(pat, re.Pattern)
+
+
+# =============================================================================
+# is_awaiting_confirmation tests
+# =============================================================================
+
+
+class TestIsAwaitingConfirmation:
+    """Verify is_awaiting_confirmation detects all CONTINUE_PROMPTS patterns."""
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            "Do you want to continue?",
+            "Are you sure you want to proceed?",
+            "Save changes (y/n):",
+            "Confirm action [y/n]:",
+            "Press enter to [confirm]",
+            "Overwrite existing config [yes/no]: ",
+            "overwrite file [startup-config] ?[yes/press any key for no]....",
+            "Destination filename [running-config]? ",
+        ],
+    )
+    def test_detects_confirmation_prompts(self, prompt):
+        """Each CONTINUE_PROMPTS pattern should be detected."""
+        assert is_awaiting_confirmation(prompt) is True
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            "router1# ",
+            "show version",
+            "Building configuration...",
+            "interface GigabitEthernet0/0",
+            "",
+        ],
+    )
+    def test_rejects_non_confirmation_prompts(self, prompt):
+        """Normal command output should not be detected as confirmation."""
+        assert is_awaiting_confirmation(prompt) is False
+
+    def test_case_insensitive(self):
+        """Detection should be case-insensitive."""
+        assert is_awaiting_confirmation("CONTINUE?") is True
+        assert is_awaiting_confirmation("Proceed?") is True
+        assert is_awaiting_confirmation("(Y/N):") is True
+
+
+# =============================================================================
+# SSH channel confirmation auto-response tests (issue #91)
+# =============================================================================
+
+
+class TestSSHChannelConfirmationAutoResponse:
+    """Verify TriggerSSHChannelBase auto-responds to confirmation prompts."""
+
+    def _make_channel(self):
+        """Create a minimal mock of TriggerSSHChannelBase for testing dataReceived."""
+        ch = MagicMock()
+        ch.data = ""
+        ch.device = "test-device1"
+        ch.enabled = True
+        ch.initialized = True
+        ch.results = []
+        ch.with_errors = False
+        ch.command_interval = 0
+        ch.prompt = compile_prompt_pattern(settings.IOSLIKE_PROMPT_PAT)
+        return ch
+
+    def test_confirmation_prompt_sends_newline(self):
+        """When a confirmation prompt is detected, write('\\n') should be called."""
+        from trigger.twister import TriggerSSHChannelBase
+
+        ch = self._make_channel()
+
+        # Simulate receiving a confirmation prompt
+        ch.data = ""
+        incoming = "copy running-config startup-config\nDestination filename [running-config]? "
+        ch.data += incoming
+
+        # Call the real dataReceived logic
+        TriggerSSHChannelBase.dataReceived(ch, incoming)
+
+        ch.write.assert_called_once_with("\n")
+        ch.resetTimeout.assert_called_once()
+        assert ch.data == ""
+
+    def test_confirmation_prompt_does_not_advance_commands(self):
+        """When a confirmation prompt is detected, results should not be appended."""
+        from trigger.twister import TriggerSSHChannelBase
+
+        ch = self._make_channel()
+
+        incoming = "Overwrite file [startup-config] ?[Yes/press any key for no]...."
+        ch.data = incoming
+
+        TriggerSSHChannelBase.dataReceived(ch, incoming)
+
+        # Should not have appended any results
+        assert ch.results == []
+
+
+class TestTelnetConfirmationAutoResponse:
+    """Verify IoslikeSendExpect (telnet) auto-responds to confirmation prompts."""
+
+    def _make_protocol(self):
+        """Create a minimal mock of IoslikeSendExpect for testing dataReceived."""
+        proto = MagicMock()
+        proto.data = ""
+        proto.device = "test-device1"
+        proto.initialized = True
+        proto.results = []
+        proto.with_errors = False
+        proto.command_interval = 0
+        proto.prompt = compile_prompt_pattern(settings.IOSLIKE_PROMPT_PAT)
+        proto.factory = MagicMock()
+        return proto
+
+    def test_confirmation_prompt_sends_newline(self):
+        """Telnet channel should send '\\n' on confirmation prompt."""
+        from trigger.twister import IoslikeSendExpect
+
+        proto = self._make_protocol()
+
+        incoming = "Save changes [y/n]:"
+        proto.data = incoming
+
+        IoslikeSendExpect.dataReceived(proto, incoming)
+
+        proto.transport.write.assert_called_once_with("\n")
+        proto.resetTimeout.assert_called_once()
+        assert proto.data == ""
+
+    def test_confirmation_prompt_does_not_advance_commands(self):
+        """Telnet channel should not append results on confirmation prompt."""
+        from trigger.twister import IoslikeSendExpect
+
+        proto = self._make_protocol()
+
+        incoming = "Are you sure you want to proceed?"
+        proto.data = incoming
+
+        IoslikeSendExpect.dataReceived(proto, incoming)
+
+        assert proto.results == []
