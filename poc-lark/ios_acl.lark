@@ -3,7 +3,7 @@
 
 start: (_ios_line NEWLINE)* _ios_line
 
-_ios_line: _WS? (ios_acl_line | ios_ext_line | "end")? _WS? icomment?
+_ios_line: _TS? (ios_acl_line | ios_ext_line | "end")? _TS? icomment?
 
 // --- IOS traditional ACL lines ---
 ios_acl_line: ios_acl_match_line | ios_acl_no_line
@@ -130,7 +130,7 @@ IPV4_INVERSE_MASK: "255.255.255.255" | "127.255.255.255" | "63.255.255.255"
     | "0.0.0.7" | "0.0.0.3" | "0.0.0.1" | "0.0.0.0"
 
 // --- Comments and remarks ---
-icomment: "!" _WS? ICOMMENT_BODY?
+icomment: "!" _TS? ICOMMENT_BODY?
 ICOMMENT_BODY: /[^\n]+/
 
 ios_remark_line: ("access-list" _TS DIGITS_S _TS)? "remark" _TS REMARK_BODY

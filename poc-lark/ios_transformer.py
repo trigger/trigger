@@ -4,23 +4,20 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from lark import Transformer, Token, Tree, v_args, Discard
+from lark import Transformer, Token
 
 from trigger.acl import support as acl_support
 from trigger.acl.support import (
     ACL, Term, Matches, Modifiers, Comment, TIP, Protocol, RangeList,
     do_protocol_lookup, do_port_lookup, do_icmp_type_lookup, do_icmp_code_lookup,
-    make_inverse_mask, strip_comments,
 )
 from trigger.acl.dicts import (
-    ports, icmp_types, icmp_codes, ios_icmp_messages,
-    tcp_flag_specials,
+    ios_icmp_messages,
 )
 from trigger.acl.ios import (
     Remark, inverse_mask_table, handle_ios_match, handle_ios_acl,
     unary_port_operators,
 )
-from trigger import exceptions
 
 # Sentinel for "any" keyword (distinct from None which Lark uses for missing optionals)
 _ANY = object()
