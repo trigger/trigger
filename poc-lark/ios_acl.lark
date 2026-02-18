@@ -148,8 +148,4 @@ ipv4: IPV4
 IPV4: /[0-9]+(\.[0-9]+)*/
 
 _TS: /[ \t]+/
-_WS: /[ \t\n]+/
 NEWLINE: /\r?\n/
-
-// Whitespace handling - we manage it explicitly
-%declare COMMENT
