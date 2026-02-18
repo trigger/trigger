@@ -35,7 +35,7 @@ class IOSACLTransformer(Transformer):
             if item is None:
                 continue
             if isinstance(item, Comment):
-                Comments.append(item)
+                continue  # Already pushed to Comments in icomment()
             elif isinstance(item, list):
                 flat.extend(item)
             elif isinstance(item, dict):
@@ -203,6 +203,10 @@ class IOSACLTransformer(Transformer):
     # --- Logging ---
 
     def ios_log(self, items):
+        # NOTE: handle_ios_match checks `if "log" in extra` and sets syslog=True.
+        # The original SimpleParse parser also discards the log/log-input distinction.
+        # TODO: Preserve "log-input" vs "log" when handle_ios_match is updated to
+        # support it (pre-existing limitation, not introduced by Lark port).
         return "log"
 
     # --- Comments and remarks ---
@@ -212,7 +216,9 @@ class IOSACLTransformer(Transformer):
         for item in items:
             if isinstance(item, Token) and item.type == "ICOMMENT_BODY":
                 body = str(item)
-        return Comment(body)
+        comment = Comment(body)
+        Comments.append(comment)
+        return None
 
     def ios_remark_line(self, items):
         # In SimpleParse, remark returns the Remark object which becomes a Comment
