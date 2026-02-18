@@ -133,7 +133,7 @@ IPV4_INVERSE_MASK: "255.255.255.255" | "127.255.255.255" | "63.255.255.255"
 icomment: "!" _TS? ICOMMENT_BODY?
 ICOMMENT_BODY: /[^\n]+/
 
-ios_remark_line: ("access-list" _TS DIGITS_S _TS)? "remark" _TS REMARK_BODY
+ios_remark_line: ("access-list" _TS DIGITS_S _TS)? "remark" (_TS REMARK_BODY)?
 REMARK_BODY: /[^\n]+/
 DIGITS_S: /[0-9]+/
 
