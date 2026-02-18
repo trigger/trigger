@@ -6,10 +6,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from lark import Transformer, Token, Tree, v_args, Discard
 
+from trigger.acl import support as acl_support
 from trigger.acl.support import (
     ACL, Term, Matches, Modifiers, Comment, TIP, Protocol, RangeList,
     do_protocol_lookup, do_port_lookup, do_icmp_type_lookup, do_icmp_code_lookup,
-    make_inverse_mask, Comments, strip_comments,
+    make_inverse_mask, strip_comments,
 )
 from trigger.acl.dicts import (
     ports, icmp_types, icmp_codes, ios_icmp_messages,
@@ -217,7 +218,7 @@ class IOSACLTransformer(Transformer):
             if isinstance(item, Token) and item.type == "ICOMMENT_BODY":
                 body = str(item)
         comment = Comment(body)
-        Comments.append(comment)
+        acl_support.Comments.append(comment)
         return None
 
     def ios_remark_line(self, items):
@@ -227,7 +228,7 @@ class IOSACLTransformer(Transformer):
         for item in items:
             if isinstance(item, Token) and item.type == "REMARK_BODY":
                 remark_body = str(item)
-        Comments.append(Remark(remark_body))
+        acl_support.Comments.append(Remark(remark_body))
         return None  # Don't generate a term
 
     def NEWLINE(self, token):
