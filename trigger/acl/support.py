@@ -474,10 +474,12 @@ class TIP(netaddr.IPNetwork):
         if isinstance(data, str) and "/" in data:
             parts = data.split("/")
             addr_part = parts[0]
-            octets = addr_part.split(".")
-            while len(octets) < 4:  # noqa: PLR2004
-                octets.append("0")
-            data = ".".join(octets) + "/" + parts[1]
+            # Only apply to IPv4 (no colons in address part)
+            if ":" not in addr_part:
+                octets = addr_part.split(".")
+                while len(octets) < 4:  # noqa: PLR2004
+                    octets.append("0")
+                data = ".".join(octets) + "/" + parts[1]
 
         super().__init__(data, **kwargs)
 
@@ -1287,7 +1289,10 @@ class Matches(MyDict):
             with contextlib.suppress(AttributeError):
                 # Force prefix display for /32 and /128 in JunOS output
                 if hasattr(pair, "prefixlen") and pair.prefixlen in (32, 128):
-                    return f"{pair.network}/{pair.prefixlen}"
+                    result = f"{pair.network}/{pair.prefixlen}"
+                    if getattr(pair, "negated", False):
+                        result += " except"
+                    return result
         return str(pair)
 
     def ios_port_str(self, ports):
