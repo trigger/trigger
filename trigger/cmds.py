@@ -16,6 +16,7 @@ from twisted.internet import defer, task
 from twisted.python import log
 
 from trigger import exceptions
+from trigger.acl.support import TIP
 from trigger.conf import settings
 from trigger.netdevices import NetDevices
 from trigger.utils.templates import (
@@ -808,13 +809,13 @@ class NetACLInfo(Commando):
         super().__init__(**args)
 
     def IPsubnet(self, addr):
-        """Given '172.20.1.4/24', return IP('172.20.1.0/24')."""
+        """Given '172.20.1.4/24', return TIP('172.20.1.0/24')."""
         net = IP(addr)
-        return IP(f"{net.network}/{net.prefixlen}")
+        return TIP(f"{net.network}/{net.prefixlen}")
 
     def IPhost(self, addr):
-        """Given '172.20.1.4/24', return IP('172.20.1.4/32')."""
-        return IP(addr[: addr.index("/")])  # Only keep before "/"
+        """Given '172.20.1.4/24', return TIP('172.20.1.4/32')."""
+        return TIP(addr[: addr.index("/")])  # Only keep before "/"
 
     # =======================================
     # Vendor-specific generate (to_)/parse (from_) methods
@@ -1166,14 +1167,14 @@ def _make_ipy(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list of
     IP address objects.
     """  # noqa: D205
-    return [IP(addr) for addr, mask in nets]
+    return [TIP(addr) for addr, mask in nets]
 
 
 def _make_cidrs(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list CIDR
     blocks.
     """  # noqa: D205
-    return [IP(f"{addr}/{mask}") for addr, mask in nets]
+    return [TIP(IP(f"{addr}/{mask}").cidr) for addr, mask in nets]
 
 
 def _dump_interfaces(idict):
