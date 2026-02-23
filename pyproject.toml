@@ -18,7 +18,7 @@ classifiers = [
     "Framework :: Twisted",
 ]
 dependencies = [
-    "IPy>=1.01",
+    "netaddr>=1.0.0,<2",
     "cryptography>=41.0.0",
     "Twisted>=22.10.0",
     "crochet>=2.0.0",

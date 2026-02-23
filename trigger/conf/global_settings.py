@@ -9,7 +9,7 @@ import os
 import socket
 from pathlib import Path
 
-import IPy
+import netaddr
 
 # ===============================
 # Global Settings
@@ -67,9 +67,9 @@ TFTP_HOST = ""
 # Add internally owned networks here. All network blocks owned/operated and
 # considered part of your network should be included.
 INTERNAL_NETWORKS = [
-    IPy.IP("10.0.0.0/8"),
-    IPy.IP("172.16.0.0/12"),
-    IPy.IP("192.168.0.0/16"),
+    netaddr.IPNetwork("10.0.0.0/8"),
+    netaddr.IPNetwork("172.16.0.0/12"),
+    netaddr.IPNetwork("192.168.0.0/16"),
 ]
 
 # A dictionary keyed by manufacturer name containing a list of the device types

@@ -3,7 +3,7 @@ Broken apart from acl.parser because the approaches are vastly different from ea
 other.
 """  # noqa: D205
 
-import IPy
+import netaddr
 
 from trigger import exceptions
 from trigger.acl.parser import (
@@ -555,11 +555,11 @@ class NSAddressBook(NetScreen):
         self.any = NSAddress(name="ANY")
 
     def find(self, address, zone):  # noqa: D102
-        if not self.entries.has_key(zone):
+        if zone not in self.entries:
             return None
 
         for nsaddr in self.entries[zone]:
-            if isinstance(address, IPy.IP):
+            if isinstance(address, netaddr.IPNetwork):
                 if nsaddr.addr == address:
                     return nsaddr
             elif isinstance(address, str):
@@ -646,7 +646,7 @@ class NSAddress(NetScreen):
             self.zone,
             self.name,
             self.addr.strNormal(0),
-            self.addr.netmask(),
+            str(self.addr.netmask),
             self.comment,
         )
         return [output]
@@ -808,7 +808,7 @@ class NSPolicy(NetScreen):
         addr = TIP(address)
         found = address_book.find(addr, zone)
         if not found:
-            if addr.prefixlen() == 32:  # noqa: PLR2004
+            if addr.prefixlen == 32:  # noqa: PLR2004
                 name = f"h{addr.strNormal(0)}"
             else:
                 name = f"n{addr.strNormal()}"
