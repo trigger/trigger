@@ -509,7 +509,8 @@ class TIP(netaddr.IPNetwork):
                 diff = 0
 
         # If both negated, they're the same
-        if self.negated == other.negated:
+        other_negated = getattr(other, "negated", False)
+        if self.negated == other_negated:
             return diff
         # Sort to make negated < not negated
         return -1 if self.negated else 1
