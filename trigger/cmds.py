@@ -11,7 +11,7 @@ import collections
 import itertools
 from xml.etree.ElementTree import Element, SubElement
 
-from IPy import IP
+from netaddr import IPNetwork as IP
 from twisted.internet import defer, task
 from twisted.python import log
 

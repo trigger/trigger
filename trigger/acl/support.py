@@ -29,14 +29,11 @@ support the various modules for parsing. This file is not meant to by used by it
 import contextlib
 from typing import ClassVar
 
-import IPy
+import netaddr
 
 from trigger import exceptions
 
 from .dicts import *  # noqa: F403
-
-# Python 2/3 compatibility
-unicode = str
 
 # Temporary resting place for comments, so the rest of the parser can
 # ignore them.  Yes, this makes the library not thread-safe.
@@ -130,13 +127,13 @@ def do_dscp_lookup(arg):  # noqa: D103
 
 
 def make_inverse_mask(prefixlen):
-    """Return an IP object of the inverse mask of the CIDR prefix.
+    """Return an IP address object of the inverse mask of the CIDR prefix.
 
     :param prefixlen:
         CIDR prefix
     """
     inverse_bits = 2 ** (32 - prefixlen) - 1
-    return TIP(inverse_bits)
+    return netaddr.IPAddress(inverse_bits)
 
 
 def strip_comments(tags):  # noqa: D103
@@ -431,12 +428,13 @@ class RangeList:
         return self.data.__iter__()
 
 
-class TIP(IPy.IP):
-    """Class based on IPy.IP, but with extensions for Trigger.
+class TIP(netaddr.IPNetwork):
+    """Class based on netaddr.IPNetwork, but with extensions for Trigger.
 
     Currently, only the only extension is the ability to negate a network
     block. Only used internally within the parser, as it's not complete
-    (doesn't interact well with IPy.IP objects). Does not handle IPv6 yet.
+    (doesn't interact well with netaddr.IPNetwork objects). Does not handle
+    IPv6 yet.
     """
 
     def __init__(self, data, **kwargs):  # noqa: D107
@@ -448,7 +446,7 @@ class TIP(IPy.IP):
         inactive = getattr(data, "inactive", False)
 
         # Is data a string?
-        if isinstance(data, (str, unicode)):
+        if isinstance(data, str):
             d = data.split()
             # This means we got something like "1.2.3.4 except" or "inactive:
             # 1.2.3.4'
@@ -471,32 +469,39 @@ class TIP(IPy.IP):
 
         self.negated = negated  # Set 'negated' variable
         self.inactive = inactive  # Set 'inactive' variable
-        IPy.IP.__init__(self, data, **kwargs)
 
-        # Make it print prefixes for /32, /128 if we're negated or inactive (and
-        # therefore assuming we're being used in a Juniper ACL.)
-        if self.negated or self.inactive:
-            self.NoPrefixForSingleIp = False
+        # Expand partial IPv4 addresses like "10/8" → "10.0.0.0/8"
+        if isinstance(data, str) and "/" in data:
+            parts = data.split("/")
+            addr_part = parts[0]
+            octets = addr_part.split(".")
+            while len(octets) < 4:  # noqa: PLR2004
+                octets.append("0")
+            data = ".".join(octets) + "/" + parts[1]
+
+        super().__init__(data, **kwargs)
 
     def _compare_to(self, other):
         """Helper method for comparison. Returns -1, 0, or 1."""  # noqa: D401
-        # Regular IPy sorts by prefix length before network base, but Juniper
-        # (our baseline) does not. We also need comparisons to be different for
-        # negation. Following Juniper's sorting, use IP compare, and then break
+        # Following Juniper's sorting, use IP compare, and then break
         # ties where negated < not negated.
-        # Python 3: Implement cmp() logic inline
-        if self.ip < other.ip:
+        self_first = self.first
+        if hasattr(other, "first"):
+            other_first = other.first
+        else:
+            return NotImplemented
+        if self_first < other_first:
             diff = -1
-        elif self.ip > other.ip:
+        elif self_first > other_first:
             diff = 1
         else:
             diff = 0
 
         if diff == 0:
             # If the same IP, compare by prefixlen
-            if self.prefixlen() < other.prefixlen():
+            if self.prefixlen < other.prefixlen:
                 diff = -1
-            elif self.prefixlen() > other.prefixlen():
+            elif self.prefixlen > other.prefixlen:
                 diff = 1
             else:
                 diff = 0
@@ -506,52 +511,56 @@ class TIP(IPy.IP):
             return diff
         # Sort to make negated < not negated
         return -1 if self.negated else 1
-        # Return the base comparison
 
     def __lt__(self, other):  # noqa: D105
-        return self._compare_to(other) < 0
+        result = self._compare_to(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return result < 0
 
     def __le__(self, other):  # noqa: D105
-        return self._compare_to(other) <= 0
+        result = self._compare_to(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return result <= 0
 
     def __gt__(self, other):  # noqa: D105
-        return self._compare_to(other) > 0
+        result = self._compare_to(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return result > 0
 
     def __ge__(self, other):  # noqa: D105
-        return self._compare_to(other) >= 0
+        result = self._compare_to(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return result >= 0
 
     def __eq__(self, other):  # noqa: D105
-        return self._compare_to(other) == 0
+        result = self._compare_to(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return result == 0
 
     def __ne__(self, other):  # noqa: D105
-        return self._compare_to(other) != 0
+        result = self._compare_to(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return result != 0
 
     def __hash__(self):  # noqa: D105
-        # Make TIP hashable for use in sets and as dict keys
-        # Base hash on IP address, prefix length, and negation status
-        return hash((str(self.ip), self.prefixlen(), self.negated, self.inactive))
+        return hash((self.first, self.prefixlen, self.negated, self.inactive))
 
     def __repr__(self):  # noqa: D105
-        # Just stick an 'except' at the end if except is set since we don't
-        # code to accept this in the constructor really just provided, for now,
-        # as a debugging aid.
-        rs = IPy.IP.__repr__(self)
-        if self.negated:
-            # Insert ' except' into the repr. (Yes, it's a hack!)
-            rs = rs.split("'")
-            rs[1] += " except"
-            rs = "'".join(rs)  # Restore original repr
-        if self.inactive:
-            # Insert 'inactive: ' into the repr. (Yes, it's also a hack!)
-            rs = rs.split("'")
-            rs[1] = "inactive: " + rs[1]
-            rs = "'".join(rs)  # Restore original repr
-        return rs
+        return f"TIP('{self!s}')"
 
     def __str__(self):  # noqa: D105
-        # IPy is not a new-style class, so the following doesn't work:
-        # return super(TIP, self).__str__()  # noqa: ERA001
-        rs = IPy.IP.__str__(self)
+        # Show prefix for all networks, but omit for single hosts (/32, /128)
+        # unless negated or inactive (Juniper ACL style needs prefix)
+        if self.prefixlen in (32, 128) and not self.negated and not self.inactive:
+            rs = str(self.ip)
+        else:
+            rs = f"{self.network}/{self.prefixlen}"
         if self.negated:
             rs += " except"
         if self.inactive:
@@ -566,8 +575,38 @@ class TIP(IPy.IP):
         # If one item is negated, it's never contained.
         if xor:
             return False
-        matched = IPy.IP.__contains__(self, item)
+        matched = super().__contains__(item)
         return matched ^ self.negated
+
+    # Prevent netaddr's iteration/subscript protocol from interfering with
+    # RangeList, which would otherwise treat TIP as a sequence of integers.
+    def __iter__(self):  # noqa: D105
+        msg = f"'{type(self).__name__}' object is not iterable"
+        raise TypeError(msg)
+
+    def __getitem__(self, index):  # noqa: D105
+        msg = f"'{type(self).__name__}' object is not subscriptable"
+        raise TypeError(msg)
+
+    def __len__(self):  # noqa: D105
+        msg = f"'{type(self).__name__}' object has no len()"
+        raise TypeError(msg)
+
+    # Compatibility methods for code that uses IPy-style API
+    def net(self):
+        """Return the network address as an IPAddress object."""
+        return self.network
+
+    def strNormal(self, mode=0):
+        """Return string representation compatible with IPy's strNormal.
+
+        :param mode:
+            0 = address without prefix for host, with prefix for network
+            1 = address with prefix always
+        """
+        if mode == 0 and self.prefixlen in (32, 128):
+            return str(self.ip)
+        return f"{self.network}/{self.prefixlen}"
 
 
 class Comment:
@@ -1247,7 +1286,7 @@ class Matches(MyDict):
         except TypeError:
             with contextlib.suppress(AttributeError):
                 # Make it print prefixes for /32, /128
-                pair.NoPrefixForSingleIp = False
+                pass  # netaddr always shows prefix
         return str(pair)
 
     def ios_port_str(self, ports):
@@ -1286,12 +1325,12 @@ class Matches(MyDict):
                 raise exceptions.VendorSupportLacking(
                     msg,
                 )
-            if addr.prefixlen() == 0:
+            if addr.prefixlen == 0:
                 a.append("any")
-            elif addr.prefixlen() == 32:  # noqa: PLR2004
+            elif addr.prefixlen == 32:  # noqa: PLR2004
                 a.append(f"host {addr.net()}")
             else:
-                inverse_mask = make_inverse_mask(addr.prefixlen())
+                inverse_mask = make_inverse_mask(addr.prefixlen)
                 a.append(f"{addr.net()} {inverse_mask}")
         return a
 

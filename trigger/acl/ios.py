@@ -27,7 +27,7 @@ class Remark(Comment):  # noqa: F405
 # Build a table to unwind Cisco's weird inverse netmask.
 # TODO (jathan): These don't actually get sorted properly, but it doesn't seem
 # to have mattered up until now. Worth looking into it at some point, though.
-inverse_mask_table = dict([(make_inverse_mask(x), x) for x in range(33)])  # noqa: F405
+inverse_mask_table = {str(make_inverse_mask(x)): x for x in range(33)}  # noqa: F405
 
 
 def handle_ios_match(a):  # noqa: D103, PLR0912
@@ -129,7 +129,7 @@ rules.update(  # noqa: F405
         ),
         "ipv4_inverse_mask": (
             literals(inverse_mask_table),  # noqa: F405
-            lambda x: inverse_mask_table[TIP(x)],  # noqa: F405
+            lambda x: inverse_mask_table[x],
         ),
         "kw_ip": ('"ip"', None),
         S("ios_match"): (  # noqa: F405

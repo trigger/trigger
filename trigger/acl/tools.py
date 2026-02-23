@@ -9,7 +9,7 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path
 
-import IPy
+import netaddr
 
 from trigger.acl.parser import *  # noqa: F403
 from trigger.conf import settings
@@ -667,10 +667,10 @@ class ACLScript:
     def _add_addr(self, to, src):
         if isinstance(src, list):
             for x in src:
-                if IPy.IP(x) not in to:
-                    to.append(IPy.IP(x))
-        elif IPy.IP(src) not in to:
-            to.append(IPy.IP(src))
+                if netaddr.IPNetwork(x) not in to:
+                    to.append(netaddr.IPNetwork(x))
+        elif netaddr.IPNetwork(src) not in to:
+            to.append(netaddr.IPNetwork(src))
 
     def _add_port(self, to, src):
         if isinstance(src, list):
