@@ -1285,8 +1285,9 @@ class Matches(MyDict):
             return "%s-%s" % pair  # noqa: UP031  # Tuples back to ranges.
         except TypeError:
             with contextlib.suppress(AttributeError):
-                # Make it print prefixes for /32, /128
-                pass  # netaddr always shows prefix
+                # Force prefix display for /32 and /128 in JunOS output
+                if hasattr(pair, "prefixlen") and pair.prefixlen in (32, 128):
+                    return f"{pair.network}/{pair.prefixlen}"
         return str(pair)
 
     def ios_port_str(self, ports):

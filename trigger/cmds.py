@@ -809,7 +809,8 @@ class NetACLInfo(Commando):
 
     def IPsubnet(self, addr):
         """Given '172.20.1.4/24', return IP('172.20.1.0/24')."""
-        return IP(addr, make_net=True)
+        net = IP(addr)
+        return IP(f"{net.network}/{net.prefixlen}")
 
     def IPhost(self, addr):
         """Given '172.20.1.4/24', return IP('172.20.1.4/32')."""
@@ -1172,7 +1173,7 @@ def _make_cidrs(nets):
     """Given a list of 2-tuples of (address, netmask), returns a list CIDR
     blocks.
     """  # noqa: D205
-    return [IP(addr).make_net(mask) for addr, mask in nets]
+    return [IP(f"{addr}/{mask}") for addr, mask in nets]
 
 
 def _dump_interfaces(idict):
