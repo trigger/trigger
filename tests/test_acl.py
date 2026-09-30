@@ -392,6 +392,77 @@ ipv4 access-list BLAHBLAH
             self.assertRaises(exceptions.BadACLName, a.output_ios)
 
 
+class CheckStringification(unittest.TestCase):
+    """Test str() and family kwarg tolerance of ACL output methods.
+
+    Regression tests for issue #397: ACL.__str__ always forwards
+    ``family=self.family`` through ACL.output(), but only output_junos()
+    accepted it, so str() raised TypeError for every other format.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.a = acl.ACL(name="BLAHBLAH")
+        self.t1 = acl.Term(name="p99")
+        self.t1.match["protocol"] = ["tcp"]
+        self.t1.match["source-address"] = ["192.0.2.0/24"]
+        self.t1.match["destination-port"] = [22]
+        self.t1.action = "accept"
+        self.a.terms.append(self.t1)
+
+    def _check_str(self, fmt, name="BLAHBLAH", term_name="p99"):
+        """Helper: str() renders without TypeError for the given format."""
+        self.a.format = fmt
+        self.a.name = name
+        self.t1.name = term_name
+        lines = str(self.a).splitlines()
+        self.assertTrue(lines)
+        return lines
+
+    def testStrJunOS(self):
+        """Test str() on a JunOS ACL"""
+        self._check_str("junos", "100j")
+
+    def testStrIOS(self):
+        """Test str() on a traditional IOS ACL"""
+        self._check_str("ios", "100", term_name=None)
+
+    def testStrIOSNamed(self):
+        """Test str() on a named IOS ACL (the #397 crash)"""
+        lines = self._check_str("ios_named")
+        self.assertEqual(lines[0], "ip access-list extended BLAHBLAH")
+
+    def testStrIOSXR(self):
+        """Test str() on an IOS XR ACL"""
+        self._check_str("iosxr", term_name=None)
+
+    def testStrIOSBrocade(self):
+        """Test str() on a Brocade-flavored IOS ACL"""
+        self._check_str("ios_brocade", "100", term_name=None)
+
+    def testParseStrRoundTrip(self):
+        """Test str() on a parsed named IOS ACL round-trips (issue #397 repro)"""
+        text = "ip access-list extended SMOKE\n permit tcp host 10.20.30.40 any eq 22\n deny ip any any log\n"
+        a = acl.parse(text)
+        self.assertEqual(str(a), text.strip())
+
+    def testFamilyKwargAccepted(self):
+        """Test ACL-level output methods accept and ignore family kwarg"""
+        for fmt, name, term_name in (
+            ("junos", "100j", "p99"),
+            ("ios", "100", None),
+            ("ios_named", "BLAHBLAH", "p99"),
+            ("iosxr", "BLAHBLAH", None),
+            ("ios_brocade", "100", None),
+        ):
+            self.a.format = fmt
+            self.a.name = name
+            self.t1.name = term_name
+            with_family = self.a.output(family="inet")
+            without_family = self.a.output()
+            self.assertEqual(with_family, without_family, f"format={fmt}")
+
+
 class CheckIOSParseAndOutput(unittest.TestCase):
     """Test parsing of IOS ACLs"""
 
