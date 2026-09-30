@@ -119,6 +119,9 @@ ignore = [
 
     # --- Kept from v2.0.0 baseline ---
     "E501",     # line-too-long (handled by formatter)
+    "PLR0917",  # too-many-positional-arguments (newly enforced in ruff 0.16;
+                # incompatible with Twisted-style long method signatures
+                # used throughout the codebase)
 ]
 
 [tool.ruff.lint.pydocstyle]
