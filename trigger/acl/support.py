@@ -758,10 +758,13 @@ class ACL:
 
         return out
 
-    def output_ios(self, replace=False):
+    def output_ios(self, replace=False, family=None):
         """Output the ACL in IOS traditional format.
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
+        :param family: Accepted for signature compatibility with
+            :meth:`~ACL.output_junos`, but ignored -- ``family inet/inet6``
+            wrapping is a JunOS-only concept.
         """
         if self.name is None:
             msg = "IOS format requires a name"
@@ -785,7 +788,7 @@ class ACL:
             out += [x for x in t.output_ios(prefix)]
         return out
 
-    def output_ios_brocade(self, replace=False, receive_acl=False):
+    def output_ios_brocade(self, replace=False, receive_acl=False, family=None):
         """Output the ACL in Brocade-flavored IOS format.
 
         The difference between this and "traditional" IOS are:
@@ -796,6 +799,9 @@ class ACL:
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
         :param receive_acl: If set the ACL is suffixed with a ``ip
             rebind-receive-acl' instead of ``ip rebind-acl``.
+        :param family: Accepted for signature compatibility with
+            :meth:`~ACL.output_junos`, but ignored -- ``family inet/inet6``
+            wrapping is a JunOS-only concept.
         """
         self.strip_comments()
 
@@ -812,10 +818,13 @@ class ACL:
 
         return out
 
-    def output_ios_named(self, replace=False):
+    def output_ios_named(self, replace=False, family=None):
         """Output the ACL in IOS named format.
 
         :param replace: If set the ACL is preceded by a ``no access-list`` line.
+        :param family: Accepted for signature compatibility with
+            :meth:`~ACL.output_junos`, but ignored -- ``family inet/inet6``
+            wrapping is a JunOS-only concept.
         """
         if self.name is None:
             msg = "IOS format requires a name"
@@ -831,10 +840,13 @@ class ACL:
             out += [x for x in t.output_ios_named(" ")]
         return out
 
-    def output_iosxr(self, replace=False):
+    def output_iosxr(self, replace=False, family=None):
         """Output the ACL in IOS XR format.
 
         :param replace: If set the ACL is preceded by a ``no ipv4 access-list`` line.
+        :param family: Accepted for signature compatibility with
+            :meth:`~ACL.output_junos`, but ignored -- ``family inet/inet6``
+            wrapping is a JunOS-only concept.
         """
         if self.name is None:
             msg = "IOS XR format requires a name"
