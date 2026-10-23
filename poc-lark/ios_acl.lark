@@ -1,0 +1,151 @@
+// IOS ACL Grammar for Lark - ported from Trigger's SimpleParse grammar
+// This handles IOS traditional, named extended, and Brocade ACL formats.
+
+start: (_ios_line NEWLINE)* _ios_line
+
+_ios_line: _TS? (ios_acl_line | ios_ext_line | "end")? _TS? icomment?
+
+// --- IOS traditional ACL lines ---
+ios_acl_line: ios_acl_match_line | ios_acl_no_line
+
+ios_acl_match_line: "access-list" _TS DIGITS _TS ios_action_match
+ios_acl_no_line: "no" _TS "access-list" _TS DIGITS
+
+// --- IOS named/extended ACL lines ---
+ios_ext_line: ios_action_match
+    | ios_ext_name_line
+    | ios_ext_no_line
+    | ios_remark_line
+    | ios_rebind_acl_line
+    | ios_rebind_receive_acl_line
+
+ios_ext_name_line: "ip" _TS "access-list" _TS "extended" _TS WORD
+ios_ext_no_line: "no" _TS "ip" _TS "access-list" _TS "extended" _TS WORD
+
+// Brocade
+ios_rebind_acl_line: "ip" _TS "rebind-acl" _TS WORD
+ios_rebind_receive_acl_line: "ip" _TS "rebind-receive-acl" _TS WORD
+
+// --- Action + match ---
+ios_action_match: IOS_ACTION _TS (ios_tcp_port_match | ios_udp_port_match | ios_icmp_match | ios_match)
+
+IOS_ACTION: "permit" | "deny"
+
+// --- Match types ---
+ios_match: (KW_IP | protocol) _TS ios_ip _TS ios_ip (_TS ios_log)?
+ios_tcp_port_match: TCP _TS ios_ip_port _TS ios_ip_port (_TS ESTABLISHED)? (_TS ios_log)?
+ios_udp_port_match: UDP _TS ios_ip_port _TS ios_ip_port (_TS ios_log)?
+ios_icmp_match: ICMP _TS ios_ip _TS ios_ip (_TS ios_log)? (_TS (ios_icmp_message | icmp_type (_TS icmp_code)?))? (_TS ios_log)?
+
+// --- IP addresses ---
+ios_ip: KW_ANY | host_ipv4 | ios_masked_ipv4
+KW_ANY: "any"
+host_ipv4: "host" _TS ipv4
+ios_masked_ipv4: ipv4 _TS IPV4_INVERSE_MASK
+
+// IP with optional port
+ios_ip_port: ios_ip (_TS (unary_port | ios_range))?
+
+// --- Port operators ---
+unary_port: UNARY_PORT_OPERATOR _TS port
+UNARY_PORT_OPERATOR: "neq" | "eq" | "le" | "lt" | "ge" | "gt"
+
+ios_range: "range" _TS port _TS port
+
+// --- Protocols ---
+KW_IP: "ip"
+TCP: "tcp" | "6"
+UDP: "udp" | "17"
+ICMP: "icmp" | "1"
+ESTABLISHED: "established"
+
+// Protocol names (longest match via priority)
+protocol: PROTOCOL_NAME | DIGITS
+PROTOCOL_NAME: "ospf" | "ipip" | "igmp" | "icmp" | "ipv6" | "ahp"i | "tcp" | "udp" | "gre" | "esp" | "egp" | "pim" | "nos" | "ah"
+
+// --- Ports ---
+port: PORT_NAME | DIGITS
+PORT_NAME: "zephyr-hm" | "zephyr-clt" | "cvspserver" | "bootps" | "bootpc"
+    | "chargen" | "discard" | "daytime" | "dnsix" | "domain" | "echo"
+    | "finger" | "ftp-data" | "ftp" | "gopher" | "hostname" | "https"
+    | "http" | "ident" | "imap" | "irc" | "isakmp" | "kerberos-sec"
+    | "klogin" | "kpasswd" | "kshell" | "ldap" | "ldp" | "login" | "lpd"
+    | "mobile-ip" | "mobileip-agent" | "mobileip-mn" | "msdp"
+    | "nameserver" | "netbios-dgm" | "netbios-ns" | "netbios-ssn"
+    | "nfsd" | "nntp" | "ntalk" | "ntp" | "pop2" | "pop3" | "pptp"
+    | "printer" | "radacct" | "radius" | "rip" | "rkinit" | "smtp"
+    | "snmptrap" | "snmp-trap" | "snmp" | "snpp" | "socks" | "ssh"
+    | "sunrpc" | "syslog" | "tacacs-ds" | "tacacs" | "talk" | "telnet"
+    | "tftp" | "timed" | "time" | "uucp" | "who" | "whois" | "www"
+    | "xdmcp" | "afs" | "bgp" | "biff" | "cmd" | "dhcp" | "dns"
+    | "eklogin" | "ekshell" | "exec"
+
+// --- ICMP ---
+icmp_type: ICMP_TYPE_NAME | DIGITS
+ICMP_TYPE_NAME: "echo-reply" | "echo-request" | "echo" | "info-reply" | "info-request"
+    | "information-reply" | "information-request" | "mask-request" | "mask-reply"
+    | "parameter-problem" | "redirect" | "router-advertisement" | "router-solicit"
+    | "source-quench" | "time-exceeded" | "timestamp-reply" | "timestamp" | "unreachable"
+
+icmp_code: ICMP_CODE_NAME | DIGITS
+ICMP_CODE_NAME: "ip-header-bad" | "required-option-missing"
+    | "redirect-for-host" | "redirect-for-network"
+    | "redirect-for-tos-and-host" | "redirect-for-tos-and-net"
+    | "ttl-eq-zero-during-reassembly" | "ttl-eq-zero-during-transit"
+    | "communication-prohibited-by-filtering" | "destination-host-prohibited"
+    | "destination-host-unknown" | "destination-network-prohibited"
+    | "destination-network-unknown" | "fragmentation-needed"
+    | "host-precedence-violation" | "host-unreachable"
+    | "host-unreachable-for-TOS" | "network-unreachable"
+    | "network-unreachable-for-TOS" | "port-unreachable"
+    | "precedence-cutoff-in-effect" | "protocol-unreachable"
+    | "source-host-isolated" | "source-route-failed"
+
+// IOS ICMP message names (combined type+code)
+ios_icmp_message: IOS_ICMP_MESSAGE
+IOS_ICMP_MESSAGE: "administratively-prohibited" | "alternate-address"
+    | "conversion-error" | "dod-host-prohibited" | "dod-net-prohibited"
+    | "echo-reply" | "echo" | "general-parameter-problem" | "host-isolated"
+    | "host-precedence-unreachable" | "host-redirect" | "host-tos-redirect"
+    | "host-tos-unreachable" | "host-unknown" | "host-unreachable"
+    | "information-reply" | "information-request" | "mask-reply" | "mask-request"
+    | "mobile-redirect" | "net-redirect" | "net-tos-redirect"
+    | "net-tos-unreachable" | "net-unreachable" | "network-unknown"
+    | "no-room-for-option" | "option-missing" | "packet-too-big"
+    | "parameter-problem" | "port-unreachable" | "precedence-unreachable"
+    | "protocol-unreachable" | "reassembly-timeout" | "redirect"
+    | "router-advertisement" | "router-solicitation" | "source-quench"
+    | "source-route-failed" | "time-exceeded" | "timestamp-reply"
+    | "timestamp-request" | "traceroute" | "ttl-exceeded" | "unreachable"
+
+// --- Inverse masks ---
+// Generated from inverse_mask_table - sorted longest first
+IPV4_INVERSE_MASK: "255.255.255.255" | "127.255.255.255" | "63.255.255.255"
+    | "31.255.255.255" | "15.255.255.255" | "7.255.255.255" | "3.255.255.255"
+    | "1.255.255.255" | "0.255.255.255" | "0.127.255.255" | "0.63.255.255"
+    | "0.31.255.255" | "0.15.255.255" | "0.7.255.255" | "0.3.255.255"
+    | "0.1.255.255" | "0.0.255.255" | "0.0.127.255" | "0.0.63.255"
+    | "0.0.31.255" | "0.0.15.255" | "0.0.7.255" | "0.0.3.255" | "0.0.1.255"
+    | "0.0.0.255" | "0.0.0.127" | "0.0.0.63" | "0.0.0.31" | "0.0.0.15"
+    | "0.0.0.7" | "0.0.0.3" | "0.0.0.1" | "0.0.0.0"
+
+// --- Comments and remarks ---
+icomment: "!" _TS? ICOMMENT_BODY?
+ICOMMENT_BODY: /[^\n]+/
+
+ios_remark_line: ("access-list" _TS DIGITS_S _TS)? "remark" (_TS REMARK_BODY)?
+REMARK_BODY: /[^\n]+/
+DIGITS_S: /[0-9]+/
+
+// --- Logging ---
+ios_log: IOS_LOG
+IOS_LOG: "log-input" | "log"
+
+// --- Basic tokens ---
+DIGITS: /[0-9]+/
+WORD: /[a-zA-Z0-9_.\-]+/
+ipv4: IPV4
+IPV4: /[0-9]+(\.[0-9]+)*/
+
+_TS: /[ \t]+/
+NEWLINE: /\r?\n/
